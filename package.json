@@ -1,0 +1,32 @@
+{
+  "name": "cos-js-sdk-v5",
+  "version": "0.0.1",
+  "description": "cos js sdk v5",
+  "main": "index.js",
+  "scripts": {
+    "dev": "webpack -w",
+    "build": "webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tencentyun/cos-js-sdk-v5.git"
+  },
+  "keywords": [],
+  "author": "carsonxu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tencentyun/cos-js-sdk-v5/issues"
+  },
+  "homepage": "https://github.com/tencentyun/cos-js-sdk-v5#readme",
+  "dependencies": {
+    "async": "^2.2.0",
+    "eventproxy": "^0.3.5",
+    "lodash": "^4.17.4",
+    "request": "^2.81.0",
+    "xml2js": "^0.4.17"
+  },
+  "devDependencies": {
+    "babel-loader": "^7.1.0",
+    "webpack": "^3.0.0"
+  }
+}
