@@ -20,6 +20,8 @@ function sliceUploadFile (params, callback) {
     var FileSize;
     var self = this;
 
+    StorageClass = null;
+
     var onProgress = params.onProgress;
     var onHashProgress = params.onHashProgress;
 
@@ -91,7 +93,16 @@ function sliceUploadFile (params, callback) {
             Body: Body,
             FileSize: FileSize,
             SliceSize: SliceSize,
-            onHashProgress: onHashProgress
+            onHashProgress: onHashProgress,
+            // init params
+            CacheControl: params.CacheControl,
+            ContentDisposition: params.ContentDisposition,
+            ContentEncoding: params.ContentEncoding,
+            ContentType: params.ContentType,
+            ACL: params.ACL,
+            GrantRead: params.GrantRead,
+            GrantWrite: params.GrantWrite,
+            GrantFullControl: params.GrantFullControl,
         }, function (err, UploadData) {
             if (err) return proxy.emit('error', err);
             proxy.emit('get_upload_data_finish', UploadData);
@@ -229,7 +240,15 @@ function getUploadIdAndPartList(params, callback) {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
-            // StorageClass: StorageClass
+            StorageClass: StorageClass,
+            CacheControl: params.CacheControl,
+            ContentDisposition: params.ContentDisposition,
+            ContentEncoding: params.ContentEncoding,
+            ContentType: params.ContentType,
+            ACL: params.ACL,
+            GrantRead: params.GrantRead,
+            GrantWrite: params.GrantWrite,
+            GrantFullControl: params.GrantFullControl,
         }, function (err, data) {
             if (err) return proxy.emit('error', err);
             var UploadId = data.UploadId;
@@ -281,6 +300,7 @@ function getUploadIdAndPartList(params, callback) {
     });
 
     return proxy.emit('no_available_upload_id');
+
     // 获取符合条件的 UploadId 列表，因为同一个文件可以有多个上传任务。
     wholeMultipartList.call(self, {
         Bucket: Bucket,
@@ -351,50 +371,6 @@ function wholeMultipartListPart(params, callback) {
         });
     };
     next();
-}
-
-// 计算文件所有分片的 ETag
-function getFileETagList(params, cb) {
-    var self = this;
-    var FileBody = params.Body;
-    var SliceSize = params.SliceSize;
-    var FileSize = params.FileSize;
-    var onHashProgress = params.onHashProgress;
-
-    var SliceCount = Math.ceil(FileSize / SliceSize);
-    var FinishSliceCount = 0;
-    var ETagList = [];
-
-    for (var i = 0; i < SliceCount; i++) {
-        ETagList.push({PartNumber: i + 1});
-    }
-
-    Async.mapLimit(ETagList, 1, function (SliceItem, callback) {
-        var PartNumber = SliceItem['PartNumber'];
-        var Index = PartNumber - 1;
-        var start = SliceSize * Index;
-        var end = Math.min(start + SliceSize, FileSize);
-        var ChunkSize = end - start;
-        var ChunkBlob = util.fileSlice.call(FileBody, start, end);
-        util.getFileMd5(ChunkBlob, function (err, md5) {
-            if (err) return callback(err);
-            var ETag = '"' + md5 + '"';
-            ETagList[Index].ETag = ETag;
-            ++FinishSliceCount;
-            if (onHashProgress && (typeof onHashProgress === 'function')) {
-                onHashProgress({
-                    PartNumber: PartNumber,
-                    FileSize: FileSize,
-                    ETag: ETag,
-                    Size: ChunkSize
-                }, parseInt(FinishSliceCount / SliceCount * 100) / 100);
-            }
-            callback(null, ETag);
-        });
-    }, function (err) {
-        if (err) return cb(err);
-        cb(null, {ETagList: ETagList});
-    });
 }
 
 // 上传文件分块，包括
@@ -554,6 +530,8 @@ function uploadSliceItem(params, callback) {
     });
 }
 
+
+
 // 完成分块上传
 function uploadSliceComplete(params, callback) {
     var Bucket = params.Bucket;
@@ -621,34 +599,7 @@ function abortUploadTask(params, callback) {
         });
     });
 
-    if (Level === 'task') {
-        // 单个任务级别的任务抛弃，抛弃指定 UploadId 的上传任务
-        if (!UploadId) {
-            return callback('abort_upload_task_no_id');
-        }
-        if (!Key) {
-            return callback('abort_upload_task_no_key');
-        }
-        ep.emit('get_abort_array', [{
-            Key: Key,
-            UploadId: UploadId
-        }]);
-    } else if (Level === 'file') {
-        // 文件级别的任务抛弃，抛弃该文件的全部上传任务
-        if (!Key) {
-            return callback('abort_upload_task_no_key');
-        }
-        wholeMultipartList.call(self, {
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key
-        }, function (err, data) {
-            if (err) {
-                return callback(err);
-            }
-            ep.emit('get_abort_array', data.UploadList || []);
-        });
-    } else {
+    if (Level === 'bucket') {
         // Bucket 级别的任务抛弃，抛弃该 Bucket 下的全部上传任务
         wholeMultipartList.call(self, {
             Bucket: Bucket,
@@ -659,6 +610,29 @@ function abortUploadTask(params, callback) {
             }
             ep.emit('get_abort_array', data.UploadList || []);
         });
+    } else if (Level === 'file') {
+        // 文件级别的任务抛弃，抛弃该文件的全部上传任务
+        if (!Key) return callback('abort_upload_task_no_key');
+        wholeMultipartList.call(self, {
+            Bucket: Bucket,
+            Region: Region,
+            Key: Key
+        }, function (err, data) {
+            if (err) {
+                return callback(err);
+            }
+            ep.emit('get_abort_array', data.UploadList || []);
+        });
+    } else if (Level === 'task') {
+        // 单个任务级别的任务抛弃，抛弃指定 UploadId 的上传任务
+        if (!UploadId) return callback('abort_upload_task_no_id');
+        if (!Key) return callback('abort_upload_task_no_key');
+        ep.emit('get_abort_array', [{
+            Key: Key,
+            UploadId: UploadId
+        }]);
+    } else {
+        return callback('abort_unknown_level');
     }
 }
 
@@ -735,11 +709,6 @@ var API_MAP = {
     abortUploadTask: abortUploadTask,
 };
 
-(function () {
-    for (var apiName in API_MAP) {
-        if (API_MAP.hasOwnProperty(apiName)) {
-            var fn = API_MAP[apiName];
-            exports[apiName] = util.apiWrapper(apiName, fn);
-        }
-    }
-})();
+util.each(API_MAP, function (fn, apiName) {
+    exports[apiName] = util.apiWrapper(apiName, fn);
+});

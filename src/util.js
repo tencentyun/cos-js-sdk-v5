@@ -51,7 +51,7 @@ var getAuth = function (opt) {
     var expired = now;
 
     if (opt.expires === undefined) {
-        expired += 600; // 签名过期时间为当前 + 600s
+        expired += 3600; // 签名过期时间为当前 + 3600s
     } else {
         expired += (opt.expires * 1) || 0;
     }
@@ -142,7 +142,7 @@ var readAsBinaryString = function (blob, callback) {
         console.error('FileReader not support readAsBinaryString');
     }
     readFun.call(this, blob);
-}
+};
 
 // 获取文件 sha1 值
 var getFileSHA = function (blob, callback) {
@@ -157,8 +157,11 @@ var getFileMd5 = function (blob, callback) {
         md5(content);
     });
 };
-
-// 简单的属性复制方法
+function clone(obj) {
+    return map(obj, function (v) {
+        return typeof v === 'object' ? clone(v) : v;
+    });
+}
 function extend(target, source) {
     for (var method in source) {
         if (!target[method]) {
@@ -167,7 +170,25 @@ function extend(target, source) {
     }
     return target;
 }
-
+function isArray(arr) {
+    return arr instanceof Array;
+}
+function each(obj, fn) {
+    for (var i in obj) {
+        if (obj.hasOwnProperty(i)) {
+            fn(obj[i], i);
+        }
+    }
+}
+function map(obj, fn) {
+    var o = isArray(obj) ? [] : {};
+    for (var i in obj) {
+        if (obj.hasOwnProperty(i)) {
+            o[i] = fn(obj[i], i);
+        }
+    }
+    return o;
+}
 var binaryBase64 = function (str) {
     var i, len, char, arr = [];
     for (i = 0, len = str.length / 2; i < len; i++) {
@@ -192,9 +213,15 @@ var checkParams = function (apiName, params) {
 
 
 var apiWrapper = function (apiName, apiFn) {
+    var regionMap = {
+        'gz': 'cn-south',
+        'tj': 'cn-north',
+        'sh': 'cn-east',
+        'cd': 'cn-southwest'
+    };
     return function (params, callback) {
         callback = callback || function () { };
-        if (apiName !== 'getService') {
+        if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
             // 判断参数是否完整
             if (!checkParams(apiName, params)) {
                 callback({error: 'lack of required params'});
@@ -203,6 +230,11 @@ var apiWrapper = function (apiName, apiFn) {
             // 优化 Key 参数
             if (params.Key && params.Key.indexOf('/') === 0) {
                 callback({error: 'params Key can not start width "/"'});
+                return;
+            }
+            // 判断 region 格式
+            if (params.Region && regionMap[params.Region]) {
+                callback({error: 'Region error, it should be ' + regionMap[params.Region]});
                 return;
             }
             // 兼容带有 AppId 的 Bucket
@@ -236,8 +268,12 @@ var util = {
     getFileSHA: getFileSHA,
     getFileMd5: getFileMd5,
     extend: extend,
+    isArray: isArray,
+    each: each,
+    map: map,
+    clone: clone,
     binaryBase64: binaryBase64,
-    fileSlice: fileSlice,
+    fileSlice: fileSlice
 };
 
 

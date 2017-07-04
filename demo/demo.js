@@ -26,26 +26,36 @@ var cos = new COS({
 });
 
 var pre = document.querySelector('.result');
-var log = {
-    info: function (text, color) {
-        console.log(text);
-        if (typeof text === 'object') {
-            try {
-                text = JSON.stringify(text);
-            } catch (e) {
-            }
+var logger = function (text, color) {
+    if (typeof text === 'object') {
+        try {
+            text = JSON.stringify(text);
+        } catch (e) {
         }
-        var div = document.createElement('div');
-        div.innerText = text;
-        color && (div.style.color = color);
-        pre.append(div);
-        pre.style.display = 'block';
-        pre.scrollTop = pre.scrollHeight;
-    },
-    error: function (text) {
-        log.info(text, 'red');
-    },
+    }
+    var div = document.createElement('div');
+    div.innerText = text;
+    color && (div.style.color = color);
+    pre.append(div);
+    pre.style.display = 'block';
+    pre.scrollTop = pre.scrollHeight;
 };
+console._log = console.log;
+console._error = console.error;
+console.log = function (text) {
+    console._log.apply(console._log, arguments);
+    logger(text);
+};
+console.error = function (text) {
+    console._error.apply(console._error, arguments);
+    logger(text, 'red');
+};
+
+function getService() {
+    cos.getService(function (err, data) {
+        return console.log(err || data);
+    });
+}
 
 function getAuth() {
     var AppId = config.AppId;
@@ -60,7 +70,17 @@ function getAuth() {
         method: 'get',
         pathname: '/' + key
     }, function (auth) {
-        log.info('http://' + Bucket + '-' + AppId + '.' + config.Region + '.myqcloud.com' + '/' + key + '?sign=' + encodeURIComponent(auth));
+        console.log('http://' + Bucket + '-' + AppId + '.' + config.Region + '.myqcloud.com' + '/' + key + '?sign=' + encodeURIComponent(auth));
+    });
+}
+
+function putBucket() {
+    cos.putBucket({
+        Bucket: 'testnew',
+        Region: config.Region
+    }, function (err, data) {
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
@@ -69,10 +89,8 @@ function getBucket() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) {
-            return log.error(err);
-        }
-        log.info(JSON.stringify(data, null, '  '));
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
@@ -81,10 +99,8 @@ function headBucket() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) {
-            return log.error(err);
-        }
-        log.info(JSON.stringify(data, null, '  '));
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
@@ -97,12 +113,21 @@ function putBucketACL() {
         // GrantRead: 'uin="1001", uin="1002"',
         // ACL: 'public-read-write',
         // ACL: 'public-read',
-        ACL: 'private'
-    }, function (err, data) {
-        if (err) {
-            return log.error(err);
+        // ACL: 'private',
+        AccessControlPolicy: {
+            "Owner": {
+                "ID": 'qcs::cam::uin/459452372:uin/459452372' // 459452372 是 QQ 号
+            },
+            "Grants": [{
+                "Grantee": {
+                    "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 QQ 号
+                },
+                "Permission": "READ"
+            }]
         }
-        log.info(JSON.stringify(data, null, '  '));
+    }, function (err, data) {
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
@@ -111,30 +136,27 @@ function getBucketACL() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) {
-            return log.error(err);
-        }
-        log.info(data.AccessControlList.Grant);
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
 function putBucketCORS() {
-    //  该接口存在问题，Content-MD5 错误
     cos.putBucketCORS({
         Bucket: config.Bucket,
         Region: config.Region,
-        CORSRules: [{
-            "AllowedOrigin": ["*"],
-            "AllowedMethod": ["GET", "POST", "PUT", "DELETE", "HEAD"],
-            "AllowedHeader": ["origin", "accept", "content-type", "authorzation"],
-            "ExposeHeader": ["ETag"],
-            "MaxAgeSeconds": "600"
-        }]
-    }, function (err, data) {
-        if (err) {
-            return log.error(err);
+        CORSConfiguration: {
+            CORSRule: [{
+                "AllowedOrigin": ["*"],
+                "AllowedMethod": ["GET", "POST", "PUT", "DELETE", "HEAD"],
+                "AllowedHeader": ["origin", "accept", "content-type", "authorzation"],
+                "ExposeHeader": ["ETag"],
+                "MaxAgeSeconds": "600"
+            }]
         }
-        log.info(JSON.stringify(data, null, '  '));
+    }, function (err, data) {
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
@@ -143,10 +165,54 @@ function getBucketCORS() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) {
-            return log.error(err);
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
+    });
+}
+
+function deleteBucketCORS() {
+    cos.deleteBucketCORS({
+        Bucket: config.Bucket,
+        Region: config.Region
+    }, function (err, data) {
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
+    });
+}
+
+function putBucketTagging() {
+    cos.putBucketTagging({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Tagging: {
+            TagSet: [
+                {Key: "k1", Value: "v1"},
+                {Key: "k2", Value: "v2"}
+            ]
         }
-        log.info(JSON.stringify(data, null, '  '));
+    }, function (err, data) {
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
+    });
+}
+
+function getBucketTagging() {
+    cos.getBucketTagging({
+        Bucket: config.Bucket,
+        Region: config.Region
+    }, function (err, data) {
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
+    });
+}
+
+function deleteBucketTagging() {
+    cos.deleteBucketTagging({
+        Bucket: config.Bucket,
+        Region: config.Region
+    }, function (err, data) {
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
@@ -161,7 +227,7 @@ function putBucketPolicy() {
     cos.putBucketPolicy({
         Policy: {
             "version": "2.0",
-            "principal": {"qcs": ["qcs::cam::uin/909600000:uin/909600000"]}, // 这里的 909600000 是 QQ 号
+            "principal": {"qcs": ["qcs::cam::uin/10001:uin/10001"]}, // 这里的 10001 是 QQ 号
             "statement": [
                 {
                     "effect": "allow",
@@ -185,35 +251,8 @@ function putBucketPolicy() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) {
-            log.error(err);
-        } else {
-            getBucketPolicy();
-        }
-    });
-}
-
-function getBucketLocation() {
-    cos.getBucketLocation({
-        Bucket: config.Bucket,
-        Region: config.Region
-    }, function (err, data) {
-        if (err) {
-            return log.error(err);
-        }
-        log.info(JSON.stringify(data, null, '  '));
-    });
-}
-
-function deleteBucket() {
-    cos.deleteBucket({
-        Bucket: 'testnew',
-        Region: config.Region
-    }, function (err, data) {
-        if (err) {
-            return log.error(err);
-        }
-        log.info(JSON.stringify(data, null, '  '));
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
@@ -222,30 +261,88 @@ function getBucketPolicy() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) {
-            log.error(err);
-        } else {
-            log.info(JSON.stringify(data, null, '  '));
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
+    });
+}
+
+function getBucketLocation() {
+    cos.getBucketLocation({
+        Bucket: config.Bucket,
+        Region: config.Region
+    }, function (err, data) {
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
+    });
+}
+
+function putBucketLifecycle() {
+    cos.putBucketLifecycle({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        LifecycleConfiguration: {
+            Rules: [{
+                'ID': 1,
+                'Prefix': 'test',
+                'Status': 'Enabled',
+                'Transition': {
+                    'Date': '2016-10-31T00:00:00+08:00',
+                    'StorageClass': 'Standard_IA'
+                }
+            }]
         }
+    }, function (err, data) {
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
+    });
+}
+
+function getBucketLifecycle() {
+    cos.getBucketLifecycle({
+        Bucket: config.Bucket,
+        Region: config.Region
+    }, function (err, data) {
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
+    });
+}
+
+function deleteBucketLifecycle() {
+    cos.deleteBucketLifecycle({
+        Bucket: config.Bucket,
+        Region: config.Region
+    }, function (err, data) {
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
+    });
+}
+
+function deleteBucket() {
+    cos.deleteBucket({
+        Bucket: 'testnew',
+        Region: config.Region
+    }, function (err, data) {
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
 function putObject() {
+    // 创建测试文件
+    var filename = '1mb.zip';
     var blob = util.createFile({type: 'image/png', size: 1024 * 1024});
+    // 调用方法
     cos.putObject({
-        Bucket: config.Bucket,
+        Bucket: config.Bucket, /* 必须 */
         Region: config.Region,
-        Key: '1mb.zip',
-        Body: blob,
+        Key: filename, /* 必须 */
         onProgress: function (progressData) {
-            log.info(JSON.stringify(progressData));
+            console.log(JSON.stringify(progressData));
         },
+        Body: blob
     }, function (err, data) {
-        if (err) {
-            log.error(err);
-        } else {
-            log.info(JSON.stringify(data, null, '  '));
-        }
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
@@ -263,11 +360,8 @@ function putObjectCopy() {
         Key: '1mb.copy.zip',
         CopySource: Bucket + '-' + AppId + '.' + config.Region + '.myqcloud.com/1mb.zip',
     }, function (err, data) {
-        if (err) {
-            log.error(err);
-        } else {
-            log.info(JSON.stringify(data, null, '  '));
-        }
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
@@ -277,10 +371,8 @@ function getObject() {
         Region: config.Region,
         Key: '1mb.zip'
     }, function (err, data) {
-        if (err) {
-            return log.error(err);
-        }
-        log.info(JSON.stringify(data, null, '  '));
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
@@ -290,10 +382,8 @@ function headObject() {
         Region: config.Region,
         Key: '1mb.zip'
     }, function (err, data) {
-        if (err) {
-            return log.error(err);
-        }
-        log.info(JSON.stringify(data, null, '  '));
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
@@ -307,12 +397,21 @@ function putObjectACL() {
         // GrantRead: 'uin="1001", uin="1002"',
         // ACL: 'public-read-write',
         // ACL: 'public-read',
-        ACL: 'private'
-    }, function (err, data) {
-        if (err) {
-            return log.error(err);
+        // ACL: 'private',
+        AccessControlPolicy: {
+            "Owner": {
+                "ID": 'qcs::cam::uin/10001:uin/10001' // 10001 是 QQ 号
+            },
+            "Grants": [{
+                "Grantee": {
+                    "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 QQ 号
+                },
+                "Permission": "READ"
+            }]
         }
-        log.info(JSON.stringify(data, null, '  '));
+    }, function (err, data) {
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
@@ -322,10 +421,8 @@ function getObjectACL() {
         Region: config.Region,
         Key: '1mb.zip'
     }, function (err, data) {
-        if (err) {
-            return log.error(err);
-        }
-        log.info(JSON.stringify(data, null, '  '));
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
@@ -335,11 +432,8 @@ function deleteObject() {
         Region: config.Region,
         Key: '1mb.zip'
     }, function (err, data) {
-        if (err) {
-            return log.error(err);
-        }
-
-        log.info(JSON.stringify(data, null, '  '));
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
@@ -352,10 +446,8 @@ function deleteMultipleObject() {
             {Key: '3mb.zip'},
         ]
     }, function (err, data) {
-        if (err) {
-            return log.error(err);
-        }
-        log.info(JSON.stringify(data, null, '  '));
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
@@ -363,14 +455,18 @@ function abortUploadTask() {
     cos.abortUploadTask({
         Bucket: config.Bucket, /* 必须 */
         Region: config.Region, /* 必须 */
+        // 格式1，删除单个上传任务
+        // Level: 'task',
+        // Key: '10mb.zip',
+        // UploadId: '14985543913e4e2642e31db217b9a1a3d9b3cd6cf62abfda23372c8d36ffa38585492681e3',
+        // 格式2，删除单个文件所有未完成上传任务
+        Level: 'file',
         Key: '10mb.zip',
-        Level: 'bucket',
+        // 格式3，删除 Bucket 下所有未完成上传任务
+        // Level: 'bucket',
     }, function (err, data) {
-        if (err) {
-            log.error(err);
-        } else {
-            log.info(JSON.stringify(data, null, '  '));
-        }
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
@@ -384,39 +480,77 @@ function sliceUploadFile() {
         AsyncLimit: 3, /* 非必须 */
         Body: blob,
         onHashProgress: function (progressData) {
-            log.info(JSON.stringify(progressData));
+            console.log(JSON.stringify(progressData));
         },
         onProgress: function (progressData) {
-            log.info(JSON.stringify(progressData));
+            console.log(JSON.stringify(progressData));
         },
     }, function (err, data) {
-        if (err) {
-            log.error(err);
-        } else {
-            log.info(JSON.stringify(data, null, '  '));
-        }
+        if (err) return console.log(err);
+        console.log(JSON.stringify(data, null, '  '));
     });
 }
 
+// getService();
+// getAuth();
+// putBucket();
+// getBucket();
+// headBucket();
+// putBucketACL();
+// getBucketACL();
+// putBucketCORS();
+// getBucketCORS();
+// deleteBucketCORS();
+// putBucketTagging();
+// getBucketTagging();
+// deleteBucketTagging();
+// putBucketPolicy();
+// getBucketPolicy();
+// getBucketLocation();
+// getBucketLifecycle();
+// putBucketLifecycle();
+// deleteBucketLifecycle();
+// deleteBucket();
+// putObject();
+// putObjectCopy();
+// getObject();
+// headObject();
+// putObjectACL();
+// getObjectACL();
+// deleteObject();
+// deleteMultipleObject();
+// abortUploadTask();
+// sliceUploadFile();
+
+
 (function () {
     var list = [
+        // 'getService',
         'getAuth',
+        // 'putBucket',
         'getBucket',
         'headBucket',
         // 'putBucketACL',
         // 'getBucketACL',
         // 'putBucketCORS',
         // 'getBucketCORS',
+        // 'deleteBucketCORS',
+        // 'putBucketTagging',
+        // 'getBucketTagging',
+        // 'deleteBucketTagging',
         // 'putBucketPolicy',
         // 'getBucketPolicy',
         // 'getBucketLocation',
+        // 'getBucketLifecycle',
+        // 'putBucketLifecycle',
+        // 'deleteBucketLifecycle',
         'deleteBucket',
         'putObject',
         'putObjectCopy',
         'getObject',
         'headObject',
         // 'putObjectACL',
-        'getObjectACL',
+        // 'getObjectACL',
         'deleteObject',
         // 'deleteMultipleObject',
         // 'abortUploadTask',
