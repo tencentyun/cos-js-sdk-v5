@@ -217,19 +217,10 @@ function getBucketACL(params, callback) {
         if (err) {
             return callback(err);
         }
-
-        data = data || {};
-
-        var Grant = util.clone(data.AccessControlPolicy.AccessControlList.Grant || []);
-
-        if (!(Grant instanceof Array)) {
-            Grant = [Grant];
-        }
-
-        delete data.AccessControlPolicy.AccessControlList.Grant;
-        data.AccessControlPolicy.AccessControlList.Grants = Grant;
-
-        callback(null, data.AccessControlPolicy || {});
+        var Owner = data.AccessControlPolicy.Owner || {};
+        var Grant = data.AccessControlPolicy.AccessControlList.Grant || [];
+        Grant = util.isArray(Grant) ? Grant : [Grant];
+        callback(null, {Owner: Owner, Grants: Grant});
     });
 }
 
@@ -907,18 +898,10 @@ function getObjectACL(params, callback) {
         if (err) {
             return callback(err);
         }
-
-        data = data || {};
-
+        var Owner = data.AccessControlPolicy.Owner || {};
         var Grant = data.AccessControlPolicy.AccessControlList.Grant || [];
-
-        if (!(Grant instanceof Array)) {
-            Grant = [Grant];
-        }
-
-        delete data.AccessControlPolicy.AccessControlList.Grant;
-        data.AccessControlPolicy.AccessControlList.Grants = Grant;
-        callback(null, data.AccessControlPolicy || {});
+        Grant = util.isArray(Grant) ? Grant : [Grant];
+        callback(null, {Owner: Owner, Grants: Grant});
     });
 }
 
