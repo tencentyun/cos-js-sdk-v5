@@ -736,7 +736,6 @@ function headObject(params, callback) {
             }
             return callback(err);
         }
-        data = data || {};
         callback(null, data);
     });
 }
@@ -871,9 +870,6 @@ function putObject(params, callback) {
         if (err) {
             return callback(err);
         }
-
-        data = data || {};
-
         if (data && data.headers && data.headers['etag']) {
             return callback(null, {
                 ETag: data.headers['etag'],
@@ -1138,7 +1134,6 @@ function putObjectCopy(params, callback) {
         if (err) {
             return callback(err);
         }
-        data = data || {};
         var result = util.clone(data.CopyObjectResult);
         util.extend(result, {
             statusCode: data.statusCode,
@@ -1182,9 +1177,6 @@ function deleteMultipleObject(params, callback) {
         if (err) {
             return callback(err);
         }
-
-        data = data || {};
-
         var Deleted = data.DeleteResult.Deleted || [];
         var Errors = data.DeleteResult.Error || [];
 
@@ -1313,9 +1305,6 @@ function multipartUpload(params, callback) {
         if (err) {
             return callback(err);
         }
-
-        data = data || {};
-
         data['headers'] = data['headers'] || {};
         callback(null, {
             ETag: data['headers']['etag'] || '',
@@ -1487,9 +1476,6 @@ function multipartListPart(params, callback) {
         if (err) {
             return callback(err);
         }
-
-        data = data || {};
-
         var Part = data.ListPartsResult.Part || [];
         Part = util.isArray(Part) ? Part : [Part];
 
