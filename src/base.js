@@ -3,11 +3,11 @@ var REQUEST = require('../lib/request');
 var util = require('./util');
 
 
-// ---------------------------------------- Bucket 相关 api ------------------------------------
+// Bucket 相关
 
 /**
  * 获取用户的 bucket 列表
- * @param  {Object}  params     回调函数，必须，下面为参数列表
+ * @param  {Object}  params         回调函数，必须，下面为参数列表
  * 无特殊参数
  * @param  {Function}  callback     回调函数，必须
  */
@@ -23,21 +23,14 @@ function getService(params, callback) {
         if (err) {
             return callback(err);
         }
-
-        data = data || {};
-
-        if (data && data.ListAllMyBucketsResult
-            && data.ListAllMyBucketsResult.Buckets
-            && data.ListAllMyBucketsResult.Buckets.Bucket) {
-            var buckets = data.ListAllMyBucketsResult.Buckets.Bucket || [];
-
-            if (!(buckets instanceof Array)) {
-                buckets = [buckets];
-            }
-            data.ListAllMyBucketsResult.Buckets = buckets;
-        }
-
-        return callback(null, data.ListAllMyBucketsResult);
+        var buckets = (data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Buckets
+            && data.ListAllMyBucketsResult.Buckets.Bucket) || [];
+        buckets = util.isArray(buckets) ? buckets : [buckets];
+        callback(null, {
+            Buckets: buckets,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
     });
 }
 
@@ -59,17 +52,28 @@ function headBucket(params, callback) {
         AppId: params.AppId,
         method: 'HEAD',
     }, function (err, data) {
+        var exist, auth;
         if (err) {
             var statusCode = err.statusCode;
-            if (statusCode && statusCode == 404) {
-                return callback(null, {BucketExist: false, BucketAuth: false}, data);
-            } else if (statusCode && statusCode == 403) {
-                return callback(null, {BucketExist: true, BucketAuth: false}, data);
+            if (statusCode && statusCode === 404) {
+                exist = false;
+                auth = false;
+            } else if (statusCode && statusCode === 403) {
+                exist = true;
+                auth = false;
             } else {
-                return callback(err, {}, data);
+                return callback(err);
             }
+        } else {
+            exist = true;
+            auth = true;
         }
-        callback(null, {BucketExist: true, BucketAuth: true}, data);
+        callback(null, {
+            BucketExist: exist,
+            BucketAuth: auth,
+            statusCode: data.statusCode,
+            headers: data.headers
+        });
     });
 }
 
@@ -106,24 +110,21 @@ function getBucket(params, callback) {
         if (err) {
             return callback(err);
         }
-
-        data = data || {};
-
         var contents = data.ListBucketResult.Contents || [];
         var CommonPrefixes = data.ListBucketResult.CommonPrefixes || [];
 
-        if (!(contents instanceof Array)) {
-            contents = [contents];
-        }
+        contents = util.isArray(contents) ? contents : [contents];
+        CommonPrefixes = util.isArray(CommonPrefixes) ? CommonPrefixes : [CommonPrefixes];
 
-        if (!(CommonPrefixes instanceof Array)) {
-            CommonPrefixes = [CommonPrefixes];
-        }
+        var result = util.clone(data.ListBucketResult);
+        util.extend(result, {
+            Contents: contents,
+            CommonPrefixes: CommonPrefixes,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
 
-        data.ListBucketResult.Contents = contents;
-        data.ListBucketResult.CommonPrefixes = CommonPrefixes;
-
-        callback(null, data.ListBucketResult || {});
+        callback(null, result);
     });
 }
 
@@ -158,13 +159,15 @@ function putBucket(params, callback) {
         if (err) {
             return callback(err);
         }
+        var url = getUrl({
+            bucket: params.Bucket,
+            region: params.Region,
+            appId: appId
+        });
         callback(null, {
-            Location: getUrl({
-                bucket: params.Bucket,
-                region: params.Region,
-                appId: appId
-            }),
-            statusCode: data.statusCode
+            Location: url,
+            statusCode: data.statusCode,
+            headers: data.headers,
         });
     });
 }
@@ -190,7 +193,9 @@ function deleteBucket(params, callback) {
             return callback(err);
         }
         callback(null, {
-            DeleteBucketSuccess: true
+            DeleteBucketSuccess: true,
+            statusCode: data.statusCode,
+            headers: data.headers,
         });
     });
 }
@@ -220,7 +225,12 @@ function getBucketACL(params, callback) {
         var Owner = data.AccessControlPolicy.Owner || {};
         var Grant = data.AccessControlPolicy.AccessControlList.Grant || [];
         Grant = util.isArray(Grant) ? Grant : [Grant];
-        callback(null, {Owner: Owner, Grants: Grant});
+        callback(null, {
+            Owner: Owner,
+            Grants: Grant,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
     });
 }
 
@@ -271,7 +281,9 @@ function putBucketACL(params, callback) {
             return callback(err);
         }
         callback(null, {
-            PutBucketAclSuccess: true
+            PutBucketAclSuccess: true,
+            statusCode: data.statusCode,
+            headers: data.headers,
         });
     });
 }
@@ -311,7 +323,11 @@ function getBucketCORS(params, callback) {
             });
         });
 
-        callback(null, {CORSRules: CORSRules});
+        callback(null, {
+            CORSRules: CORSRules,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
     });
 }
 
@@ -334,7 +350,7 @@ function putBucketCORS(params, callback) {
     util.each(CORSRules, function (rule) {
         util.each(['AllowedOrigin', 'AllowedHeader', 'AllowedMethod', 'ExposeHeader'], function (key, k) {
             var sKey = key + 's';
-            var val =  rule[sKey] || rule[key] || [];
+            var val = rule[sKey] || rule[key] || [];
             delete rule[sKey];
             rule[key] = util.isArray(val) ? val : [val];
         });
@@ -358,7 +374,11 @@ function putBucketCORS(params, callback) {
         if (err) {
             return callback(err);
         }
-        callback(null, {PutBucketCorsSuccess: true});
+        callback(null, {
+            PutBucketCorsSuccess: true,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
     });
 }
 
@@ -384,7 +404,9 @@ function deleteBucketCORS(params, callback) {
             return callback(err);
         }
         callback(null, {
-            DeleteBucketCorsSuccess: true
+            DeleteBucketCorsSuccess: true,
+            statusCode: data.statusCode,
+            headers: data.headers,
         });
     });
 }
@@ -420,7 +442,11 @@ function putBucketPolicy(params, callback) {
         if (err && err.statusCode !== 204) {
             return callback(err);
         }
-        callback(null, {PutBucketPolicySuccess: true});
+        callback(null, {
+            PutBucketPolicySuccess: true,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
     });
 }
 
@@ -444,7 +470,7 @@ function getBucketLocation(params, callback) {
         if (err) {
             return callback(err);
         }
-        callback(null, data || {});
+        callback(null, data);
     });
 }
 
@@ -483,7 +509,11 @@ function getBucketPolicy(params, callback) {
             Policy = JSON.parse(data.body);
         } catch (e) {
         }
-        callback(null, {Policy: Policy});
+        callback(null, {
+            Policy: Policy,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
     });
 }
 
@@ -513,7 +543,11 @@ function getBucketTagging(params, callback) {
         } catch (e) {
         }
         TagSet = util.clone(util.isArray(TagSet) ? TagSet : [TagSet]);
-        callback(null, {TagSet: TagSet});
+        callback(null, {
+            TagSet: TagSet,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
     });
 }
 
@@ -530,7 +564,7 @@ function getBucketTagging(params, callback) {
 function putBucketTagging(params, callback) {
 
     var Tagging = params['Tagging'] || {};
-    var Tags = Tagging.TagSet || params['TagSet'] || params['Tags'] || [];
+    var Tags = Tagging.TagSet || params['Tags'] || [];
     Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
     var xml = util.json2xml({Tagging: {TagSet: {Tag: Tags}}});
 
@@ -552,7 +586,9 @@ function putBucketTagging(params, callback) {
             return callback(err);
         }
         callback(null, {
-            PutBucketTaggingSuccess: true
+            PutBucketTaggingSuccess: true,
+            statusCode: data.statusCode,
+            headers: data.headers,
         });
     });
 }
@@ -580,7 +616,9 @@ function deleteBucketTagging(params, callback) {
             return callback(err);
         }
         callback(null, {
-            DeleteBucketTaggingSuccess: true
+            DeleteBucketTaggingSuccess: true,
+            statusCode: data.statusCode,
+            headers: data.headers,
         });
     });
 }
@@ -588,7 +626,7 @@ function deleteBucketTagging(params, callback) {
 function putBucketLifecycle(params, callback) {
 
     var LifecycleConfiguration = params['LifecycleConfiguration'] || {};
-    var Rules = LifecycleConfiguration.Rules || params['Rules'] || [];
+    var Rules = LifecycleConfiguration.Rules || [];
     Rules = util.clone(Rules);
     var xml = util.json2xml({LifecycleConfiguration: {Rule: Rules}});
 
@@ -609,7 +647,11 @@ function putBucketLifecycle(params, callback) {
         if (err && err.statusCode !== 204) {
             return callback(err);
         }
-        callback(null, {PutBucketLifecycleSuccess: true});
+        callback(null, {
+            PutBucketLifecycleSuccess: true,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
     });
 }
 
@@ -630,7 +672,11 @@ function getBucketLifecycle(params, callback) {
         } catch (e) {
         }
         Rules = util.clone(util.isArray(Rules) ? Rules : [Rules]);
-        callback(null, {Rules: Rules});
+        callback(null, {
+            Rules: Rules,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
     });
 }
 
@@ -646,7 +692,11 @@ function deleteBucketLifecycle(params, callback) {
         if (err && err.statusCode !== 204) {
             return callback(err);
         }
-        callback(null, {DeleteBucketLifecycleSuccess: true});
+        callback(null, {
+            DeleteBucketLifecycleSuccess: true,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
     });
 }
 
@@ -687,7 +737,7 @@ function headObject(params, callback) {
             return callback(err);
         }
         data = data || {};
-        callback(null, data.headers);
+        callback(null, data);
     });
 }
 
@@ -750,10 +800,10 @@ function getObject(params, callback) {
             }
             return callback(err);
         }
-
-        data = data || {};
-
-        callback(null, data.headers || {});
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
     });
 }
 
@@ -826,7 +876,9 @@ function putObject(params, callback) {
 
         if (data && data.headers && data.headers['etag']) {
             return callback(null, {
-                'ETag': data.headers['etag']
+                ETag: data.headers['etag'],
+                statusCode: data.statusCode,
+                headers: data.headers,
             });
         }
         callback(null, data);
@@ -857,18 +909,24 @@ function deleteObject(params, callback) {
             var statusCode = err.statusCode;
             if (statusCode && statusCode == 204) {
                 return callback(null, {
-                    DeleteObjectSuccess: true
+                    DeleteObjectSuccess: true,
+                    statusCode: data.statusCode,
+                    headers: data.headers,
                 });
             } else if (statusCode && statusCode == 404) {
                 return callback(null, {
-                    BucketNotFound: true
+                    BucketNotFound: true,
+                    statusCode: data.statusCode,
+                    headers: data.headers,
                 });
             } else {
                 return callback(err);
             }
         }
         callback(null, {
-            DeleteObjectSuccess: true
+            DeleteObjectSuccess: true,
+            statusCode: data.statusCode,
+            headers: data.headers,
         });
 
     });
@@ -901,7 +959,12 @@ function getObjectACL(params, callback) {
         var Owner = data.AccessControlPolicy.Owner || {};
         var Grant = data.AccessControlPolicy.AccessControlList.Grant || [];
         Grant = util.isArray(Grant) ? Grant : [Grant];
-        callback(null, {Owner: Owner, Grants: Grant});
+        callback(null, {
+            Owner: Owner,
+            Grants: Grant,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
     });
 }
 
@@ -951,7 +1014,9 @@ function putObjectACL(params, callback) {
             return callback(err);
         }
         callback(null, {
-            PutObjectAclSuccess: true
+            PutObjectAclSuccess: true,
+            statusCode: data.statusCode,
+            headers: data.headers,
         });
     });
 }
@@ -985,24 +1050,24 @@ function optionsObject(params, callback) {
         if (err) {
             if (err.statusCode && err.statusCode == 403) {
                 return callback(null, {
-                    OptionsForbidden: true
+                    OptionsForbidden: true,
+                    statusCode: data.statusCode,
+                    headers: data.headers,
                 });
             }
             return callback(err);
         }
 
-        data = data || {};
-
-        var resHeaders = data.headers || {};
-
-        var retData = {};
-
-        retData['AccessControlAllowOrigin'] = resHeaders['access-control-allow-origin'];
-        retData['AccessControlAllowMethods'] = resHeaders['access-control-allow-methods'];
-        retData['AccessControlAllowHeaders'] = resHeaders['access-control-allow-headers'];
-        retData['AccessControlExposeHeaders'] = resHeaders['access-control-expose-headers'];
-        retData['AccessControlMaxAge'] = resHeaders['access-control-max-age'];
-        callback(null, retData);
+        var headers = data.headers || {};
+        callback(null, {
+            AccessControlAllowOrigin: headers['access-control-allow-origin'],
+            AccessControlAllowMethods: headers['access-control-allow-methods'],
+            AccessControlAllowHeaders: headers['access-control-allow-headers'],
+            AccessControlExposeHeaders: headers['access-control-expose-headers'],
+            AccessControlMaxAge: headers['access-control-max-age'],
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
     });
 }
 
@@ -1074,7 +1139,12 @@ function putObjectCopy(params, callback) {
             return callback(err);
         }
         data = data || {};
-        callback(null, data.CopyObjectResult || {});
+        var result = util.clone(data.CopyObjectResult);
+        util.extend(result, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+        callback(null, result);
     });
 }
 
@@ -1118,15 +1188,17 @@ function deleteMultipleObject(params, callback) {
         var Deleted = data.DeleteResult.Deleted || [];
         var Errors = data.DeleteResult.Error || [];
 
-        if (!(Deleted instanceof Array)) {
-            Deleted = [Deleted];
-        }
-        if (!(Errors instanceof Array)) {
-            Errors = [Errors];
-        }
-        data.DeleteResult.Error = Errors;
-        data.DeleteResult.Deleted = Deleted;
-        callback(null, data.DeleteResult || {});
+        Deleted = util.isArray(Deleted) ? Deleted : [Deleted];
+        Errors = util.isArray(Errors) ? Errors : [Errors];
+
+        var result = util.clone(data.DeleteResult);
+        util.extend(result, {
+            Error: Errors,
+            Deleted: Deleted,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+        callback(null, result);
     });
 }
 
@@ -1189,11 +1261,12 @@ function multipartInit(params, callback) {
         if (err) {
             return callback(err);
         }
-
-        data = data || {};
-
+        data = util.clone(data || {});
         if (data && data.InitiateMultipartUploadResult) {
-            return callback(null, data.InitiateMultipartUploadResult);
+            return callback(null, util.extend(data.InitiateMultipartUploadResult, {
+                statusCode: data.statusCode,
+                headers: data.headers,
+            }));
         }
         callback(null, data);
     });
@@ -1245,7 +1318,9 @@ function multipartUpload(params, callback) {
 
         data['headers'] = data['headers'] || {};
         callback(null, {
-            ETag: data['headers']['etag'] || ''
+            ETag: data['headers']['etag'] || '',
+            statusCode: data.statusCode,
+            headers: data.headers,
         });
     });
 }
@@ -1307,8 +1382,11 @@ function multipartComplete(params, callback) {
         if (err) {
             return callback(err);
         }
-        data = data || {};
-        callback(null, data.CompleteMultipartUploadResult || {});
+        var result = util.extend(data.CompleteMultipartUploadResult, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+        callback(null, result);
     });
 }
 
@@ -1354,26 +1432,23 @@ function multipartList(params, callback) {
             return callback(err);
         }
 
-        data = data || {};
-
         if (data && data.ListMultipartUploadsResult) {
             var Upload = data.ListMultipartUploadsResult.Upload || [];
 
             var CommonPrefixes = data.ListMultipartUploadsResult.CommonPrefixes || [];
 
-
-            if (!(CommonPrefixes instanceof Array)) {
-                CommonPrefixes = [CommonPrefixes];
-            }
-
-            if (!(Upload instanceof Array)) {
-                Upload = [Upload];
-            }
+            CommonPrefixes = util.isArray(CommonPrefixes) ? CommonPrefixes : [CommonPrefixes];
+            Upload = util.isArray(Upload) ? Upload : [Upload];
 
             data.ListMultipartUploadsResult.Upload = Upload;
             data.ListMultipartUploadsResult.CommonPrefixes = CommonPrefixes;
         }
-        callback(null, data.ListMultipartUploadsResult || {});
+        var result = util.clone(data.ListMultipartUploadsResult);
+        util.extend(result, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+        callback(null, result);
     });
 }
 
@@ -1416,12 +1491,15 @@ function multipartListPart(params, callback) {
         data = data || {};
 
         var Part = data.ListPartsResult.Part || [];
+        Part = util.isArray(Part) ? Part : [Part];
 
-        if (!(Part instanceof Array)) {
-            Part = [Part];
-        }
         data.ListPartsResult.Part = Part;
-        callback(null, data.ListPartsResult || {});
+        var result = util.clone(data.ListPartsResult);
+        util.extend(result, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+        callback(null, result);
     });
 }
 
@@ -1453,7 +1531,9 @@ function multipartAbort(params, callback) {
             return callback(err);
         }
         callback(null, {
-            MultipartAbortSuccess: true
+            MultipartAbortSuccess: true,
+            statusCode: data.statusCode,
+            headers: data.headers,
         });
     });
 }

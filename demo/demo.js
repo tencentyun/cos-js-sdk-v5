@@ -146,7 +146,7 @@ function putBucketCORS() {
         Bucket: config.Bucket,
         Region: config.Region,
         CORSConfiguration: {
-            CORSRule: [{
+            "CORSRules": [{
                 "AllowedOrigin": ["*"],
                 "AllowedMethod": ["GET", "POST", "PUT", "DELETE", "HEAD"],
                 "AllowedHeader": ["origin", "accept", "content-type", "authorzation"],
@@ -185,9 +185,9 @@ function putBucketTagging() {
         Bucket: config.Bucket,
         Region: config.Region,
         Tagging: {
-            TagSet: [
-                {Key: "k1", Value: "v1"},
-                {Key: "k2", Value: "v2"}
+            "TagSet": [
+                {"Key": "k1", "Value": "v1"},
+                {"Key": "k2", "Value": "v2"}
             ]
         }
     }, function (err, data) {
@@ -281,7 +281,7 @@ function putBucketLifecycle() {
         Bucket: config.Bucket,
         Region: config.Region,
         LifecycleConfiguration: {
-            Rules: [{
+            "Rules": [{
                 'ID': 1,
                 'Prefix': 'test',
                 'Status': 'Enabled',
