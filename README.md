@@ -6,7 +6,6 @@
 
 ## get started
 
-在 html 页面引入 dist/cos-js-sdk-v5.js
 ```html
 <script src="dist/cos-js-sdk-v5.js"></script>
 <script>
