@@ -4,17 +4,12 @@
 
 [releases and changelog](https://github.com/tencentyun/cos-js-sdk-v5/releases)
 
-## npm 安装
-
- [npm 地址](https://www.npmjs.com/package/cos-js-sdk-v5)
- 
-```
-npm i cos-js-sdk-v5 --save
-```
-
 ## get started
 
-```javascript
+在 html 页面引入 dist/cos-js-sdk-v5.js
+```html
+<script src="dist/cos-js-sdk-v5.js"></script>
+<script>
 var cos = new COS({
     AppId: '1250000000',
     getAuthorization: function (options, callback) {
@@ -35,6 +30,7 @@ cos.sliceUploadFile({
 }, function (err, data) {
     console.log(err, data);
 });
+</script>
 ```
 
 [更多例子](demo/demo.js)
