@@ -137,7 +137,7 @@ function getUploadIdAndPartList(params, callback) {
         var update = function () {
             progressTimer = 0;
             var time1 = Date.now();
-            var speed = parseInt((FinishSize - size0) / (time1 - time0) * 100) / 100 || 0;
+            var speed = parseInt((FinishSize - size0) / ((time1 - time0) / 1000) * 100) / 100 || 0;
             var percent = parseInt(FinishSliceCount / SliceCount * 100) / 100 || 0;
             time0 = time1;
             size0 = FinishSize;

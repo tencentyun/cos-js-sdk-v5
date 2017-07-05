@@ -1626,7 +1626,7 @@ function submitRequest(params, callback) {
                 try { loaded = e.loaded; } catch (e) {}
                 var total = contentLength;
                 var time1 = Date.now();
-                var speed = parseInt((loaded - size0) / (time1 - time0) * 100) / 100;
+                var speed = parseInt((loaded - size0) / ((time1 - time0) / 1000) * 100) / 100;
                 var percent = total ? (parseInt(loaded / total * 100) / 100) : 0;
                 // time0 = time1;
                 // size0 = loaded;
