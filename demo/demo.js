@@ -53,7 +53,7 @@ console.error = function (text) {
 
 function getService() {
     cos.getService(function (err, data) {
-        return console.log(err || data);
+        console.log(err || data);
     });
 }
 
@@ -79,8 +79,7 @@ function putBucket() {
         Bucket: 'testnew',
         Region: config.Region
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -89,8 +88,7 @@ function getBucket() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -99,13 +97,12 @@ function headBucket() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
-function putBucketACL() {
-    cos.putBucketACL({
+function putBucketAcl() {
+    cos.putBucketAcl({
         Bucket: config.Bucket,
         Region: config.Region,
         // GrantFullControl: 'uin="1001", uin="1002"',
@@ -116,7 +113,7 @@ function putBucketACL() {
         // ACL: 'private',
         AccessControlPolicy: {
             "Owner": {
-                "ID": 'qcs::cam::uin/459452372:uin/459452372' // 459452372 是 QQ 号
+                "ID": 'qcs::cam::uin/10001:uin/10001' // 10001 是 QQ 号
             },
             "Grants": [{
                 "Grantee": {
@@ -126,23 +123,21 @@ function putBucketACL() {
             }]
         }
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
-function getBucketACL() {
-    cos.getBucketACL({
+function getBucketAcl() {
+    cos.getBucketAcl({
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
-function putBucketCORS() {
-    cos.putBucketCORS({
+function putBucketCors() {
+    cos.putBucketCors({
         Bucket: config.Bucket,
         Region: config.Region,
         CORSConfiguration: {
@@ -155,28 +150,25 @@ function putBucketCORS() {
             }]
         }
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
-function getBucketCORS() {
-    cos.getBucketCORS({
+function getBucketCors() {
+    cos.getBucketCors({
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
-function deleteBucketCORS() {
-    cos.deleteBucketCORS({
+function deleteBucketCors() {
+    cos.deleteBucketCors({
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -185,14 +177,13 @@ function putBucketTagging() {
         Bucket: config.Bucket,
         Region: config.Region,
         Tagging: {
-            "TagSet": [
+            "Tags": [
                 {"Key": "k1", "Value": "v1"},
                 {"Key": "k2", "Value": "v2"}
             ]
         }
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -201,8 +192,7 @@ function getBucketTagging() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -211,8 +201,7 @@ function deleteBucketTagging() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -251,8 +240,7 @@ function putBucketPolicy() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -261,8 +249,7 @@ function getBucketPolicy() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -271,8 +258,7 @@ function getBucketLocation() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -283,7 +269,9 @@ function putBucketLifecycle() {
         LifecycleConfiguration: {
             "Rules": [{
                 'ID': 1,
-                'Prefix': 'test',
+                'Filter': {
+                    'Prefix': 'test123',
+                },
                 'Status': 'Enabled',
                 'Transition': {
                     'Date': '2016-10-31T00:00:00+08:00',
@@ -292,8 +280,7 @@ function putBucketLifecycle() {
             }]
         }
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -302,8 +289,7 @@ function getBucketLifecycle() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -312,8 +298,7 @@ function deleteBucketLifecycle() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -322,8 +307,7 @@ function deleteBucket() {
         Bucket: 'testnew',
         Region: config.Region
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -341,8 +325,7 @@ function putObject() {
         },
         Body: blob
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -360,8 +343,7 @@ function putObjectCopy() {
         Key: '1mb.copy.zip',
         CopySource: Bucket + '-' + AppId + '.' + config.Region + '.myqcloud.com/1mb.zip',
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -371,8 +353,7 @@ function getObject() {
         Region: config.Region,
         Key: '1mb.zip'
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -382,13 +363,12 @@ function headObject() {
         Region: config.Region,
         Key: '1mb.zip'
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
-function putObjectACL() {
-    cos.putBucketACL({
+function putObjectAcl() {
+    cos.putObjectAcl({
         Bucket: config.Bucket,
         Region: config.Region,
         Key: '1mb.zip',
@@ -410,19 +390,17 @@ function putObjectACL() {
             }]
         }
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
-function getObjectACL() {
-    cos.getObjectACL({
+function getObjectAcl() {
+    cos.getObjectAcl({
         Bucket: config.Bucket,
         Region: config.Region,
         Key: '1mb.zip'
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -432,8 +410,7 @@ function deleteObject() {
         Region: config.Region,
         Key: '1mb.zip'
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -446,8 +423,7 @@ function deleteMultipleObject() {
             {Key: '3mb.zip'},
         ]
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -465,8 +441,7 @@ function abortUploadTask() {
         // 格式3，删除 Bucket 下所有未完成上传任务
         // Level: 'bucket',
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
@@ -486,21 +461,20 @@ function sliceUploadFile() {
             console.log(JSON.stringify(progressData));
         },
     }, function (err, data) {
-        if (err) return console.log(err);
-        console.log(JSON.stringify(data, null, '  '));
+        console.log(err || data);
     });
 }
 
-// getService();
+getService();
 // getAuth();
 // putBucket();
 // getBucket();
 // headBucket();
-// putBucketACL();
-// getBucketACL();
-// putBucketCORS();
-// getBucketCORS();
-// deleteBucketCORS();
+// putBucketAcl();
+// getBucketAcl();
+// putBucketCors();
+// getBucketCors();
+// deleteBucketCors();
 // putBucketTagging();
 // getBucketTagging();
 // deleteBucketTagging();
@@ -515,8 +489,8 @@ function sliceUploadFile() {
 // putObjectCopy();
 // getObject();
 // headObject();
-// putObjectACL();
-// getObjectACL();
+// putObjectAcl();
+// getObjectAcl();
 // deleteObject();
 // deleteMultipleObject();
 // abortUploadTask();
@@ -530,11 +504,11 @@ function sliceUploadFile() {
         // 'putBucket',
         'getBucket',
         'headBucket',
-        // 'putBucketACL',
-        // 'getBucketACL',
-        // 'putBucketCORS',
-        // 'getBucketCORS',
-        // 'deleteBucketCORS',
+        // 'putBucketAcl',
+        // 'getBucketAcl',
+        // 'putBucketCors',
+        // 'getBucketCors',
+        // 'deleteBucketCors',
         // 'putBucketTagging',
         // 'getBucketTagging',
         // 'deleteBucketTagging',
@@ -549,8 +523,8 @@ function sliceUploadFile() {
         'putObjectCopy',
         'getObject',
         'headObject',
-        // 'putObjectACL',
-        // 'getObjectACL',
+        // 'putObjectAcl',
+        // 'getObjectAcl',
         'deleteObject',
         // 'deleteMultipleObject',
         // 'abortUploadTask',

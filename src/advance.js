@@ -164,17 +164,16 @@ function getUploadIdAndPartList(params, callback) {
             setTimeout(update, 100);
         }
     };
-    var getChunkETag = function (algorithm, PartNumber, callback) {
+    var getChunkETag = function (PartNumber, callback) {
         if (ETagMap[PartNumber]) {
             return ETagMap[PartNumber];
         }
         var start = SliceSize * (PartNumber - 1);
         var end = Math.min(start + SliceSize, FileSize);
         var ChunkSize = end - start;
-        var ChunkBlob = util.fileSlice.call(params.Body, start, end);
-        var getFileETag = algorithm === 'sha1' ? util.getFileSHA : util.getFileMd5;
-        getFileETag(ChunkBlob, function (err, md5) {
-            if (err) return callback(err, '');
+        var ChunkReadStream = fs.createReadStream(params.FilePath, {start: start, end: end - 1});
+        util.getFileMd5(ChunkReadStream, function (err, md5) {
+            if (err) return callback(err);
             var ETag = '"' + md5 + '"';
             ETagMap[PartNumber] = ETag;
             FinishSliceCount += 1;
@@ -210,8 +209,8 @@ function getUploadIdAndPartList(params, callback) {
         var next = function (index) {
             if (index < PartCount) {
                 var Part = PartList[index];
-                getChunkETag(Part.ETag.length === 42 ? 'sha1' : 'md5', Part.PartNumber, function (err, chunk) {
-                    if (chunk.ETag === Part.ETag && chunk.Size === Part.Size) {
+                getChunkETag(Part.PartNumber, function (err, chunk) {
+                    if (chunk && chunk.ETag === Part.ETag && chunk.Size === Part.Size) {
                         next(index + 1);
                     } else {
                         callback(null, false);
@@ -412,7 +411,7 @@ function uploadSliceList(params, cb) {
             progressTimer = 0;
             if (onProgress && (typeof onProgress === 'function')) {
                 var time1 = Date.now();
-                var speed = parseInt((FinishSize - size0) / (time1 - time0) * 100) / 100 || 0;
+                var speed = parseInt((FinishSize - size0) / ((time1 - time0) / 1000) * 100) / 100 || 0;
                 var percent = parseInt(FinishSize / FileSize * 100) / 100 || 0;
                 time0 = time1;
                 size0 = FinishSize;
@@ -506,7 +505,7 @@ function uploadSliceItem(params, callback) {
     }
 
     var Body = util.fileSlice.call(FileBody, start, end);
-    var ContentSha1 = SliceList[PartNumber * 1 - 1].ETag;
+    var ContentSha1 = SliceList[PartNumber - 1].ETag;
     Async.retry(sliceRetryTimes, function (tryCallback) {
         self.multipartUpload({
             Bucket: Bucket,
@@ -612,7 +611,7 @@ function abortUploadTask(params, callback) {
         });
     } else if (Level === 'file') {
         // 文件级别的任务抛弃，抛弃该文件的全部上传任务
-        if (!Key) return callback('abort_upload_task_no_key');
+        if (!Key) return callback({error: 'abort_upload_task_no_key'});
         wholeMultipartList.call(self, {
             Bucket: Bucket,
             Region: Region,
@@ -625,14 +624,14 @@ function abortUploadTask(params, callback) {
         });
     } else if (Level === 'task') {
         // 单个任务级别的任务抛弃，抛弃指定 UploadId 的上传任务
-        if (!UploadId) return callback('abort_upload_task_no_id');
-        if (!Key) return callback('abort_upload_task_no_key');
+        if (!UploadId) return callback({error: 'abort_upload_task_no_id'});
+        if (!Key) return callback({error: 'abort_upload_task_no_key'});
         ep.emit('get_abort_array', [{
             Key: Key,
             UploadId: UploadId
         }]);
     } else {
-        return callback('abort_unknown_level');
+        return callback({error: 'abort_unknown_level'});
     }
 }
 

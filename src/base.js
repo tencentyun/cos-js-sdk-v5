@@ -189,11 +189,12 @@ function deleteBucket(params, callback) {
         Region: params.Region,
         AppId: params.AppId,
     }, function (err, data) {
-        if (err && err.statusCode !== 204) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
             return callback(err);
         }
         callback(null, {
-            DeleteBucketSuccess: true,
             statusCode: data.statusCode,
             headers: data.headers,
         });
@@ -210,7 +211,7 @@ function deleteBucket(params, callback) {
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.AccessControlPolicy  访问权限信息
  */
-function getBucketACL(params, callback) {
+function getBucketAcl(params, callback) {
 
     submitRequest.call(this, {
         method: 'GET',
@@ -247,7 +248,7 @@ function getBucketACL(params, callback) {
  * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
  * @return  {Object}  data                          返回的数据
  */
-function putBucketACL(params, callback) {
+function putBucketAcl(params, callback) {
     var headers = {};
 
     headers['x-cos-acl'] = params['ACL'];
@@ -281,7 +282,6 @@ function putBucketACL(params, callback) {
             return callback(err);
         }
         callback(null, {
-            PutBucketAclSuccess: true,
             statusCode: data.statusCode,
             headers: data.headers,
         });
@@ -298,7 +298,7 @@ function putBucketACL(params, callback) {
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.CORSRules            Bucket的跨域设置
  */
-function getBucketCORS(params, callback) {
+function getBucketCors(params, callback) {
     submitRequest.call(this, {
         method: 'GET',
         Bucket: params.Bucket,
@@ -342,7 +342,7 @@ function getBucketCORS(params, callback) {
  * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。
  * @return  {Object}  data                              返回的数据
  */
-function putBucketCORS(params, callback) {
+function putBucketCors(params, callback) {
 
     var CORSConfiguration = params['CORSConfiguration'] || {};
     var CORSRules = CORSConfiguration['CORSRules'] || params['CORSRules'] || [];
@@ -369,13 +369,11 @@ function putBucketCORS(params, callback) {
         body: xml,
         action: '/?cors',
         headers: headers,
-        needHeaders: true,
     }, function (err, data) {
         if (err) {
             return callback(err);
         }
         callback(null, {
-            PutBucketCorsSuccess: true,
             statusCode: data.statusCode,
             headers: data.headers,
         });
@@ -391,21 +389,21 @@ function putBucketCORS(params, callback) {
  * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。
  * @return  {Object}  data                  返回的数据
  */
-function deleteBucketCORS(params, callback) {
+function deleteBucketCors(params, callback) {
     submitRequest.call(this, {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
         AppId: params.AppId,
         action: '/?cors',
-        needHeaders: true,
     }, function (err, data) {
-        if (err && err.statusCode !== 204) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
             return callback(err);
         }
         callback(null, {
-            DeleteBucketCorsSuccess: true,
-            statusCode: data.statusCode,
+            statusCode: data.statusCode || err.statusCode,
             headers: data.headers,
         });
     });
@@ -422,7 +420,7 @@ function putBucketPolicy(params, callback) {
             PolicyStr = JSON.stringify(Policy);
         }
     } catch (e) {
-        callback('Policy format error');
+        callback({error: 'Policy format error'});
     }
 
     headers['Content-Type'] = 'application/json';
@@ -437,13 +435,13 @@ function putBucketPolicy(params, callback) {
         body: Policy,
         headers: headers,
         json: true,
-        needHeaders: true,
     }, function (err, data) {
-        if (err && err.statusCode !== 204) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
             return callback(err);
         }
         callback(null, {
-            PutBucketPolicySuccess: true,
             statusCode: data.statusCode,
             headers: data.headers,
         });
@@ -537,14 +535,14 @@ function getBucketTagging(params, callback) {
         if (err) {
             return callback(err);
         }
-        var TagSet = [];
+        var Tags = [];
         try {
-            TagSet = data.Tagging.TagSet.Tag || [];
+            Tags = data.Tagging.TagSet.Tag || [];
         } catch (e) {
         }
-        TagSet = util.clone(util.isArray(TagSet) ? TagSet : [TagSet]);
+        Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
         callback(null, {
-            TagSet: TagSet,
+            Tags: Tags,
             statusCode: data.statusCode,
             headers: data.headers,
         });
@@ -564,7 +562,7 @@ function getBucketTagging(params, callback) {
 function putBucketTagging(params, callback) {
 
     var Tagging = params['Tagging'] || {};
-    var Tags = Tagging.TagSet || params['Tags'] || [];
+    var Tags = Tagging.TagSet || Tagging.Tags || params['Tags'] || [];
     Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
     var xml = util.json2xml({Tagging: {TagSet: {Tag: Tags}}});
 
@@ -580,13 +578,13 @@ function putBucketTagging(params, callback) {
         body: xml,
         action: '/?tagging',
         headers: headers,
-        needHeaders: true,
     }, function (err, data) {
-        if (err && err.statusCode !== 204) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
             return callback(err);
         }
         callback(null, {
-            PutBucketTaggingSuccess: true,
             statusCode: data.statusCode,
             headers: data.headers,
         });
@@ -610,13 +608,13 @@ function deleteBucketTagging(params, callback) {
         Region: params.Region,
         AppId: params.AppId,
         action: '/?tagging',
-        needHeaders: true,
     }, function (err, data) {
-        if (err && err.statusCode !== 204) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
             return callback(err);
         }
         callback(null, {
-            DeleteBucketTaggingSuccess: true,
             statusCode: data.statusCode,
             headers: data.headers,
         });
@@ -642,13 +640,13 @@ function putBucketLifecycle(params, callback) {
         body: xml,
         action: '/?lifecycle',
         headers: headers,
-        needHeaders: true,
     }, function (err, data) {
-        if (err && err.statusCode !== 204) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
             return callback(err);
         }
         callback(null, {
-            PutBucketLifecycleSuccess: true,
             statusCode: data.statusCode,
             headers: data.headers,
         });
@@ -687,13 +685,13 @@ function deleteBucketLifecycle(params, callback) {
         Region: params.Region,
         AppId: params.AppId,
         action: '/?lifecycle',
-        needHeaders: true,
     }, function (err, data) {
-        if (err && err.statusCode !== 204) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
             return callback(err);
         }
         callback(null, {
-            DeleteBucketLifecycleSuccess: true,
             statusCode: data.statusCode,
             headers: data.headers,
         });
@@ -725,13 +723,13 @@ function headObject(params, callback) {
         AppId: params.AppId,
         Key: params.Key,
         headers: headers,
-        needHeaders: true,
     }, function (err, data) {
         if (err) {
             var statusCode = err.statusCode;
-            if (headers['If-Modified-Since'] && statusCode && statusCode == 304) {
+            if (headers['If-Modified-Since'] && statusCode && statusCode === 304) {
                 return callback(null, {
-                    NotModified: true
+                    NotModified: true,
+                    statusCode: statusCode,
                 });
             }
             return callback(err);
@@ -778,6 +776,10 @@ function getObject(params, callback) {
     reqParams['response-content-disposition'] = params['ResponseContentDisposition'];
     reqParams['response-content-encoding'] = params['ResponseContentEncoding'];
 
+    var BodyType;
+
+    BodyType = util.isBrowser ? 'string' : 'buffer';
+
     // 如果用户自己传入了 output
     submitRequest.call(this, {
         method: 'GET',
@@ -787,50 +789,55 @@ function getObject(params, callback) {
         Key: params.Key,
         headers: headers,
         qs: reqParams,
-        needHeaders: true,
-        rawBody: true
+        rawBody: true,
     }, function (err, data) {
         if (err) {
             var statusCode = err.statusCode;
-            if (headers['If-Modified-Since'] && statusCode && statusCode == 304) {
+            if (headers['If-Modified-Since'] && statusCode && statusCode === 304) {
                 return callback(null, {
                     NotModified: true
                 });
             }
             return callback(err);
         }
-        callback(null, {
+        var result = {};
+        if (BodyType === 'string') {
+            result.Body = data.body;
+        }
+        util.extend(result, {
             statusCode: data.statusCode,
             headers: data.headers,
         });
+        callback(null, result);
     });
+
 }
 
 /**
  * 上传 object
- * @param  {Object} params                                      参数对象，必须
- *     @param  {String}  params.Bucket                          Bucket名称，必须
- *     @param  {String}  params.Region                          地域名称，必须
- *     @param  {String}  params.Key                             文件名称，必须
- *     @param  {String}  params.FilePath                        上传文件的路径
- *     @param  {String || Buffer || ReadStream}  params.Body    上传文件的内容或者流
- *     @param  {String}  params.CacheControl                    RFC 2616 中定义的缓存策略，将作为 Object 元数据保存，非必须
- *     @param  {String}  params.ContentDisposition              RFC 2616 中定义的文件名称，将作为 Object 元数据保存，非必须
- *     @param  {String}  params.ContentEncoding                 RFC 2616 中定义的编码格式，将作为 Object 元数据保存，非必须
- *     @param  {String}  params.ContentLength                   RFC 2616 中定义的 HTTP 请求内容长度（字节），必须
- *     @param  {String}  params.ContentType                     RFC 2616 中定义的内容类型（MIME），将作为 Object 元数据保存，非必须
- *     @param  {String}  params.Expect                          当使用 Expect: 100-continue 时，在收到服务端确认后，才会发送请求内容，非必须
- *     @param  {String}  params.Expires                         RFC 2616 中定义的过期时间，将作为 Object 元数据保存，非必须
- *     @param  {String}  params.ContentSha1                     RFC 3174 中定义的 160-bit 内容 SHA-1 算法校验，非必须
- *     @param  {String}  params.ACL                             允许用户自定义文件权限，有效值：private | public-read，非必须
- *     @param  {String}  params.GrantRead                       赋予被授权者读的权限，格式 x-cos-grant-read: uin=" ",uin=" "，非必须
- *     @param  {String}  params.GrantWrite                      赋予被授权者写的权限，格式 x-cos-grant-write: uin=" ",uin=" "，非必须
- *     @param  {String}  params.GrantFullControl                赋予被授权者读写权限，格式 x-cos-grant-full-control: uin=" ",uin=" "，非必须
- *     @param  {Function}  params.onProgress                    上传进度回调函数
- * @param  {Function}  callback                                 回调函数，必须
- * @return  {Object}  err                                       请求失败的错误，如果请求成功，则为空。
- * @return  {Object}  data                                      为对应的 object 数据
- *     @return  {String}  data.ETag                             为对应上传文件的 ETag 值
+ * @param  {Object} params                                          参数对象，必须
+ *     @param  {String}  params.Bucket                              Bucket名称，必须
+ *     @param  {String}  params.Region                              地域名称，必须
+ *     @param  {String}  params.Key                                 文件名称，必须
+ *     @param  {String}  params.FilePath                            上传文件的路径
+ *     @param  {Buffer || ReadStream || File || Blob}  params.Body  上传文件的内容或者流
+ *     @param  {String}  params.CacheControl                        RFC 2616 中定义的缓存策略，将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.ContentDisposition                  RFC 2616 中定义的文件名称，将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.ContentEncoding                     RFC 2616 中定义的编码格式，将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.ContentLength                       RFC 2616 中定义的 HTTP 请求内容长度（字节），必须
+ *     @param  {String}  params.ContentType                         RFC 2616 中定义的内容类型（MIME），将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.Expect                              当使用 Expect: 100-continue 时，在收到服务端确认后，才会发送请求内容，非必须
+ *     @param  {String}  params.Expires                             RFC 2616 中定义的过期时间，将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.ContentSha1                         RFC 3174 中定义的 160-bit 内容 SHA-1 算法校验，非必须
+ *     @param  {String}  params.ACL                                 允许用户自定义文件权限，有效值：private | public-read，非必须
+ *     @param  {String}  params.GrantRead                           赋予被授权者读的权限，格式 x-cos-grant-read: uin=" ",uin=" "，非必须
+ *     @param  {String}  params.GrantWrite                          赋予被授权者写的权限，格式 x-cos-grant-write: uin=" ",uin=" "，非必须
+ *     @param  {String}  params.GrantFullControl                    赋予被授权者读写权限，格式 x-cos-grant-full-control: uin=" ",uin=" "，非必须
+ *     @param  {Function}  params.onProgress                        上传进度回调函数
+ * @param  {Function}  callback                                     回调函数，必须
+ * @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  data                                          为对应的 object 数据
+ *     @return  {String}  data.ETag                                 为对应上传文件的 ETag 值
  */
 function putObject(params, callback) {
     var headers = {};
@@ -856,6 +863,27 @@ function putObject(params, callback) {
         }
     }
 
+    var Body = params.Body;
+    var readStream;
+
+    if (util.isBrowser && (Body instanceof global.Blob || Body instanceof global.File)) { // 传入 Blob 或者 File 文件内容
+        headers['Content-Length'] = Body.length;
+    } else if (Body && Body instanceof Buffer) { // 传入 fs.readFileSync(filepath) 或者 文件内容
+        headers['Content-Length'] = Body.length;
+    } else if (Body && typeof Body.pipe === 'function') { // fs.createReadStream(filepath)
+        readStream = Body;
+        Body = null;
+        if (headers['Content-Length'] === undefined) {
+            callback({error: 'lack of param ContentLength'});
+            return;
+        }
+    } else if (Body && typeof Body.pipe === 'string' && util.isBrowser) { // 在浏览器允许传入字符串作为内容 'hello'
+        headers['Content-Length'] = Body.length;
+    } else {
+        callback({error: 'params body format error, Only allow Buffer, Stream, Blob.'});
+        return;
+    }
+
     submitRequest.call(this, {
         method: 'PUT',
         Bucket: params.Bucket,
@@ -863,8 +891,8 @@ function putObject(params, callback) {
         AppId: params.AppId,
         Key: params.Key,
         headers: headers,
-        needHeaders: true,
-        body: params.Body,
+        body: Body,
+        inputStream: readStream,
         onProgress: params.onProgress
     }, function (err, data) {
         if (err) {
@@ -905,7 +933,6 @@ function deleteObject(params, callback) {
             var statusCode = err.statusCode;
             if (statusCode && statusCode == 204) {
                 return callback(null, {
-                    DeleteObjectSuccess: true,
                     statusCode: data.statusCode,
                     headers: data.headers,
                 });
@@ -920,7 +947,6 @@ function deleteObject(params, callback) {
             }
         }
         callback(null, {
-            DeleteObjectSuccess: true,
             statusCode: data.statusCode,
             headers: data.headers,
         });
@@ -939,7 +965,7 @@ function deleteObject(params, callback) {
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.AccessControlPolicy  权限列表
  */
-function getObjectACL(params, callback) {
+function getObjectAcl(params, callback) {
 
     submitRequest.call(this, {
         method: 'GET',
@@ -974,7 +1000,7 @@ function getObjectACL(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
  * @return  {Object}  data              返回的数据
  */
-function putObjectACL(params, callback) {
+function putObjectAcl(params, callback) {
     var headers = {};
 
     headers['x-cos-acl'] = params['ACL'];
@@ -1003,14 +1029,12 @@ function putObjectACL(params, callback) {
         Key: params.Key,
         action: '?acl',
         headers: headers,
-        needHeaders: true,
         body: xml,
     }, function (err, data) {
         if (err) {
             return callback(err);
         }
         callback(null, {
-            PutObjectAclSuccess: true,
             statusCode: data.statusCode,
             headers: data.headers,
         });
@@ -1041,7 +1065,6 @@ function optionsObject(params, callback) {
         AppId: params.AppId,
         Key: params.Key,
         headers: headers,
-        needHeaders: true,
     }, function (err, data) {
         if (err) {
             if (err.statusCode && err.statusCode == 403) {
@@ -1129,7 +1152,6 @@ function putObjectCopy(params, callback) {
         AppId: params.AppId,
         Key: params.Key,
         headers: headers,
-        needHeaders: true,
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -1172,7 +1194,6 @@ function deleteMultipleObject(params, callback) {
         body: xml,
         action: '/?delete',
         headers: headers,
-        needHeaders: true,
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -1248,7 +1269,6 @@ function multipartInit(params, callback) {
         Key: params.Key,
         action: '?uploads',
         headers: headers,
-        needHeaders: true,
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -1298,7 +1318,6 @@ function multipartUpload(params, callback) {
         Key: params.Key,
         action: action,
         headers: headers,
-        needHeaders: true,
         inputStream: params.Body || null,
         onProgress: params.onProgress
     }, function (err, data) {
@@ -1366,7 +1385,6 @@ function multipartComplete(params, callback) {
         action: action,
         body: xml,
         headers: headers,
-        needHeaders: true,
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -1415,7 +1433,7 @@ function multipartList(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         AppId: params.AppId,
-        action: '/?uploads&' + querystring.stringify(reqParams),
+        action: '/?uploads&' + queryString.stringify(reqParams),
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -1511,13 +1529,11 @@ function multipartAbort(params, callback) {
         AppId: params.AppId,
         Key: params.Key,
         qs: reqParams,
-        needHeaders: true,
     }, function (err, data) {
         if (err) {
             return callback(err);
         }
         callback(null, {
-            MultipartAbortSuccess: true,
             statusCode: data.statusCode,
             headers: data.headers,
         });
@@ -1643,14 +1659,16 @@ function submitRequest(params, callback) {
 
             // 返回内容添加 状态码 和 headers
             var cb = function (err, data) {
-                if (err && !response) {
+                if (err) {
+                    err = err || {};
+                    response.statusCode && (err.statusCode = response.statusCode);
                     callback(err, null);
-                    return;
+                } else {
+                    data = data || {};
+                    response.statusCode && (data.statusCode = response.statusCode);
+                    response.headers && (data.headers = response.headers);
+                    callback(null, data);
                 }
-                data = data || {};
-                data.statusCode = response.statusCode;
-                data.headers = response.headers;
-                callback(err, data);
             };
 
             // 请求错误，发生网络错误
@@ -1661,7 +1679,6 @@ function submitRequest(params, callback) {
                 return;
             }
 
-            var statusCode = response.statusCode;
             var jsonRes;
 
             try {
@@ -1671,11 +1688,9 @@ function submitRequest(params, callback) {
             }
 
             // 请求返回码不为 200
+            var statusCode = response.statusCode;
             if (statusCode !== 200 && statusCode !== 204 && statusCode !== 206) {
-                cb({
-                    statusCode: statusCode,
-                    error: jsonRes.Error || jsonRes
-                });
+                cb({error: jsonRes.Error || jsonRes});
                 return;
             }
 
@@ -1685,16 +1700,8 @@ function submitRequest(params, callback) {
                 jsonRes.body = body;
             }
 
-            // 如果需要头部信息，则 headers 挂载返回
-            if (needHeaders) {
-                jsonRes.headers = response.headers || {};
-            }
-
             if (jsonRes.Error) {
-                cb({
-                    statusCode: statusCode,
-                    error: jsonRes.Error
-                });
+                cb({error: jsonRes.Error});
                 return;
             }
             cb(null, jsonRes);
@@ -1727,11 +1734,11 @@ var API_MAP = {
     headBucket: headBucket,
     putBucket: putBucket,
     deleteBucket: deleteBucket,
-    getBucketACL: getBucketACL,
-    putBucketACL: putBucketACL,
-    getBucketCORS: getBucketCORS,
-    putBucketCORS: putBucketCORS,
-    deleteBucketCORS: deleteBucketCORS,
+    getBucketAcl: getBucketAcl,
+    putBucketAcl: putBucketAcl,
+    getBucketCors: getBucketCors,
+    putBucketCors: putBucketCors,
+    deleteBucketCors: deleteBucketCors,
     getBucketLocation: getBucketLocation,
     putBucketTagging: putBucketTagging,
     getBucketTagging: getBucketTagging,
@@ -1747,8 +1754,8 @@ var API_MAP = {
     headObject: headObject,
     putObject: putObject,
     deleteObject: deleteObject,
-    getObjectACL: getObjectACL,
-    putObjectACL: putObjectACL,
+    getObjectAcl: getObjectAcl,
+    putObjectAcl: putObjectAcl,
     optionsObject: optionsObject,
     putObjectCopy: putObjectCopy,
 
