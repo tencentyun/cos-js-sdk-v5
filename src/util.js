@@ -189,6 +189,22 @@ function map(obj, fn) {
     }
     return o;
 }
+function filter(obj, fn) {
+    var iaArr = isArray(obj);
+    var o = iaArr ? [] : {};
+    for (var i in obj) {
+        if (obj.hasOwnProperty(i)) {
+            if (fn(obj[i], i)) {
+                if (iaArr) {
+                    o.push(obj[i]);
+                } else {
+                    o[i] = obj[i];
+                }
+            }
+        }
+    }
+    return o;
+}
 var binaryBase64 = function (str) {
     var i, len, char, arr = [];
     for (i = 0, len = str.length / 2; i < len; i++) {
@@ -196,6 +212,12 @@ var binaryBase64 = function (str) {
         arr.push(char);
     }
     return new Buffer(arr).toString('base64');
+};
+var uuid = function () {
+    var S4 = function () {
+        return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+    };
+    return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
 };
 
 var checkParams = function (apiName, params) {
@@ -211,7 +233,6 @@ var checkParams = function (apiName, params) {
     return true;
 };
 
-
 var apiWrapper = function (apiName, apiFn) {
     var regionMap = {
         'gz': 'cn-south',
@@ -220,7 +241,8 @@ var apiWrapper = function (apiName, apiFn) {
         'cd': 'cn-southwest'
     };
     return function (params, callback) {
-        callback = callback || function () { };
+        callback = callback || function () {
+            };
         if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
             // 判断参数是否完整
             if (!checkParams(apiName, params)) {
@@ -250,8 +272,6 @@ var apiWrapper = function (apiName, apiFn) {
         var res = apiFn.call(this, params, callback);
         if (apiName === 'getAuth') {
             return res;
-        } else {
-            return;
         }
     }
 };
@@ -265,15 +285,16 @@ var util = {
     json2xml: json2xml,
     md5: md5,
     clearKey: clearKey,
-    getFileSHA: getFileSHA,
     getFileMd5: getFileMd5,
+    binaryBase64: binaryBase64,
     extend: extend,
     isArray: isArray,
     each: each,
     map: map,
+    filter: filter,
     clone: clone,
-    binaryBase64: binaryBase64,
-    fileSlice: fileSlice
+    uuid: uuid,
+    isBrowser: !!global.window
 };
 
 

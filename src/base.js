@@ -840,6 +840,13 @@ function getObject(params, callback) {
  *     @return  {String}  data.ETag                                 为对应上传文件的 ETag 值
  */
 function putObject(params, callback) {
+    var taskId = util.uuid();
+    params.TaskReady && params.TaskReady(taskId);
+    this._addTask(taskId, '_putObject', params, callback);
+}
+function _putObject(params, callback) {
+    var self = this;
+    var TaskId = params.TaskId;
     var headers = {};
 
     headers['Cache-Control'] = params['CacheControl'];
@@ -884,7 +891,48 @@ function putObject(params, callback) {
         return;
     }
 
-    submitRequest.call(this, {
+    var onProgress = params.onProgress;
+    var onFileProgress = (function () {
+        var time0 = Date.now();
+        var size0 = 0;
+        var FinishSize = 0;
+        var FileSize = headers['Content-Length'];
+        var progressTimer;
+        var update = function () {
+            progressTimer = 0;
+            if (onProgress && (typeof onProgress === 'function')) {
+                var time1 = Date.now();
+                var speed = parseInt((FinishSize - size0) / ((time1 - time0) / 1000) * 100) / 100 || 0;
+                var percent = parseInt(FinishSize / FileSize * 100) / 100 || 0;
+                time0 = time1;
+                size0 = FinishSize;
+                try {
+                    onProgress({
+                        loaded: FinishSize,
+                        total: FileSize,
+                        speed: speed,
+                        percent: percent
+                    });
+                } catch (e) {
+                }
+            }
+        };
+        return function (info, immediately) {
+            if (info && info.loaded) {
+                FinishSize = info.loaded;
+                FileSize = info.total;
+            }
+            if (immediately) {
+                clearTimeout(progressTimer);
+                update();
+            } else {
+                if (progressTimer) return;
+                progressTimer = setTimeout(update, self.options.ProgressInterval || 100);
+            }
+        };
+    })();
+
+    var sender = submitRequest.call(this, {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -893,8 +941,10 @@ function putObject(params, callback) {
         headers: headers,
         body: Body,
         inputStream: readStream,
-        onProgress: params.onProgress
+        onProgress: onFileProgress
     }, function (err, data) {
+        params.TaskId === TaskId && self.off('inner-kill-task', killTask);
+        onFileProgress(null, true);
         if (err) {
             return callback(err);
         }
@@ -907,6 +957,12 @@ function putObject(params, callback) {
         }
         callback(null, data);
     });
+
+    var killTask = function (data) {
+        sender && sender.abort && sender.abort();
+        params.TaskId === data.TaskId && self.off('inner-kill-task', killTask);
+    };
+    params.TaskId && this.on('inner-kill-task', killTask);
 }
 
 /**
@@ -1299,6 +1355,7 @@ function multipartInit(params, callback) {
  *     @return  {Object}  data.ETag             返回的文件分块 sha1 值
  */
 function multipartUpload(params, callback) {
+    var self = this;
     var headers = {};
 
     headers['Content-Length'] = params['ContentLength'];
@@ -1310,7 +1367,7 @@ function multipartUpload(params, callback) {
 
     var action = '?partNumber=' + PartNumber + '&uploadId=' + UploadId;
 
-    submitRequest.call(this, {
+    var sender = submitRequest.call(this, {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1321,6 +1378,7 @@ function multipartUpload(params, callback) {
         inputStream: params.Body || null,
         onProgress: params.onProgress
     }, function (err, data) {
+        if (params.TaskId) self.off('inner-kill-task', killTask);
         if (err) {
             return callback(err);
         }
@@ -1331,6 +1389,13 @@ function multipartUpload(params, callback) {
             headers: data.headers,
         });
     });
+
+    var killTask = function (TaskId) {
+        sender && sender.abort && sender.abort();
+        if (params.TaskId === TaskId) self.off('inner-kill-task', killTask);
+    };
+    if (params.TaskId) this.on('inner-kill-task', killTask);
+
 }
 
 /**
@@ -1426,7 +1491,6 @@ function multipartList(params, callback) {
     reqParams['upload-id-marker'] = params['UploadIdMarker'];
 
     reqParams = util.clearKey(reqParams);
-
 
     submitRequest.call(this, {
         method: 'GET',
@@ -1551,8 +1615,8 @@ function getAuth(params) {
     return util.getAuth({
         method: params.Method || 'get',
         pathname: '/' + (params.Key + ''),
-        SecretId: params.SecretId || this.SecretId || '',
-        SecretKey: params.SecretKey || this.SecretKey || ''
+        SecretId: params.SecretId || this.options.SecretId || '',
+        SecretKey: params.SecretKey || this.options.SecretKey || ''
     });
 }
 
@@ -1604,7 +1668,7 @@ function submitRequest(params, callback) {
             region: region,
             object: object,
             action: action,
-            appId: params.AppId || this.AppId,
+            appId: params.AppId || this.options.AppId,
         }),
         method: method,
         headers: headers,
@@ -1644,8 +1708,8 @@ function submitRequest(params, callback) {
                 var time1 = Date.now();
                 var speed = parseInt((loaded - size0) / ((time1 - time0) / 1000) * 100) / 100;
                 var percent = total ? (parseInt(loaded / total * 100) / 100) : 0;
-                // time0 = time1;
-                // size0 = loaded;
+                time0 = time1;
+                size0 = loaded;
                 params.onProgress({
                     loaded: loaded,
                     total: total,
@@ -1655,7 +1719,7 @@ function submitRequest(params, callback) {
             };
         }
 
-        REQUEST(opt, function (err, response, body) {
+        var sender = REQUEST(opt, function (err, response, body) {
 
             // 返回内容添加 状态码 和 headers
             var cb = function (err, data) {
@@ -1673,14 +1737,11 @@ function submitRequest(params, callback) {
 
             // 请求错误，发生网络错误
             if (err) {
-                cb({
-                    error: err
-                });
+                cb({error: err});
                 return;
             }
 
             var jsonRes;
-
             try {
                 jsonRes = util.xml2json(body) || {};
             } catch (e) {
@@ -1709,8 +1770,8 @@ function submitRequest(params, callback) {
     };
 
     // 获取签名
-    if (this.getAuthorization) {
-        this.getAuthorization({
+    if (this.options.getAuthorization) {
+        this.options.getAuthorization({
             method: opt.method,
             pathname: object || '/'
         }, getAuthorizationCallback);
