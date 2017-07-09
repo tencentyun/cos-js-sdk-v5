@@ -13,7 +13,7 @@
     ![cors.png](./demo/cors.png)
 
 ```html
-<script src="dist/cos-js-sdk-v5.js"></script>
+<script src="dist/cos-js-sdk-v5.min.js"></script>
 <script>
 var cos = new COS({
     AppId: '1250000000',
