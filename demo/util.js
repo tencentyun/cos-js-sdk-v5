@@ -5,7 +5,9 @@ var util = {
         arr.forEach(function (char, i) {
             arr[i] = 0;
         });
-        var blob = new Blob([buffer], {type: options.type || 'image/png'});
+        var opt = {};
+        options.type && (opt.type = options.type);
+        var blob = new Blob([buffer], options);
         return blob;
     }
 };

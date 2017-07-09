@@ -6,6 +6,12 @@
 
 ## get started
 
+1. 使用 SDK 需要浏览器支持HTML 5
+2. 请您到https://console.qcloud.com/cos 获取您的 AppId、Bucket、Region、SecretId 和 SecretKey
+3. 请您到https://console.qcloud.com/cos 针对您要操作的bucket进行跨域（CORS）设置，可以按照如下范例，修改允许的来源 Origin 和 Headers：
+
+    ![cors.png](./demo/cors.png)
+
 ```html
 <script src="dist/cos-js-sdk-v5.js"></script>
 <script>

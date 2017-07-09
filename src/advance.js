@@ -87,7 +87,7 @@ function _sliceUploadFile (params, callback) {
                 Region: Region,
                 Key: Key,
                 StorageClass: StorageClass,
-                FilePath: FilePath,
+                Body: Body,
                 FileSize: FileSize,
                 SliceSize: SliceSize,
                 onHashProgress: onHashProgress,
@@ -541,11 +541,7 @@ function uploadSliceItem(params, callback) {
         ContentLength = end - start;
     }
 
-    var Body = fs.createReadStream(FilePath, {
-        start: start,
-        end: end - 1
-    });
-
+    var Body = util.fileSlice.call(FileBody, start, end);
     var ContentSha1 = UploadData.PartList[PartNumber - 1].ETag;
     Async.retry(sliceRetryTimes, function (tryCallback) {
         if (!self._isRunningTask(TaskId)) return;

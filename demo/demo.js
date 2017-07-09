@@ -1,28 +1,31 @@
+var getAuthorization = function (options, callback) {
+
+    // 方法一（推荐）
+    var method = (options.method || 'get').toLowerCase();
+    var pathname = options.pathname || '/';
+    var url = '../server/auth.php?method=' + method + '&pathname=' + pathname;
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.onload = function (e) {
+        callback(e.target.responseText);
+    };
+    xhr.send();
+
+    // // 方法二（适用于前端调试）
+    // var authorization = COS.getAuthorization({
+    //     SecretId: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    //     method: (options.method || 'get').toLowerCase(),
+    //     pathname: options.pathname || '/',
+    // });
+    // callback(authorization);
+
+};
+
 var cos = new COS({
     AppId: config.AppId,
-    getAuthorization: function (options, callback) {
-
-        // 方法一（推荐）
-        var method = (options.method || 'get').toLowerCase();
-        var pathname = options.pathname || '/';
-        var url = '../server/auth.php?method=' + method + '&pathname=' + pathname;
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
-        xhr.onload = function (e) {
-            callback(e.target.responseText);
-        };
-        xhr.send();
-
-        // // 方法二（适用于前端调试）
-        // var authorization = COS.getAuthorization({
-        //     SecretId: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        //     method: (options.method || 'get').toLowerCase(),
-        //     pathname: options.pathname || '/',
-        // });
-        // callback(authorization);
-
-    }
+    ChunkParallelLimit: 1,
+    getAuthorization: getAuthorization
 });
 
 var pre = document.querySelector('.result');
@@ -66,7 +69,7 @@ function getAuth() {
         AppId = arr[1];
     }
     var key = '1.png';
-    cos.getAuthorization({
+    getAuthorization({
         method: 'get',
         pathname: '/' + key
     }, function (auth) {
@@ -314,7 +317,7 @@ function deleteBucket() {
 function putObject() {
     // 创建测试文件
     var filename = '1mb.zip';
-    var blob = util.createFile({type: 'image/png', size: 1024 * 1024});
+    var blob = util.createFile({size: 1024 * 1024});
     // 调用方法
     cos.putObject({
         Bucket: config.Bucket, /* 必须 */
@@ -446,13 +449,11 @@ function abortUploadTask() {
 }
 
 function sliceUploadFile() {
-    var blob = util.createFile({type: 'image/png', size: 1024 * 1024 * 10});
+    var blob = util.createFile({size: 1024 * 1024 * 10});
     cos.sliceUploadFile({
         Bucket: config.Bucket, /* 必须 */
         Region: config.Region,
         Key: '10mb.zip', /* 必须 */
-        SliceSize: 1024 * 1024,  //1MB  /* 非必须 */
-        AsyncLimit: 3, /* 非必须 */
         Body: blob,
         onHashProgress: function (progressData) {
             console.log(JSON.stringify(progressData));
@@ -465,7 +466,7 @@ function sliceUploadFile() {
     });
 }
 
-getService();
+// getService();
 // getAuth();
 // putBucket();
 // getBucket();

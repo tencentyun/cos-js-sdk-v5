@@ -163,11 +163,9 @@ function clone(obj) {
     });
 }
 function extend(target, source) {
-    for (var method in source) {
-        if (!target[method]) {
-            target[method] = source[method];
-        }
-    }
+    each(source, function (val, key) {
+        target[key] = source[key];
+    });
     return target;
 }
 function isArray(arr) {
@@ -279,6 +277,7 @@ var apiWrapper = function (apiName, apiFn) {
 var fileSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
 
 var util = {
+    fileSlice: fileSlice,
     apiWrapper: apiWrapper,
     getAuth: getAuth,
     xml2json: xml2json,

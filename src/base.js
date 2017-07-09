@@ -940,7 +940,6 @@ function _putObject(params, callback) {
         Key: params.Key,
         headers: headers,
         body: Body,
-        inputStream: readStream,
         onProgress: onFileProgress
     }, function (err, data) {
         params.TaskId === TaskId && self.off('inner-kill-task', killTask);
@@ -1375,7 +1374,7 @@ function multipartUpload(params, callback) {
         Key: params.Key,
         action: action,
         headers: headers,
-        inputStream: params.Body || null,
+        body: params.Body || null,
         onProgress: params.onProgress
     }, function (err, data) {
         if (params.TaskId) self.off('inner-kill-task', killTask);
@@ -1814,6 +1813,7 @@ var API_MAP = {
     getObject: getObject,
     headObject: headObject,
     putObject: putObject,
+    _putObject: _putObject,
     deleteObject: deleteObject,
     getObjectAcl: getObjectAcl,
     putObjectAcl: putObjectAcl,

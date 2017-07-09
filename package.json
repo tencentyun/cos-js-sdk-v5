@@ -4,8 +4,8 @@
   "description": "cos js sdk v5",
   "main": "index.js",
   "scripts": {
-    "dev": "webpack -w",
-    "build": "webpack"
+    "dev": "SET NODE_ENV=development&& webpack -w",
+    "build": "SET NODE_ENV=development&& webpack"
   },
   "repository": {
     "type": "git",
