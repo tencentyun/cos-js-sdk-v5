@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "SET NODE_ENV=development&& webpack -w",
-    "build": "SET NODE_ENV=development&& webpack"
+    "build": "SET NODE_ENV=production&& webpack"
   },
   "repository": {
     "type": "git",

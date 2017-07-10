@@ -29146,12 +29146,12 @@ function plural(ms, n, name) {
 
 module.exports = {
 	"name": "cos-js-sdk-v5",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"description": "cos js sdk v5",
 	"main": "index.js",
 	"scripts": {
 		"dev": "SET NODE_ENV=development&& webpack -w",
-		"build": "SET NODE_ENV=development&& webpack"
+		"build": "SET NODE_ENV=production&& webpack"
 	},
 	"repository": {
 		"type": "git",
