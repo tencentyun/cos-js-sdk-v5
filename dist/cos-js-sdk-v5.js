@@ -16887,8 +16887,9 @@ function getUrl(params) {
     var object = params.object;
     var action = params.action;
     var appId = params.appId;
+    var protocol = util.isBrowser && location.protocol === 'https:' ? 'https:' : 'http:';
 
-    var url = 'http://' + bucket + '-' + appId + '.' + region + '.myqcloud.com';
+    var url = protocol + '//' + bucket + '-' + appId + '.' + region + '.myqcloud.com';
 
     if (object) {
         url += '/' + encodeURIComponent(object);
