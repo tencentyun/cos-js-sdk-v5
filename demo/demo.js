@@ -524,6 +524,9 @@ function restartTask() {
 // deleteMultipleObject();
 // abortUploadTask();
 // sliceUploadFile();
+// cancelTask();
+// pauseTask();
+// restartTask();
 
 
 (function () {
@@ -558,6 +561,9 @@ function restartTask() {
         // 'deleteMultipleObject',
         // 'abortUploadTask',
         'sliceUploadFile',
+        'cancelTask',
+        'pauseTask',
+        'restartTask',
     ];
     var container = document.querySelector('.main');
     var html = [];
