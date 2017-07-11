@@ -16912,10 +16912,7 @@ function submitRequest(params, callback) {
     var url = params.url;
     var body = params.body;
     var json = params.json;
-
-    var needHeaders = params.needHeaders;
     var rawBody = params.rawBody;
-
     var qs = params.qs;
 
     var opt = {
