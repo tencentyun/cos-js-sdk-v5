@@ -27,6 +27,7 @@ var cos = new COS({
     ChunkParallelLimit: 1,
     getAuthorization: getAuthorization
 });
+var TaskId;
 
 var pre = document.querySelector('.result');
 var logger = function (text, color) {
@@ -323,6 +324,9 @@ function putObject() {
         Bucket: config.Bucket, /* 必须 */
         Region: config.Region,
         Key: filename, /* 必须 */
+        TaskReady: function (tid) {
+            TaskId = tid;
+        },
         onProgress: function (progressData) {
             console.log(JSON.stringify(progressData));
         },
@@ -448,7 +452,6 @@ function abortUploadTask() {
     });
 }
 
-var TaskId;
 function sliceUploadFile() {
     var blob = util.createFile({size: 1024 * 1024 * 10});
     cos.sliceUploadFile({
