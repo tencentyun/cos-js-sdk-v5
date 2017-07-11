@@ -448,6 +448,7 @@ function abortUploadTask() {
     });
 }
 
+var TaskId;
 function sliceUploadFile() {
     var blob = util.createFile({size: 1024 * 1024 * 10});
     cos.sliceUploadFile({
@@ -455,6 +456,9 @@ function sliceUploadFile() {
         Region: config.Region,
         Key: '10mb.zip', /* 必须 */
         Body: blob,
+        TaskReady: function (tid) {
+            TaskId = tid;
+        },
         onHashProgress: function (progressData) {
             console.log(JSON.stringify(progressData));
         },
@@ -464,6 +468,30 @@ function sliceUploadFile() {
     }, function (err, data) {
         console.log(err || data);
     });
+}
+
+function cancelTask() {
+    sliceUploadFile();
+    setTimeout(function () {
+        cos.cancelTask(TaskId);
+        console.log('canceled');
+    }, 2000);
+}
+
+function pauseTask() {
+    sliceUploadFile();
+    setTimeout(function () {
+        cos.pauseTask(TaskId);
+        console.log('paused');
+        restartTask();
+    }, 2000);
+}
+
+function restartTask() {
+    setTimeout(function () {
+        cos.restartTask(TaskId);
+        console.log('restart');
+    }, 4000);
 }
 
 // getService();
