@@ -1,4 +1,4 @@
-var querystring = require('querystring');
+var queryString = require('querystring');
 var REQUEST = require('../lib/request');
 var util = require('./util');
 

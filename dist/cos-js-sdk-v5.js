@@ -15254,7 +15254,7 @@ module.exports.init = initTask;
 /* 199 */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(global, Buffer) {var querystring = __webpack_require__(200);
+/* WEBPACK VAR INJECTION */(function(global, Buffer) {var queryString = __webpack_require__(200);
 var REQUEST = __webpack_require__(203);
 var util = __webpack_require__(16);
 
@@ -29157,7 +29157,7 @@ function plural(ms, n, name) {
 
 module.exports = {
 	"name": "cos-js-sdk-v5",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "cos js sdk v5",
 	"main": "index.js",
 	"scripts": {
