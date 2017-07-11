@@ -1783,8 +1783,8 @@ function submitRequest(params, callback) {
         var auth = util.getAuth({
             method: opt.method,
             pathname: object || '/',
-            SecretId: params.SecretId || this.SecretId,
-            SecretKey: params.SecretKey || this.SecretKey,
+            SecretId: params.SecretId || this.options.SecretId,
+            SecretKey: params.SecretKey || this.options.SecretKey,
         });
         getAuthorizationCallback(auth);
     }
