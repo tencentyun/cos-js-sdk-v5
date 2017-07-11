@@ -471,27 +471,18 @@ function sliceUploadFile() {
 }
 
 function cancelTask() {
-    sliceUploadFile();
-    setTimeout(function () {
-        cos.cancelTask(TaskId);
-        console.log('canceled');
-    }, 2000);
+    cos.cancelTask(TaskId);
+    console.log('canceled');
 }
 
 function pauseTask() {
-    sliceUploadFile();
-    setTimeout(function () {
-        cos.pauseTask(TaskId);
-        console.log('paused');
-        restartTask();
-    }, 2000);
+    cos.pauseTask(TaskId);
+    console.log('paused');
 }
 
 function restartTask() {
-    setTimeout(function () {
-        cos.restartTask(TaskId);
-        console.log('restart');
-    }, 4000);
+    cos.restartTask(TaskId);
+    console.log('restart');
 }
 
 // getService();

@@ -857,7 +857,7 @@ function _putObject(params, callback) {
     headers['Content-Type'] = params['ContentType'];
     headers['Expect'] = params['Expect'];
     headers['Expires'] = params['Expires'];
-    headers['x-cos-content-sha1'] = params['ContentSha1'];
+    // headers['x-cos-content-sha1'] = params['ContentSha1'];
     headers['x-cos-acl'] = params['ACL'];
     headers['x-cos-grant-read'] = params['GrantRead'];
     headers['x-cos-grant-write'] = params['GrantWrite'];
@@ -1192,7 +1192,7 @@ function putObjectCopy(params, callback) {
     headers['Content-Type'] = params['ContentType'];
     headers['Expect'] = params['Expect'];
     headers['Expires'] = params['Expires'];
-    headers['x-cos-content-sha1'] = params['ContentSha1'];
+    // headers['x-cos-content-sha1'] = params['ContentSha1'];
 
     for (var key in params) {
         if (key.indexOf('x-cos-meta-') > -1) {
@@ -1359,7 +1359,7 @@ function multipartUpload(params, callback) {
 
     headers['Content-Length'] = params['ContentLength'];
     headers['Expect'] = params['Expect'];
-    headers['x-cos-content-sha1'] = params['ContentSha1'];
+    // headers['x-cos-content-sha1'] = params['ContentSha1'];
 
     var PartNumber = params['PartNumber'];
     var UploadId = params['UploadId'];
@@ -1681,6 +1681,13 @@ function submitRequest(params, callback) {
         object = '/' + object;
     }
 
+    var innerSender;
+    var outerSender = {
+        abort: function () {
+            innerSender && innerSender.abort && innerSender.abort();
+        }
+    };
+
     // 发送请求
     var getAuthorizationCallback = function (auth) {
 
@@ -1719,7 +1726,7 @@ function submitRequest(params, callback) {
             };
         }
 
-        var sender = REQUEST(opt, function (err, response, body) {
+        innerSender = REQUEST(opt, function (err, response, body) {
 
             // 返回内容添加 状态码 和 headers
             var cb = function (err, data) {
@@ -1784,6 +1791,8 @@ function submitRequest(params, callback) {
         });
         getAuthorizationCallback(auth);
     }
+
+    return outerSender;
 
 }
 
