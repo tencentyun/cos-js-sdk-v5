@@ -26,7 +26,8 @@
     "xml2js": "^0.4.17"
   },
   "devDependencies": {
-    "babel-loader": "^7.1.0",
-    "webpack": "^3.0.0"
+    "babel-core": "^6.25.0",
+    "babel-loader": "^7.1.1",
+    "webpack": "^3.2.0"
   }
 }
