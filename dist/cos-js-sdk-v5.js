@@ -15300,7 +15300,7 @@ var initTask = function (cos) {
             size = params.Body.size;
         } else if (params.Body && params.Body.length) {
             size = params.Body.length;
-        } else if (params.ContentLength === undefined) {
+        } else if (params.ContentLength !== undefined) {
             size = params.ContentLength;
         }
         if (params.ContentLength === undefined) params.ContentLength = size;
