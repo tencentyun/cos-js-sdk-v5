@@ -6,6 +6,14 @@ var xml2js = require('xml2js');
 var xmlParser = new xml2js.Parser({explicitArray: false, ignoreAttrs: true});
 var xmlBuilder = new xml2js.Builder();
 
+function camSafeUrlEncode(str) {
+    return encodeURIComponent(str)
+        .replace(/!/g, '%21')
+        .replace(/'/g, '%27')
+        .replace(/\(/g, '%28')
+        .replace(/\)/g, '%29')
+        .replace(/\*/g, '%2A');
+}
 
 //测试用的key后面可以去掉
 var getAuth = function (opt) {
@@ -40,8 +48,8 @@ var getAuth = function (opt) {
             key = keyList[i];
             val = obj[key] || '';
             key = key.toLowerCase();
-            key = encodeURIComponent(key);
-            list.push(key + '=' + encodeURIComponent(val));
+            key = camSafeUrlEncode(key);
+            list.push(key + '=' + camSafeUrlEncode(val));
         }
         return list.join('&');
     };
