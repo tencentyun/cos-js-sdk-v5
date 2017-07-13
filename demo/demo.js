@@ -24,7 +24,10 @@ var getAuthorization = function (options, callback) {
 
 var cos = new COS({
     AppId: config.AppId,
-    ChunkParallelLimit: 1,
+    ProgressInterval: 1000,
+    FileParallelLimit: 3,
+    ChunkParallelLimit: 3,
+    ChunkSize: 1024 * 1024,
     getAuthorization: getAuthorization
 });
 var TaskId;

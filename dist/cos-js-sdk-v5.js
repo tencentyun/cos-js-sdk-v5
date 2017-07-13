@@ -3004,9 +3004,12 @@ module.exports = isObjectLike;
 var md5 = __webpack_require__(75);
 var CryptoJS = __webpack_require__(76);
 var xml2js = __webpack_require__(77);
-var xmlParser = new xml2js.Parser({explicitArray: false, ignoreAttrs: true});
+var xmlParser = new xml2js.Parser({ explicitArray: false, ignoreAttrs: true });
 var xmlBuilder = new xml2js.Builder();
 
+function camSafeUrlEncode(str) {
+    return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/\*/g, '%2A');
+}
 
 //测试用的key后面可以去掉
 var getAuth = function (opt) {
@@ -3041,8 +3044,8 @@ var getAuth = function (opt) {
             key = keyList[i];
             val = obj[key] || '';
             key = key.toLowerCase();
-            key = encodeURIComponent(key);
-            list.push(key + '=' + encodeURIComponent(val));
+            key = camSafeUrlEncode(key);
+            list.push(key + '=' + camSafeUrlEncode(val));
         }
         return list.join('&');
     };
@@ -3054,7 +3057,7 @@ var getAuth = function (opt) {
     if (opt.expires === undefined) {
         expired += 3600; // 签名过期时间为当前 + 3600s
     } else {
-        expired += (opt.expires * 1) || 0;
+        expired += opt.expires * 1 || 0;
     }
 
     // 要用到的 Authorization 参数列表
@@ -3079,18 +3082,9 @@ var getAuth = function (opt) {
     var qSignature = CryptoJS.HmacSHA1(stringToSign, signKey).toString();
 
     // 步骤五：构造 Authorization
-    var authorization = [
-        'q-sign-algorithm=' + qSignAlgorithm,
-        'q-ak=' + qAk,
-        'q-sign-time=' + qSignTime,
-        'q-key-time=' + qKeyTime,
-        'q-header-list=' + qHeaderList,
-        'q-url-param-list=' + qUrlParamList,
-        'q-signature=' + qSignature
-    ].join('&');
+    var authorization = ['q-sign-algorithm=' + qSignAlgorithm, 'q-ak=' + qAk, 'q-sign-time=' + qSignTime, 'q-key-time=' + qKeyTime, 'q-header-list=' + qHeaderList, 'q-url-param-list=' + qUrlParamList, 'q-signature=' + qSignature].join('&');
 
     return authorization;
-
 };
 
 // XML 对象转 JSON 对象
@@ -3124,7 +3118,8 @@ var readAsBinaryString = function (blob, callback) {
     var readFun;
     if (FileReader.prototype.readAsBinaryString) {
         readFun = FileReader.prototype.readAsBinaryString;
-    } else if (FileReader.prototype.readAsArrayBuffer) { // 在 ie11 添加 readAsBinaryString 兼容
+    } else if (FileReader.prototype.readAsArrayBuffer) {
+        // 在 ie11 添加 readAsBinaryString 兼容
         readFun = function (fileData) {
             var binary = "";
             var pt = this;
@@ -3205,7 +3200,10 @@ function filter(obj, fn) {
     return o;
 }
 var binaryBase64 = function (str) {
-    var i, len, char, arr = [];
+    var i,
+        len,
+        char,
+        arr = [];
     for (i = 0, len = str.length / 2; i < len; i++) {
         char = parseInt(str[i * 2] + str[i * 2 + 1], 16);
         arr.push(char);
@@ -3214,9 +3212,9 @@ var binaryBase64 = function (str) {
 };
 var uuid = function () {
     var S4 = function () {
-        return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+        return ((1 + Math.random()) * 0x10000 | 0).toString(16).substring(1);
     };
-    return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
+    return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
 };
 
 var checkParams = function (apiName, params) {
@@ -3240,26 +3238,26 @@ var apiWrapper = function (apiName, apiFn) {
         'cd': 'cn-southwest'
     };
     return function (params, callback) {
-        callback = callback || function () {
-            };
+        callback = callback || function () {};
         if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
             // 判断参数是否完整
             if (!checkParams(apiName, params)) {
-                callback({error: 'lack of required params'});
+                callback({ error: 'lack of required params' });
                 return;
             }
             // 优化 Key 参数
             if (params.Key && params.Key.indexOf('/') === 0) {
-                callback({error: 'params Key can not start width "/"'});
+                callback({ error: 'params Key can not start width "/"' });
                 return;
             }
             // 判断 region 格式
             if (params.Region && regionMap[params.Region]) {
-                callback({error: 'Region error, it should be ' + regionMap[params.Region]});
+                callback({ error: 'Region error, it should be ' + regionMap[params.Region] });
                 return;
             }
             // 兼容带有 AppId 的 Bucket
-            var appId, bucket = params.Bucket;
+            var appId,
+                bucket = params.Bucket;
             if (bucket && bucket.indexOf('-') > -1) {
                 var arr = bucket.split('-');
                 appId = arr[1];
@@ -3272,7 +3270,7 @@ var apiWrapper = function (apiName, apiFn) {
         if (apiName === 'getAuth') {
             return res;
         }
-    }
+    };
 };
 
 var fileSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
@@ -3296,7 +3294,6 @@ var util = {
     uuid: uuid,
     isBrowser: !!global.window
 };
-
 
 module.exports = util;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7).Buffer, __webpack_require__(3)))
@@ -7881,7 +7878,6 @@ var base = __webpack_require__(199);
 var advance = __webpack_require__(207);
 var pkg = __webpack_require__(214);
 
-
 var defaultOptions = {
     AppId: '',
     SecretId: '',
@@ -7889,7 +7885,7 @@ var defaultOptions = {
     ProgressInterval: 1000,
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
-    ChunkSize: 1024 * 1024,
+    ChunkSize: 1024 * 1024
 };
 
 // 对外暴露的类
@@ -7906,7 +7902,6 @@ COS.getAuthorization = util.getAuth;
 COS.version = pkg.version;
 
 module.exports = window.COS = COS;
-
 
 /***/ }),
 /* 73 */
@@ -8133,51 +8128,59 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
 var md5 = function (string) {
 
     function RotateLeft(lValue, iShiftBits) {
-        return (lValue<<iShiftBits) | (lValue>>>(32-iShiftBits));
+        return lValue << iShiftBits | lValue >>> 32 - iShiftBits;
     }
 
-    function AddUnsigned(lX,lY) {
-        var lX4,lY4,lX8,lY8,lResult;
-        lX8 = (lX & 0x80000000);
-        lY8 = (lY & 0x80000000);
-        lX4 = (lX & 0x40000000);
-        lY4 = (lY & 0x40000000);
-        lResult = (lX & 0x3FFFFFFF)+(lY & 0x3FFFFFFF);
+    function AddUnsigned(lX, lY) {
+        var lX4, lY4, lX8, lY8, lResult;
+        lX8 = lX & 0x80000000;
+        lY8 = lY & 0x80000000;
+        lX4 = lX & 0x40000000;
+        lY4 = lY & 0x40000000;
+        lResult = (lX & 0x3FFFFFFF) + (lY & 0x3FFFFFFF);
         if (lX4 & lY4) {
-            return (lResult ^ 0x80000000 ^ lX8 ^ lY8);
+            return lResult ^ 0x80000000 ^ lX8 ^ lY8;
         }
         if (lX4 | lY4) {
             if (lResult & 0x40000000) {
-                return (lResult ^ 0xC0000000 ^ lX8 ^ lY8);
+                return lResult ^ 0xC0000000 ^ lX8 ^ lY8;
             } else {
-                return (lResult ^ 0x40000000 ^ lX8 ^ lY8);
+                return lResult ^ 0x40000000 ^ lX8 ^ lY8;
             }
         } else {
-            return (lResult ^ lX8 ^ lY8);
+            return lResult ^ lX8 ^ lY8;
         }
     }
 
-    function F(x,y,z) { return (x & y) | ((~x) & z); }
-    function G(x,y,z) { return (x & z) | (y & (~z)); }
-    function H(x,y,z) { return (x ^ y ^ z); }
-    function I(x,y,z) { return (y ^ (x | (~z))); }
+    function F(x, y, z) {
+        return x & y | ~x & z;
+    }
+    function G(x, y, z) {
+        return x & z | y & ~z;
+    }
+    function H(x, y, z) {
+        return x ^ y ^ z;
+    }
+    function I(x, y, z) {
+        return y ^ (x | ~z);
+    }
 
-    function FF(a,b,c,d,x,s,ac) {
+    function FF(a, b, c, d, x, s, ac) {
         a = AddUnsigned(a, AddUnsigned(AddUnsigned(F(b, c, d), x), ac));
         return AddUnsigned(RotateLeft(a, s), b);
     };
 
-    function GG(a,b,c,d,x,s,ac) {
+    function GG(a, b, c, d, x, s, ac) {
         a = AddUnsigned(a, AddUnsigned(AddUnsigned(G(b, c, d), x), ac));
         return AddUnsigned(RotateLeft(a, s), b);
     };
 
-    function HH(a,b,c,d,x,s,ac) {
+    function HH(a, b, c, d, x, s, ac) {
         a = AddUnsigned(a, AddUnsigned(AddUnsigned(H(b, c, d), x), ac));
         return AddUnsigned(RotateLeft(a, s), b);
     };
 
-    function II(a,b,c,d,x,s,ac) {
+    function II(a, b, c, d, x, s, ac) {
         a = AddUnsigned(a, AddUnsigned(AddUnsigned(I(b, c, d), x), ac));
         return AddUnsigned(RotateLeft(a, s), b);
     };
@@ -8185,38 +8188,41 @@ var md5 = function (string) {
     function ConvertToWordArray(string) {
         var lWordCount;
         var lMessageLength = string.length;
-        var lNumberOfWords_temp1=lMessageLength + 8;
-        var lNumberOfWords_temp2=(lNumberOfWords_temp1-(lNumberOfWords_temp1 % 64))/64;
-        var lNumberOfWords = (lNumberOfWords_temp2+1)*16;
-        var lWordArray=Array(lNumberOfWords-1);
+        var lNumberOfWords_temp1 = lMessageLength + 8;
+        var lNumberOfWords_temp2 = (lNumberOfWords_temp1 - lNumberOfWords_temp1 % 64) / 64;
+        var lNumberOfWords = (lNumberOfWords_temp2 + 1) * 16;
+        var lWordArray = Array(lNumberOfWords - 1);
         var lBytePosition = 0;
         var lByteCount = 0;
-        while ( lByteCount < lMessageLength ) {
-            lWordCount = (lByteCount-(lByteCount % 4))/4;
-            lBytePosition = (lByteCount % 4)*8;
-            lWordArray[lWordCount] = (lWordArray[lWordCount] | (string.charCodeAt(lByteCount)<<lBytePosition));
+        while (lByteCount < lMessageLength) {
+            lWordCount = (lByteCount - lByteCount % 4) / 4;
+            lBytePosition = lByteCount % 4 * 8;
+            lWordArray[lWordCount] = lWordArray[lWordCount] | string.charCodeAt(lByteCount) << lBytePosition;
             lByteCount++;
         }
-        lWordCount = (lByteCount-(lByteCount % 4))/4;
-        lBytePosition = (lByteCount % 4)*8;
-        lWordArray[lWordCount] = lWordArray[lWordCount] | (0x80<<lBytePosition);
-        lWordArray[lNumberOfWords-2] = lMessageLength<<3;
-        lWordArray[lNumberOfWords-1] = lMessageLength>>>29;
+        lWordCount = (lByteCount - lByteCount % 4) / 4;
+        lBytePosition = lByteCount % 4 * 8;
+        lWordArray[lWordCount] = lWordArray[lWordCount] | 0x80 << lBytePosition;
+        lWordArray[lNumberOfWords - 2] = lMessageLength << 3;
+        lWordArray[lNumberOfWords - 1] = lMessageLength >>> 29;
         return lWordArray;
     };
 
     function WordToHex(lValue) {
-        var WordToHexValue="",WordToHexValue_temp="",lByte,lCount;
-        for (lCount = 0;lCount<=3;lCount++) {
-            lByte = (lValue>>>(lCount*8)) & 255;
+        var WordToHexValue = "",
+            WordToHexValue_temp = "",
+            lByte,
+            lCount;
+        for (lCount = 0; lCount <= 3; lCount++) {
+            lByte = lValue >>> lCount * 8 & 255;
             WordToHexValue_temp = "0" + lByte.toString(16);
-            WordToHexValue = WordToHexValue + WordToHexValue_temp.substr(WordToHexValue_temp.length-2,2);
+            WordToHexValue = WordToHexValue + WordToHexValue_temp.substr(WordToHexValue_temp.length - 2, 2);
         }
         return WordToHexValue;
     };
 
     function Utf8Encode(string) {
-        string = string.replace(/\r\n/g,"\n");
+        string = string.replace(/\r\n/g, "\n");
         var utftext = "";
 
         for (var n = 0; n < string.length; n++) {
@@ -8225,111 +8231,120 @@ var md5 = function (string) {
 
             if (c < 128) {
                 utftext += String.fromCharCode(c);
+            } else if (c > 127 && c < 2048) {
+                utftext += String.fromCharCode(c >> 6 | 192);
+                utftext += String.fromCharCode(c & 63 | 128);
+            } else {
+                utftext += String.fromCharCode(c >> 12 | 224);
+                utftext += String.fromCharCode(c >> 6 & 63 | 128);
+                utftext += String.fromCharCode(c & 63 | 128);
             }
-            else if((c > 127) && (c < 2048)) {
-                utftext += String.fromCharCode((c >> 6) | 192);
-                utftext += String.fromCharCode((c & 63) | 128);
-            }
-            else {
-                utftext += String.fromCharCode((c >> 12) | 224);
-                utftext += String.fromCharCode(((c >> 6) & 63) | 128);
-                utftext += String.fromCharCode((c & 63) | 128);
-            }
-
         }
 
         return utftext;
     };
 
-    var x=Array();
-    var k,AA,BB,CC,DD,a,b,c,d;
-    var S11=7, S12=12, S13=17, S14=22;
-    var S21=5, S22=9 , S23=14, S24=20;
-    var S31=4, S32=11, S33=16, S34=23;
-    var S41=6, S42=10, S43=15, S44=21;
+    var x = Array();
+    var k, AA, BB, CC, DD, a, b, c, d;
+    var S11 = 7,
+        S12 = 12,
+        S13 = 17,
+        S14 = 22;
+    var S21 = 5,
+        S22 = 9,
+        S23 = 14,
+        S24 = 20;
+    var S31 = 4,
+        S32 = 11,
+        S33 = 16,
+        S34 = 23;
+    var S41 = 6,
+        S42 = 10,
+        S43 = 15,
+        S44 = 21;
 
     string = Utf8Encode(string);
 
     x = ConvertToWordArray(string);
 
-    a = 0x67452301; b = 0xEFCDAB89; c = 0x98BADCFE; d = 0x10325476;
+    a = 0x67452301;b = 0xEFCDAB89;c = 0x98BADCFE;d = 0x10325476;
 
-    for (k=0;k<x.length;k+=16) {
-        AA=a; BB=b; CC=c; DD=d;
-        a=FF(a,b,c,d,x[k+0], S11,0xD76AA478);
-        d=FF(d,a,b,c,x[k+1], S12,0xE8C7B756);
-        c=FF(c,d,a,b,x[k+2], S13,0x242070DB);
-        b=FF(b,c,d,a,x[k+3], S14,0xC1BDCEEE);
-        a=FF(a,b,c,d,x[k+4], S11,0xF57C0FAF);
-        d=FF(d,a,b,c,x[k+5], S12,0x4787C62A);
-        c=FF(c,d,a,b,x[k+6], S13,0xA8304613);
-        b=FF(b,c,d,a,x[k+7], S14,0xFD469501);
-        a=FF(a,b,c,d,x[k+8], S11,0x698098D8);
-        d=FF(d,a,b,c,x[k+9], S12,0x8B44F7AF);
-        c=FF(c,d,a,b,x[k+10],S13,0xFFFF5BB1);
-        b=FF(b,c,d,a,x[k+11],S14,0x895CD7BE);
-        a=FF(a,b,c,d,x[k+12],S11,0x6B901122);
-        d=FF(d,a,b,c,x[k+13],S12,0xFD987193);
-        c=FF(c,d,a,b,x[k+14],S13,0xA679438E);
-        b=FF(b,c,d,a,x[k+15],S14,0x49B40821);
-        a=GG(a,b,c,d,x[k+1], S21,0xF61E2562);
-        d=GG(d,a,b,c,x[k+6], S22,0xC040B340);
-        c=GG(c,d,a,b,x[k+11],S23,0x265E5A51);
-        b=GG(b,c,d,a,x[k+0], S24,0xE9B6C7AA);
-        a=GG(a,b,c,d,x[k+5], S21,0xD62F105D);
-        d=GG(d,a,b,c,x[k+10],S22,0x2441453);
-        c=GG(c,d,a,b,x[k+15],S23,0xD8A1E681);
-        b=GG(b,c,d,a,x[k+4], S24,0xE7D3FBC8);
-        a=GG(a,b,c,d,x[k+9], S21,0x21E1CDE6);
-        d=GG(d,a,b,c,x[k+14],S22,0xC33707D6);
-        c=GG(c,d,a,b,x[k+3], S23,0xF4D50D87);
-        b=GG(b,c,d,a,x[k+8], S24,0x455A14ED);
-        a=GG(a,b,c,d,x[k+13],S21,0xA9E3E905);
-        d=GG(d,a,b,c,x[k+2], S22,0xFCEFA3F8);
-        c=GG(c,d,a,b,x[k+7], S23,0x676F02D9);
-        b=GG(b,c,d,a,x[k+12],S24,0x8D2A4C8A);
-        a=HH(a,b,c,d,x[k+5], S31,0xFFFA3942);
-        d=HH(d,a,b,c,x[k+8], S32,0x8771F681);
-        c=HH(c,d,a,b,x[k+11],S33,0x6D9D6122);
-        b=HH(b,c,d,a,x[k+14],S34,0xFDE5380C);
-        a=HH(a,b,c,d,x[k+1], S31,0xA4BEEA44);
-        d=HH(d,a,b,c,x[k+4], S32,0x4BDECFA9);
-        c=HH(c,d,a,b,x[k+7], S33,0xF6BB4B60);
-        b=HH(b,c,d,a,x[k+10],S34,0xBEBFBC70);
-        a=HH(a,b,c,d,x[k+13],S31,0x289B7EC6);
-        d=HH(d,a,b,c,x[k+0], S32,0xEAA127FA);
-        c=HH(c,d,a,b,x[k+3], S33,0xD4EF3085);
-        b=HH(b,c,d,a,x[k+6], S34,0x4881D05);
-        a=HH(a,b,c,d,x[k+9], S31,0xD9D4D039);
-        d=HH(d,a,b,c,x[k+12],S32,0xE6DB99E5);
-        c=HH(c,d,a,b,x[k+15],S33,0x1FA27CF8);
-        b=HH(b,c,d,a,x[k+2], S34,0xC4AC5665);
-        a=II(a,b,c,d,x[k+0], S41,0xF4292244);
-        d=II(d,a,b,c,x[k+7], S42,0x432AFF97);
-        c=II(c,d,a,b,x[k+14],S43,0xAB9423A7);
-        b=II(b,c,d,a,x[k+5], S44,0xFC93A039);
-        a=II(a,b,c,d,x[k+12],S41,0x655B59C3);
-        d=II(d,a,b,c,x[k+3], S42,0x8F0CCC92);
-        c=II(c,d,a,b,x[k+10],S43,0xFFEFF47D);
-        b=II(b,c,d,a,x[k+1], S44,0x85845DD1);
-        a=II(a,b,c,d,x[k+8], S41,0x6FA87E4F);
-        d=II(d,a,b,c,x[k+15],S42,0xFE2CE6E0);
-        c=II(c,d,a,b,x[k+6], S43,0xA3014314);
-        b=II(b,c,d,a,x[k+13],S44,0x4E0811A1);
-        a=II(a,b,c,d,x[k+4], S41,0xF7537E82);
-        d=II(d,a,b,c,x[k+11],S42,0xBD3AF235);
-        c=II(c,d,a,b,x[k+2], S43,0x2AD7D2BB);
-        b=II(b,c,d,a,x[k+9], S44,0xEB86D391);
-        a=AddUnsigned(a,AA);
-        b=AddUnsigned(b,BB);
-        c=AddUnsigned(c,CC);
-        d=AddUnsigned(d,DD);
+    for (k = 0; k < x.length; k += 16) {
+        AA = a;BB = b;CC = c;DD = d;
+        a = FF(a, b, c, d, x[k + 0], S11, 0xD76AA478);
+        d = FF(d, a, b, c, x[k + 1], S12, 0xE8C7B756);
+        c = FF(c, d, a, b, x[k + 2], S13, 0x242070DB);
+        b = FF(b, c, d, a, x[k + 3], S14, 0xC1BDCEEE);
+        a = FF(a, b, c, d, x[k + 4], S11, 0xF57C0FAF);
+        d = FF(d, a, b, c, x[k + 5], S12, 0x4787C62A);
+        c = FF(c, d, a, b, x[k + 6], S13, 0xA8304613);
+        b = FF(b, c, d, a, x[k + 7], S14, 0xFD469501);
+        a = FF(a, b, c, d, x[k + 8], S11, 0x698098D8);
+        d = FF(d, a, b, c, x[k + 9], S12, 0x8B44F7AF);
+        c = FF(c, d, a, b, x[k + 10], S13, 0xFFFF5BB1);
+        b = FF(b, c, d, a, x[k + 11], S14, 0x895CD7BE);
+        a = FF(a, b, c, d, x[k + 12], S11, 0x6B901122);
+        d = FF(d, a, b, c, x[k + 13], S12, 0xFD987193);
+        c = FF(c, d, a, b, x[k + 14], S13, 0xA679438E);
+        b = FF(b, c, d, a, x[k + 15], S14, 0x49B40821);
+        a = GG(a, b, c, d, x[k + 1], S21, 0xF61E2562);
+        d = GG(d, a, b, c, x[k + 6], S22, 0xC040B340);
+        c = GG(c, d, a, b, x[k + 11], S23, 0x265E5A51);
+        b = GG(b, c, d, a, x[k + 0], S24, 0xE9B6C7AA);
+        a = GG(a, b, c, d, x[k + 5], S21, 0xD62F105D);
+        d = GG(d, a, b, c, x[k + 10], S22, 0x2441453);
+        c = GG(c, d, a, b, x[k + 15], S23, 0xD8A1E681);
+        b = GG(b, c, d, a, x[k + 4], S24, 0xE7D3FBC8);
+        a = GG(a, b, c, d, x[k + 9], S21, 0x21E1CDE6);
+        d = GG(d, a, b, c, x[k + 14], S22, 0xC33707D6);
+        c = GG(c, d, a, b, x[k + 3], S23, 0xF4D50D87);
+        b = GG(b, c, d, a, x[k + 8], S24, 0x455A14ED);
+        a = GG(a, b, c, d, x[k + 13], S21, 0xA9E3E905);
+        d = GG(d, a, b, c, x[k + 2], S22, 0xFCEFA3F8);
+        c = GG(c, d, a, b, x[k + 7], S23, 0x676F02D9);
+        b = GG(b, c, d, a, x[k + 12], S24, 0x8D2A4C8A);
+        a = HH(a, b, c, d, x[k + 5], S31, 0xFFFA3942);
+        d = HH(d, a, b, c, x[k + 8], S32, 0x8771F681);
+        c = HH(c, d, a, b, x[k + 11], S33, 0x6D9D6122);
+        b = HH(b, c, d, a, x[k + 14], S34, 0xFDE5380C);
+        a = HH(a, b, c, d, x[k + 1], S31, 0xA4BEEA44);
+        d = HH(d, a, b, c, x[k + 4], S32, 0x4BDECFA9);
+        c = HH(c, d, a, b, x[k + 7], S33, 0xF6BB4B60);
+        b = HH(b, c, d, a, x[k + 10], S34, 0xBEBFBC70);
+        a = HH(a, b, c, d, x[k + 13], S31, 0x289B7EC6);
+        d = HH(d, a, b, c, x[k + 0], S32, 0xEAA127FA);
+        c = HH(c, d, a, b, x[k + 3], S33, 0xD4EF3085);
+        b = HH(b, c, d, a, x[k + 6], S34, 0x4881D05);
+        a = HH(a, b, c, d, x[k + 9], S31, 0xD9D4D039);
+        d = HH(d, a, b, c, x[k + 12], S32, 0xE6DB99E5);
+        c = HH(c, d, a, b, x[k + 15], S33, 0x1FA27CF8);
+        b = HH(b, c, d, a, x[k + 2], S34, 0xC4AC5665);
+        a = II(a, b, c, d, x[k + 0], S41, 0xF4292244);
+        d = II(d, a, b, c, x[k + 7], S42, 0x432AFF97);
+        c = II(c, d, a, b, x[k + 14], S43, 0xAB9423A7);
+        b = II(b, c, d, a, x[k + 5], S44, 0xFC93A039);
+        a = II(a, b, c, d, x[k + 12], S41, 0x655B59C3);
+        d = II(d, a, b, c, x[k + 3], S42, 0x8F0CCC92);
+        c = II(c, d, a, b, x[k + 10], S43, 0xFFEFF47D);
+        b = II(b, c, d, a, x[k + 1], S44, 0x85845DD1);
+        a = II(a, b, c, d, x[k + 8], S41, 0x6FA87E4F);
+        d = II(d, a, b, c, x[k + 15], S42, 0xFE2CE6E0);
+        c = II(c, d, a, b, x[k + 6], S43, 0xA3014314);
+        b = II(b, c, d, a, x[k + 13], S44, 0x4E0811A1);
+        a = II(a, b, c, d, x[k + 4], S41, 0xF7537E82);
+        d = II(d, a, b, c, x[k + 11], S42, 0xBD3AF235);
+        c = II(c, d, a, b, x[k + 2], S43, 0x2AD7D2BB);
+        b = II(b, c, d, a, x[k + 9], S44, 0xEB86D391);
+        a = AddUnsigned(a, AA);
+        b = AddUnsigned(b, BB);
+        c = AddUnsigned(c, CC);
+        d = AddUnsigned(d, DD);
     }
 
-    var temp = WordToHex(a)+WordToHex(b)+WordToHex(c)+WordToHex(d);
+    var temp = WordToHex(a) + WordToHex(b) + WordToHex(c) + WordToHex(d);
 
     return temp.toLowerCase();
-}
+};
 
 module.exports = md5;
 
@@ -8343,18 +8358,129 @@ module.exports = md5;
  (c) 2009-2013 by Jeff Mott. All rights reserved.
  code.google.com/p/crypto-js/wiki/License
  */
-var CryptoJS=CryptoJS||function(g,l){var e={},d=e.lib={},m=function(){},k=d.Base={extend:function(a){m.prototype=this;var c=new m;a&&c.mixIn(a);c.hasOwnProperty("init")||(c.init=function(){c.$super.init.apply(this,arguments)});c.init.prototype=c;c.$super=this;return c},create:function(){var a=this.extend();a.init.apply(a,arguments);return a},init:function(){},mixIn:function(a){for(var c in a)a.hasOwnProperty(c)&&(this[c]=a[c]);a.hasOwnProperty("toString")&&(this.toString=a.toString)},clone:function(){return this.init.prototype.extend(this)}},
-        p=d.WordArray=k.extend({init:function(a,c){a=this.words=a||[];this.sigBytes=c!=l?c:4*a.length},toString:function(a){return(a||n).stringify(this)},concat:function(a){var c=this.words,q=a.words,f=this.sigBytes;a=a.sigBytes;this.clamp();if(f%4)for(var b=0;b<a;b++)c[f+b>>>2]|=(q[b>>>2]>>>24-8*(b%4)&255)<<24-8*((f+b)%4);else if(65535<q.length)for(b=0;b<a;b+=4)c[f+b>>>2]=q[b>>>2];else c.push.apply(c,q);this.sigBytes+=a;return this},clamp:function(){var a=this.words,c=this.sigBytes;a[c>>>2]&=4294967295<<
-            32-8*(c%4);a.length=g.ceil(c/4)},clone:function(){var a=k.clone.call(this);a.words=this.words.slice(0);return a},random:function(a){for(var c=[],b=0;b<a;b+=4)c.push(4294967296*g.random()|0);return new p.init(c,a)}}),b=e.enc={},n=b.Hex={stringify:function(a){var c=a.words;a=a.sigBytes;for(var b=[],f=0;f<a;f++){var d=c[f>>>2]>>>24-8*(f%4)&255;b.push((d>>>4).toString(16));b.push((d&15).toString(16))}return b.join("")},parse:function(a){for(var c=a.length,b=[],f=0;f<c;f+=2)b[f>>>3]|=parseInt(a.substr(f,
-                2),16)<<24-4*(f%8);return new p.init(b,c/2)}},j=b.Latin1={stringify:function(a){var c=a.words;a=a.sigBytes;for(var b=[],f=0;f<a;f++)b.push(String.fromCharCode(c[f>>>2]>>>24-8*(f%4)&255));return b.join("")},parse:function(a){for(var c=a.length,b=[],f=0;f<c;f++)b[f>>>2]|=(a.charCodeAt(f)&255)<<24-8*(f%4);return new p.init(b,c)}},h=b.Utf8={stringify:function(a){try{return decodeURIComponent(escape(j.stringify(a)))}catch(c){throw Error("Malformed UTF-8 data");}},parse:function(a){return j.parse(unescape(encodeURIComponent(a)))}},
-        r=d.BufferedBlockAlgorithm=k.extend({reset:function(){this._data=new p.init;this._nDataBytes=0},_append:function(a){"string"==typeof a&&(a=h.parse(a));this._data.concat(a);this._nDataBytes+=a.sigBytes},_process:function(a){var c=this._data,b=c.words,f=c.sigBytes,d=this.blockSize,e=f/(4*d),e=a?g.ceil(e):g.max((e|0)-this._minBufferSize,0);a=e*d;f=g.min(4*a,f);if(a){for(var k=0;k<a;k+=d)this._doProcessBlock(b,k);k=b.splice(0,a);c.sigBytes-=f}return new p.init(k,f)},clone:function(){var a=k.clone.call(this);
-            a._data=this._data.clone();return a},_minBufferSize:0});d.Hasher=r.extend({cfg:k.extend(),init:function(a){this.cfg=this.cfg.extend(a);this.reset()},reset:function(){r.reset.call(this);this._doReset()},update:function(a){this._append(a);this._process();return this},finalize:function(a){a&&this._append(a);return this._doFinalize()},blockSize:16,_createHelper:function(a){return function(b,d){return(new a.init(d)).finalize(b)}},_createHmacHelper:function(a){return function(b,d){return(new s.HMAC.init(a,
-        d)).finalize(b)}}});var s=e.algo={};return e}(Math);
-(function(){var g=CryptoJS,l=g.lib,e=l.WordArray,d=l.Hasher,m=[],l=g.algo.SHA1=d.extend({_doReset:function(){this._hash=new e.init([1732584193,4023233417,2562383102,271733878,3285377520])},_doProcessBlock:function(d,e){for(var b=this._hash.words,n=b[0],j=b[1],h=b[2],g=b[3],l=b[4],a=0;80>a;a++){if(16>a)m[a]=d[e+a]|0;else{var c=m[a-3]^m[a-8]^m[a-14]^m[a-16];m[a]=c<<1|c>>>31}c=(n<<5|n>>>27)+l+m[a];c=20>a?c+((j&h|~j&g)+1518500249):40>a?c+((j^h^g)+1859775393):60>a?c+((j&h|j&g|h&g)-1894007588):c+((j^h^
-g)-899497514);l=g;g=h;h=j<<30|j>>>2;j=n;n=c}b[0]=b[0]+n|0;b[1]=b[1]+j|0;b[2]=b[2]+h|0;b[3]=b[3]+g|0;b[4]=b[4]+l|0},_doFinalize:function(){var d=this._data,e=d.words,b=8*this._nDataBytes,g=8*d.sigBytes;e[g>>>5]|=128<<24-g%32;e[(g+64>>>9<<4)+14]=Math.floor(b/4294967296);e[(g+64>>>9<<4)+15]=b;d.sigBytes=4*e.length;this._process();return this._hash},clone:function(){var e=d.clone.call(this);e._hash=this._hash.clone();return e}});g.SHA1=d._createHelper(l);g.HmacSHA1=d._createHmacHelper(l)})();
-(function(){var g=CryptoJS,l=g.enc.Utf8;g.algo.HMAC=g.lib.Base.extend({init:function(e,d){e=this._hasher=new e.init;"string"==typeof d&&(d=l.parse(d));var g=e.blockSize,k=4*g;d.sigBytes>k&&(d=e.finalize(d));d.clamp();for(var p=this._oKey=d.clone(),b=this._iKey=d.clone(),n=p.words,j=b.words,h=0;h<g;h++)n[h]^=1549556828,j[h]^=909522486;p.sigBytes=b.sigBytes=k;this.reset()},reset:function(){var e=this._hasher;e.reset();e.update(this._iKey)},update:function(e){this._hasher.update(e);return this},finalize:function(e){var d=
-    this._hasher;e=d.finalize(e);d.reset();return d.finalize(this._oKey.clone().concat(e))}})})();
-
+var CryptoJS = CryptoJS || function (g, l) {
+    var e = {},
+        d = e.lib = {},
+        m = function () {},
+        k = d.Base = { extend: function (a) {
+            m.prototype = this;var c = new m();a && c.mixIn(a);c.hasOwnProperty("init") || (c.init = function () {
+                c.$super.init.apply(this, arguments);
+            });c.init.prototype = c;c.$super = this;return c;
+        }, create: function () {
+            var a = this.extend();a.init.apply(a, arguments);return a;
+        }, init: function () {}, mixIn: function (a) {
+            for (var c in a) a.hasOwnProperty(c) && (this[c] = a[c]);a.hasOwnProperty("toString") && (this.toString = a.toString);
+        }, clone: function () {
+            return this.init.prototype.extend(this);
+        } },
+        p = d.WordArray = k.extend({ init: function (a, c) {
+            a = this.words = a || [];this.sigBytes = c != l ? c : 4 * a.length;
+        }, toString: function (a) {
+            return (a || n).stringify(this);
+        }, concat: function (a) {
+            var c = this.words,
+                q = a.words,
+                f = this.sigBytes;a = a.sigBytes;this.clamp();if (f % 4) for (var b = 0; b < a; b++) c[f + b >>> 2] |= (q[b >>> 2] >>> 24 - 8 * (b % 4) & 255) << 24 - 8 * ((f + b) % 4);else if (65535 < q.length) for (b = 0; b < a; b += 4) c[f + b >>> 2] = q[b >>> 2];else c.push.apply(c, q);this.sigBytes += a;return this;
+        }, clamp: function () {
+            var a = this.words,
+                c = this.sigBytes;a[c >>> 2] &= 4294967295 << 32 - 8 * (c % 4);a.length = g.ceil(c / 4);
+        }, clone: function () {
+            var a = k.clone.call(this);a.words = this.words.slice(0);return a;
+        }, random: function (a) {
+            for (var c = [], b = 0; b < a; b += 4) c.push(4294967296 * g.random() | 0);return new p.init(c, a);
+        } }),
+        b = e.enc = {},
+        n = b.Hex = { stringify: function (a) {
+            var c = a.words;a = a.sigBytes;for (var b = [], f = 0; f < a; f++) {
+                var d = c[f >>> 2] >>> 24 - 8 * (f % 4) & 255;b.push((d >>> 4).toString(16));b.push((d & 15).toString(16));
+            }return b.join("");
+        }, parse: function (a) {
+            for (var c = a.length, b = [], f = 0; f < c; f += 2) b[f >>> 3] |= parseInt(a.substr(f, 2), 16) << 24 - 4 * (f % 8);return new p.init(b, c / 2);
+        } },
+        j = b.Latin1 = { stringify: function (a) {
+            var c = a.words;a = a.sigBytes;for (var b = [], f = 0; f < a; f++) b.push(String.fromCharCode(c[f >>> 2] >>> 24 - 8 * (f % 4) & 255));return b.join("");
+        }, parse: function (a) {
+            for (var c = a.length, b = [], f = 0; f < c; f++) b[f >>> 2] |= (a.charCodeAt(f) & 255) << 24 - 8 * (f % 4);return new p.init(b, c);
+        } },
+        h = b.Utf8 = { stringify: function (a) {
+            try {
+                return decodeURIComponent(escape(j.stringify(a)));
+            } catch (c) {
+                throw Error("Malformed UTF-8 data");
+            }
+        }, parse: function (a) {
+            return j.parse(unescape(encodeURIComponent(a)));
+        } },
+        r = d.BufferedBlockAlgorithm = k.extend({ reset: function () {
+            this._data = new p.init();this._nDataBytes = 0;
+        }, _append: function (a) {
+            "string" == typeof a && (a = h.parse(a));this._data.concat(a);this._nDataBytes += a.sigBytes;
+        }, _process: function (a) {
+            var c = this._data,
+                b = c.words,
+                f = c.sigBytes,
+                d = this.blockSize,
+                e = f / (4 * d),
+                e = a ? g.ceil(e) : g.max((e | 0) - this._minBufferSize, 0);a = e * d;f = g.min(4 * a, f);if (a) {
+                for (var k = 0; k < a; k += d) this._doProcessBlock(b, k);k = b.splice(0, a);c.sigBytes -= f;
+            }return new p.init(k, f);
+        }, clone: function () {
+            var a = k.clone.call(this);
+            a._data = this._data.clone();return a;
+        }, _minBufferSize: 0 });d.Hasher = r.extend({ cfg: k.extend(), init: function (a) {
+            this.cfg = this.cfg.extend(a);this.reset();
+        }, reset: function () {
+            r.reset.call(this);this._doReset();
+        }, update: function (a) {
+            this._append(a);this._process();return this;
+        }, finalize: function (a) {
+            a && this._append(a);return this._doFinalize();
+        }, blockSize: 16, _createHelper: function (a) {
+            return function (b, d) {
+                return new a.init(d).finalize(b);
+            };
+        }, _createHmacHelper: function (a) {
+            return function (b, d) {
+                return new s.HMAC.init(a, d).finalize(b);
+            };
+        } });var s = e.algo = {};return e;
+}(Math);
+(function () {
+    var g = CryptoJS,
+        l = g.lib,
+        e = l.WordArray,
+        d = l.Hasher,
+        m = [],
+        l = g.algo.SHA1 = d.extend({ _doReset: function () {
+            this._hash = new e.init([1732584193, 4023233417, 2562383102, 271733878, 3285377520]);
+        }, _doProcessBlock: function (d, e) {
+            for (var b = this._hash.words, n = b[0], j = b[1], h = b[2], g = b[3], l = b[4], a = 0; 80 > a; a++) {
+                if (16 > a) m[a] = d[e + a] | 0;else {
+                    var c = m[a - 3] ^ m[a - 8] ^ m[a - 14] ^ m[a - 16];m[a] = c << 1 | c >>> 31;
+                }c = (n << 5 | n >>> 27) + l + m[a];c = 20 > a ? c + ((j & h | ~j & g) + 1518500249) : 40 > a ? c + ((j ^ h ^ g) + 1859775393) : 60 > a ? c + ((j & h | j & g | h & g) - 1894007588) : c + ((j ^ h ^ g) - 899497514);l = g;g = h;h = j << 30 | j >>> 2;j = n;n = c;
+            }b[0] = b[0] + n | 0;b[1] = b[1] + j | 0;b[2] = b[2] + h | 0;b[3] = b[3] + g | 0;b[4] = b[4] + l | 0;
+        }, _doFinalize: function () {
+            var d = this._data,
+                e = d.words,
+                b = 8 * this._nDataBytes,
+                g = 8 * d.sigBytes;e[g >>> 5] |= 128 << 24 - g % 32;e[(g + 64 >>> 9 << 4) + 14] = Math.floor(b / 4294967296);e[(g + 64 >>> 9 << 4) + 15] = b;d.sigBytes = 4 * e.length;this._process();return this._hash;
+        }, clone: function () {
+            var e = d.clone.call(this);e._hash = this._hash.clone();return e;
+        } });g.SHA1 = d._createHelper(l);g.HmacSHA1 = d._createHmacHelper(l);
+})();
+(function () {
+    var g = CryptoJS,
+        l = g.enc.Utf8;g.algo.HMAC = g.lib.Base.extend({ init: function (e, d) {
+            e = this._hasher = new e.init();"string" == typeof d && (d = l.parse(d));var g = e.blockSize,
+                k = 4 * g;d.sigBytes > k && (d = e.finalize(d));d.clamp();for (var p = this._oKey = d.clone(), b = this._iKey = d.clone(), n = p.words, j = b.words, h = 0; h < g; h++) n[h] ^= 1549556828, j[h] ^= 909522486;p.sigBytes = b.sigBytes = k;this.reset();
+        }, reset: function () {
+            var e = this._hasher;e.reset();e.update(this._iKey);
+        }, update: function (e) {
+            this._hasher.update(e);return this;
+        }, finalize: function (e) {
+            var d = this._hasher;e = d.finalize(e);d.reset();return d.finalize(this._oKey.clone().concat(e));
+        } });
+})();
 
 (function () {
     // Shortcuts
@@ -8392,14 +8518,14 @@ g)-899497514);l=g;g=h;h=j<<30|j>>>2;j=n;n=c}b[0]=b[0]+n|0;b[1]=b[1]+j|0;b[2]=b[2
             // Convert
             var base64Chars = [];
             for (var i = 0; i < sigBytes; i += 3) {
-                var byte1 = (words[i >>> 2]       >>> (24 - (i % 4) * 8))       & 0xff;
-                var byte2 = (words[(i + 1) >>> 2] >>> (24 - ((i + 1) % 4) * 8)) & 0xff;
-                var byte3 = (words[(i + 2) >>> 2] >>> (24 - ((i + 2) % 4) * 8)) & 0xff;
+                var byte1 = words[i >>> 2] >>> 24 - i % 4 * 8 & 0xff;
+                var byte2 = words[i + 1 >>> 2] >>> 24 - (i + 1) % 4 * 8 & 0xff;
+                var byte3 = words[i + 2 >>> 2] >>> 24 - (i + 2) % 4 * 8 & 0xff;
 
-                var triplet = (byte1 << 16) | (byte2 << 8) | byte3;
+                var triplet = byte1 << 16 | byte2 << 8 | byte3;
 
-                for (var j = 0; (j < 4) && (i + j * 0.75 < sigBytes); j++) {
-                    base64Chars.push(map.charAt((triplet >>> (6 * (3 - j))) & 0x3f));
+                for (var j = 0; j < 4 && i + j * 0.75 < sigBytes; j++) {
+                    base64Chars.push(map.charAt(triplet >>> 6 * (3 - j) & 0x3f));
                 }
             }
 
@@ -8446,9 +8572,9 @@ g)-899497514);l=g;g=h;h=j<<30|j>>>2;j=n;n=c}b[0]=b[0]+n|0;b[1]=b[1]+j|0;b[2]=b[2
             var nBytes = 0;
             for (var i = 0; i < base64StrLength; i++) {
                 if (i % 4) {
-                    var bits1 = map.indexOf(base64Str.charAt(i - 1)) << ((i % 4) * 2);
-                    var bits2 = map.indexOf(base64Str.charAt(i)) >>> (6 - (i % 4) * 2);
-                    words[nBytes >>> 2] |= (bits1 | bits2) << (24 - (nBytes % 4) * 8);
+                    var bits1 = map.indexOf(base64Str.charAt(i - 1)) << i % 4 * 2;
+                    var bits2 = map.indexOf(base64Str.charAt(i)) >>> 6 - i % 4 * 2;
+                    words[nBytes >>> 2] |= (bits1 | bits2) << 24 - nBytes % 4 * 8;
                     nBytes++;
                 }
             }
@@ -8458,14 +8584,13 @@ g)-899497514);l=g;g=h;h=j<<30|j>>>2;j=n;n=c}b[0]=b[0]+n|0;b[1]=b[1]+j|0;b[2]=b[2
 
         _map: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='
     };
-}());
+})();
 
-if(true){
+if (true) {
     module.exports = CryptoJS;
-}else{
+} else {
     window.CryptoJS = CryptoJS;
 }
-
 
 /***/ }),
 /* 77 */
@@ -15076,7 +15201,7 @@ var initEvent = function (cos) {
     cos.off = function (action, callback) {
         var list = getList(action);
         for (var i = list.length - 1; i >= 0; i--) {
-            callback === list[i] && (list.splice(i, 1));
+            callback === list[i] && list.splice(i, 1);
         }
     };
     cos.emit = function (action, data) {
@@ -15115,15 +15240,14 @@ var initTask = function (cos) {
             size: task.size,
             speed: task.speed,
             percent: task.percent,
-            hashPercent: task.hashPercent,
+            hashPercent: task.hashPercent
         };
         if (task.FilePath) t.FilePath = task.FilePath;
         return t;
     };
 
     var startNextTask = function () {
-        if (nextUploadIndex < queue.length &&
-            uploadingFileCount < cos.options.FileParallelLimit) {
+        if (nextUploadIndex < queue.length && uploadingFileCount < cos.options.FileParallelLimit) {
             var task = queue[nextUploadIndex];
             if (task.state === 'waiting') {
                 uploadingFileCount++;
@@ -15157,8 +15281,8 @@ var initTask = function (cos) {
                 return;
             }
             task.state = switchToState;
-            cos.emit('inner-kill-task', {TaskId: id});
-            cos.emit('task-update', {task: formatTask(task)});
+            cos.emit('inner-kill-task', { TaskId: id });
+            cos.emit('task-update', { task: formatTask(task) });
             if (running) {
                 uploadingFileCount--;
                 startNextTask(cos);
@@ -15198,14 +15322,14 @@ var initTask = function (cos) {
             size: size,
             speed: 0,
             percent: 0,
-            hashPercent: 0,
+            hashPercent: 0
         };
         var onHashProgress = params.onHashProgress;
         params.onHashProgress = function (info) {
             if (!cos._isRunningTask(task.id)) return;
             task.hashPercent = info.percent;
             onHashProgress(info);
-            cos.emit('task-update', {task: formatTask(task)});
+            cos.emit('task-update', { task: formatTask(task) });
         };
         var onProgress = params.onProgress;
         params.onProgress = function (info) {
@@ -15215,11 +15339,11 @@ var initTask = function (cos) {
             task.speed = info.speed;
             task.percent = info.percent;
             onProgress(info);
-            cos.emit('task-update', {task: formatTask(task)});
+            cos.emit('task-update', { task: formatTask(task) });
         };
         queue.push(task);
         tasks[id] = task;
-        cos.emit('task-list-update', {list: util.map(queue, formatTask)});
+        cos.emit('task-list-update', { list: util.map(queue, formatTask) });
         startNextTask(cos);
         return id;
     };
@@ -15231,21 +15355,20 @@ var initTask = function (cos) {
         return util.map(queue, formatTask);
     };
     cos.cancelTask = function (id) {
-        killTask(id, 'canceled')
+        killTask(id, 'canceled');
     };
     cos.pauseTask = function (id) {
-        killTask(id, 'paused')
+        killTask(id, 'paused');
     };
     cos.restartTask = function (id) {
         var task = tasks[id];
         if (task && (task.state === 'paused' || task.state === 'error')) {
             task.state = 'waiting';
-            cos.emit('task-update', {task: formatTask(task)});
+            cos.emit('task-update', { task: formatTask(task) });
             nextUploadIndex = Math.min(nextUploadIndex, task.index);
             startNextTask();
         }
     };
-
 };
 
 module.exports.init = initTask;
@@ -15257,7 +15380,6 @@ module.exports.init = initTask;
 /* WEBPACK VAR INJECTION */(function(global, Buffer) {var queryString = __webpack_require__(200);
 var REQUEST = __webpack_require__(203);
 var util = __webpack_require__(16);
-
 
 // Bucket 相关
 
@@ -15272,20 +15394,22 @@ function getService(params, callback) {
         callback = params;
         params = {};
     }
+
+    var protocol = util.isBrowser && location.protocol === 'https:' ? 'https:' : 'http:';
+
     submitRequest.call(this, {
-        url: 'http://service.cos.myqcloud.com',
-        method: 'GET',
+        url: protocol + '//service.cos.myqcloud.com',
+        method: 'GET'
     }, function (err, data) {
         if (err) {
             return callback(err);
         }
-        var buckets = (data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Buckets
-            && data.ListAllMyBucketsResult.Buckets.Bucket) || [];
+        var buckets = data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Buckets && data.ListAllMyBucketsResult.Buckets.Bucket || [];
         buckets = util.isArray(buckets) ? buckets : [buckets];
         callback(null, {
             Buckets: buckets,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -15306,7 +15430,7 @@ function headBucket(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         AppId: params.AppId,
-        method: 'HEAD',
+        method: 'HEAD'
     }, function (err, data) {
         var exist, auth;
         if (err) {
@@ -15361,7 +15485,7 @@ function getBucket(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         AppId: params.AppId,
-        qs: reqParams,
+        qs: reqParams
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -15377,7 +15501,7 @@ function getBucket(params, callback) {
             Contents: contents,
             CommonPrefixes: CommonPrefixes,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
 
         callback(null, result);
@@ -15404,13 +15528,13 @@ function putBucket(params, callback) {
     headers['x-cos-grant-read'] = params['GrantRead'];
     headers['x-cos-grant-write'] = params['GrantWrite'];
     headers['x-cos-grant-full-control'] = params['GrantFullControl'];
-    var appId = this.AppId || '';
+    var appId = this.options.AppId || '';
     submitRequest.call(this, {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
         AppId: params.AppId,
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -15423,7 +15547,7 @@ function putBucket(params, callback) {
         callback(null, {
             Location: url,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -15443,16 +15567,16 @@ function deleteBucket(params, callback) {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
+        AppId: params.AppId
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -15474,7 +15598,7 @@ function getBucketAcl(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         AppId: params.AppId,
-        action: '/?acl',
+        action: '/?acl'
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -15486,7 +15610,7 @@ function getBucketAcl(params, callback) {
             Owner: Owner,
             Grants: Grant,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -15519,8 +15643,8 @@ function putBucketAcl(params, callback) {
         Grants = util.isArray(Grants) ? Grants : [Grants];
         delete AccessControlPolicy.Grant;
         delete AccessControlPolicy.Grants;
-        AccessControlPolicy.AccessControlList = {Grant: Grants};
-        xml = util.json2xml({AccessControlPolicy: AccessControlPolicy});
+        AccessControlPolicy.AccessControlList = { Grant: Grants };
+        xml = util.json2xml({ AccessControlPolicy: AccessControlPolicy });
         headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
         headers['Content-Type'] = 'application/xml';
     }
@@ -15532,14 +15656,14 @@ function putBucketAcl(params, callback) {
         AppId: params.AppId,
         action: '/?acl',
         headers: headers,
-        body: xml,
+        body: xml
     }, function (err, data) {
         if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -15560,7 +15684,7 @@ function getBucketCors(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         AppId: params.AppId,
-        action: '/?cors',
+        action: '/?cors'
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -15582,7 +15706,7 @@ function getBucketCors(params, callback) {
         callback(null, {
             CORSRules: CORSRules,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -15612,7 +15736,7 @@ function putBucketCors(params, callback) {
         });
     });
 
-    var xml = util.json2xml({CORSConfiguration: {CORSRule: CORSRules}});
+    var xml = util.json2xml({ CORSConfiguration: { CORSRule: CORSRules } });
     var headers = {};
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
     headers['Content-Type'] = 'application/xml';
@@ -15624,14 +15748,14 @@ function putBucketCors(params, callback) {
         AppId: params.AppId,
         body: xml,
         action: '/?cors',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -15651,16 +15775,16 @@ function deleteBucketCors(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         AppId: params.AppId,
-        action: '/?cors',
+        action: '/?cors'
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode || err.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -15676,7 +15800,7 @@ function putBucketPolicy(params, callback) {
             PolicyStr = JSON.stringify(Policy);
         }
     } catch (e) {
-        callback({error: 'Policy format error'});
+        callback({ error: 'Policy format error' });
     }
 
     headers['Content-Type'] = 'application/json';
@@ -15690,16 +15814,16 @@ function putBucketPolicy(params, callback) {
         action: '/?policy',
         body: Policy,
         headers: headers,
-        json: true,
+        json: true
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -15719,7 +15843,7 @@ function getBucketLocation(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         AppId: params.AppId,
-        action: '/?location',
+        action: '/?location'
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -15744,29 +15868,28 @@ function getBucketPolicy(params, callback) {
         Region: params.Region,
         AppId: params.AppId,
         action: '/?policy',
-        rawBody: true,
+        rawBody: true
     }, function (err, data) {
         if (err) {
             if (err.statusCode && err.statusCode === 403) {
-                return callback({ErrorStatus: 'Access Denied'});
+                return callback({ ErrorStatus: 'Access Denied' });
             }
             if (err.statusCode && err.statusCode === 405) {
-                return callback({ErrorStatus: 'Method Not Allowed'});
+                return callback({ ErrorStatus: 'Method Not Allowed' });
             }
             if (err.statusCode && err.statusCode === 404) {
-                return callback({ErrorStatus: 'Policy Not Found'});
+                return callback({ ErrorStatus: 'Policy Not Found' });
             }
             return callback(err);
         }
         var Policy = {};
         try {
             Policy = JSON.parse(data.body);
-        } catch (e) {
-        }
+        } catch (e) {}
         callback(null, {
             Policy: Policy,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -15786,7 +15909,7 @@ function getBucketTagging(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         AppId: params.AppId,
-        action: '/?tagging',
+        action: '/?tagging'
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -15794,13 +15917,12 @@ function getBucketTagging(params, callback) {
         var Tags = [];
         try {
             Tags = data.Tagging.TagSet.Tag || [];
-        } catch (e) {
-        }
+        } catch (e) {}
         Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
         callback(null, {
             Tags: Tags,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -15820,7 +15942,7 @@ function putBucketTagging(params, callback) {
     var Tagging = params['Tagging'] || {};
     var Tags = Tagging.TagSet || Tagging.Tags || params['Tags'] || [];
     Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
-    var xml = util.json2xml({Tagging: {TagSet: {Tag: Tags}}});
+    var xml = util.json2xml({ Tagging: { TagSet: { Tag: Tags } } });
 
     var headers = {};
     headers['Content-Type'] = 'application/xml';
@@ -15833,20 +15955,19 @@ function putBucketTagging(params, callback) {
         AppId: params.AppId,
         body: xml,
         action: '/?tagging',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
-
 
 /**
  * 删除 Bucket 的 标签设置
@@ -15863,16 +15984,16 @@ function deleteBucketTagging(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         AppId: params.AppId,
-        action: '/?tagging',
+        action: '/?tagging'
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -15882,7 +16003,7 @@ function putBucketLifecycle(params, callback) {
     var LifecycleConfiguration = params['LifecycleConfiguration'] || {};
     var Rules = LifecycleConfiguration.Rules || [];
     Rules = util.clone(Rules);
-    var xml = util.json2xml({LifecycleConfiguration: {Rule: Rules}});
+    var xml = util.json2xml({ LifecycleConfiguration: { Rule: Rules } });
 
     var headers = {};
     headers['Content-Type'] = 'application/xml';
@@ -15895,16 +16016,16 @@ function putBucketLifecycle(params, callback) {
         AppId: params.AppId,
         body: xml,
         action: '/?lifecycle',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -15915,7 +16036,7 @@ function getBucketLifecycle(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         AppId: params.AppId,
-        action: '/?lifecycle',
+        action: '/?lifecycle'
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -15923,13 +16044,12 @@ function getBucketLifecycle(params, callback) {
         var Rules = [];
         try {
             Rules = data.LifecycleConfiguration.Rule || [];
-        } catch (e) {
-        }
+        } catch (e) {}
         Rules = util.clone(util.isArray(Rules) ? Rules : [Rules]);
         callback(null, {
             Rules: Rules,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -15940,16 +16060,16 @@ function deleteBucketLifecycle(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         AppId: params.AppId,
-        action: '/?lifecycle',
+        action: '/?lifecycle'
     }, function (err, data) {
         if (err && err.statusCode === 204) {
-            return callback(null, {statusCode: err.statusCode});
+            return callback(null, { statusCode: err.statusCode });
         } else if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -15978,14 +16098,14 @@ function headObject(params, callback) {
         Region: params.Region,
         AppId: params.AppId,
         Key: params.Key,
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err) {
             var statusCode = err.statusCode;
             if (headers['If-Modified-Since'] && statusCode && statusCode === 304) {
                 return callback(null, {
                     NotModified: true,
-                    statusCode: statusCode,
+                    statusCode: statusCode
                 });
             }
             return callback(err);
@@ -16045,7 +16165,7 @@ function getObject(params, callback) {
         Key: params.Key,
         headers: headers,
         qs: reqParams,
-        rawBody: true,
+        rawBody: true
     }, function (err, data) {
         if (err) {
             var statusCode = err.statusCode;
@@ -16062,11 +16182,10 @@ function getObject(params, callback) {
         }
         util.extend(result, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
         callback(null, result);
     });
-
 }
 
 /**
@@ -16129,26 +16248,30 @@ function _putObject(params, callback) {
     var Body = params.Body;
     var readStream;
 
-    if (util.isBrowser && (Body instanceof global.Blob || Body instanceof global.File)) { // 传入 Blob 或者 File 文件内容
+    if (util.isBrowser && (Body instanceof global.Blob || Body instanceof global.File)) {
+        // 传入 Blob 或者 File 文件内容
         headers['Content-Length'] = Body.length;
-    } else if (Body && Body instanceof Buffer) { // 传入 fs.readFileSync(filepath) 或者 文件内容
+    } else if (Body && Body instanceof Buffer) {
+        // 传入 fs.readFileSync(filepath) 或者 文件内容
         headers['Content-Length'] = Body.length;
-    } else if (Body && typeof Body.pipe === 'function') { // fs.createReadStream(filepath)
+    } else if (Body && typeof Body.pipe === 'function') {
+        // fs.createReadStream(filepath)
         readStream = Body;
         Body = null;
         if (headers['Content-Length'] === undefined) {
-            callback({error: 'lack of param ContentLength'});
+            callback({ error: 'lack of param ContentLength' });
             return;
         }
-    } else if (Body && typeof Body.pipe === 'string' && util.isBrowser) { // 在浏览器允许传入字符串作为内容 'hello'
+    } else if (Body && typeof Body.pipe === 'string' && util.isBrowser) {
+        // 在浏览器允许传入字符串作为内容 'hello'
         headers['Content-Length'] = Body.length;
     } else {
-        callback({error: 'params body format error, Only allow Buffer, Stream, Blob.'});
+        callback({ error: 'params body format error, Only allow Buffer, Stream, Blob.' });
         return;
     }
 
     var onProgress = params.onProgress;
-    var onFileProgress = (function () {
+    var onFileProgress = function () {
         var time0 = Date.now();
         var size0 = 0;
         var FinishSize = 0;
@@ -16156,7 +16279,7 @@ function _putObject(params, callback) {
         var progressTimer;
         var update = function () {
             progressTimer = 0;
-            if (onProgress && (typeof onProgress === 'function')) {
+            if (onProgress && typeof onProgress === 'function') {
                 var time1 = Date.now();
                 var speed = parseInt((FinishSize - size0) / ((time1 - time0) / 1000) * 100) / 100 || 0;
                 var percent = parseInt(FinishSize / FileSize * 100) / 100 || 0;
@@ -16169,8 +16292,7 @@ function _putObject(params, callback) {
                         speed: speed,
                         percent: percent
                     });
-                } catch (e) {
-                }
+                } catch (e) {}
             }
         };
         return function (info, immediately) {
@@ -16186,7 +16308,7 @@ function _putObject(params, callback) {
                 progressTimer = setTimeout(update, self.options.ProgressInterval || 100);
             }
         };
-    })();
+    }();
 
     var sender = submitRequest.call(this, {
         method: 'PUT',
@@ -16207,7 +16329,7 @@ function _putObject(params, callback) {
             return callback(null, {
                 ETag: data.headers['etag'],
                 statusCode: data.statusCode,
-                headers: data.headers,
+                headers: data.headers
             });
         }
         callback(null, data);
@@ -16238,20 +16360,20 @@ function deleteObject(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         AppId: params.AppId,
-        Key: params.Key,
+        Key: params.Key
     }, function (err, data) {
         if (err) {
             var statusCode = err.statusCode;
             if (statusCode && statusCode == 204) {
                 return callback(null, {
                     statusCode: data.statusCode,
-                    headers: data.headers,
+                    headers: data.headers
                 });
             } else if (statusCode && statusCode == 404) {
                 return callback(null, {
                     BucketNotFound: true,
                     statusCode: data.statusCode,
-                    headers: data.headers,
+                    headers: data.headers
                 });
             } else {
                 return callback(err);
@@ -16259,9 +16381,8 @@ function deleteObject(params, callback) {
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
-
     });
 }
 
@@ -16284,7 +16405,7 @@ function getObjectAcl(params, callback) {
         Region: params.Region,
         AppId: params.AppId,
         Key: params.Key,
-        action: '?acl',
+        action: '?acl'
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -16296,7 +16417,7 @@ function getObjectAcl(params, callback) {
             Owner: Owner,
             Grants: Grant,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -16326,8 +16447,8 @@ function putObjectAcl(params, callback) {
         Grants = util.isArray(Grants) ? Grants : [Grants];
         delete AccessControlPolicy.Grant;
         delete AccessControlPolicy.Grants;
-        AccessControlPolicy.AccessControlList = {Grant: Grants};
-        xml = util.json2xml({AccessControlPolicy: AccessControlPolicy});
+        AccessControlPolicy.AccessControlList = { Grant: Grants };
+        xml = util.json2xml({ AccessControlPolicy: AccessControlPolicy });
         headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
         headers['Content-Type'] = 'application/xml';
     }
@@ -16340,14 +16461,14 @@ function putObjectAcl(params, callback) {
         Key: params.Key,
         action: '?acl',
         headers: headers,
-        body: xml,
+        body: xml
     }, function (err, data) {
         if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -16375,14 +16496,14 @@ function optionsObject(params, callback) {
         Region: params.Region,
         AppId: params.AppId,
         Key: params.Key,
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err) {
             if (err.statusCode && err.statusCode == 403) {
                 return callback(null, {
                     OptionsForbidden: true,
                     statusCode: data.statusCode,
-                    headers: data.headers,
+                    headers: data.headers
                 });
             }
             return callback(err);
@@ -16396,7 +16517,7 @@ function optionsObject(params, callback) {
             AccessControlExposeHeaders: headers['access-control-expose-headers'],
             AccessControlMaxAge: headers['access-control-max-age'],
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -16462,7 +16583,7 @@ function putObjectCopy(params, callback) {
         Region: params.Region,
         AppId: params.AppId,
         Key: params.Key,
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -16470,12 +16591,11 @@ function putObjectCopy(params, callback) {
         var result = util.clone(data.CopyObjectResult);
         util.extend(result, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
         callback(null, result);
     });
 }
-
 
 function deleteMultipleObject(params, callback) {
     var headers = {};
@@ -16504,7 +16624,7 @@ function deleteMultipleObject(params, callback) {
         AppId: params.AppId,
         body: xml,
         action: '/?delete',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -16520,12 +16640,11 @@ function deleteMultipleObject(params, callback) {
             Error: Errors,
             Deleted: Deleted,
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
         callback(null, result);
     });
 }
-
 
 // 分块上传
 
@@ -16579,7 +16698,7 @@ function multipartInit(params, callback) {
         AppId: params.AppId,
         Key: params.Key,
         action: '?uploads',
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -16588,7 +16707,7 @@ function multipartInit(params, callback) {
         if (data && data.InitiateMultipartUploadResult) {
             return callback(null, util.extend(data.InitiateMultipartUploadResult, {
                 statusCode: data.statusCode,
-                headers: data.headers,
+                headers: data.headers
             }));
         }
         callback(null, data);
@@ -16641,7 +16760,7 @@ function multipartUpload(params, callback) {
         callback(null, {
             ETag: data['headers']['etag'] || '',
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 
@@ -16650,7 +16769,6 @@ function multipartUpload(params, callback) {
         if (params.TaskId === TaskId) self.off('inner-kill-task', killTask);
     };
     if (params.TaskId) this.on('inner-kill-task', killTask);
-
 }
 
 /**
@@ -16704,14 +16822,14 @@ function multipartComplete(params, callback) {
         Key: params.Key,
         action: action,
         body: xml,
-        headers: headers,
+        headers: headers
     }, function (err, data) {
         if (err) {
             return callback(err);
         }
         var result = util.extend(data.CompleteMultipartUploadResult, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
         callback(null, result);
     });
@@ -16752,7 +16870,7 @@ function multipartList(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         AppId: params.AppId,
-        action: '/?uploads&' + queryString.stringify(reqParams),
+        action: '/?uploads&' + queryString.stringify(reqParams)
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -16772,7 +16890,7 @@ function multipartList(params, callback) {
         var result = util.clone(data.ListMultipartUploadsResult);
         util.extend(result, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
         callback(null, result);
     });
@@ -16801,14 +16919,13 @@ function multipartListPart(params, callback) {
     reqParams['max-parts'] = params['MaxParts'];
     reqParams['part-number-marker'] = params['PartNumberMarker'];
 
-
     submitRequest.call(this, {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
         AppId: params.AppId,
         Key: params.Key,
-        qs: reqParams,
+        qs: reqParams
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -16820,7 +16937,7 @@ function multipartListPart(params, callback) {
         var result = util.clone(data.ListPartsResult);
         util.extend(result, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
         callback(null, result);
     });
@@ -16847,14 +16964,14 @@ function multipartAbort(params, callback) {
         Region: params.Region,
         AppId: params.AppId,
         Key: params.Key,
-        qs: reqParams,
+        qs: reqParams
     }, function (err, data) {
         if (err) {
             return callback(err);
         }
         callback(null, {
             statusCode: data.statusCode,
-            headers: data.headers,
+            headers: data.headers
         });
     });
 }
@@ -16874,7 +16991,6 @@ function getAuth(params) {
         SecretKey: params.SecretKey || this.options.SecretKey || ''
     });
 }
-
 
 /**
  * 私有方法
@@ -16921,13 +17037,13 @@ function submitRequest(params, callback) {
             region: region,
             object: object,
             action: action,
-            appId: params.AppId || this.options.AppId,
+            appId: params.AppId || this.options.AppId
         }),
         method: method,
         headers: headers,
         qs: qs,
         body: body,
-        json: json,
+        json: json
     };
 
     if (object) {
@@ -16963,18 +17079,20 @@ function submitRequest(params, callback) {
             var size0 = 0;
             opt.onProgress = function (e) {
                 var loaded = 0;
-                try { loaded = e.loaded; } catch (e) {}
+                try {
+                    loaded = e.loaded;
+                } catch (e) {}
                 var total = contentLength;
                 var time1 = Date.now();
                 var speed = parseInt((loaded - size0) / ((time1 - time0) / 1000) * 100) / 100;
-                var percent = total ? (parseInt(loaded / total * 100) / 100) : 0;
+                var percent = total ? parseInt(loaded / total * 100) / 100 : 0;
                 time0 = time1;
                 size0 = loaded;
                 params.onProgress({
                     loaded: loaded,
                     total: total,
                     speed: speed,
-                    percent: percent,
+                    percent: percent
                 });
             };
         }
@@ -16997,7 +17115,7 @@ function submitRequest(params, callback) {
 
             // 请求错误，发生网络错误
             if (err) {
-                cb({error: err});
+                cb({ error: err });
                 return;
             }
 
@@ -17011,7 +17129,7 @@ function submitRequest(params, callback) {
             // 请求返回码不为 200
             var statusCode = response.statusCode;
             if (statusCode !== 200 && statusCode !== 204 && statusCode !== 206) {
-                cb({error: jsonRes.Error || jsonRes});
+                cb({ error: jsonRes.Error || jsonRes });
                 return;
             }
 
@@ -17022,7 +17140,7 @@ function submitRequest(params, callback) {
             }
 
             if (jsonRes.Error) {
-                cb({error: jsonRes.Error});
+                cb({ error: jsonRes.Error });
                 return;
             }
             cb(null, jsonRes);
@@ -17040,15 +17158,13 @@ function submitRequest(params, callback) {
             method: opt.method,
             pathname: object || '/',
             SecretId: params.SecretId || this.options.SecretId,
-            SecretKey: params.SecretKey || this.options.SecretKey,
+            SecretKey: params.SecretKey || this.options.SecretKey
         });
         getAuthorizationCallback(auth);
     }
 
     return outerSender;
-
 }
-
 
 var API_MAP = {
     // Bucket 相关方法
@@ -17093,13 +17209,12 @@ var API_MAP = {
     deleteMultipleObject: deleteMultipleObject,
 
     // 工具方法
-    getAuth: getAuth,
+    getAuth: getAuth
 };
 
 util.each(API_MAP, function (fn, apiName) {
     exports[apiName] = util.apiWrapper(apiName, fn);
 });
-
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3), __webpack_require__(7).Buffer))
 
 /***/ }),
@@ -17301,7 +17416,7 @@ var objectKeys = Object.keys || function (obj) {
 /***/ (function(module, exports, __webpack_require__) {
 
 var queryString = __webpack_require__(204);
-var $ = (function () {
+var $ = function () {
     var deletedIds = [];
 
     var slice = deletedIds.slice;
@@ -17320,29 +17435,31 @@ var $ = (function () {
 
     var support = {};
 
+    var version = "1.11.1 -css,-css/addGetHookIf,-css/curCSS,-css/defaultDisplay,-css/hiddenVisibleSelectors,-css/support,-css/swap,-css/var/cssExpand,-css/var/isHidden,-css/var/rmargin,-css/var/rnumnonpx,-effects,-effects/Tween,-effects/animatedSelector,-effects/support,-dimensions,-offset,-deprecated,-event-alias,-wrap",
 
-    var
-        version = "1.11.1 -css,-css/addGetHookIf,-css/curCSS,-css/defaultDisplay,-css/hiddenVisibleSelectors,-css/support,-css/swap,-css/var/cssExpand,-css/var/isHidden,-css/var/rmargin,-css/var/rnumnonpx,-effects,-effects/Tween,-effects/animatedSelector,-effects/support,-dimensions,-offset,-deprecated,-event-alias,-wrap",
 
-        // Define a local copy of jQuery
-        jQuery = function (selector, context) {
-            // The jQuery object is actually just the init constructor 'enhanced'
-            // Need init if jQuery is called (just allow error to be thrown if not included)
-            return new jQuery.fn.init(selector, context);
-        },
+    // Define a local copy of jQuery
+    jQuery = function (selector, context) {
+        // The jQuery object is actually just the init constructor 'enhanced'
+        // Need init if jQuery is called (just allow error to be thrown if not included)
+        return new jQuery.fn.init(selector, context);
+    },
 
-        // Support: Android<4.1, IE<9
-        // Make sure we trim BOM and NBSP
-        rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g,
 
-        // Matches dashed string for camelizing
-        rmsPrefix = /^-ms-/,
+    // Support: Android<4.1, IE<9
+    // Make sure we trim BOM and NBSP
+    rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g,
+
+
+    // Matches dashed string for camelizing
+    rmsPrefix = /^-ms-/,
         rdashAlpha = /-([\da-z])/gi,
 
-        // Used by jQuery.camelCase as callback to replace()
-        fcamelCase = function (all, letter) {
-            return letter.toUpperCase();
-        };
+
+    // Used by jQuery.camelCase as callback to replace()
+    fcamelCase = function (all, letter) {
+        return letter.toUpperCase();
+    };
 
     jQuery.fn = jQuery.prototype = {
         // The current version of jQuery being used
@@ -17365,11 +17482,11 @@ var $ = (function () {
         get: function (num) {
             return num != null ?
 
-                // Return just the one element from the set
-                ( num < 0 ? this[num + this.length] : this[num] ) :
+            // Return just the one element from the set
+            num < 0 ? this[num + this.length] : this[num] :
 
-                // Return all the elements in a clean array
-                slice.call(this);
+            // Return all the elements in a clean array
+            slice.call(this);
         },
 
         // Take an array of elements and push it onto the stack
@@ -17414,7 +17531,7 @@ var $ = (function () {
 
         eq: function (i) {
             var len = this.length,
-                j = +i + ( i < 0 ? len : 0 );
+                j = +i + (i < 0 ? len : 0);
             return this.pushStack(j >= 0 && j < len ? [this[j]] : []);
         },
 
@@ -17430,7 +17547,12 @@ var $ = (function () {
     };
 
     jQuery.extend = jQuery.fn.extend = function () {
-        var src, copyIsArray, copy, name, options, clone,
+        var src,
+            copyIsArray,
+            copy,
+            name,
+            options,
+            clone,
             target = arguments[0] || {},
             i = 1,
             length = arguments.length,
@@ -17470,11 +17592,10 @@ var $ = (function () {
                     }
 
                     // Recurse if we're merging plain objects or arrays
-                    if (deep && copy && ( jQuery.isPlainObject(copy) || (copyIsArray = jQuery.isArray(copy)) )) {
+                    if (deep && copy && (jQuery.isPlainObject(copy) || (copyIsArray = jQuery.isArray(copy)))) {
                         if (copyIsArray) {
                             copyIsArray = false;
                             clone = src && jQuery.isArray(src) ? src : [];
-
                         } else {
                             clone = src && jQuery.isPlainObject(src) ? src : {};
                         }
@@ -17496,7 +17617,7 @@ var $ = (function () {
 
     jQuery.extend({
         // Unique for each copy of jQuery on the page
-        expando: "jQuery" + ( version + Math.random() ).replace(/\D/g, ""),
+        expando: "jQuery" + (version + Math.random()).replace(/\D/g, ""),
 
         // Assume jQuery is ready without the ready module
         isReady: true,
@@ -17505,8 +17626,7 @@ var $ = (function () {
             throw new Error(msg);
         },
 
-        noop: function () {
-        },
+        noop: function () {},
 
         // See test/unit/core.js for details concerning isFunction.
         // Since version 1.3, DOM methods and functions like alert
@@ -17551,9 +17671,7 @@ var $ = (function () {
 
             try {
                 // Not own constructor property must be Object
-                if (obj.constructor &&
-                    !hasOwn.call(obj, "constructor") &&
-                    !hasOwn.call(obj.constructor.prototype, "isPrototypeOf")) {
+                if (obj.constructor && !hasOwn.call(obj, "constructor") && !hasOwn.call(obj.constructor.prototype, "isPrototypeOf")) {
                     return false;
                 }
             } catch (e) {
@@ -17571,8 +17689,7 @@ var $ = (function () {
 
             // Own properties are enumerated firstly, so to speed up,
             // if last one is own, then all properties are own.
-            for (key in obj) {
-            }
+            for (key in obj) {}
 
             return key === undefined || hasOwn.call(obj, key);
         },
@@ -17581,9 +17698,7 @@ var $ = (function () {
             if (obj == null) {
                 return obj + "";
             }
-            return typeof obj === "object" || typeof obj === "function" ?
-                class2type[toString.call(obj)] || "object" :
-                typeof obj;
+            return typeof obj === "object" || typeof obj === "function" ? class2type[toString.call(obj)] || "object" : typeof obj;
         },
 
         // Evaluates a script in a global context
@@ -17594,9 +17709,9 @@ var $ = (function () {
                 // We use execScript on Internet Explorer
                 // We use an anonymous function so that context is window
                 // rather than jQuery in Firefox
-                ( window.execScript || function (data) {
+                (window.execScript || function (data) {
                     window["eval"].call(window, data);
-                } )(data);
+                })(data);
             }
         },
 
@@ -17662,9 +17777,7 @@ var $ = (function () {
 
         // Support: Android<4.1, IE<9
         trim: function (text) {
-            return text == null ?
-                "" :
-                ( text + "" ).replace(rtrim, "");
+            return text == null ? "" : (text + "").replace(rtrim, "");
         },
 
         // results is for internal usage only
@@ -17673,10 +17786,7 @@ var $ = (function () {
 
             if (arr != null) {
                 if (isArraylike(Object(arr))) {
-                    jQuery.merge(ret,
-                        typeof arr === "string" ?
-                            [arr] : arr
-                    );
+                    jQuery.merge(ret, typeof arr === "string" ? [arr] : arr);
                 } else {
                     push.call(ret, arr);
                 }
@@ -17814,7 +17924,7 @@ var $ = (function () {
         },
 
         now: function () {
-            return +( new Date() );
+            return +new Date();
         },
 
         // jQuery.support is not used in Core but other projects attach their
@@ -17822,7 +17932,7 @@ var $ = (function () {
         support: support
     });
 
-// Populate the class2type map
+    // Populate the class2type map
     jQuery.each("Boolean Number String Function Array Date RegExp Object Error".split(" "), function (i, name) {
         class2type["[object " + name + "]"] = name.toLowerCase();
     });
@@ -17839,143 +17949,135 @@ var $ = (function () {
             return true;
         }
 
-        return type === "array" || length === 0 ||
-            typeof length === "number" && length > 0 && ( length - 1 ) in obj;
+        return type === "array" || length === 0 || typeof length === "number" && length > 0 && length - 1 in obj;
     }
 
+    // Initialize a jQuery object
 
-// Initialize a jQuery object
 
-
-// A central reference to the root jQuery(document)
+    // A central reference to the root jQuery(document)
     var rootjQuery,
 
-        // Use the correct document accordingly with window argument (sandbox)
-        document = window.document,
 
-        // A simple way to check for HTML strings
-        // Prioritize #id over <tag> to avoid XSS via location.hash (#9521)
-        // Strict HTML recognition (#11290: must start with <)
-        rquickExpr = /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]*))$/,
+    // Use the correct document accordingly with window argument (sandbox)
+    document = window.document,
 
+
+    // A simple way to check for HTML strings
+    // Prioritize #id over <tag> to avoid XSS via location.hash (#9521)
+    // Strict HTML recognition (#11290: must start with <)
+    rquickExpr = /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]*))$/,
         init = jQuery.fn.init = function (selector, context) {
-            var match, elem;
+        var match, elem;
 
-            // HANDLE: $(""), $(null), $(undefined), $(false)
-            if (!selector) {
-                return this;
+        // HANDLE: $(""), $(null), $(undefined), $(false)
+        if (!selector) {
+            return this;
+        }
+
+        // Handle HTML strings
+        if (typeof selector === "string") {
+            if (selector.charAt(0) === "<" && selector.charAt(selector.length - 1) === ">" && selector.length >= 3) {
+                // Assume that strings that start and end with <> are HTML and skip the regex check
+                match = [null, selector, null];
+            } else {
+                match = rquickExpr.exec(selector);
             }
 
-            // Handle HTML strings
-            if (typeof selector === "string") {
-                if (selector.charAt(0) === "<" && selector.charAt(selector.length - 1) === ">" && selector.length >= 3) {
-                    // Assume that strings that start and end with <> are HTML and skip the regex check
-                    match = [null, selector, null];
+            // Match html or make sure no context is specified for #id
+            if (match && (match[1] || !context)) {
 
-                } else {
-                    match = rquickExpr.exec(selector);
-                }
+                // HANDLE: $(html) -> $(array)
+                if (match[1]) {
+                    context = context instanceof jQuery ? context[0] : context;
 
-                // Match html or make sure no context is specified for #id
-                if (match && (match[1] || !context)) {
+                    // scripts is true for back-compat
+                    // Intentionally let the error be thrown if parseHTML is not present
+                    jQuery.merge(this, jQuery.parseHTML(match[1], context && context.nodeType ? context.ownerDocument || context : document, true));
 
-                    // HANDLE: $(html) -> $(array)
-                    if (match[1]) {
-                        context = context instanceof jQuery ? context[0] : context;
+                    // HANDLE: $(html, props)
+                    if (rsingleTag.test(match[1]) && jQuery.isPlainObject(context)) {
+                        for (match in context) {
+                            // Properties of context are called as methods if possible
+                            if (jQuery.isFunction(this[match])) {
+                                this[match](context[match]);
 
-                        // scripts is true for back-compat
-                        // Intentionally let the error be thrown if parseHTML is not present
-                        jQuery.merge(this, jQuery.parseHTML(
-                            match[1],
-                            context && context.nodeType ? context.ownerDocument || context : document,
-                            true
-                        ));
-
-                        // HANDLE: $(html, props)
-                        if (rsingleTag.test(match[1]) && jQuery.isPlainObject(context)) {
-                            for (match in context) {
-                                // Properties of context are called as methods if possible
-                                if (jQuery.isFunction(this[match])) {
-                                    this[match](context[match]);
-
-                                    // ...and otherwise set as attributes
-                                } else {
-                                    this.attr(match, context[match]);
-                                }
+                                // ...and otherwise set as attributes
+                            } else {
+                                this.attr(match, context[match]);
                             }
                         }
-
-                        return this;
-
-                        // HANDLE: $(#id)
-                    } else {
-                        elem = document.getElementById(match[2]);
-
-                        // Check parentNode to catch when Blackberry 4.6 returns
-                        // nodes that are no longer in the document #6963
-                        if (elem && elem.parentNode) {
-                            // Handle the case where IE and Opera return items
-                            // by name instead of ID
-                            if (elem.id !== match[2]) {
-                                return rootjQuery.find(selector);
-                            }
-
-                            // Otherwise, we inject the element directly into the jQuery object
-                            this.length = 1;
-                            this[0] = elem;
-                        }
-
-                        this.context = document;
-                        this.selector = selector;
-                        return this;
                     }
 
-                    // HANDLE: $(expr, $(...))
-                } else if (!context || context.jquery) {
-                    return ( context || rootjQuery ).find(selector);
+                    return this;
 
-                    // HANDLE: $(expr, context)
-                    // (which is just equivalent to: $(context).find(expr)
+                    // HANDLE: $(#id)
                 } else {
-                    return this.constructor(context).find(selector);
+                    elem = document.getElementById(match[2]);
+
+                    // Check parentNode to catch when Blackberry 4.6 returns
+                    // nodes that are no longer in the document #6963
+                    if (elem && elem.parentNode) {
+                        // Handle the case where IE and Opera return items
+                        // by name instead of ID
+                        if (elem.id !== match[2]) {
+                            return rootjQuery.find(selector);
+                        }
+
+                        // Otherwise, we inject the element directly into the jQuery object
+                        this.length = 1;
+                        this[0] = elem;
+                    }
+
+                    this.context = document;
+                    this.selector = selector;
+                    return this;
                 }
 
-                // HANDLE: $(DOMElement)
-            } else if (selector.nodeType) {
-                this.context = this[0] = selector;
-                this.length = 1;
-                return this;
+                // HANDLE: $(expr, $(...))
+            } else if (!context || context.jquery) {
+                return (context || rootjQuery).find(selector);
 
-                // HANDLE: $(function)
-                // Shortcut for document ready
-            } else if (jQuery.isFunction(selector)) {
-                return typeof rootjQuery.ready !== "undefined" ?
-                    rootjQuery.ready(selector) :
-                    // Execute immediately if ready is not present
-                    selector(jQuery);
+                // HANDLE: $(expr, context)
+                // (which is just equivalent to: $(context).find(expr)
+            } else {
+                return this.constructor(context).find(selector);
             }
 
-            if (selector.selector !== undefined) {
-                this.selector = selector.selector;
-                this.context = selector.context;
-            }
+            // HANDLE: $(DOMElement)
+        } else if (selector.nodeType) {
+            this.context = this[0] = selector;
+            this.length = 1;
+            return this;
 
-            return jQuery.makeArray(selector, this);
-        };
+            // HANDLE: $(function)
+            // Shortcut for document ready
+        } else if (jQuery.isFunction(selector)) {
+            return typeof rootjQuery.ready !== "undefined" ? rootjQuery.ready(selector) :
+            // Execute immediately if ready is not present
+            selector(jQuery);
+        }
 
-// Give the init function the jQuery prototype for later instantiation
+        if (selector.selector !== undefined) {
+            this.selector = selector.selector;
+            this.context = selector.context;
+        }
+
+        return jQuery.makeArray(selector, this);
+    };
+
+    // Give the init function the jQuery prototype for later instantiation
     init.prototype = jQuery.fn;
 
-// Initialize central reference
+    // Initialize central reference
     rootjQuery = jQuery(document);
 
+    var rnotwhite = /\S+/g;
 
-    var rnotwhite = (/\S+/g);
-
-// String to Object options format cache
+    // String to Object options format cache
     var optionsCache = {};
 
-// Convert String-formatted options into Object-formatted ones and store in cache
+    // Convert String-formatted options into Object-formatted ones and store in cache
     function createOptions(options) {
         var object = optionsCache[options] = {};
         jQuery.each(options.match(rnotwhite) || [], function (_, flag) {
@@ -18010,212 +18112,212 @@ var $ = (function () {
 
         // Convert options from String-formatted to Object-formatted if needed
         // (we check in cache first)
-        options = typeof options === "string" ?
-            ( optionsCache[options] || createOptions(options) ) :
-            jQuery.extend({}, options);
+        options = typeof options === "string" ? optionsCache[options] || createOptions(options) : jQuery.extend({}, options);
 
         var // Flag to know if list is currently firing
-            firing,
-            // Last fire value (for non-forgettable lists)
-            memory,
-            // Flag to know if list was already fired
-            fired,
-            // End of the loop when firing
-            firingLength,
-            // Index of currently firing callback (modified by remove if needed)
-            firingIndex,
-            // First callback to fire (used internally by add and fireWith)
-            firingStart,
-            // Actual callback list
-            list = [],
-            // Stack of fire calls for repeatable lists
-            stack = !options.once && [],
-            // Fire callbacks
-            fire = function (data) {
-                memory = options.memory && data;
-                fired = true;
-                firingIndex = firingStart || 0;
-                firingStart = 0;
-                firingLength = list.length;
-                firing = true;
-                for (; list && firingIndex < firingLength; firingIndex++) {
-                    if (list[firingIndex].apply(data[0], data[1]) === false && options.stopOnFalse) {
-                        memory = false; // To prevent further calls using add
-                        break;
-                    }
+        firing,
+
+        // Last fire value (for non-forgettable lists)
+        memory,
+
+        // Flag to know if list was already fired
+        fired,
+
+        // End of the loop when firing
+        firingLength,
+
+        // Index of currently firing callback (modified by remove if needed)
+        firingIndex,
+
+        // First callback to fire (used internally by add and fireWith)
+        firingStart,
+
+        // Actual callback list
+        list = [],
+
+        // Stack of fire calls for repeatable lists
+        stack = !options.once && [],
+
+        // Fire callbacks
+        fire = function (data) {
+            memory = options.memory && data;
+            fired = true;
+            firingIndex = firingStart || 0;
+            firingStart = 0;
+            firingLength = list.length;
+            firing = true;
+            for (; list && firingIndex < firingLength; firingIndex++) {
+                if (list[firingIndex].apply(data[0], data[1]) === false && options.stopOnFalse) {
+                    memory = false; // To prevent further calls using add
+                    break;
                 }
-                firing = false;
+            }
+            firing = false;
+            if (list) {
+                if (stack) {
+                    if (stack.length) {
+                        fire(stack.shift());
+                    }
+                } else if (memory) {
+                    list = [];
+                } else {
+                    self.disable();
+                }
+            }
+        },
+
+        // Actual Callbacks object
+        self = {
+            // Add a callback or a collection of callbacks to the list
+            add: function () {
                 if (list) {
-                    if (stack) {
-                        if (stack.length) {
-                            fire(stack.shift());
-                        }
-                    } else if (memory) {
-                        list = [];
-                    } else {
-                        self.disable();
-                    }
-                }
-            },
-            // Actual Callbacks object
-            self = {
-                // Add a callback or a collection of callbacks to the list
-                add: function () {
-                    if (list) {
-                        // First, we save the current length
-                        var start = list.length;
-                        (function add(args) {
-                            jQuery.each(args, function (_, arg) {
-                                var type = jQuery.type(arg);
-                                if (type === "function") {
-                                    if (!options.unique || !self.has(arg)) {
-                                        list.push(arg);
-                                    }
-                                } else if (arg && arg.length && type !== "string") {
-                                    // Inspect recursively
-                                    add(arg);
+                    // First, we save the current length
+                    var start = list.length;
+                    (function add(args) {
+                        jQuery.each(args, function (_, arg) {
+                            var type = jQuery.type(arg);
+                            if (type === "function") {
+                                if (!options.unique || !self.has(arg)) {
+                                    list.push(arg);
                                 }
-                            });
-                        })(arguments);
-                        // Do we need to add the callbacks to the
-                        // current firing batch?
-                        if (firing) {
-                            firingLength = list.length;
-                            // With memory, if we're not firing then
-                            // we should call right away
-                        } else if (memory) {
-                            firingStart = start;
-                            fire(memory);
-                        }
-                    }
-                    return this;
-                },
-                // Remove a callback from the list
-                remove: function () {
-                    if (list) {
-                        jQuery.each(arguments, function (_, arg) {
-                            var index;
-                            while (( index = jQuery.inArray(arg, list, index) ) > -1) {
-                                list.splice(index, 1);
-                                // Handle firing indexes
-                                if (firing) {
-                                    if (index <= firingLength) {
-                                        firingLength--;
-                                    }
-                                    if (index <= firingIndex) {
-                                        firingIndex--;
-                                    }
-                                }
+                            } else if (arg && arg.length && type !== "string") {
+                                // Inspect recursively
+                                add(arg);
                             }
                         });
+                    })(arguments);
+                    // Do we need to add the callbacks to the
+                    // current firing batch?
+                    if (firing) {
+                        firingLength = list.length;
+                        // With memory, if we're not firing then
+                        // we should call right away
+                    } else if (memory) {
+                        firingStart = start;
+                        fire(memory);
                     }
-                    return this;
-                },
-                // Check if a given callback is in the list.
-                // If no argument is given, return whether or not list has callbacks attached.
-                has: function (fn) {
-                    return fn ? jQuery.inArray(fn, list) > -1 : !!( list && list.length );
-                },
-                // Remove all callbacks from the list
-                empty: function () {
-                    list = [];
-                    firingLength = 0;
-                    return this;
-                },
-                // Have the list do nothing anymore
-                disable: function () {
-                    list = stack = memory = undefined;
-                    return this;
-                },
-                // Is it disabled?
-                disabled: function () {
-                    return !list;
-                },
-                // Lock the list in its current state
-                lock: function () {
-                    stack = undefined;
-                    if (!memory) {
-                        self.disable();
-                    }
-                    return this;
-                },
-                // Is it locked?
-                locked: function () {
-                    return !stack;
-                },
-                // Call all callbacks with the given context and arguments
-                fireWith: function (context, args) {
-                    if (list && ( !fired || stack )) {
-                        args = args || [];
-                        args = [context, args.slice ? args.slice() : args];
-                        if (firing) {
-                            stack.push(args);
-                        } else {
-                            fire(args);
-                        }
-                    }
-                    return this;
-                },
-                // Call all the callbacks with the given arguments
-                fire: function () {
-                    self.fireWith(this, arguments);
-                    return this;
-                },
-                // To know if the callbacks have already been called at least once
-                fired: function () {
-                    return !!fired;
                 }
-            };
+                return this;
+            },
+            // Remove a callback from the list
+            remove: function () {
+                if (list) {
+                    jQuery.each(arguments, function (_, arg) {
+                        var index;
+                        while ((index = jQuery.inArray(arg, list, index)) > -1) {
+                            list.splice(index, 1);
+                            // Handle firing indexes
+                            if (firing) {
+                                if (index <= firingLength) {
+                                    firingLength--;
+                                }
+                                if (index <= firingIndex) {
+                                    firingIndex--;
+                                }
+                            }
+                        }
+                    });
+                }
+                return this;
+            },
+            // Check if a given callback is in the list.
+            // If no argument is given, return whether or not list has callbacks attached.
+            has: function (fn) {
+                return fn ? jQuery.inArray(fn, list) > -1 : !!(list && list.length);
+            },
+            // Remove all callbacks from the list
+            empty: function () {
+                list = [];
+                firingLength = 0;
+                return this;
+            },
+            // Have the list do nothing anymore
+            disable: function () {
+                list = stack = memory = undefined;
+                return this;
+            },
+            // Is it disabled?
+            disabled: function () {
+                return !list;
+            },
+            // Lock the list in its current state
+            lock: function () {
+                stack = undefined;
+                if (!memory) {
+                    self.disable();
+                }
+                return this;
+            },
+            // Is it locked?
+            locked: function () {
+                return !stack;
+            },
+            // Call all callbacks with the given context and arguments
+            fireWith: function (context, args) {
+                if (list && (!fired || stack)) {
+                    args = args || [];
+                    args = [context, args.slice ? args.slice() : args];
+                    if (firing) {
+                        stack.push(args);
+                    } else {
+                        fire(args);
+                    }
+                }
+                return this;
+            },
+            // Call all the callbacks with the given arguments
+            fire: function () {
+                self.fireWith(this, arguments);
+                return this;
+            },
+            // To know if the callbacks have already been called at least once
+            fired: function () {
+                return !!fired;
+            }
+        };
 
         return self;
     };
-
 
     jQuery.extend({
 
         Deferred: function (func) {
             var tuples = [
-                    // action, add listener, listener list, final state
-                    ["resolve", "done", jQuery.Callbacks("once memory"), "resolved"],
-                    ["reject", "fail", jQuery.Callbacks("once memory"), "rejected"],
-                    ["notify", "progress", jQuery.Callbacks("memory")]
-                ],
+            // action, add listener, listener list, final state
+            ["resolve", "done", jQuery.Callbacks("once memory"), "resolved"], ["reject", "fail", jQuery.Callbacks("once memory"), "rejected"], ["notify", "progress", jQuery.Callbacks("memory")]],
                 state = "pending",
                 promise = {
-                    state: function () {
-                        return state;
-                    },
-                    always: function () {
-                        deferred.done(arguments).fail(arguments);
-                        return this;
-                    },
-                    then: function (/* fnDone, fnFail, fnProgress */) {
-                        var fns = arguments;
-                        return jQuery.Deferred(function (newDefer) {
-                            jQuery.each(tuples, function (i, tuple) {
-                                var fn = jQuery.isFunction(fns[i]) && fns[i];
-                                // deferred[ done | fail | progress ] for forwarding actions to newDefer
-                                deferred[tuple[1]](function () {
-                                    var returned = fn && fn.apply(this, arguments);
-                                    if (returned && jQuery.isFunction(returned.promise)) {
-                                        returned.promise()
-                                            .done(newDefer.resolve)
-                                            .fail(newDefer.reject)
-                                            .progress(newDefer.notify);
-                                    } else {
-                                        newDefer[tuple[0] + "With"](this === promise ? newDefer.promise() : this, fn ? [returned] : arguments);
-                                    }
-                                });
-                            });
-                            fns = null;
-                        }).promise();
-                    },
-                    // Get a promise for this deferred
-                    // If obj is provided, the promise aspect is added to the object
-                    promise: function (obj) {
-                        return obj != null ? jQuery.extend(obj, promise) : promise;
-                    }
+                state: function () {
+                    return state;
                 },
+                always: function () {
+                    deferred.done(arguments).fail(arguments);
+                    return this;
+                },
+                then: function () /* fnDone, fnFail, fnProgress */{
+                    var fns = arguments;
+                    return jQuery.Deferred(function (newDefer) {
+                        jQuery.each(tuples, function (i, tuple) {
+                            var fn = jQuery.isFunction(fns[i]) && fns[i];
+                            // deferred[ done | fail | progress ] for forwarding actions to newDefer
+                            deferred[tuple[1]](function () {
+                                var returned = fn && fn.apply(this, arguments);
+                                if (returned && jQuery.isFunction(returned.promise)) {
+                                    returned.promise().done(newDefer.resolve).fail(newDefer.reject).progress(newDefer.notify);
+                                } else {
+                                    newDefer[tuple[0] + "With"](this === promise ? newDefer.promise() : this, fn ? [returned] : arguments);
+                                }
+                            });
+                        });
+                        fns = null;
+                    }).promise();
+                },
+                // Get a promise for this deferred
+                // If obj is provided, the promise aspect is added to the object
+                promise: function (obj) {
+                    return obj != null ? jQuery.extend(obj, promise) : promise;
+                }
+            },
                 deferred = {};
 
             // Keep pipe for back-compat
@@ -18265,27 +18367,30 @@ var $ = (function () {
                 resolveValues = slice.call(arguments),
                 length = resolveValues.length,
 
-                // the count of uncompleted subordinates
-                remaining = length !== 1 || ( subordinate && jQuery.isFunction(subordinate.promise) ) ? length : 0,
 
-                // the master Deferred. If resolveValues consist of only a single Deferred, just use that.
-                deferred = remaining === 1 ? subordinate : jQuery.Deferred(),
+            // the count of uncompleted subordinates
+            remaining = length !== 1 || subordinate && jQuery.isFunction(subordinate.promise) ? length : 0,
 
-                // Update function for both resolve and progress values
-                updateFunc = function (i, contexts, values) {
-                    return function (value) {
-                        contexts[i] = this;
-                        values[i] = arguments.length > 1 ? slice.call(arguments) : value;
-                        if (values === progressValues) {
-                            deferred.notifyWith(contexts, values);
 
-                        } else if (!(--remaining)) {
-                            deferred.resolveWith(contexts, values);
-                        }
-                    };
-                },
+            // the master Deferred. If resolveValues consist of only a single Deferred, just use that.
+            deferred = remaining === 1 ? subordinate : jQuery.Deferred(),
 
-                progressValues, progressContexts, resolveContexts;
+
+            // Update function for both resolve and progress values
+            updateFunc = function (i, contexts, values) {
+                return function (value) {
+                    contexts[i] = this;
+                    values[i] = arguments.length > 1 ? slice.call(arguments) : value;
+                    if (values === progressValues) {
+                        deferred.notifyWith(contexts, values);
+                    } else if (! --remaining) {
+                        deferred.resolveWith(contexts, values);
+                    }
+                };
+            },
+                progressValues,
+                progressContexts,
+                resolveContexts;
 
             // add listeners to Deferred subordinates; treat others as resolved
             if (length > 1) {
@@ -18294,10 +18399,7 @@ var $ = (function () {
                 resolveContexts = new Array(length);
                 for (; i < length; i++) {
                     if (resolveValues[i] && jQuery.isFunction(resolveValues[i].promise)) {
-                        resolveValues[i].promise()
-                            .done(updateFunc(i, resolveContexts, resolveValues))
-                            .fail(deferred.reject)
-                            .progress(updateFunc(i, progressContexts, progressValues));
+                        resolveValues[i].promise().done(updateFunc(i, resolveContexts, resolveValues)).fail(deferred.reject).progress(updateFunc(i, progressContexts, progressValues));
                     } else {
                         --remaining;
                     }
@@ -18313,8 +18415,7 @@ var $ = (function () {
         }
     });
 
-
-// The deferred used on DOM ready
+    // The deferred used on DOM ready
     var readyList;
 
     jQuery.fn.ready = function (fn) {
@@ -18380,7 +18481,6 @@ var $ = (function () {
         if (document.addEventListener) {
             document.removeEventListener("DOMContentLoaded", completed, false);
             window.removeEventListener("load", completed, false);
-
         } else {
             document.detachEvent("onreadystatechange", completed);
             window.detachEvent("onload", completed);
@@ -18432,8 +18532,7 @@ var $ = (function () {
 
                 try {
                     top = window.frameElement == null && document.documentElement;
-                } catch (e) {
-                }
+                } catch (e) {}
 
                 if (top && top.doScroll) {
                     (function doScrollCheck() {
@@ -18460,24 +18559,21 @@ var $ = (function () {
         return readyList.promise(obj);
     };
 
-
     var strundefined = typeof undefined;
 
-
-// Support: IE<9
-// Iteration over object's inherited properties before its own
+    // Support: IE<9
+    // Iteration over object's inherited properties before its own
     var i;
     for (i in jQuery(support)) {
         break;
     }
     support.ownLast = i !== "0";
 
-// Note: most support tests are defined in their respective modules.
-// false until the test is run
+    // Note: most support tests are defined in their respective modules.
+    // false until the test is run
     support.inlineBlockNeedsLayout = false;
 
-
-// Execute ASAP in case we need to set body.style.zoom
+    // Execute ASAP in case we need to set body.style.zoom
     jQuery(function () {
         // Minified: var a,b,c,d
         var val, div, body, container;
@@ -18513,7 +18609,6 @@ var $ = (function () {
         body.removeChild(container);
     });
 
-
     (function () {
         var div = document.createElement("div");
 
@@ -18532,7 +18627,6 @@ var $ = (function () {
         div = null;
     })();
 
-
     /**
      * Determines whether an object can have data
      */
@@ -18541,13 +18635,11 @@ var $ = (function () {
             nodeType = +elem.nodeType || 1;
 
         // Do not set data on non-element DOM nodes because it will not be cleared (#8335).
-        return nodeType !== 1 && nodeType !== 9 ?
-            false :
+        return nodeType !== 1 && nodeType !== 9 ? false :
 
-            // Nodes accept data unless otherwise specified; rejection can be conditional
-            !noData || noData !== true && elem.getAttribute("classid") === noData;
+        // Nodes accept data unless otherwise specified; rejection can be conditional
+        !noData || noData !== true && elem.getAttribute("classid") === noData;
     };
-
 
     var rbrace = /^(?:\{[\w\W]*\}|\[[\w\W]*\])$/,
         rmultiDash = /([A-Z])/g;
@@ -18563,19 +18655,13 @@ var $ = (function () {
 
             if (typeof data === "string") {
                 try {
-                    data = data === "true" ? true :
-                        data === "false" ? false :
-                            data === "null" ? null :
-                                // Only convert to a number if it doesn't change the string
-                                +data + "" === data ? +data :
-                                    rbrace.test(data) ? jQuery.parseJSON(data) :
-                                        data;
-                } catch (e) {
-                }
+                    data = data === "true" ? true : data === "false" ? false : data === "null" ? null :
+                    // Only convert to a number if it doesn't change the string
+                    +data + "" === data ? +data : rbrace.test(data) ? jQuery.parseJSON(data) : data;
+                } catch (e) {}
 
                 // Make sure we set the data so it isn't changed later
                 jQuery.data(elem, key, data);
-
             } else {
                 data = undefined;
             }
@@ -18584,7 +18670,7 @@ var $ = (function () {
         return data;
     }
 
-// checks a cache object for emptiness
+    // checks a cache object for emptiness
     function isEmptyDataObject(obj) {
         var name;
         for (name in obj) {
@@ -18606,24 +18692,28 @@ var $ = (function () {
             return;
         }
 
-        var ret, thisCache,
+        var ret,
+            thisCache,
             internalKey = jQuery.expando,
 
-            // We have to handle DOM nodes and JS objects differently because IE6-7
-            // can't GC object references properly across the DOM-JS boundary
-            isNode = elem.nodeType,
 
-            // Only DOM nodes need the global jQuery cache; JS object data is
-            // attached directly to the object so GC can occur automatically
-            cache = isNode ? jQuery.cache : elem,
+        // We have to handle DOM nodes and JS objects differently because IE6-7
+        // can't GC object references properly across the DOM-JS boundary
+        isNode = elem.nodeType,
 
-            // Only defining an ID for JS objects if its cache already exists allows
-            // the code to shortcut on the same path as a DOM node with no cache
-            id = isNode ? elem[internalKey] : elem[internalKey] && internalKey;
+
+        // Only DOM nodes need the global jQuery cache; JS object data is
+        // attached directly to the object so GC can occur automatically
+        cache = isNode ? jQuery.cache : elem,
+
+
+        // Only defining an ID for JS objects if its cache already exists allows
+        // the code to shortcut on the same path as a DOM node with no cache
+        id = isNode ? elem[internalKey] : elem[internalKey] && internalKey;
 
         // Avoid doing any more work than we need to when trying to get data on an
         // object that has no data at all
-        if ((!id || !cache[id] || (!pvt && !cache[id].data)) && data === undefined && typeof name === "string") {
+        if ((!id || !cache[id] || !pvt && !cache[id].data) && data === undefined && typeof name === "string") {
             return;
         }
 
@@ -18640,7 +18730,7 @@ var $ = (function () {
         if (!cache[id]) {
             // Avoid exposing jQuery metadata on plain JS objects when the object
             // is serialized using JSON.stringify
-            cache[id] = isNode ? {} : {toJSON: jQuery.noop};
+            cache[id] = isNode ? {} : { toJSON: jQuery.noop };
         }
 
         // An object can be passed to jQuery.data instead of a key/value pair; this gets
@@ -18695,11 +18785,13 @@ var $ = (function () {
             return;
         }
 
-        var thisCache, i,
+        var thisCache,
+            i,
             isNode = elem.nodeType,
 
-            // See jQuery.data for more information
-            cache = isNode ? jQuery.cache : elem,
+
+        // See jQuery.data for more information
+        cache = isNode ? jQuery.cache : elem,
             id = isNode ? elem[jQuery.expando] : jQuery.expando;
 
         // If there is already no cache entry for this object, there is no
@@ -18817,7 +18909,9 @@ var $ = (function () {
 
     jQuery.fn.extend({
         data: function (key, value) {
-            var i, name, data,
+            var i,
+                name,
+                data,
                 elem = this[0],
                 attrs = elem && elem.attributes;
 
@@ -18859,14 +18953,14 @@ var $ = (function () {
 
             return arguments.length > 1 ?
 
-                // Sets one value
-                this.each(function () {
-                    jQuery.data(this, key, value);
-                }) :
+            // Sets one value
+            this.each(function () {
+                jQuery.data(this, key, value);
+            }) :
 
-                // Gets one value
-                // Try to fetch any internally stored data first
-                elem ? dataAttr(elem, key, jQuery.data(elem, key)) : undefined;
+            // Gets one value
+            // Try to fetch any internally stored data first
+            elem ? dataAttr(elem, key, jQuery.data(elem, key)) : undefined;
         },
 
         removeData: function (key) {
@@ -18876,13 +18970,12 @@ var $ = (function () {
         }
     });
 
-
     jQuery.extend({
         queue: function (elem, type, data) {
             var queue;
 
             if (elem) {
-                type = ( type || "fx" ) + "queue";
+                type = (type || "fx") + "queue";
                 queue = jQuery._data(elem, type);
 
                 // Speed up dequeue by getting out quickly if this is just a lookup
@@ -18905,8 +18998,8 @@ var $ = (function () {
                 fn = queue.shift(),
                 hooks = jQuery._queueHooks(elem, type),
                 next = function () {
-                    jQuery.dequeue(elem, type);
-                };
+                jQuery.dequeue(elem, type);
+            };
 
             // If the fx queue is dequeued, always remove the progress sentinel
             if (fn === "inprogress") {
@@ -18936,11 +19029,11 @@ var $ = (function () {
         _queueHooks: function (elem, type) {
             var key = type + "queueHooks";
             return jQuery._data(elem, key) || jQuery._data(elem, key, {
-                    empty: jQuery.Callbacks("once memory").add(function () {
-                        jQuery._removeData(elem, type + "queue");
-                        jQuery._removeData(elem, key);
-                    })
-                });
+                empty: jQuery.Callbacks("once memory").add(function () {
+                    jQuery._removeData(elem, type + "queue");
+                    jQuery._removeData(elem, key);
+                })
+            });
         }
     });
 
@@ -18958,18 +19051,16 @@ var $ = (function () {
                 return jQuery.queue(this[0], type);
             }
 
-            return data === undefined ?
-                this :
-                this.each(function () {
-                    var queue = jQuery.queue(this, type, data);
+            return data === undefined ? this : this.each(function () {
+                var queue = jQuery.queue(this, type, data);
 
-                    // ensure a hooks for this queue
-                    jQuery._queueHooks(this, type);
+                // ensure a hooks for this queue
+                jQuery._queueHooks(this, type);
 
-                    if (type === "fx" && queue[0] !== "inprogress") {
-                        jQuery.dequeue(this, type);
-                    }
-                });
+                if (type === "fx" && queue[0] !== "inprogress") {
+                    jQuery.dequeue(this, type);
+                }
+            });
         },
         dequeue: function (type) {
             return this.each(function () {
@@ -18988,10 +19079,10 @@ var $ = (function () {
                 elements = this,
                 i = this.length,
                 resolve = function () {
-                    if (!( --count )) {
-                        defer.resolveWith(elements, [elements]);
-                    }
-                };
+                if (! --count) {
+                    defer.resolveWith(elements, [elements]);
+                }
+            };
 
             if (typeof type !== "string") {
                 obj = type;
@@ -19011,7 +19102,6 @@ var $ = (function () {
         }
     });
 
-
     /*
      * Helper functions for managing events -- not part of the public interface.
      * Props to Dean Edwards' addEvent library for many of the ideas.
@@ -19021,9 +19111,17 @@ var $ = (function () {
         global: {},
 
         add: function (elem, types, handler, data, selector) {
-            var tmp, events, t, handleObjIn,
-                special, eventHandle, handleObj,
-                handlers, type, namespaces, origType,
+            var tmp,
+                events,
+                t,
+                handleObjIn,
+                special,
+                eventHandle,
+                handleObj,
+                handlers,
+                type,
+                namespaces,
+                origType,
                 elemData = jQuery._data(elem);
 
             // Don't attach events to noData or text/comment nodes (but allow plain objects)
@@ -19051,21 +19149,19 @@ var $ = (function () {
                 eventHandle = elemData.handle = function (e) {
                     // Discard the second event of a jQuery.event.trigger() and
                     // when an event is called after a page has unloaded
-                    return typeof jQuery !== strundefined && (!e || jQuery.event.triggered !== e.type) ?
-                        jQuery.event.dispatch.apply(eventHandle.elem, arguments) :
-                        undefined;
+                    return typeof jQuery !== strundefined && (!e || jQuery.event.triggered !== e.type) ? jQuery.event.dispatch.apply(eventHandle.elem, arguments) : undefined;
                 };
                 // Add elem as a property of the handle fn to prevent a memory leak with IE non-native events
                 eventHandle.elem = elem;
             }
 
             // Handle multiple events separated by a space
-            types = ( types || "" ).match(rnotwhite) || [""];
+            types = (types || "").match(rnotwhite) || [""];
             t = types.length;
             while (t--) {
                 tmp = rtypenamespace.exec(types[t]) || [];
                 type = origType = tmp[1];
-                namespaces = ( tmp[2] || "" ).split(".").sort();
+                namespaces = (tmp[2] || "").split(".").sort();
 
                 // There *must* be a type, no attaching namespace-only handlers
                 if (!type) {
@@ -19076,7 +19172,7 @@ var $ = (function () {
                 special = jQuery.event.special[type] || {};
 
                 // If selector defined, determine special event api type, otherwise given type
-                type = ( selector ? special.delegateType : special.bindType ) || type;
+                type = (selector ? special.delegateType : special.bindType) || type;
 
                 // Update special based on newly reset type
                 special = jQuery.event.special[type] || {};
@@ -19103,7 +19199,6 @@ var $ = (function () {
                         // Bind the global event handler to the element
                         if (elem.addEventListener) {
                             elem.addEventListener(type, eventHandle, false);
-
                         } else if (elem.attachEvent) {
                             elem.attachEvent("on" + type, eventHandle);
                         }
@@ -19135,10 +19230,17 @@ var $ = (function () {
 
         // Detach an event or set of events from an element
         remove: function (elem, types, handler, selector, mappedTypes) {
-            var j, handleObj, tmp,
-                origCount, t, events,
-                special, handlers, type,
-                namespaces, origType,
+            var j,
+                handleObj,
+                tmp,
+                origCount,
+                t,
+                events,
+                special,
+                handlers,
+                type,
+                namespaces,
+                origType,
                 elemData = jQuery.hasData(elem) && jQuery._data(elem);
 
             if (!elemData || !(events = elemData.events)) {
@@ -19146,12 +19248,12 @@ var $ = (function () {
             }
 
             // Once for each type.namespace in types; type may be omitted
-            types = ( types || "" ).match(rnotwhite) || [""];
+            types = (types || "").match(rnotwhite) || [""];
             t = types.length;
             while (t--) {
                 tmp = rtypenamespace.exec(types[t]) || [];
                 type = origType = tmp[1];
-                namespaces = ( tmp[2] || "" ).split(".").sort();
+                namespaces = (tmp[2] || "").split(".").sort();
 
                 // Unbind all events (on this namespace, if provided) for the element
                 if (!type) {
@@ -19162,7 +19264,7 @@ var $ = (function () {
                 }
 
                 special = jQuery.event.special[type] || {};
-                type = ( selector ? special.delegateType : special.bindType ) || type;
+                type = (selector ? special.delegateType : special.bindType) || type;
                 handlers = events[type] || [];
                 tmp = tmp[2] && new RegExp("(^|\\.)" + namespaces.join("\\.(?:.*\\.|)") + "(\\.|$)");
 
@@ -19171,10 +19273,7 @@ var $ = (function () {
                 while (j--) {
                     handleObj = handlers[j];
 
-                    if (( mappedTypes || origType === handleObj.origType ) &&
-                        ( !handler || handler.guid === handleObj.guid ) &&
-                        ( !tmp || tmp.test(handleObj.namespace) ) &&
-                        ( !selector || selector === handleObj.selector || selector === "**" && handleObj.selector )) {
+                    if ((mappedTypes || origType === handleObj.origType) && (!handler || handler.guid === handleObj.guid) && (!tmp || tmp.test(handleObj.namespace)) && (!selector || selector === handleObj.selector || selector === "**" && handleObj.selector)) {
                         handlers.splice(j, 1);
 
                         if (handleObj.selector) {
@@ -19208,8 +19307,13 @@ var $ = (function () {
         },
 
         trigger: function (event, data, elem, onlyHandlers) {
-            var handle, ontype, cur,
-                bubbleType, special, tmp, i,
+            var handle,
+                ontype,
+                cur,
+                bubbleType,
+                special,
+                tmp,
+                i,
                 eventPath = [elem || document],
                 type = hasOwn.call(event, "type") ? event.type : event,
                 namespaces = hasOwn.call(event, "namespace") ? event.namespace.split(".") : [];
@@ -19235,16 +19339,12 @@ var $ = (function () {
             ontype = type.indexOf(":") < 0 && "on" + type;
 
             // Caller can pass in a jQuery.Event object, Object, or just an event type string
-            event = event[jQuery.expando] ?
-                event :
-                new jQuery.Event(type, typeof event === "object" && event);
+            event = event[jQuery.expando] ? event : new jQuery.Event(type, typeof event === "object" && event);
 
             // Trigger bitmask: & 1 for native handlers; & 2 for jQuery (always true)
             event.isTrigger = onlyHandlers ? 2 : 3;
             event.namespace = namespaces.join(".");
-            event.namespace_re = event.namespace ?
-                new RegExp("(^|\\.)" + namespaces.join("\\.(?:.*\\.|)") + "(\\.|$)") :
-                null;
+            event.namespace_re = event.namespace ? new RegExp("(^|\\.)" + namespaces.join("\\.(?:.*\\.|)") + "(\\.|$)") : null;
 
             // Clean up the event in case it is being reused
             event.result = undefined;
@@ -19253,9 +19353,7 @@ var $ = (function () {
             }
 
             // Clone any incoming data and prepend the event, creating the handler arg list
-            data = data == null ?
-                [event] :
-                jQuery.makeArray(data, [event]);
+            data = data == null ? [event] : jQuery.makeArray(data, [event]);
 
             // Allow special events to draw outside the lines
             special = jQuery.event.special[type] || {};
@@ -19286,12 +19384,10 @@ var $ = (function () {
             i = 0;
             while ((cur = eventPath[i++]) && !event.isPropagationStopped()) {
 
-                event.type = i > 1 ?
-                    bubbleType :
-                    special.bindType || type;
+                event.type = i > 1 ? bubbleType : special.bindType || type;
 
                 // jQuery handler
-                handle = ( jQuery._data(cur, "events") || {} )[event.type] && jQuery._data(cur, "handle");
+                handle = (jQuery._data(cur, "events") || {})[event.type] && jQuery._data(cur, "handle");
                 if (handle) {
                     handle.apply(cur, data);
                 }
@@ -19310,8 +19406,7 @@ var $ = (function () {
             // If nobody prevented the default action, do it now
             if (!onlyHandlers && !event.isDefaultPrevented()) {
 
-                if ((!special._default || special._default.apply(eventPath.pop(), data) === false) &&
-                    jQuery.acceptData(elem)) {
+                if ((!special._default || special._default.apply(eventPath.pop(), data) === false) && jQuery.acceptData(elem)) {
 
                     // Call a native DOM method on the target with the same name name as the event.
                     // Can't use an .isFunction() check here because IE6/7 fails that test.
@@ -19350,10 +19445,14 @@ var $ = (function () {
             // Make a writable jQuery.Event from the native event object
             event = jQuery.event.fix(event);
 
-            var i, ret, handleObj, matched, j,
+            var i,
+                ret,
+                handleObj,
+                matched,
+                j,
                 handlerQueue = [],
                 args = slice.call(arguments),
-                handlers = ( jQuery._data(this, "events") || {} )[event.type] || [],
+                handlers = (jQuery._data(this, "events") || {})[event.type] || [],
                 special = jQuery.event.special[event.type] || {};
 
             // Use the fix-ed jQuery.Event rather than the (read-only) native event
@@ -19383,8 +19482,7 @@ var $ = (function () {
                         event.handleObj = handleObj;
                         event.data = handleObj.data;
 
-                        ret = ( (jQuery.event.special[handleObj.origType] || {}).handle || handleObj.handler )
-                            .apply(matched.elem, args);
+                        ret = ((jQuery.event.special[handleObj.origType] || {}).handle || handleObj.handler).apply(matched.elem, args);
 
                         if (ret !== undefined) {
                             if ((event.result = ret) === false) {
@@ -19405,7 +19503,10 @@ var $ = (function () {
         },
 
         handlers: function (event, handlers) {
-            var sel, handleObj, matches, i,
+            var sel,
+                handleObj,
+                matches,
+                i,
                 handlerQueue = [],
                 delegateCount = handlers.delegateCount,
                 cur = event.target;
@@ -19430,16 +19531,14 @@ var $ = (function () {
                             sel = handleObj.selector + " ";
 
                             if (matches[sel] === undefined) {
-                                matches[sel] = handleObj.needsContext ?
-                                    jQuery(sel, this).index(cur) >= 0 :
-                                    jQuery.find(sel, this, null, [cur]).length;
+                                matches[sel] = handleObj.needsContext ? jQuery(sel, this).index(cur) >= 0 : jQuery.find(sel, this, null, [cur]).length;
                             }
                             if (matches[sel]) {
                                 matches.push(handleObj);
                             }
                         }
                         if (matches.length) {
-                            handlerQueue.push({elem: cur, handlers: matches});
+                            handlerQueue.push({ elem: cur, handlers: matches });
                         }
                     }
                 }
@@ -19447,7 +19546,7 @@ var $ = (function () {
 
             // Add the remaining (directly-bound) handlers
             if (delegateCount < handlers.length) {
-                handlerQueue.push({elem: this, handlers: handlers.slice(delegateCount)});
+                handlerQueue.push({ elem: this, handlers: handlers.slice(delegateCount) });
             }
 
             return handlerQueue;
@@ -19459,16 +19558,15 @@ var $ = (function () {
             }
 
             // Create a writable copy of the event object and normalize some properties
-            var i, prop, copy,
+            var i,
+                prop,
+                copy,
                 type = event.type,
                 originalEvent = event,
                 fixHook = this.fixHooks[type];
 
             if (!fixHook) {
-                this.fixHooks[type] = fixHook =
-                    rmouseEvent.test(type) ? this.mouseHooks :
-                        rkeyEvent.test(type) ? this.keyHooks :
-                            {};
+                this.fixHooks[type] = fixHook = rmouseEvent.test(type) ? this.mouseHooks : rkeyEvent.test(type) ? this.keyHooks : {};
             }
             copy = fixHook.props ? this.props.concat(fixHook.props) : this.props;
 
@@ -19520,7 +19618,9 @@ var $ = (function () {
         mouseHooks: {
             props: "button buttons clientX clientY fromElement offsetX offsetY pageX pageY screenX screenY toElement".split(" "),
             filter: function (event, original) {
-                var body, eventDoc, doc,
+                var body,
+                    eventDoc,
+                    doc,
                     button = original.button,
                     fromElement = original.fromElement;
 
@@ -19530,8 +19630,8 @@ var $ = (function () {
                     doc = eventDoc.documentElement;
                     body = eventDoc.body;
 
-                    event.pageX = original.clientX + ( doc && doc.scrollLeft || body && body.scrollLeft || 0 ) - ( doc && doc.clientLeft || body && body.clientLeft || 0 );
-                    event.pageY = original.clientY + ( doc && doc.scrollTop || body && body.scrollTop || 0 ) - ( doc && doc.clientTop || body && body.clientTop || 0 );
+                    event.pageX = original.clientX + (doc && doc.scrollLeft || body && body.scrollLeft || 0) - (doc && doc.clientLeft || body && body.clientLeft || 0);
+                    event.pageY = original.clientY + (doc && doc.scrollTop || body && body.scrollTop || 0) - (doc && doc.clientTop || body && body.clientTop || 0);
                 }
 
                 // Add relatedTarget, if necessary
@@ -19542,7 +19642,7 @@ var $ = (function () {
                 // Add which for click: 1 === left; 2 === middle; 3 === right
                 // Note: button is not normalized, so don't use it
                 if (!event.which && button !== undefined) {
-                    event.which = ( button & 1 ? 1 : ( button & 2 ? 3 : ( button & 4 ? 2 : 0 ) ) );
+                    event.which = button & 1 ? 1 : button & 2 ? 3 : button & 4 ? 2 : 0;
                 }
 
                 return event;
@@ -19610,15 +19710,11 @@ var $ = (function () {
             // Piggyback on a donor event to simulate a different one.
             // Fake originalEvent to avoid donor's stopPropagation, but if the
             // simulated event prevents default then we do the same on the donor.
-            var e = jQuery.extend(
-                new jQuery.Event(),
-                event,
-                {
-                    type: type,
-                    isSimulated: true,
-                    originalEvent: {}
-                }
-            );
+            var e = jQuery.extend(new jQuery.Event(), event, {
+                type: type,
+                isSimulated: true,
+                originalEvent: {}
+            });
             if (bubble) {
                 jQuery.event.trigger(e, null, elem);
             } else {
@@ -19630,26 +19726,24 @@ var $ = (function () {
         }
     };
 
-    jQuery.removeEvent = document.removeEventListener ?
-        function (elem, type, handle) {
-            if (elem.removeEventListener) {
-                elem.removeEventListener(type, handle, false);
+    jQuery.removeEvent = document.removeEventListener ? function (elem, type, handle) {
+        if (elem.removeEventListener) {
+            elem.removeEventListener(type, handle, false);
+        }
+    } : function (elem, type, handle) {
+        var name = "on" + type;
+
+        if (elem.detachEvent) {
+
+            // #8545, #7054, preventing memory leaks for custom events in IE6-8
+            // detachEvent needed property on element, by name of that event, to properly expose it to GC
+            if (typeof elem[name] === strundefined) {
+                elem[name] = null;
             }
-        } :
-        function (elem, type, handle) {
-            var name = "on" + type;
 
-            if (elem.detachEvent) {
-
-                // #8545, #7054, preventing memory leaks for custom events in IE6-8
-                // detachEvent needed property on element, by name of that event, to properly expose it to GC
-                if (typeof elem[name] === strundefined) {
-                    elem[name] = null;
-                }
-
-                elem.detachEvent(name, handle);
-            }
-        };
+            elem.detachEvent(name, handle);
+        }
+    };
 
     jQuery.Event = function (src, props) {
         // Allow instantiation without the 'new' keyword
@@ -19664,12 +19758,9 @@ var $ = (function () {
 
             // Events bubbling up the document may have been marked as prevented
             // by a handler lower down the tree; reflect the correct value.
-            this.isDefaultPrevented = src.defaultPrevented ||
-            src.defaultPrevented === undefined &&
+            this.isDefaultPrevented = src.defaultPrevented || src.defaultPrevented === undefined &&
             // Support: IE < 9, Android < 4.0
-            src.returnValue === false ?
-                returnTrue :
-                returnFalse;
+            src.returnValue === false ? returnTrue : returnFalse;
 
             // Event type
         } else {
@@ -19702,8 +19793,8 @@ var $ = (function () {
         return false;
     }
 
-// jQuery.Event is based on DOM3 Events as specified by the ECMAScript Language Binding
-// http://www.w3.org/TR/2003/WD-DOM-Level-3-Events-20030331/ecma-script-binding.html
+    // jQuery.Event is based on DOM3 Events as specified by the ECMAScript Language Binding
+    // http://www.w3.org/TR/2003/WD-DOM-Level-3-Events-20030331/ecma-script-binding.html
     jQuery.Event.prototype = {
         isDefaultPrevented: returnFalse,
         isPropagationStopped: returnFalse,
@@ -19756,8 +19847,7 @@ var $ = (function () {
         }
     };
 
-
-// IE submit delegation
+    // IE submit delegation
     if (!support.submitBubbles) {
 
         jQuery.event.special.submit = {
@@ -19804,7 +19894,7 @@ var $ = (function () {
         };
     }
 
-// IE change delegation and checkbox/radio fix
+    // IE change delegation and checkbox/radio fix
     if (!support.changeBubbles) {
 
         jQuery.event.special.change = {
@@ -19850,7 +19940,7 @@ var $ = (function () {
                 var elem = event.target;
 
                 // Swallow native change events from checkbox/radio, we already triggered them above
-                if (this !== elem || event.isSimulated || event.isTrigger || (elem.type !== "radio" && elem.type !== "checkbox")) {
+                if (this !== elem || event.isSimulated || event.isTrigger || elem.type !== "radio" && elem.type !== "checkbox") {
                     return event.handleObj.handler.apply(this, arguments);
                 }
             },
@@ -19863,9 +19953,9 @@ var $ = (function () {
         };
     }
 
-// Create "bubbling" focus and blur events
+    // Create "bubbling" focus and blur events
     if (!support.focusinBubbles) {
-        jQuery.each({focus: "focusin", blur: "focusout"}, function (orig, fix) {
+        jQuery.each({ focus: "focusin", blur: "focusout" }, function (orig, fix) {
 
             // Attach a single capturing handler on the document while someone wants focusin/focusout
             var handler = function (event) {
@@ -19880,7 +19970,7 @@ var $ = (function () {
                     if (!attaches) {
                         doc.addEventListener(orig, handler, true);
                     }
-                    jQuery._data(doc, fix, ( attaches || 0 ) + 1);
+                    jQuery._data(doc, fix, (attaches || 0) + 1);
                 },
                 teardown: function () {
                     var doc = this.ownerDocument || this,
@@ -19899,7 +19989,7 @@ var $ = (function () {
 
     jQuery.fn.extend({
 
-        on: function (types, selector, data, fn, /*INTERNAL*/ one) {
+        on: function (types, selector, data, fn, /*INTERNAL*/one) {
             var type, origFn;
 
             // Types can be a map of types/handlers
@@ -19946,7 +20036,7 @@ var $ = (function () {
                     return origFn.apply(this, arguments);
                 };
                 // Use same guid so caller can remove using origFn
-                fn.guid = origFn.guid || ( origFn.guid = jQuery.guid++ );
+                fn.guid = origFn.guid || (origFn.guid = jQuery.guid++);
             }
             return this.each(function () {
                 jQuery.event.add(this, types, fn, data, selector);
@@ -19960,11 +20050,7 @@ var $ = (function () {
             if (types && types.preventDefault && types.handleObj) {
                 // ( event )  dispatched jQuery.Event
                 handleObj = types.handleObj;
-                jQuery(types.delegateTarget).off(
-                    handleObj.namespace ? handleObj.origType + "." + handleObj.namespace : handleObj.origType,
-                    handleObj.selector,
-                    handleObj.handler
-                );
+                jQuery(types.delegateTarget).off(handleObj.namespace ? handleObj.origType + "." + handleObj.namespace : handleObj.origType, handleObj.selector, handleObj.handler);
                 return this;
             }
             if (typeof types === "object") {
@@ -20000,9 +20086,8 @@ var $ = (function () {
         }
     });
 
-
-// Based off of the plugin by Clint Helfers, with permission.
-// http://blindsignals.com/index.php/2009/07/jquery-delay/
+    // Based off of the plugin by Clint Helfers, with permission.
+    // http://blindsignals.com/index.php/2009/07/jquery-delay/
     jQuery.fn.delay = function (time, type) {
         time = jQuery.fx ? jQuery.fx.speeds[time] || time : time;
         type = type || "fx";
@@ -20015,11 +20100,9 @@ var $ = (function () {
         });
     };
 
-
     var nonce = jQuery.now();
 
-    var rquery = (/\?/);
-
+    var rquery = /\?/;
 
     var rvalidtokens = /(,)|(\[|{)|(}|])|"(?:[^"\\\r\n]|\\["\\\/bfnrt]|\\u[\da-fA-F]{4})*"\s*:?|true|false|null|-?(?!0\d)\d+(?:\.\d+|)(?:[eE][+-]?\d+|)/g;
 
@@ -20060,23 +20143,22 @@ var $ = (function () {
 
             // Remove this token
             return "";
-        })) ?
-            ( Function("return " + str) )() :
-            jQuery.error("Invalid JSON: " + data);
+        })) ? Function("return " + str)() : jQuery.error("Invalid JSON: " + data);
     };
 
-
-// Cross-browser xml parsing
+    // Cross-browser xml parsing
     jQuery.parseXML = function (data) {
         var xml, tmp;
         if (!data || typeof data !== "string") {
             return null;
         }
         try {
-            if (window.DOMParser) { // Standard
+            if (window.DOMParser) {
+                // Standard
                 tmp = new DOMParser();
                 xml = tmp.parseFromString(data, "text/xml");
-            } else { // IE
+            } else {
+                // IE
                 xml = new ActiveXObject("Microsoft.XMLDOM");
                 xml.async = "false";
                 xml.loadXML(data);
@@ -20090,44 +20172,46 @@ var $ = (function () {
         return xml;
     };
 
-
     var
-        // Document location
-        ajaxLocParts,
+    // Document location
+    ajaxLocParts,
         ajaxLocation,
-
         rhash = /#.*$/,
         rts = /([?&])_=[^&]*/,
-        rheaders = /^(.*?):[ \t]*([^\r\n]*)\r?$/mg, // IE leaves an \r character at EOL
-        // #7653, #8125, #8152: local protocol detection
-        rlocalProtocol = /^(?:about|app|app-storage|.+-extension|file|res|widget):$/,
+        rheaders = /^(.*?):[ \t]*([^\r\n]*)\r?$/mg,
+        // IE leaves an \r character at EOL
+    // #7653, #8125, #8152: local protocol detection
+    rlocalProtocol = /^(?:about|app|app-storage|.+-extension|file|res|widget):$/,
         rnoContent = /^(?:GET|HEAD)$/,
         rprotocol = /^\/\//,
         rurl = /^([\w.+-]+:)(?:\/\/(?:[^\/?#]*@|)([^\/?#:]*)(?::(\d+)|)|)/,
 
-        /* Prefilters
-         * 1) They are useful to introduce custom dataTypes (see ajax/jsonp.js for an example)
-         * 2) These are called:
-         *    - BEFORE asking for a transport
-         *    - AFTER param serialization (s.data is a string if s.processData is true)
-         * 3) key is the dataType
-         * 4) the catchall symbol "*" can be used
-         * 5) execution will start with transport dataType and THEN continue down to "*" if needed
-         */
-        prefilters = {},
 
-        /* Transports bindings
-         * 1) key is the dataType
-         * 2) the catchall symbol "*" can be used
-         * 3) selection will start with transport dataType and THEN go to "*" if needed
-         */
-        transports = {},
+    /* Prefilters
+     * 1) They are useful to introduce custom dataTypes (see ajax/jsonp.js for an example)
+     * 2) These are called:
+     *    - BEFORE asking for a transport
+     *    - AFTER param serialization (s.data is a string if s.processData is true)
+     * 3) key is the dataType
+     * 4) the catchall symbol "*" can be used
+     * 5) execution will start with transport dataType and THEN continue down to "*" if needed
+     */
+    prefilters = {},
 
-        // Avoid comment-prolog char sequence (#10098); must appease lint and evade compression
-        allTypes = "*/".concat("*");
 
-// #8138, IE may throw an exception when accessing
-// a field from window.location if document.domain has been set
+    /* Transports bindings
+     * 1) key is the dataType
+     * 2) the catchall symbol "*" can be used
+     * 3) selection will start with transport dataType and THEN go to "*" if needed
+     */
+    transports = {},
+
+
+    // Avoid comment-prolog char sequence (#10098); must appease lint and evade compression
+    allTypes = "*/".concat("*");
+
+    // #8138, IE may throw an exception when accessing
+    // a field from window.location if document.domain has been set
     try {
         ajaxLocation = location.href;
     } catch (e) {
@@ -20138,10 +20222,10 @@ var $ = (function () {
         ajaxLocation = ajaxLocation.href;
     }
 
-// Segment location into parts
+    // Segment location into parts
     ajaxLocParts = rurl.exec(ajaxLocation.toLowerCase()) || [];
 
-// Base "constructor" for jQuery.ajaxPrefilter and jQuery.ajaxTransport
+    // Base "constructor" for jQuery.ajaxPrefilter and jQuery.ajaxTransport
     function addToPrefiltersOrTransports(structure) {
 
         // dataTypeExpression is optional and defaults to "*"
@@ -20158,7 +20242,7 @@ var $ = (function () {
 
             if (jQuery.isFunction(func)) {
                 // For each dataType in the dataTypeExpression
-                while ((dataType = dataTypes[i++])) {
+                while (dataType = dataTypes[i++]) {
                     // Prepend if requested
                     if (dataType.charAt(0) === "+") {
                         dataType = dataType.slice(1) || "*";
@@ -20173,11 +20257,11 @@ var $ = (function () {
         };
     }
 
-// Base inspection function for prefilters and transports
+    // Base inspection function for prefilters and transports
     function inspectPrefiltersOrTransports(structure, options, originalOptions, jqXHR) {
 
         var inspected = {},
-            seekingTransport = ( structure === transports );
+            seekingTransport = structure === transports;
 
         function inspect(dataType) {
             var selected;
@@ -20189,7 +20273,7 @@ var $ = (function () {
                     inspect(dataTypeOrTransport);
                     return false;
                 } else if (seekingTransport) {
-                    return !( selected = dataTypeOrTransport );
+                    return !(selected = dataTypeOrTransport);
                 }
             });
             return selected;
@@ -20198,16 +20282,17 @@ var $ = (function () {
         return inspect(options.dataTypes[0]) || !inspected["*"] && inspect("*");
     }
 
-// A special extend for ajax options
-// that takes "flat" options (not to be deep extended)
-// Fixes #9887
+    // A special extend for ajax options
+    // that takes "flat" options (not to be deep extended)
+    // Fixes #9887
     function ajaxExtend(target, src) {
-        var deep, key,
+        var deep,
+            key,
             flatOptions = jQuery.ajaxSettings.flatOptions || {};
 
         for (key in src) {
             if (src[key] !== undefined) {
-                ( flatOptions[key] ? target : ( deep || (deep = {}) ) )[key] = src[key];
+                (flatOptions[key] ? target : deep || (deep = {}))[key] = src[key];
             }
         }
         if (deep) {
@@ -20222,7 +20307,10 @@ var $ = (function () {
      * - returns the corresponding response
      */
     function ajaxHandleResponses(s, jqXHR, responses) {
-        var firstDataType, ct, finalDataType, type,
+        var firstDataType,
+            ct,
+            finalDataType,
+            type,
             contents = s.contents,
             dataTypes = s.dataTypes;
 
@@ -20277,10 +20365,15 @@ var $ = (function () {
      * Also sets the responseXXX fields on the jqXHR instance
      */
     function ajaxConvert(s, response, jqXHR, isSuccess) {
-        var conv2, current, conv, tmp, prev,
+        var conv2,
+            current,
+            conv,
+            tmp,
+            prev,
             converters = {},
-            // Work with a copy of dataTypes in case we need to modify it for conversion
-            dataTypes = s.dataTypes.slice();
+
+        // Work with a copy of dataTypes in case we need to modify it for conversion
+        dataTypes = s.dataTypes.slice();
 
         // Create converters map with lowercased keys
         if (dataTypes[1]) {
@@ -20328,8 +20421,7 @@ var $ = (function () {
                             if (tmp[1] === current) {
 
                                 // If prev can be converted to accepted input
-                                conv = converters[prev + " " + tmp[0]] ||
-                                    converters["* " + tmp[0]];
+                                conv = converters[prev + " " + tmp[0]] || converters["* " + tmp[0]];
                                 if (conv) {
                                     // Condense equivalence converters
                                     if (conv === true) {
@@ -20367,7 +20459,7 @@ var $ = (function () {
             }
         }
 
-        return {state: "success", data: response};
+        return { state: "success", data: response };
     }
 
     jQuery.extend({
@@ -20452,11 +20544,11 @@ var $ = (function () {
         ajaxSetup: function (target, settings) {
             return settings ?
 
-                // Building a settings object
-                ajaxExtend(ajaxExtend(target, jQuery.ajaxSettings), settings) :
+            // Building a settings object
+            ajaxExtend(ajaxExtend(target, jQuery.ajaxSettings), settings) :
 
-                // Extending ajaxSettings
-                ajaxExtend(jQuery.ajaxSettings, target);
+            // Extending ajaxSettings
+            ajaxExtend(jQuery.ajaxSettings, target);
         },
 
         ajaxPrefilter: addToPrefiltersOrTransports(prefilters),
@@ -20475,111 +20567,123 @@ var $ = (function () {
             options = options || {};
 
             var // Cross-domain detection vars
-                parts,
-                // Loop variable
-                i,
-                // URL without anti-cache param
-                cacheURL,
-                // Response headers as string
-                responseHeadersString,
-                // timeout handle
-                timeoutTimer,
+            parts,
 
-                // To know if global events are to be dispatched
-                fireGlobals,
+            // Loop variable
+            i,
 
+            // URL without anti-cache param
+            cacheURL,
+
+            // Response headers as string
+            responseHeadersString,
+
+            // timeout handle
+            timeoutTimer,
+
+
+            // To know if global events are to be dispatched
+            fireGlobals,
                 transport,
-                // Response headers
-                responseHeaders,
-                // Create the final options object
-                s = jQuery.ajaxSetup({}, options),
-                // Callbacks context
-                callbackContext = s.context || s,
-                // Context for global events is callbackContext if it is a DOM node or jQuery collection
-                globalEventContext = s.context && ( callbackContext.nodeType || callbackContext.jquery ) ?
-                    jQuery(callbackContext) :
-                    jQuery.event,
-                // Deferreds
-                deferred = jQuery.Deferred(),
+
+            // Response headers
+            responseHeaders,
+
+            // Create the final options object
+            s = jQuery.ajaxSetup({}, options),
+
+            // Callbacks context
+            callbackContext = s.context || s,
+
+            // Context for global events is callbackContext if it is a DOM node or jQuery collection
+            globalEventContext = s.context && (callbackContext.nodeType || callbackContext.jquery) ? jQuery(callbackContext) : jQuery.event,
+
+            // Deferreds
+            deferred = jQuery.Deferred(),
                 completeDeferred = jQuery.Callbacks("once memory"),
-                // Status-dependent callbacks
-                statusCode = s.statusCode || {},
-                // Headers (they are sent all at once)
-                requestHeaders = {},
+
+            // Status-dependent callbacks
+            statusCode = s.statusCode || {},
+
+            // Headers (they are sent all at once)
+            requestHeaders = {},
                 requestHeadersNames = {},
-                // The jqXHR state
-                state = 0,
-                // Default abort message
-                strAbort = "canceled",
-                // Fake xhr
-                jqXHR = {
-                    readyState: 0,
 
-                    // Builds headers hashtable if needed
-                    getResponseHeader: function (key) {
-                        var match;
-                        if (state === 2) {
-                            if (!responseHeaders) {
-                                responseHeaders = {};
-                                while ((match = rheaders.exec(responseHeadersString))) {
-                                    responseHeaders[match[1].toLowerCase()] = match[2];
-                                }
-                            }
-                            match = responseHeaders[key.toLowerCase()];
-                        }
-                        return match == null ? null : match;
-                    },
+            // The jqXHR state
+            state = 0,
 
-                    // Raw string
-                    getAllResponseHeaders: function () {
-                        return state === 2 ? responseHeadersString : null;
-                    },
+            // Default abort message
+            strAbort = "canceled",
 
-                    // Caches the header
-                    setRequestHeader: function (name, value) {
-                        var lname = name.toLowerCase();
-                        if (!state) {
-                            name = requestHeadersNames[lname] = requestHeadersNames[lname] || name;
-                            requestHeaders[name] = value;
-                        }
-                        return this;
-                    },
+            // Fake xhr
+            jqXHR = {
+                readyState: 0,
 
-                    // Overrides response content-type header
-                    overrideMimeType: function (type) {
-                        if (!state) {
-                            s.mimeType = type;
-                        }
-                        return this;
-                    },
-
-                    // Status-dependent callbacks
-                    statusCode: function (map) {
-                        var code;
-                        if (map) {
-                            if (state < 2) {
-                                for (code in map) {
-                                    // Lazy-add the new callback in a way that preserves old ones
-                                    statusCode[code] = [statusCode[code], map[code]];
-                                }
-                            } else {
-                                // Execute the appropriate callbacks
-                                jqXHR.always(map[jqXHR.status]);
+                // Builds headers hashtable if needed
+                getResponseHeader: function (key) {
+                    var match;
+                    if (state === 2) {
+                        if (!responseHeaders) {
+                            responseHeaders = {};
+                            while (match = rheaders.exec(responseHeadersString)) {
+                                responseHeaders[match[1].toLowerCase()] = match[2];
                             }
                         }
-                        return this;
-                    },
-
-                    // Cancel the request
-                    abort: function (statusText) {
-                        var finalText = statusText || strAbort;
-                        if (transport) {
-                            transport.abort(finalText);
-                        }
-                        done(0, finalText);
-                        return this;
+                        match = responseHeaders[key.toLowerCase()];
                     }
-                };
+                    return match == null ? null : match;
+                },
+
+                // Raw string
+                getAllResponseHeaders: function () {
+                    return state === 2 ? responseHeadersString : null;
+                },
+
+                // Caches the header
+                setRequestHeader: function (name, value) {
+                    var lname = name.toLowerCase();
+                    if (!state) {
+                        name = requestHeadersNames[lname] = requestHeadersNames[lname] || name;
+                        requestHeaders[name] = value;
+                    }
+                    return this;
+                },
+
+                // Overrides response content-type header
+                overrideMimeType: function (type) {
+                    if (!state) {
+                        s.mimeType = type;
+                    }
+                    return this;
+                },
+
+                // Status-dependent callbacks
+                statusCode: function (map) {
+                    var code;
+                    if (map) {
+                        if (state < 2) {
+                            for (code in map) {
+                                // Lazy-add the new callback in a way that preserves old ones
+                                statusCode[code] = [statusCode[code], map[code]];
+                            }
+                        } else {
+                            // Execute the appropriate callbacks
+                            jqXHR.always(map[jqXHR.status]);
+                        }
+                    }
+                    return this;
+                },
+
+                // Cancel the request
+                abort: function (statusText) {
+                    var finalText = statusText || strAbort;
+                    if (transport) {
+                        transport.abort(finalText);
+                    }
+                    done(0, finalText);
+                    return this;
+                }
+            };
 
             // Attach deferreds
             deferred.promise(jqXHR).complete = completeDeferred.add;
@@ -20590,7 +20694,7 @@ var $ = (function () {
             // Add protocol if not provided (#5866: IE7 issue with protocol-less urls)
             // Handle falsy url in the settings object (#10093: consistency with old signature)
             // We also use the url parameter if available
-            s.url = ( ( url || s.url || ajaxLocation ) + "" ).replace(rhash, "").replace(rprotocol, ajaxLocParts[1] + "//");
+            s.url = ((url || s.url || ajaxLocation) + "").replace(rhash, "").replace(rprotocol, ajaxLocParts[1] + "//");
 
             // Alias method option to type as per ticket #12004
             s.type = options.method || options.type || s.method || s.type;
@@ -20601,11 +20705,7 @@ var $ = (function () {
             // A cross-domain request is in order when we have a protocol:host:port mismatch
             if (s.crossDomain == null) {
                 parts = rurl.exec(s.url.toLowerCase());
-                s.crossDomain = !!( parts &&
-                    ( parts[1] !== ajaxLocParts[1] || parts[2] !== ajaxLocParts[2] ||
-                    ( parts[3] || ( parts[1] === "http:" ? "80" : "443" ) ) !==
-                    ( ajaxLocParts[3] || ( ajaxLocParts[1] === "http:" ? "80" : "443" ) ) )
-                );
+                s.crossDomain = !!(parts && (parts[1] !== ajaxLocParts[1] || parts[2] !== ajaxLocParts[2] || (parts[3] || (parts[1] === "http:" ? "80" : "443")) !== (ajaxLocParts[3] || (ajaxLocParts[1] === "http:" ? "80" : "443"))));
             }
 
             // Convert data if not already a string
@@ -20644,7 +20744,7 @@ var $ = (function () {
 
                 // If data is available, append data to url
                 if (s.data) {
-                    cacheURL = ( s.url += ( rquery.test(cacheURL) ? "&" : "?" ) + s.data );
+                    cacheURL = s.url += (rquery.test(cacheURL) ? "&" : "?") + s.data;
                     // #9682: remove data so that it's not used in an eventual retry
                     delete s.data;
                 }
@@ -20653,11 +20753,11 @@ var $ = (function () {
                 if (s.cache === false) {
                     s.url = rts.test(cacheURL) ?
 
-                        // If there is already a '_' parameter, set its value
-                        cacheURL.replace(rts, "$1_=" + nonce++) :
+                    // If there is already a '_' parameter, set its value
+                    cacheURL.replace(rts, "$1_=" + nonce++) :
 
-                        // Otherwise add one to the end
-                        cacheURL + ( rquery.test(cacheURL) ? "&" : "?" ) + "_=" + nonce++;
+                    // Otherwise add one to the end
+                    cacheURL + (rquery.test(cacheURL) ? "&" : "?") + "_=" + nonce++;
                 }
             }
 
@@ -20690,7 +20790,7 @@ var $ = (function () {
             }
 
             // Allow custom headers/mimetypes and early abort
-            if (s.beforeSend && ( s.beforeSend.call(callbackContext, jqXHR, s) === false || state === 2 )) {
+            if (s.beforeSend && (s.beforeSend.call(callbackContext, jqXHR, s) === false || state === 2)) {
                 // Abort if not done already and return
                 return jqXHR.abort();
             }
@@ -20699,7 +20799,7 @@ var $ = (function () {
             strAbort = "abort";
 
             // Install callbacks on deferreds
-            for (i in {success: 1, error: 1, complete: 1}) {
+            for (i in { success: 1, error: 1, complete: 1 }) {
                 jqXHR[i](s[i]);
             }
 
@@ -20739,7 +20839,11 @@ var $ = (function () {
 
             // Callback for when everything is done
             function done(status, nativeStatusText, responses, headers) {
-                var isSuccess, success, error, response, modified,
+                var isSuccess,
+                    success,
+                    error,
+                    response,
+                    modified,
                     statusText = nativeStatusText;
 
                 // Called once
@@ -20820,7 +20924,7 @@ var $ = (function () {
 
                 // Set data for the fake xhr object
                 jqXHR.status = status;
-                jqXHR.statusText = ( nativeStatusText || statusText ) + "";
+                jqXHR.statusText = (nativeStatusText || statusText) + "";
 
                 // Success/Error
                 if (isSuccess) {
@@ -20834,8 +20938,7 @@ var $ = (function () {
                 statusCode = undefined;
 
                 if (fireGlobals) {
-                    globalEventContext.trigger(isSuccess ? "ajaxSuccess" : "ajaxError",
-                        [jqXHR, s, isSuccess ? success : error]);
+                    globalEventContext.trigger(isSuccess ? "ajaxSuccess" : "ajaxError", [jqXHR, s, isSuccess ? success : error]);
                 }
 
                 // Complete
@@ -20844,7 +20947,7 @@ var $ = (function () {
                 if (fireGlobals) {
                     globalEventContext.trigger("ajaxComplete", [jqXHR, s]);
                     // Handle the global AJAX counter
-                    if (!( --jQuery.active )) {
+                    if (! --jQuery.active) {
                         jQuery.event.trigger("ajaxStop");
                     }
                 }
@@ -20881,13 +20984,12 @@ var $ = (function () {
         };
     });
 
-// Attach a bunch of functions for handling common AJAX events
+    // Attach a bunch of functions for handling common AJAX events
     jQuery.each(["ajaxStart", "ajaxStop", "ajaxComplete", "ajaxError", "ajaxSuccess", "ajaxSend"], function (i, type) {
         jQuery.fn[type] = function (fn) {
             return this.on(type, fn);
         };
     });
-
 
     jQuery._evalUrl = function (url) {
         return jQuery.ajax({
@@ -20899,7 +21001,6 @@ var $ = (function () {
             "throws": true
         });
     };
-
 
     var r20 = /%20/g,
         rbracket = /\[\]$/,
@@ -20916,35 +21017,32 @@ var $ = (function () {
                 if (traditional || rbracket.test(prefix)) {
                     // Treat each array item as a scalar.
                     add(prefix, v);
-
                 } else {
                     // Item is non-scalar (array or object), encode its numeric index.
-                    buildParams(prefix + "[" + ( typeof v === "object" ? i : "" ) + "]", v, traditional, add);
+                    buildParams(prefix + "[" + (typeof v === "object" ? i : "") + "]", v, traditional, add);
                 }
             });
-
         } else if (!traditional && jQuery.type(obj) === "object") {
             // Serialize object item.
             for (name in obj) {
                 buildParams(prefix + "[" + name + "]", obj[name], traditional, add);
             }
-
         } else {
             // Serialize scalar item.
             add(prefix, obj);
         }
     }
 
-// Serialize an array of form elements or a set of
-// key/values into a query string
+    // Serialize an array of form elements or a set of
+    // key/values into a query string
     jQuery.param = function (a, traditional) {
         var prefix,
             s = [],
             add = function (key, value) {
-                // If value is a function, invoke it and return its value
-                value = jQuery.isFunction(value) ? value() : ( value == null ? "" : value );
-                s[s.length] = encodeURIComponent(key) + "=" + encodeURIComponent(value);
-            };
+            // If value is a function, invoke it and return its value
+            value = jQuery.isFunction(value) ? value() : value == null ? "" : value;
+            s[s.length] = encodeURIComponent(key) + "=" + encodeURIComponent(value);
+        };
 
         // Set traditional to true for jQuery <= 1.3.2 behavior.
         if (traditional === undefined) {
@@ -20952,12 +21050,11 @@ var $ = (function () {
         }
 
         // If an array was passed in, assume that it is an array of form elements.
-        if (jQuery.isArray(a) || ( a.jquery && !jQuery.isPlainObject(a) )) {
+        if (jQuery.isArray(a) || a.jquery && !jQuery.isPlainObject(a)) {
             // Serialize the form elements
             jQuery.each(a, function () {
                 add(this.name, this.value);
             });
-
         } else {
             // If traditional, encode the "old" way (the way 1.3.2 or older
             // did it), otherwise encode params recursively.
@@ -20979,57 +21076,46 @@ var $ = (function () {
                 // Can add propHook for "elements" to filter or add form elements
                 var elements = jQuery.prop(this, "elements");
                 return elements ? jQuery.makeArray(elements) : this;
-            })
-                .filter(function () {
-                    var type = this.type;
-                    // Use .is(":disabled") so that fieldset[disabled] works
-                    return this.name && !jQuery(this).is(":disabled") &&
-                        rsubmittable.test(this.nodeName) && !rsubmitterTypes.test(type) &&
-                        ( this.checked || !rcheckableType.test(type) );
-                })
-                .map(function (i, elem) {
-                    var val = jQuery(this).val();
+            }).filter(function () {
+                var type = this.type;
+                // Use .is(":disabled") so that fieldset[disabled] works
+                return this.name && !jQuery(this).is(":disabled") && rsubmittable.test(this.nodeName) && !rsubmitterTypes.test(type) && (this.checked || !rcheckableType.test(type));
+            }).map(function (i, elem) {
+                var val = jQuery(this).val();
 
-                    return val == null ?
-                        null :
-                        jQuery.isArray(val) ?
-                            jQuery.map(val, function (val) {
-                                return {name: elem.name, value: val.replace(rCRLF, "\r\n")};
-                            }) :
-                            {name: elem.name, value: val.replace(rCRLF, "\r\n")};
-                }).get();
+                return val == null ? null : jQuery.isArray(val) ? jQuery.map(val, function (val) {
+                    return { name: elem.name, value: val.replace(rCRLF, "\r\n") };
+                }) : { name: elem.name, value: val.replace(rCRLF, "\r\n") };
+            }).get();
         }
     });
 
-
-// Create the request object
-// (This is still attached to ajaxSettings for backward compatibility)
+    // Create the request object
+    // (This is still attached to ajaxSettings for backward compatibility)
     jQuery.ajaxSettings.xhr = window.ActiveXObject !== undefined ?
-        // Support: IE6+
-        function () {
+    // Support: IE6+
+    function () {
 
-            // XHR cannot access local files, always use ActiveX for that case
-            return !this.isLocal &&
+        // XHR cannot access local files, always use ActiveX for that case
+        return !this.isLocal &&
 
-                // Support: IE7-8
-                // oldIE XHR does not support non-RFC2616 methods (#13240)
-                // See http://msdn.microsoft.com/en-us/library/ie/ms536648(v=vs.85).aspx
-                // and http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9
-                // Although this check for six methods instead of eight
-                // since IE also does not support "trace" and "connect"
-                /^(get|post|head|put|delete|options)$/i.test(this.type) &&
-
-                createStandardXHR() || createActiveXHR();
-        } :
-        // For all other browsers, use the standard XMLHttpRequest object
-        createStandardXHR;
+        // Support: IE7-8
+        // oldIE XHR does not support non-RFC2616 methods (#13240)
+        // See http://msdn.microsoft.com/en-us/library/ie/ms536648(v=vs.85).aspx
+        // and http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9
+        // Although this check for six methods instead of eight
+        // since IE also does not support "trace" and "connect"
+        /^(get|post|head|put|delete|options)$/i.test(this.type) && createStandardXHR() || createActiveXHR();
+    } :
+    // For all other browsers, use the standard XMLHttpRequest object
+    createStandardXHR;
 
     var xhrId = 0,
         xhrCallbacks = {},
         xhrSupported = jQuery.ajaxSettings.xhr();
 
-// Support: IE<10
-// Open requests must be manually aborted on unload (#5280)
+    // Support: IE<10
+    // Open requests must be manually aborted on unload (#5280)
     if (window.ActiveXObject) {
         jQuery(window).on("unload", function () {
             for (var key in xhrCallbacks) {
@@ -21038,11 +21124,11 @@ var $ = (function () {
         });
     }
 
-// Determine support properties
-    support.cors = !!xhrSupported && ( "withCredentials" in xhrSupported );
+    // Determine support properties
+    support.cors = !!xhrSupported && "withCredentials" in xhrSupported;
     xhrSupported = support.ajax = !!xhrSupported;
 
-// Create transport if the browser can provide an xhr
+    // Create transport if the browser can provide an xhr
     if (xhrSupported) {
 
         jQuery.ajaxTransport(function (options) {
@@ -21101,14 +21187,14 @@ var $ = (function () {
                         // Do send the request
                         // This may raise an exception which is actually
                         // handled in jQuery.ajax (so no try/catch here)
-                        xhr.send(( options.hasContent && (options.body || options.data)) || null);
+                        xhr.send(options.hasContent && (options.body || options.data) || null);
 
                         // Listener
                         callback = function (_, isAbort) {
                             var status, statusText, responses;
 
                             // Was never called and is aborted or complete
-                            if (callback && ( isAbort || xhr.readyState === 4 )) {
+                            if (callback && (isAbort || xhr.readyState === 4)) {
                                 // Clean up
                                 delete xhrCallbacks[id];
                                 callback = undefined;
@@ -21182,23 +21268,20 @@ var $ = (function () {
         });
     }
 
-// Functions to create xhrs
+    // Functions to create xhrs
     function createStandardXHR() {
         try {
             return new window.XMLHttpRequest();
-        } catch (e) {
-        }
+        } catch (e) {}
     }
 
     function createActiveXHR() {
         try {
             return new window.ActiveXObject("Microsoft.XMLHTTP");
-        } catch (e) {
-        }
+        } catch (e) {}
     }
 
-
-// Install script dataType
+    // Install script dataType
     jQuery.ajaxSetup({
         accepts: {
             script: "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript"
@@ -21214,7 +21297,7 @@ var $ = (function () {
         }
     });
 
-// Handle cache's special case and global
+    // Handle cache's special case and global
     jQuery.ajaxPrefilter("script", function (s) {
         if (s.cache === undefined) {
             s.cache = false;
@@ -21225,7 +21308,7 @@ var $ = (function () {
         }
     });
 
-// Bind script tag hack transport
+    // Bind script tag hack transport
     jQuery.ajaxTransport("script", function (s) {
 
         // This transport only deals with cross domain requests
@@ -21285,42 +21368,38 @@ var $ = (function () {
         }
     });
 
-
     var oldCallbacks = [],
         rjsonp = /(=)\?(?=&|$)|\?\?/;
 
-// Default jsonp settings
+    // Default jsonp settings
     jQuery.ajaxSetup({
         jsonp: "callback",
         jsonpCallback: function () {
-            var callback = oldCallbacks.pop() || ( jQuery.expando + "_" + ( nonce++ ) );
+            var callback = oldCallbacks.pop() || jQuery.expando + "_" + nonce++;
             this[callback] = true;
             return callback;
         }
     });
 
-// Detect, normalize options and install callbacks for jsonp requests
+    // Detect, normalize options and install callbacks for jsonp requests
     jQuery.ajaxPrefilter("json jsonp", function (s, originalSettings, jqXHR) {
 
-        var callbackName, overwritten, responseContainer,
-            jsonProp = s.jsonp !== false && ( rjsonp.test(s.url) ?
-                        "url" :
-                        typeof s.data === "string" && !( s.contentType || "" ).indexOf("application/x-www-form-urlencoded") && rjsonp.test(s.data) && "data"
-                );
+        var callbackName,
+            overwritten,
+            responseContainer,
+            jsonProp = s.jsonp !== false && (rjsonp.test(s.url) ? "url" : typeof s.data === "string" && !(s.contentType || "").indexOf("application/x-www-form-urlencoded") && rjsonp.test(s.data) && "data");
 
         // Handle iff the expected data type is "jsonp" or we have a parameter to set
         if (jsonProp || s.dataTypes[0] === "jsonp") {
 
             // Get callback name, remembering preexisting value associated with it
-            callbackName = s.jsonpCallback = jQuery.isFunction(s.jsonpCallback) ?
-                s.jsonpCallback() :
-                s.jsonpCallback;
+            callbackName = s.jsonpCallback = jQuery.isFunction(s.jsonpCallback) ? s.jsonpCallback() : s.jsonpCallback;
 
             // Insert callback into url or form data
             if (jsonProp) {
                 s[jsonProp] = s[jsonProp].replace(rjsonp, "$1" + callbackName);
             } else if (s.jsonp !== false) {
-                s.url += ( rquery.test(s.url) ? "&" : "?" ) + s.jsonp + "=" + callbackName;
+                s.url += (rquery.test(s.url) ? "&" : "?") + s.jsonp + "=" + callbackName;
             }
 
             // Use data converter to retrieve json after script execution
@@ -21367,9 +21446,9 @@ var $ = (function () {
         }
     });
 
-// data: string of html
-// context (optional): If specified, the fragment will be created in this context, defaults to document
-// keepScripts (optional): If true, will include scripts passed in the html string
+    // data: string of html
+    // context (optional): If specified, the fragment will be created in this context, defaults to document
+    // keepScripts (optional): If true, will include scripts passed in the html string
     jQuery.parseHTML = function (data, context, keepScripts) {
         if (!data || typeof data !== "string") {
             return null;
@@ -21398,12 +21477,11 @@ var $ = (function () {
     };
 
     return jQuery;
-
-})();
+}();
 
 var request = function (options, callback) {
 
-    options = $.extend(true, {headers: {}, qs: {}}, options);
+    options = $.extend(true, { headers: {}, qs: {} }, options);
 
     // method
     options.type = options.method;
@@ -21415,11 +21493,7 @@ var request = function (options, callback) {
         delete options.headers;
         options.beforeSend = function (xhr) {
             for (var key in headers) {
-                if (headers.hasOwnProperty(key) &&
-                    key.toLowerCase() !== 'content-length' &&
-                    key.toLowerCase() !== 'user-agent' &&
-                    key.toLowerCase() !== 'origin' &&
-                    key.toLowerCase() !== 'host') {
+                if (headers.hasOwnProperty(key) && key.toLowerCase() !== 'content-length' && key.toLowerCase() !== 'user-agent' && key.toLowerCase() !== 'origin' && key.toLowerCase() !== 'host') {
                     xhr.setRequestHeader(key, headers[key]);
                 }
             }
@@ -21485,7 +21559,6 @@ var request = function (options, callback) {
 
     // send
     return $.ajax(options);
-
 };
 
 module.exports = request;
@@ -21675,7 +21748,7 @@ function sliceUploadFile(params, callback) {
 }
 
 // 文件分块上传全过程，暴露的分块上传接口
-function _sliceUploadFile (params, callback) {
+function _sliceUploadFile(params, callback) {
     var proxy = new EventProxy();
     var TaskId = params.TaskId;
     var Bucket = params.Bucket;
@@ -21779,7 +21852,6 @@ function _sliceUploadFile (params, callback) {
     FileSize = Body.size || params.ContentLength;
     SliceCount = Math.ceil(FileSize / SliceSize);
     proxy.emit('get_file_size_finish');
-
 }
 
 // 获取上传任务的 UploadId
@@ -21818,8 +21890,7 @@ function getUploadIdAndPartList(params, callback) {
                         speed: speed,
                         percent: percent
                     });
-                } catch (e) {
-                }
+                } catch (e) {}
             }
         };
         if (immediately) {
@@ -21840,7 +21911,7 @@ function getUploadIdAndPartList(params, callback) {
         var start = SliceSize * (PartNumber - 1);
         var end = Math.min(start + SliceSize, FileSize);
         var ChunkSize = end - start;
-        var ChunkReadStream = fs.createReadStream(params.FilePath, {start: start, end: end - 1});
+        var ChunkReadStream = fs.createReadStream(params.FilePath, { start: start, end: end - 1 });
         util.getFileMd5(ChunkReadStream, function (err, md5) {
             if (err) return callback(err);
             var ETag = '"' + md5 + '"';
@@ -21939,15 +22010,15 @@ function getUploadIdAndPartList(params, callback) {
             ACL: params.ACL,
             GrantRead: params.GrantRead,
             GrantWrite: params.GrantWrite,
-            GrantFullControl: params.GrantFullControl,
+            GrantFullControl: params.GrantFullControl
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (err) return proxy.emit('error', err);
             var UploadId = data.UploadId;
             if (!UploadId) {
-                return callback({Message: 'no upload id'});
+                return callback({ Message: 'no upload id' });
             }
-            proxy.emit('upload_id_ready', {UploadId: UploadId, PartList: []});
+            proxy.emit('upload_id_ready', { UploadId: UploadId, PartList: [] });
         });
     });
 
@@ -21961,7 +22032,7 @@ function getUploadIdAndPartList(params, callback) {
                 Bucket: Bucket,
                 Region: Region,
                 Key: Key,
-                UploadId: UploadId,
+                UploadId: UploadId
             }, function (err, PartListData) {
                 if (!self._isRunningTask(TaskId)) return;
                 if (err) return proxy.emit('error', err);
@@ -21984,7 +22055,7 @@ function getUploadIdAndPartList(params, callback) {
                     }
                 });
             });
-        }, function(AvailableUploadData){
+        }, function (AvailableUploadData) {
             if (!self._isRunningTask(TaskId)) return;
             onHashProgress(true);
             if (AvailableUploadData && AvailableUploadData.UploadId) {
@@ -22033,12 +22104,13 @@ function wholeMultipartList(params, callback) {
         self.multipartList(sendParams, function (err, data) {
             if (err) return callback(err);
             UploadList.push.apply(UploadList, data.Upload || []);
-            if (data.IsTruncated == 'true') { // 列表不完整
+            if (data.IsTruncated == 'true') {
+                // 列表不完整
                 sendParams.KeyMarker = data.NextKeyMarker;
                 sendParams.UploadIdMarker = data.NextUploadIdMarker;
                 next();
             } else {
-                callback(null, {UploadList: UploadList});
+                callback(null, { UploadList: UploadList });
             }
         });
     };
@@ -22059,11 +22131,12 @@ function wholeMultipartListPart(params, callback) {
         self.multipartListPart(sendParams, function (err, data) {
             if (err) return callback(err);
             PartList.push.apply(PartList, data.Part || []);
-            if (data.IsTruncated == 'true') { // 列表不完整
+            if (data.IsTruncated == 'true') {
+                // 列表不完整
                 sendParams.PartNumberMarker = data.NextPartNumberMarker;
                 next();
             } else {
-                callback(null, {PartList: PartList});
+                callback(null, { PartList: PartList });
             }
         });
     };
@@ -22096,19 +22169,19 @@ function uploadSliceList(params, cb) {
     var FinishSize = 0;
     var needUploadSlices = util.filter(UploadData.PartList, function (SliceItem) {
         if (SliceItem['Uploaded']) {
-            FinishSize += SliceItem['PartNumber'] >= SliceCount ? (FileSize % SliceSize || SliceSize) : SliceSize;
+            FinishSize += SliceItem['PartNumber'] >= SliceCount ? FileSize % SliceSize || SliceSize : SliceSize;
         }
         return !SliceItem['Uploaded'];
     });
 
-    var onFileProgress = (function () {
+    var onFileProgress = function () {
         var time0 = Date.now();
         var size0 = FinishSize;
         var progressTimer;
         var update = function () {
             if (!self._isRunningTask(TaskId)) return;
             progressTimer = 0;
-            if (onProgress && (typeof onProgress === 'function')) {
+            if (onProgress && typeof onProgress === 'function') {
                 var time1 = Date.now();
                 var speed = parseInt((FinishSize - size0) / ((time1 - time0) / 1000) * 100) / 100 || 0;
                 var percent = parseInt(FinishSize / FileSize * 100) / 100 || 0;
@@ -22121,8 +22194,7 @@ function uploadSliceList(params, cb) {
                         speed: speed,
                         percent: percent
                     });
-                } catch (e) {
-                }
+                } catch (e) {}
             }
         };
         return function (immediately) {
@@ -22134,7 +22206,7 @@ function uploadSliceList(params, cb) {
                 progressTimer = setTimeout(update, self.options.ProgressInterval || 100);
             }
         };
-    })();
+    }();
     Async.mapLimit(needUploadSlices, ChunkParallel, function (SliceItem, asyncCallback) {
         if (!self._isRunningTask(TaskId)) return;
         var PartNumber = SliceItem['PartNumber'];
@@ -22155,7 +22227,7 @@ function uploadSliceList(params, cb) {
                 FinishSize += data.loaded - preAddSize;
                 preAddSize = data.loaded;
                 onFileProgress();
-            },
+            }
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (err) {
@@ -22167,7 +22239,6 @@ function uploadSliceList(params, cb) {
             onFileProgress(true);
             asyncCallback(err || null, data);
         });
-
     }, function (err, datas) {
         if (!self._isRunningTask(TaskId)) return;
         if (err) {
@@ -22231,13 +22302,11 @@ function uploadSliceItem(params, callback) {
                 return tryCallback(null, data);
             }
         });
-    }, function(err, data) {
+    }, function (err, data) {
         if (!self._isRunningTask(TaskId)) return;
         return callback(err, data);
     });
 }
-
-
 
 // 完成分块上传
 function uploadSliceComplete(params, callback) {
@@ -22319,7 +22388,7 @@ function abortUploadTask(params, callback) {
         });
     } else if (Level === 'file') {
         // 文件级别的任务抛弃，抛弃该文件的全部上传任务
-        if (!Key) return callback({error: 'abort_upload_task_no_key'});
+        if (!Key) return callback({ error: 'abort_upload_task_no_key' });
         wholeMultipartList.call(self, {
             Bucket: Bucket,
             Region: Region,
@@ -22332,14 +22401,14 @@ function abortUploadTask(params, callback) {
         });
     } else if (Level === 'task') {
         // 单个任务级别的任务抛弃，抛弃指定 UploadId 的上传任务
-        if (!UploadId) return callback({error: 'abort_upload_task_no_id'});
-        if (!Key) return callback({error: 'abort_upload_task_no_key'});
+        if (!UploadId) return callback({ error: 'abort_upload_task_no_id' });
+        if (!Key) return callback({ error: 'abort_upload_task_no_key' });
         ep.emit('get_abort_array', [{
             Key: Key,
             UploadId: UploadId
         }]);
     } else {
-        return callback({error: 'abort_unknown_level'});
+        return callback({ error: 'abort_unknown_level' });
     }
 }
 
@@ -22385,7 +22454,6 @@ function abortUploadTaskArray(params, callback) {
                 task: task
             });
         });
-
     }, function (err, datas) {
         if (err) {
             return callback(err);
@@ -22410,11 +22478,10 @@ function abortUploadTaskArray(params, callback) {
     });
 }
 
-
 var API_MAP = {
     sliceUploadFile: sliceUploadFile,
     _sliceUploadFile: _sliceUploadFile,
-    abortUploadTask: abortUploadTask,
+    abortUploadTask: abortUploadTask
 };
 
 util.each(API_MAP, function (fn, apiName) {
@@ -29180,8 +29247,9 @@ module.exports = {
 		"xml2js": "^0.4.17"
 	},
 	"devDependencies": {
-		"babel-loader": "^7.1.0",
-		"webpack": "^3.0.0"
+		"babel-core": "^6.25.0",
+		"babel-loader": "^7.1.1",
+		"webpack": "^3.2.0"
 	}
 };
 

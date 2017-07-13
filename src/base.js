@@ -16,8 +16,11 @@ function getService(params, callback) {
         callback = params;
         params = {};
     }
+
+    var protocol = util.isBrowser && location.protocol === 'https:' ? 'https:' : 'http:';
+
     submitRequest.call(this, {
-        url: 'http://service.cos.myqcloud.com',
+        url: protocol + '//service.cos.myqcloud.com',
         method: 'GET',
     }, function (err, data) {
         if (err) {
@@ -148,7 +151,7 @@ function putBucket(params, callback) {
     headers['x-cos-grant-read'] = params['GrantRead'];
     headers['x-cos-grant-write'] = params['GrantWrite'];
     headers['x-cos-grant-full-control'] = params['GrantFullControl'];
-    var appId = this.AppId || '';
+    var appId = this.options.AppId || '';
     submitRequest.call(this, {
         method: 'PUT',
         Bucket: params.Bucket,
