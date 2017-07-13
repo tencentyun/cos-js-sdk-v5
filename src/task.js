@@ -56,7 +56,7 @@ var initTask = function (cos) {
         var task = tasks[id];
         var waiting = task && task.state === 'waiting';
         var running = task && (task.state === 'checking' || task.state === 'uploading');
-        if (waiting || running) {
+        if (waiting || running || (switchToState === 'canceled' && task.state === 'paused')) {
             if (switchToState === 'paused' && task.params.Body && typeof task.params.Body.pipe === 'function') {
                 console.error('stream not support pause');
                 return;
@@ -68,7 +68,7 @@ var initTask = function (cos) {
                 uploadingFileCount--;
                 startNextTask(cos);
             }
-            if (switchToState === 'cancel') {
+            if (switchToState === 'canceled') {
                 delete task.params;
                 delete task.callback;
             }
