@@ -23,12 +23,15 @@ var getAuthorization = function (options, callback) {
 };
 
 var cos = new COS({
+    // 必选参数
     AppId: config.AppId,
-    ProgressInterval: 1000,
-    FileParallelLimit: 3,
-    ChunkParallelLimit: 3,
-    ChunkSize: 1024 * 1024,
-    getAuthorization: getAuthorization
+    getAuthorization: getAuthorization,
+    // 可选参数
+    FileParallelLimit: 3,    // 控制文件上传并发数
+    ChunkParallelLimit: 3,   // 控制单个文件下分片上传并发数
+    ChunkSize: 1024 * 1024,  // 控制分片大小，单位 B
+    ProgressInterval: 1000,  // 控制 onProgress 回调的间隔
+    Domain: '{{Bucket}}-{{AppId}}.{{Region}}.myqcloud.com',  // 自定义域名
 });
 var TaskId;
 

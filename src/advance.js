@@ -165,7 +165,7 @@ function getUploadIdAndPartList(params, callback) {
             }
         } else {
             if (progressTimer) return;
-            progressTimer = setTimeout(update, self.options.ProgressInterval || 100);
+            progressTimer = setTimeout(update, self.options.ProgressInterval || 1000);
         }
     };
     var getChunkETag = function (PartNumber, callback) {
@@ -466,7 +466,7 @@ function uploadSliceList(params, cb) {
                 update();
             } else {
                 if (progressTimer) return;
-                progressTimer = setTimeout(update, self.options.ProgressInterval || 100);
+                progressTimer = setTimeout(update, self.options.ProgressInterval || 1000);
             }
         };
     })();

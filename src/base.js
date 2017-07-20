@@ -16,11 +16,23 @@ function getService(params, callback) {
         callback = params;
         params = {};
     }
-
     var protocol = util.isBrowser && location.protocol === 'https:' ? 'https:' : 'http:';
+    var domain = this.options.ServiceDomain;
+    var appId = params.AppId || this.options.appId;
+    if (domain) {
+        domain = domain.replace(/\{\{AppId\}\}/ig, appId || '').replace(/\{\{.*?\}\}/ig, '');
+        if (!/^[a-zA-Z]+:\/\//.test(domain)) {
+            domain = protocol + '//' + domain;
+        }
+        if (domain.slice(-1) === '/') {
+            domain = domain.slice(0, -1);
+        }
+    } else {
+        domain = protocol + '//service.cos.myqcloud.com';
+    }
 
     submitRequest.call(this, {
-        url: protocol + '//service.cos.myqcloud.com',
+        url: domain,
         method: 'GET',
     }, function (err, data) {
         if (err) {
@@ -146,6 +158,7 @@ function getBucket(params, callback) {
  *     @return  {String}  data.Location             操作地址
  */
 function putBucket(params, callback) {
+    var self = this;
     var headers = {};
     headers['x-cos-acl'] = params['ACL'];
     headers['x-cos-grant-read'] = params['GrantRead'];
@@ -163,6 +176,7 @@ function putBucket(params, callback) {
             return callback(err);
         }
         var url = getUrl({
+            domain: self.options.Domain,
             bucket: params.Bucket,
             region: params.Region,
             appId: appId
@@ -930,7 +944,7 @@ function _putObject(params, callback) {
                 update();
             } else {
                 if (progressTimer) return;
-                progressTimer = setTimeout(update, self.options.ProgressInterval || 100);
+                progressTimer = setTimeout(update, self.options.ProgressInterval || 1000);
             }
         };
     })();
@@ -1362,7 +1376,6 @@ function multipartUpload(params, callback) {
     var self = this;
     var TaskId = params.TaskId;
     var headers = {};
-    console.log(TaskId, params);
 
     headers['Content-Length'] = params['ContentLength'];
     headers['Expect'] = params['Expect'];
@@ -1384,7 +1397,7 @@ function multipartUpload(params, callback) {
         body: params.Body || null,
         onProgress: params.onProgress
     }, function (err, data) {
-        // if (TaskId) self.off('inner-kill-task', killTask);
+        if (TaskId) self.off('inner-kill-task', killTask);
         if (err) {
             return callback(err);
         }
@@ -1397,17 +1410,15 @@ function multipartUpload(params, callback) {
     });
 
     var killTask = function (data) {
-        console.log(count, TaskId, data.TaskId);
         if (data.TaskId === TaskId) {
             sender && sender.abort && sender.abort();
             self.off('inner-kill-task', killTask);
         }
     };
-    killTask.id = count++;
     TaskId && this.on('inner-kill-task', killTask);
 
 }
-var count = 0;
+
 /**
  * 完成分块上传
  * @param  {Object}  params                             参数对象，必须
@@ -1637,14 +1648,28 @@ function getAuth(params) {
 
 // 生成操作 url
 function getUrl(params) {
+    var domain = params.domain;
     var bucket = params.bucket;
     var region = params.region;
     var object = params.object;
     var action = params.action;
     var appId = params.appId;
     var protocol = util.isBrowser && location.protocol === 'https:' ? 'https:' : 'http:';
-
-    var url = protocol + '//' + bucket + '-' + appId + '.' + region + '.myqcloud.com';
+    if (domain) {
+        domain = domain.replace(/\{\{AppId\}\}/ig, appId)
+            .replace(/\{\{Bucket\}\}/ig, bucket)
+            .replace(/\{\{Region\}\}/ig, region)
+            .replace(/\{\{.*?\}\}/ig, '');
+        if (!/^[a-zA-Z]+:\/\//.test(domain)) {
+            domain = protocol + '//' + domain;
+        }
+        if (domain.slice(-1) === '/') {
+            domain = domain.slice(0, -1);
+        }
+    } else {
+        domain = protocol + '//' + bucket + '-' + appId + '.' + region + '.myqcloud.com';
+    }
+    var url = domain;
 
     if (object) {
         url += '/' + encodeURIComponent(object);
@@ -1672,6 +1697,7 @@ function submitRequest(params, callback) {
 
     var opt = {
         url: url || getUrl({
+            domain: this.options.Domain,
             bucket: bucket,
             region: region,
             object: object,
@@ -1679,7 +1705,7 @@ function submitRequest(params, callback) {
             appId: params.AppId || this.options.AppId,
         }),
         method: method,
-        headers: headers,
+        headers: headers || {},
         qs: qs,
         body: body,
         json: json,
