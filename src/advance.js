@@ -169,26 +169,32 @@ function getUploadIdAndPartList(params, callback) {
         }
     };
     var getChunkETag = function (PartNumber, callback) {
-        if (ETagMap[PartNumber]) {
-            return ETagMap[PartNumber];
-        }
         var start = SliceSize * (PartNumber - 1);
         var end = Math.min(start + SliceSize, FileSize);
         var ChunkSize = end - start;
-        var ChunkReadStream = fs.createReadStream(params.FilePath, {start: start, end: end - 1});
-        util.getFileMd5(ChunkReadStream, function (err, md5) {
-            if (err) return callback(err);
-            var ETag = '"' + md5 + '"';
-            ETagMap[PartNumber] = ETag;
-            FinishSliceCount += 1;
-            FinishSize += ChunkSize;
-            callback(err, {
+
+        if (ETagMap[PartNumber]) {
+            callback(null, {
                 PartNumber: PartNumber,
-                ETag: ETag,
+                ETag: ETagMap[PartNumber],
                 Size: ChunkSize
             });
-            onHashProgress();
-        });
+        } else {
+            var ChunkReadStream = fs.createReadStream(params.FilePath, {start: start, end: end - 1});
+            util.getFileMd5(ChunkReadStream, function (err, md5) {
+                if (err) return callback(err);
+                var ETag = '"' + md5 + '"';
+                ETagMap[PartNumber] = ETag;
+                FinishSliceCount += 1;
+                FinishSize += ChunkSize;
+                callback(err, {
+                    PartNumber: PartNumber,
+                    ETag: ETag,
+                    Size: ChunkSize
+                });
+                onHashProgress();
+            });
+        }
     };
 
     // 通过和文件的 md5 对比，判断 UploadId 是否可用
@@ -499,12 +505,12 @@ function uploadSliceList(params, cb) {
                 FinishSize += currentSize - preAddSize;
                 SliceItem.ETag = data.ETag;
             }
-            onFileProgress(true);
             asyncCallback(err || null, data);
         });
 
     }, function (err, datas) {
         if (!self._isRunningTask(TaskId)) return;
+        onFileProgress(true);
         if (err) {
             return cb(err);
         }
