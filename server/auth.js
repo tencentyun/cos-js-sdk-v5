@@ -12,8 +12,8 @@ var cos = {
     sid: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     skey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     getAuthorization: function (method, pathname, callback) {
-        method = method.toUpperCase();
         method = method ? method : 'POST';
+        method = method.toUpperCase();
         pathname = pathname ? pathname : '/';
         pathname.substr(0, 1) != '/' && (pathname = '/' + pathname);
         var queryParams = {};
