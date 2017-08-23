@@ -12,14 +12,11 @@ var cos = {
     sid: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     skey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     getAuthorization: function (method, pathname, callback) {
-        method = method ? method : 'POST';
-        method = method.toUpperCase();
+        method = (method ? method : 'post').toLowerCase();
         pathname = pathname ? pathname : '/';
         pathname.substr(0, 1) != '/' && (pathname = '/' + pathname);
         var queryParams = {};
         var headers = {};
-
-        console.log(method, pathname);
 
         // 工具方法
         var getObjectKeys = function (obj) {

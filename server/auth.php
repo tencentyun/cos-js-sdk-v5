@@ -9,8 +9,7 @@
 
 function getAuthorization($method, $pathname)
 {
-    $method = strtoupper($method);
-    $method = $method ? $method : 'POST';
+    $method = strtolower($method ? $method : 'post');
     $pathname = $pathname ? $pathname : '/';
     substr($pathname, 0, 1) != '/' && ($pathname = '/' . $pathname);
     $queryParams = array();
