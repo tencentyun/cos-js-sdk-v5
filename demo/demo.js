@@ -154,7 +154,7 @@ function putBucketCors() {
             "CORSRules": [{
                 "AllowedOrigin": ["*"],
                 "AllowedMethod": ["GET", "POST", "PUT", "DELETE", "HEAD"],
-                "AllowedHeader": ["origin", "accept", "content-type", "authorzation"],
+                "AllowedHeader": ["origin", "accept", "content-type", "authorization"],
                 "ExposeHeader": ["ETag"],
                 "MaxAgeSeconds": "600"
             }]
@@ -459,20 +459,20 @@ function abortUploadTask() {
 }
 
 function sliceUploadFile() {
-    var blob = util.createFile({size: 1024 * 1024 * 10});
+    var blob = util.createFile({size: 1024 * 1024 * 30});
     cos.sliceUploadFile({
         Bucket: config.Bucket, /* 必须 */
         Region: config.Region,
-        Key: '10mb.zip', /* 必须 */
+        Key: '30mb.zip', /* 必须 */
         Body: blob,
         TaskReady: function (tid) {
             TaskId = tid;
         },
         onHashProgress: function (progressData) {
-            console.log(JSON.stringify(progressData));
+            console.log('onHashProgress', JSON.stringify(progressData));
         },
         onProgress: function (progressData) {
-            console.log(JSON.stringify(progressData));
+            console.log('onProgress', JSON.stringify(progressData));
         },
     }, function (err, data) {
         console.log(err || data);
@@ -531,35 +531,35 @@ function restartTask() {
 
 (function () {
     var list = [
-        // 'getService',
+        // 'getService', // 不支持
         'getAuth',
-        // 'putBucket',
+        // 'putBucket', // 不支持
         'getBucket',
         'headBucket',
-        // 'putBucketAcl',
-        // 'getBucketAcl',
-        // 'putBucketCors',
-        // 'getBucketCors',
-        // 'deleteBucketCors',
-        // 'putBucketTagging',
-        // 'getBucketTagging',
-        // 'deleteBucketTagging',
-        // 'putBucketPolicy',
-        // 'getBucketPolicy',
-        // 'getBucketLocation',
-        // 'getBucketLifecycle',
-        // 'putBucketLifecycle',
-        // 'deleteBucketLifecycle',
+        'putBucketAcl',
+        'getBucketAcl',
+        'putBucketCors',
+        'getBucketCors',
+        'deleteBucketCors',
+        'putBucketTagging',
+        'getBucketTagging',
+        'deleteBucketTagging',
+        'putBucketPolicy',
+        'getBucketPolicy',
+        'getBucketLocation',
+        'getBucketLifecycle',
+        'putBucketLifecycle',
+        'deleteBucketLifecycle',
         'deleteBucket',
         'putObject',
         'putObjectCopy',
         'getObject',
         'headObject',
-        // 'putObjectAcl',
-        // 'getObjectAcl',
+        'putObjectAcl',
+        'getObjectAcl',
         'deleteObject',
-        // 'deleteMultipleObject',
-        // 'abortUploadTask',
+        'deleteMultipleObject',
+        'abortUploadTask',
         'sliceUploadFile',
         'cancelTask',
         'pauseTask',

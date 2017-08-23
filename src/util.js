@@ -129,8 +129,12 @@ var clearKey = function (obj) {
 
 var readAsBinaryString = function (blob, callback) {
     var readFun;
+    var fr = new FileReader();
     if (FileReader.prototype.readAsBinaryString) {
         readFun = FileReader.prototype.readAsBinaryString;
+        fr.onload = function () {
+            callback(this.result);
+        };
     } else if (FileReader.prototype.readAsArrayBuffer) { // 在 ie11 添加 readAsBinaryString 兼容
         readFun = function (fileData) {
             var binary = "";
@@ -149,20 +153,22 @@ var readAsBinaryString = function (blob, callback) {
     } else {
         console.error('FileReader not support readAsBinaryString');
     }
-    readFun.call(this, blob);
+    readFun.call(fr, blob);
 };
 
 // 获取文件 sha1 值
 var getFileSHA = function (blob, callback) {
     readAsBinaryString(blob, function (content) {
-        CryptoJS.SHA1(content).toString();
+        var hash = CryptoJS.SHA1(content).toString();
+        callback(null, hash);
     });
 };
 
 // 获取文件 md5 值
 var getFileMd5 = function (blob, callback) {
     readAsBinaryString(blob, function (content) {
-        md5(content);
+        var hash = md5(content);
+        callback(null, hash);
     });
 };
 function clone(obj) {

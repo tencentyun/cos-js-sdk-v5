@@ -761,7 +761,7 @@ function headObject(params, callback) {
  *     @param  {String}  params.Bucket                      Bucket名称，必须
  *     @param  {String}  params.Region                      地域名称，必须
  *     @param  {String}  params.Key                         文件名称，必须
- *     @param  {String || WriteStream}  params.Output       文件输出地址或者写流，非必须
+ *     @param  {WriteStream}  params.Output                 文件写入流，非必须
  *     @param  {String}  params.IfModifiedSince             当Object在指定时间后被修改，则返回对应Object元信息，否则返回304，非必须
  *     @param  {String}  params.IfUnmodifiedSince           如果文件修改时间早于或等于指定时间，才返回文件内容。否则返回 412 (precondition failed)，非必须
  *     @param  {String}  params.IfMatch                     当 ETag 与指定的内容一致，才返回文件。否则返回 412 (precondition failed)，非必须
@@ -836,7 +836,6 @@ function getObject(params, callback) {
  *     @param  {String}  params.Bucket                              Bucket名称，必须
  *     @param  {String}  params.Region                              地域名称，必须
  *     @param  {String}  params.Key                                 文件名称，必须
- *     @param  {String}  params.FilePath                            上传文件的路径
  *     @param  {Buffer || ReadStream || File || Blob}  params.Body  上传文件的内容或者流
  *     @param  {String}  params.CacheControl                        RFC 2616 中定义的缓存策略，将作为 Object 元数据保存，非必须
  *     @param  {String}  params.ContentDisposition                  RFC 2616 中定义的文件名称，将作为 Object 元数据保存，非必须
@@ -1005,17 +1004,10 @@ function deleteObject(params, callback) {
     }, function (err, data) {
         if (err) {
             var statusCode = err.statusCode;
-            if (statusCode && statusCode == 204) {
-                return callback(null, {
-                    statusCode: data.statusCode,
-                    headers: data.headers,
-                });
-            } else if (statusCode && statusCode == 404) {
-                return callback(null, {
-                    BucketNotFound: true,
-                    statusCode: data.statusCode,
-                    headers: data.headers,
-                });
+            if (statusCode && statusCode === 204) {
+                return callback(null, {statusCode: statusCode});
+            } else if (statusCode && statusCode === 404) {
+                return callback(null, {BucketNotFound: true, statusCode: statusCode,});
             } else {
                 return callback(err);
             }
@@ -1024,7 +1016,6 @@ function deleteObject(params, callback) {
             statusCode: data.statusCode,
             headers: data.headers,
         });
-
     });
 }
 
@@ -1144,8 +1135,7 @@ function optionsObject(params, callback) {
             if (err.statusCode && err.statusCode == 403) {
                 return callback(null, {
                     OptionsForbidden: true,
-                    statusCode: data.statusCode,
-                    headers: data.headers,
+                    statusCode: err.statusCode
                 });
             }
             return callback(err);
@@ -1299,6 +1289,7 @@ function deleteMultipleObject(params, callback) {
  *     @param  {String}  params.Bucket                          Bucket名称，必须
  *     @param  {String}  params.Region                          地域名称，必须
  *     @param  {String}  params.Key                             object名称，必须
+ *     @param  {String}  params.UploadId                        object名称，必须
  *     @param  {String}  params.CacheControl                    RFC 2616 中定义的缓存策略，将作为 Object 元数据保存，非必须
  *     @param  {String}  params.ContentDisposition              RFC 2616 中定义的文件名称，将作为 Object 元数据保存    ，非必须
  *     @param  {String}  params.ContentEncoding                 RFC 2616 中定义的编码格式，将作为 Object 元数据保存，非必须
@@ -1312,7 +1303,6 @@ function deleteMultipleObject(params, callback) {
  * @param  {Function}  callback                                 回调函数，必须
  * @return  {Object}  err                                       请求失败的错误，如果请求成功，则为空。
  * @return  {Object}  data                                      返回的数据
- *     @return  {Object}  data.InitiateMultipartUploadResult    初始化上传信息，包括 Bucket(Bucket名称), Key(文件名称) 和 UploadId (上传任务ID)
  */
 function multipartInit(params, callback) {
     var headers = {};

@@ -2,6 +2,8 @@ var Async = require('async');
 var EventProxy = require('eventproxy');
 var util = require('./util');
 
+var _slice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
+
 // 分块上传入口
 function sliceUploadFile(params, callback) {
     var taskId = util.uuid();
@@ -123,6 +125,7 @@ function getUploadIdAndPartList(params, callback) {
     var Bucket = params.Bucket;
     var Region = params.Region;
     var Key = params.Key;
+    var Body = params.Body;
     var StorageClass = params.StorageClass;
     var self = this;
 
@@ -180,8 +183,8 @@ function getUploadIdAndPartList(params, callback) {
                 Size: ChunkSize
             });
         } else {
-            var ChunkReadStream = fs.createReadStream(params.FilePath, {start: start, end: end - 1});
-            util.getFileMd5(ChunkReadStream, function (err, md5) {
+            var blob = _slice.call(Body, start, end);
+            util.getFileMd5(blob, function (err, md5) {
                 if (err) return callback(err);
                 var ETag = '"' + md5 + '"';
                 ETagMap[PartNumber] = ETag;
@@ -335,8 +338,6 @@ function getUploadIdAndPartList(params, callback) {
             }
         });
     });
-
-    return proxy.emit('no_available_upload_id');
 
     // 获取符合条件的 UploadId 列表，因为同一个文件可以有多个上传任务。
     wholeMultipartList.call(self, {

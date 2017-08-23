@@ -3116,8 +3116,12 @@ var clearKey = function (obj) {
 
 var readAsBinaryString = function (blob, callback) {
     var readFun;
+    var fr = new FileReader();
     if (FileReader.prototype.readAsBinaryString) {
         readFun = FileReader.prototype.readAsBinaryString;
+        fr.onload = function () {
+            callback(this.result);
+        };
     } else if (FileReader.prototype.readAsArrayBuffer) {
         // 在 ie11 添加 readAsBinaryString 兼容
         readFun = function (fileData) {
@@ -3137,20 +3141,22 @@ var readAsBinaryString = function (blob, callback) {
     } else {
         console.error('FileReader not support readAsBinaryString');
     }
-    readFun.call(this, blob);
+    readFun.call(fr, blob);
 };
 
 // 获取文件 sha1 值
 var getFileSHA = function (blob, callback) {
     readAsBinaryString(blob, function (content) {
-        CryptoJS.SHA1(content).toString();
+        var hash = CryptoJS.SHA1(content).toString();
+        callback(null, hash);
     });
 };
 
 // 获取文件 md5 值
 var getFileMd5 = function (blob, callback) {
     readAsBinaryString(blob, function (content) {
-        md5(content);
+        var hash = md5(content);
+        callback(null, hash);
     });
 };
 function clone(obj) {
@@ -16138,7 +16144,7 @@ function headObject(params, callback) {
  *     @param  {String}  params.Bucket                      Bucket名称，必须
  *     @param  {String}  params.Region                      地域名称，必须
  *     @param  {String}  params.Key                         文件名称，必须
- *     @param  {String || WriteStream}  params.Output       文件输出地址或者写流，非必须
+ *     @param  {WriteStream}  params.Output                 文件写入流，非必须
  *     @param  {String}  params.IfModifiedSince             当Object在指定时间后被修改，则返回对应Object元信息，否则返回304，非必须
  *     @param  {String}  params.IfUnmodifiedSince           如果文件修改时间早于或等于指定时间，才返回文件内容。否则返回 412 (precondition failed)，非必须
  *     @param  {String}  params.IfMatch                     当 ETag 与指定的内容一致，才返回文件。否则返回 412 (precondition failed)，非必须
@@ -16212,7 +16218,6 @@ function getObject(params, callback) {
  *     @param  {String}  params.Bucket                              Bucket名称，必须
  *     @param  {String}  params.Region                              地域名称，必须
  *     @param  {String}  params.Key                                 文件名称，必须
- *     @param  {String}  params.FilePath                            上传文件的路径
  *     @param  {Buffer || ReadStream || File || Blob}  params.Body  上传文件的内容或者流
  *     @param  {String}  params.CacheControl                        RFC 2616 中定义的缓存策略，将作为 Object 元数据保存，非必须
  *     @param  {String}  params.ContentDisposition                  RFC 2616 中定义的文件名称，将作为 Object 元数据保存，非必须
@@ -16384,17 +16389,10 @@ function deleteObject(params, callback) {
     }, function (err, data) {
         if (err) {
             var statusCode = err.statusCode;
-            if (statusCode && statusCode == 204) {
-                return callback(null, {
-                    statusCode: data.statusCode,
-                    headers: data.headers
-                });
-            } else if (statusCode && statusCode == 404) {
-                return callback(null, {
-                    BucketNotFound: true,
-                    statusCode: data.statusCode,
-                    headers: data.headers
-                });
+            if (statusCode && statusCode === 204) {
+                return callback(null, { statusCode: statusCode });
+            } else if (statusCode && statusCode === 404) {
+                return callback(null, { BucketNotFound: true, statusCode: statusCode });
             } else {
                 return callback(err);
             }
@@ -16522,8 +16520,7 @@ function optionsObject(params, callback) {
             if (err.statusCode && err.statusCode == 403) {
                 return callback(null, {
                     OptionsForbidden: true,
-                    statusCode: data.statusCode,
-                    headers: data.headers
+                    statusCode: err.statusCode
                 });
             }
             return callback(err);
@@ -16675,6 +16672,7 @@ function deleteMultipleObject(params, callback) {
  *     @param  {String}  params.Bucket                          Bucket名称，必须
  *     @param  {String}  params.Region                          地域名称，必须
  *     @param  {String}  params.Key                             object名称，必须
+ *     @param  {String}  params.UploadId                        object名称，必须
  *     @param  {String}  params.CacheControl                    RFC 2616 中定义的缓存策略，将作为 Object 元数据保存，非必须
  *     @param  {String}  params.ContentDisposition              RFC 2616 中定义的文件名称，将作为 Object 元数据保存    ，非必须
  *     @param  {String}  params.ContentEncoding                 RFC 2616 中定义的编码格式，将作为 Object 元数据保存，非必须
@@ -16688,7 +16686,6 @@ function deleteMultipleObject(params, callback) {
  * @param  {Function}  callback                                 回调函数，必须
  * @return  {Object}  err                                       请求失败的错误，如果请求成功，则为空。
  * @return  {Object}  data                                      返回的数据
- *     @return  {Object}  data.InitiateMultipartUploadResult    初始化上传信息，包括 Bucket(Bucket名称), Key(文件名称) 和 UploadId (上传任务ID)
  */
 function multipartInit(params, callback) {
     var headers = {};
@@ -21533,6 +21530,8 @@ var request = function (options, callback) {
                 }
             }
         };
+    } else {
+        options.headers = {};
     }
 
     // progress
@@ -21775,6 +21774,8 @@ var Async = __webpack_require__(208);
 var EventProxy = __webpack_require__(209);
 var util = __webpack_require__(16);
 
+var _slice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
+
 // 分块上传入口
 function sliceUploadFile(params, callback) {
     var taskId = util.uuid();
@@ -21895,6 +21896,7 @@ function getUploadIdAndPartList(params, callback) {
     var Bucket = params.Bucket;
     var Region = params.Region;
     var Key = params.Key;
+    var Body = params.Body;
     var StorageClass = params.StorageClass;
     var self = this;
 
@@ -21940,26 +21942,32 @@ function getUploadIdAndPartList(params, callback) {
         }
     };
     var getChunkETag = function (PartNumber, callback) {
-        if (ETagMap[PartNumber]) {
-            return ETagMap[PartNumber];
-        }
         var start = SliceSize * (PartNumber - 1);
         var end = Math.min(start + SliceSize, FileSize);
         var ChunkSize = end - start;
-        var ChunkReadStream = fs.createReadStream(params.FilePath, { start: start, end: end - 1 });
-        util.getFileMd5(ChunkReadStream, function (err, md5) {
-            if (err) return callback(err);
-            var ETag = '"' + md5 + '"';
-            ETagMap[PartNumber] = ETag;
-            FinishSliceCount += 1;
-            FinishSize += ChunkSize;
-            callback(err, {
+
+        if (ETagMap[PartNumber]) {
+            callback(null, {
                 PartNumber: PartNumber,
-                ETag: ETag,
+                ETag: ETagMap[PartNumber],
                 Size: ChunkSize
             });
-            onHashProgress();
-        });
+        } else {
+            var blob = _slice.call(Body, start, end);
+            util.getFileMd5(blob, function (err, md5) {
+                if (err) return callback(err);
+                var ETag = '"' + md5 + '"';
+                ETagMap[PartNumber] = ETag;
+                FinishSliceCount += 1;
+                FinishSize += ChunkSize;
+                callback(err, {
+                    PartNumber: PartNumber,
+                    ETag: ETag,
+                    Size: ChunkSize
+                });
+                onHashProgress();
+            });
+        }
     };
 
     // 通过和文件的 md5 对比，判断 UploadId 是否可用
@@ -22100,8 +22108,6 @@ function getUploadIdAndPartList(params, callback) {
             }
         });
     });
-
-    return proxy.emit('no_available_upload_id');
 
     // 获取符合条件的 UploadId 列表，因为同一个文件可以有多个上传任务。
     wholeMultipartList.call(self, {
@@ -22271,11 +22277,11 @@ function uploadSliceList(params, cb) {
                 FinishSize += currentSize - preAddSize;
                 SliceItem.ETag = data.ETag;
             }
-            onFileProgress(true);
             asyncCallback(err || null, data);
         });
     }, function (err, datas) {
         if (!self._isRunningTask(TaskId)) return;
+        onFileProgress(true);
         if (err) {
             return cb(err);
         }
@@ -29256,7 +29262,7 @@ function plural(ms, n, name) {
 
 module.exports = {
 	"name": "cos-js-sdk-v5",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "cos js sdk v5",
 	"main": "index.js",
 	"scripts": {
