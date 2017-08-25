@@ -67,9 +67,9 @@ function headBucket(params, callback) {
         AppId: params.AppId,
         method: 'HEAD',
     }, function (err, data) {
-        var exist, auth;
+        var exist, auth, statusCode;
         if (err) {
-            var statusCode = err.statusCode;
+            statusCode = err.statusCode;
             if (statusCode && statusCode === 404) {
                 exist = false;
                 auth = false;
@@ -80,15 +80,19 @@ function headBucket(params, callback) {
                 return callback(err);
             }
         } else {
+            statusCode = data.statusCode;
             exist = true;
             auth = true;
         }
-        callback(null, {
+        var result = {
             BucketExist: exist,
             BucketAuth: auth,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+            statusCode: statusCode
+        };
+        if (data && data.headers) {
+            result.headers = data.headers;
+        }
+        callback(null, result);
     });
 }
 
@@ -990,9 +994,7 @@ function _putObject(params, callback) {
  *     @param  {String}  params.Key             object名称，必须
  * @param  {Function}  callback                 回调函数，必须
  * @param  {Object}  err                        请求失败的错误，如果请求成功，则为空。
- * @param  {Object}  data                       删除操作成功之后返回的数据，如果删除操作成功，则返回 success 为 true, 并且附带原先 object 的 url
- *     @param  {Boolean}  data.Success          删除操作是否成功，成功则为 true，否则为 false
- *     @param  {Boolean}  data.BucketNotFound   请求的 object 所在的 bucket 是否不存在，如果为 true，则说明该 bucket 不存在
+ * @param  {Object}  data                       删除操作成功之后返回的数据
  */
 function deleteObject(params, callback) {
     submitRequest.call(this, {
@@ -1645,19 +1647,18 @@ function getUrl(params) {
     var action = params.action;
     var appId = params.appId;
     var protocol = util.isBrowser && location.protocol === 'https:' ? 'https:' : 'http:';
-    if (domain) {
-        domain = domain.replace(/\{\{AppId\}\}/ig, appId)
-            .replace(/\{\{Bucket\}\}/ig, bucket)
-            .replace(/\{\{Region\}\}/ig, region)
-            .replace(/\{\{.*?\}\}/ig, '');
-        if (!/^[a-zA-Z]+:\/\//.test(domain)) {
-            domain = protocol + '//' + domain;
-        }
-        if (domain.slice(-1) === '/') {
-            domain = domain.slice(0, -1);
-        }
-    } else {
-        domain = protocol + '//' + bucket + '-' + appId + '.' + region + '.myqcloud.com';
+    if (!domain) {
+        domain = '{{Bucket}}-{{AppId}}.cos.{{Region}}.myqcloud.com';
+    }
+    domain = domain.replace(/\{\{AppId\}\}/ig, appId)
+        .replace(/\{\{Bucket\}\}/ig, bucket)
+        .replace(/\{\{Region\}\}/ig, region)
+        .replace(/\{\{.*?\}\}/ig, '');
+    if (!/^[a-zA-Z]+:\/\//.test(domain)) {
+        domain = protocol + '//' + domain;
+    }
+    if (domain.slice(-1) === '/') {
+        domain = domain.slice(0, -1);
     }
     var url = domain;
 

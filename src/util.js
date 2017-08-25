@@ -261,14 +261,14 @@ var apiWrapper = function (apiName, apiFn) {
                 callback({error: 'lack of required params'});
                 return;
             }
-            // 优化 Key 参数
-            if (params.Key && params.Key.indexOf('/') === 0) {
-                callback({error: 'params Key can not start width "/"'});
+            // 判断 region 格式
+            if (params.Region && regionMap[params.Region]) {
+                callback({error: 'Region should be ' + regionMap[params.Region]});
                 return;
             }
             // 判断 region 格式
-            if (params.Region && regionMap[params.Region]) {
-                callback({error: 'Region error, it should be ' + regionMap[params.Region]});
+            if (params.Region && params.Region.indexOf('cos.') > -1) {
+                callback({error: 'Region should not be start with "cos."'});
                 return;
             }
             // 兼容带有 AppId 的 Bucket
@@ -279,6 +279,10 @@ var apiWrapper = function (apiName, apiFn) {
                 bucket = arr[0];
                 params.AppId = appId;
                 params.Bucket = bucket;
+            }
+            // 兼容带有斜杠开头的 Key
+            if (params.Key && params.Key.substr(0, 1) === '/') {
+                params.Key = params.Key.substr(1);
             }
         }
         var res = apiFn.call(this, params, callback);

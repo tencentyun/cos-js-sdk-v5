@@ -2,8 +2,6 @@ var Async = require('async');
 var EventProxy = require('eventproxy');
 var util = require('./util');
 
-var _slice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
-
 // 分块上传入口
 function sliceUploadFile(params, callback) {
     var taskId = util.uuid();
@@ -183,7 +181,7 @@ function getUploadIdAndPartList(params, callback) {
                 Size: ChunkSize
             });
         } else {
-            var blob = _slice.call(Body, start, end);
+            var blob = util.fileSlice.call(Body, start, end);
             util.getFileMd5(blob, function (err, md5) {
                 if (err) return callback(err);
                 var ETag = '"' + md5 + '"';
