@@ -16,8 +16,8 @@ function getAuthorization($method, $pathname)
     $headers = array();
 
     // 获取个人 API 密钥 https://console.qcloud.com/capi
-    $sid = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
-    $skey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+    $SecretId = 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+    $SecretKey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 
     // 工具方法
     function getObjectKeys($obj)
@@ -48,7 +48,7 @@ function getAuthorization($method, $pathname)
 
     // 要用到的 Authorization 参数列表
     $qSignAlgorithm = 'sha1';
-    $qAk = $sid;
+    $qAk = $SecretId;
     $qSignTime = $now . ';' . $expired;
     $qKeyTime = $now . ';' . $expired;
     $qHeaderList = strtolower(implode(';', getObjectKeys($headers)));
@@ -56,7 +56,7 @@ function getAuthorization($method, $pathname)
 
     // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
     // 步骤一：计算 SignKey
-    $signKey = hash_hmac("sha1", $qKeyTime, $skey);
+    $signKey = hash_hmac("sha1", $qKeyTime, $SecretKey);
 
     // 步骤二：构成 FormatString
     $formatString = implode("\n", array(strtolower($method), $pathname, obj2str($queryParams), obj2str($headers), ''));

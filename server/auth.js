@@ -9,8 +9,8 @@ var crypto = require('crypto');
 
 var cos = {
     // 获取个人 API 密钥 https://console.qcloud.com/capi
-    sid: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    skey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    SecretId: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     getAuthorization: function (method, pathname, callback) {
         method = (method ? method : 'post').toLowerCase();
         pathname = pathname ? pathname : '/';
@@ -48,7 +48,7 @@ var cos = {
 
         // 要用到的 Authorization 参数列表
         var qSignAlgorithm = 'sha1';
-        var qAk = cos.sid;
+        var qAk = cos.SecretId;
         var qSignTime = now + ';' + expired;
         var qKeyTime = now + ';' + expired;
         var qHeaderList = getObjectKeys(headers).join(';').toLowerCase();
@@ -56,7 +56,7 @@ var cos = {
 
         // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
         // 步骤一：计算 SignKey
-        var signKey = crypto.createHmac('sha1', cos.skey).update(qKeyTime).digest('hex');
+        var signKey = crypto.createHmac('sha1', cos.SecretKey).update(qKeyTime).digest('hex');
 
         // 步骤二：构成 FormatString
         var formatString = [method.toLowerCase(), pathname, obj2str(queryParams), obj2str(headers), ''].join('\n');
