@@ -3251,14 +3251,14 @@ var apiWrapper = function (apiName, apiFn) {
                 callback({ error: 'lack of required params' });
                 return;
             }
-            // 优化 Key 参数
-            if (params.Key && params.Key.indexOf('/') === 0) {
-                callback({ error: 'params Key can not start width "/"' });
+            // 判断 region 格式
+            if (params.Region && regionMap[params.Region]) {
+                callback({ error: 'Region should be ' + regionMap[params.Region] });
                 return;
             }
             // 判断 region 格式
-            if (params.Region && regionMap[params.Region]) {
-                callback({ error: 'Region error, it should be ' + regionMap[params.Region] });
+            if (params.Region && params.Region.indexOf('cos.') > -1) {
+                callback({ error: 'Region should not be start with "cos."' });
                 return;
             }
             // 兼容带有 AppId 的 Bucket
@@ -3270,6 +3270,10 @@ var apiWrapper = function (apiName, apiFn) {
                 bucket = arr[0];
                 params.AppId = appId;
                 params.Bucket = bucket;
+            }
+            // 兼容带有斜杠开头的 Key
+            if (params.Key && params.Key.substr(0, 1) === '/') {
+                params.Key = params.Key.substr(1);
             }
         }
         var res = apiFn.call(this, params, callback);
@@ -15454,9 +15458,9 @@ function headBucket(params, callback) {
         AppId: params.AppId,
         method: 'HEAD'
     }, function (err, data) {
-        var exist, auth;
+        var exist, auth, statusCode;
         if (err) {
-            var statusCode = err.statusCode;
+            statusCode = err.statusCode;
             if (statusCode && statusCode === 404) {
                 exist = false;
                 auth = false;
@@ -15467,15 +15471,19 @@ function headBucket(params, callback) {
                 return callback(err);
             }
         } else {
+            statusCode = data.statusCode;
             exist = true;
             auth = true;
         }
-        callback(null, {
+        var result = {
             BucketExist: exist,
             BucketAuth: auth,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+            statusCode: statusCode
+        };
+        if (data && data.headers) {
+            result.headers = data.headers;
+        }
+        callback(null, result);
     });
 }
 
@@ -15836,7 +15844,7 @@ function putBucketPolicy(params, callback) {
         Region: params.Region,
         AppId: params.AppId,
         action: '/?policy',
-        body: Policy,
+        body: PolicyStr,
         headers: headers,
         json: true
     }, function (err, data) {
@@ -16375,9 +16383,7 @@ function _putObject(params, callback) {
  *     @param  {String}  params.Key             object名称，必须
  * @param  {Function}  callback                 回调函数，必须
  * @param  {Object}  err                        请求失败的错误，如果请求成功，则为空。
- * @param  {Object}  data                       删除操作成功之后返回的数据，如果删除操作成功，则返回 success 为 true, 并且附带原先 object 的 url
- *     @param  {Boolean}  data.Success          删除操作是否成功，成功则为 true，否则为 false
- *     @param  {Boolean}  data.BucketNotFound   请求的 object 所在的 bucket 是否不存在，如果为 true，则说明该 bucket 不存在
+ * @param  {Object}  data                       删除操作成功之后返回的数据
  */
 function deleteObject(params, callback) {
     submitRequest.call(this, {
@@ -17025,16 +17031,15 @@ function getUrl(params) {
     var action = params.action;
     var appId = params.appId;
     var protocol = util.isBrowser && location.protocol === 'https:' ? 'https:' : 'http:';
-    if (domain) {
-        domain = domain.replace(/\{\{AppId\}\}/ig, appId).replace(/\{\{Bucket\}\}/ig, bucket).replace(/\{\{Region\}\}/ig, region).replace(/\{\{.*?\}\}/ig, '');
-        if (!/^[a-zA-Z]+:\/\//.test(domain)) {
-            domain = protocol + '//' + domain;
-        }
-        if (domain.slice(-1) === '/') {
-            domain = domain.slice(0, -1);
-        }
-    } else {
-        domain = protocol + '//' + bucket + '-' + appId + '.' + region + '.myqcloud.com';
+    if (!domain) {
+        domain = '{{Bucket}}-{{AppId}}.cos.{{Region}}.myqcloud.com';
+    }
+    domain = domain.replace(/\{\{AppId\}\}/ig, appId).replace(/\{\{Bucket\}\}/ig, bucket).replace(/\{\{Region\}\}/ig, region).replace(/\{\{.*?\}\}/ig, '');
+    if (!/^[a-zA-Z]+:\/\//.test(domain)) {
+        domain = protocol + '//' + domain;
+    }
+    if (domain.slice(-1) === '/') {
+        domain = domain.slice(0, -1);
     }
     var url = domain;
 
@@ -21519,21 +21524,6 @@ var request = function (options, callback) {
     options.type = options.method;
     delete options.method;
 
-    // headers
-    if (options.headers) {
-        var headers = options.headers;
-        delete options.headers;
-        options.beforeSend = function (xhr) {
-            for (var key in headers) {
-                if (headers.hasOwnProperty(key) && key.toLowerCase() !== 'content-length' && key.toLowerCase() !== 'user-agent' && key.toLowerCase() !== 'origin' && key.toLowerCase() !== 'host') {
-                    xhr.setRequestHeader(key, headers[key]);
-                }
-            }
-        };
-    } else {
-        options.headers = {};
-    }
-
     // progress
     if (options.onProgress) {
         options.progress = options.onProgress;
@@ -21551,8 +21541,10 @@ var request = function (options, callback) {
 
     // json
     if (options.json) {
-        options.data = JSON.stringify(options.json);
+        options.data = options.body;
         delete options.json;
+        delete options.body;
+        !options.headers && (options.headers = {});
         options.headers['Content-Type'] = 'application/json';
     }
 
@@ -21562,6 +21554,19 @@ var request = function (options, callback) {
             options.data = options.body;
             delete options.body;
         }
+    }
+
+    // headers
+    if (options.headers) {
+        var headers = options.headers;
+        delete options.headers;
+        options.beforeSend = function (xhr) {
+            for (var key in headers) {
+                if (headers.hasOwnProperty(key) && key.toLowerCase() !== 'content-length' && key.toLowerCase() !== 'user-agent' && key.toLowerCase() !== 'origin' && key.toLowerCase() !== 'host') {
+                    xhr.setRequestHeader(key, headers[key]);
+                }
+            }
+        };
     }
 
     var getResponse = function (xhr) {
@@ -21774,8 +21779,6 @@ var Async = __webpack_require__(208);
 var EventProxy = __webpack_require__(209);
 var util = __webpack_require__(16);
 
-var _slice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
-
 // 分块上传入口
 function sliceUploadFile(params, callback) {
     var taskId = util.uuid();
@@ -21953,7 +21956,7 @@ function getUploadIdAndPartList(params, callback) {
                 Size: ChunkSize
             });
         } else {
-            var blob = _slice.call(Body, start, end);
+            var blob = util.fileSlice.call(Body, start, end);
             util.getFileMd5(blob, function (err, md5) {
                 if (err) return callback(err);
                 var ETag = '"' + md5 + '"';
