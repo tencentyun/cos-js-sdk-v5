@@ -1,3 +1,17 @@
+var util = {
+    createFile: function (options) {
+        var buffer = new ArrayBuffer(options.size || 0);
+        var arr = new Uint8Array(buffer);
+        arr.forEach(function (char, i) {
+            arr[i] = 0;
+        });
+        var opt = {};
+        options.type && (opt.type = options.type);
+        var blob = new Blob([buffer], options);
+        return blob;
+    }
+};
+
 var getAuthorization = function (options, callback) {
 
     // 方法一（推荐）
@@ -31,7 +45,6 @@ var cos = new COS({
     ChunkParallelLimit: 3,   // 控制单个文件下分片上传并发数
     ChunkSize: 1024 * 1024,  // 控制分片大小，单位 B
     ProgressInterval: 1000,  // 控制 onProgress 回调的间隔
-    Domain: '{{Bucket}}-{{AppId}}.{{Region}}.myqcloud.com',  // 自定义域名
 });
 var TaskId;
 
@@ -96,7 +109,7 @@ function putBucket() {
 function getBucket() {
     cos.getBucket({
         Bucket: config.Bucket,
-        Region: config.Region
+        Region: config.Region,
     }, function (err, data) {
         console.log(err || data);
     });
@@ -154,7 +167,18 @@ function putBucketCors() {
             "CORSRules": [{
                 "AllowedOrigin": ["*"],
                 "AllowedMethod": ["GET", "POST", "PUT", "DELETE", "HEAD"],
-                "AllowedHeader": ["origin", "accept", "content-type", "authorization"],
+                "AllowedHeader": [
+                    "origin",
+                    "accept",
+                    "content-type",
+                    "authorization",
+                    "content-md5",
+                    "x-cos-copy-source",
+                    "x-cos-acl",
+                    "x-cos-grant-read",
+                    "x-cos-grant-write",
+                    "x-cos-grant-full-control",
+                ],
                 "ExposeHeader": ["ETag"],
                 "MaxAgeSeconds": "600"
             }]
@@ -479,6 +503,51 @@ function sliceUploadFile() {
     });
 }
 
+function selectFileToUpload() {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = function (e) {
+        var file = this.files[0]
+        if (file) {
+            if (file.size > 1024 * 1024) {
+                cos.sliceUploadFile({
+                    Bucket: config.Bucket,
+                    Region: config.Region,
+                    Key: file.name,
+                    Body: file,
+                    TaskReady: function (tid) {
+                        TaskId = tid;
+                    },
+                    onHashProgress: function (progressData) {
+                        console.log('onHashProgress', JSON.stringify(progressData));
+                    },
+                    onProgress: function (progressData) {
+                        console.log('onProgress', JSON.stringify(progressData));
+                    },
+                }, function (err, data) {
+                    console.log(err || data);
+                });
+            } else {
+                cos.putObject({
+                    Bucket: config.Bucket,
+                    Region: config.Region,
+                    Key: file.name,
+                    Body: file,
+                    TaskReady: function (tid) {
+                        TaskId = tid;
+                    },
+                    onProgress: function (progressData) {
+                        console.log(JSON.stringify(progressData));
+                    },
+                }, function (err, data) {
+                    console.log(err || data);
+                });
+            }
+        }
+    };
+    input.click();
+}
+
 function cancelTask() {
     cos.cancelTask(TaskId);
     console.log('canceled');
@@ -540,7 +609,7 @@ function restartTask() {
         'getBucketAcl',
         'putBucketCors',
         'getBucketCors',
-        'deleteBucketCors',
+        // 'deleteBucketCors', // 不提供
         'putBucketTagging',
         'getBucketTagging',
         'deleteBucketTagging',
@@ -561,6 +630,7 @@ function restartTask() {
         'deleteMultipleObject',
         'abortUploadTask',
         'sliceUploadFile',
+        'selectFileToUpload',
         'cancelTask',
         'pauseTask',
         'restartTask',
