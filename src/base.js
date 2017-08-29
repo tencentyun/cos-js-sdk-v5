@@ -453,7 +453,7 @@ function putBucketPolicy(params, callback) {
         Region: params.Region,
         AppId: params.AppId,
         action: '/?policy',
-        body: Policy,
+        body: PolicyStr,
         headers: headers,
         json: true,
     }, function (err, data) {
