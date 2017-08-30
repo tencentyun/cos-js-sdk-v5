@@ -267,7 +267,7 @@ function putBucketPolicy() {
                         "name/cos:AppendObject"
                     ],
                     // "resource": ["qcs::cos:cn-south:uid/1250000000:test-1250000000.cn-south.myqcloud.com//1250000000/test/*"] // 1250000000 是 appid
-                    "resource": ["qcs::cos:" + config.Region + ":uid/" + AppId + ":" + Bucket + "-" + AppId + "." + config.Region + ".myqcloud.com//" + AppId + "/" + Bucket + "/*"] // 1250000000 是 appid
+                    "resource": ["qcs::cos:" + config.Region + ":uid/" + AppId + ":" + Bucket + "-" + AppId + ".cos." + config.Region + ".myqcloud.com//" + AppId + "/" + Bucket + "/*"] // 1250000000 是 appid
                 }
             ]
         },
@@ -354,13 +354,13 @@ function putObject() {
         Bucket: config.Bucket, /* 必须 */
         Region: config.Region,
         Key: filename, /* 必须 */
+        Body: blob,
         TaskReady: function (tid) {
             TaskId = tid;
         },
         onProgress: function (progressData) {
             console.log(JSON.stringify(progressData));
         },
-        Body: blob
     }, function (err, data) {
         console.log(err || data);
     });
@@ -493,7 +493,6 @@ function sliceUploadFile() {
             TaskId = tid;
         },
         onHashProgress: function (progressData) {
-            console.log('onHashProgress', JSON.stringify(progressData));
         },
         onProgress: function (progressData) {
             console.log('onProgress', JSON.stringify(progressData));
