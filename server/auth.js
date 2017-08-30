@@ -9,7 +9,7 @@ var crypto = require('crypto');
 
 var cos = {
     // 获取个人 API 密钥 https://console.qcloud.com/capi
-    SecretId: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     getAuthorization: function (method, pathname, callback) {
         method = (method ? method : 'post').toLowerCase();
