@@ -15398,49 +15398,6 @@ var util = __webpack_require__(16);
 // Bucket 相关
 
 /**
- * 获取用户的 bucket 列表
- * @param  {Object}  params         回调函数，必须，下面为参数列表
- * 无特殊参数
- * @param  {Function}  callback     回调函数，必须
- */
-function getService(params, callback) {
-    if (typeof params === 'function') {
-        callback = params;
-        params = {};
-    }
-    var protocol = util.isBrowser && location.protocol === 'https:' ? 'https:' : 'http:';
-    var domain = this.options.ServiceDomain;
-    var appId = params.AppId || this.options.appId;
-    if (domain) {
-        domain = domain.replace(/\{\{AppId\}\}/ig, appId || '').replace(/\{\{.*?\}\}/ig, '');
-        if (!/^[a-zA-Z]+:\/\//.test(domain)) {
-            domain = protocol + '//' + domain;
-        }
-        if (domain.slice(-1) === '/') {
-            domain = domain.slice(0, -1);
-        }
-    } else {
-        domain = protocol + '//service.cos.myqcloud.com';
-    }
-
-    submitRequest.call(this, {
-        url: domain,
-        method: 'GET'
-    }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
-        var buckets = data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Buckets && data.ListAllMyBucketsResult.Buckets.Bucket || [];
-        buckets = util.isArray(buckets) ? buckets : [buckets];
-        callback(null, {
-            Buckets: buckets,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-    });
-}
-
-/**
  * 查看是否存在该Bucket，是否有权限访问
  * @param  {Object}  params                     参数对象，必须
  *     @param  {String}  params.Bucket          Bucket名称，必须
@@ -15535,52 +15492,6 @@ function getBucket(params, callback) {
         });
 
         callback(null, result);
-    });
-}
-
-/**
- * 创建 Bucket，并初始化访问权限
- * @param  {Object}  params                         参数对象，必须
- *     @param  {String}  params.Bucket              Bucket名称，必须
- *     @param  {String}  params.Region              地域名称，必须
- *     @param  {String}  params.ACL                 用户自定义文件权限，可以设置：private，public-read；默认值：private，非必须
- *     @param  {String}  params.GrantRead           赋予被授权者读的权限，格式x-cos-grant-read: uin=" ",uin=" "，非必须
- *     @param  {String}  params.GrantWrite          赋予被授权者写的权限，格式x-cos-grant-write: uin=" ",uin=" "，非必须
- *     @param  {String}  params.GrantFullControl    赋予被授权者读写权限，格式x-cos-grant-full-control: uin=" ",uin=" "，非必须
- * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
- * @return  {Object}  data                          返回的数据
- *     @return  {String}  data.Location             操作地址
- */
-function putBucket(params, callback) {
-    var self = this;
-    var headers = {};
-    headers['x-cos-acl'] = params['ACL'];
-    headers['x-cos-grant-read'] = params['GrantRead'];
-    headers['x-cos-grant-write'] = params['GrantWrite'];
-    headers['x-cos-grant-full-control'] = params['GrantFullControl'];
-    var appId = this.options.AppId || '';
-    submitRequest.call(this, {
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        AppId: params.AppId,
-        headers: headers
-    }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
-        var url = getUrl({
-            domain: self.options.Domain,
-            bucket: params.Bucket,
-            region: params.Region,
-            appId: appId
-        });
-        callback(null, {
-            Location: url,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
     });
 }
 
@@ -16279,8 +16190,8 @@ function _putObject(params, callback) {
     var Body = params.Body;
     var readStream;
 
-    if (util.isBrowser && (Body instanceof global.Blob || Body instanceof global.File)) {
-        // 传入 Blob 或者 File 文件内容
+    if (util.isBrowser && (typeof Body === 'string' || Body instanceof global.Blob || Body instanceof global.File)) {
+        // 在浏览器传入 String、Blob 或者 File 文件内容
         headers['Content-Length'] = Body.length;
     } else if (Body && Body instanceof Buffer) {
         // 传入 fs.readFileSync(filepath) 或者 文件内容
@@ -17205,10 +17116,8 @@ function submitRequest(params, callback) {
 
 var API_MAP = {
     // Bucket 相关方法
-    getService: getService,
     getBucket: getBucket,
     headBucket: headBucket,
-    putBucket: putBucket,
     deleteBucket: deleteBucket,
     getBucketAcl: getBucketAcl,
     putBucketAcl: putBucketAcl,
@@ -22508,10 +22417,12 @@ function abortUploadTaskArray(params, callback) {
 
         for (var i = 0, len = datas.length; i < len; i++) {
             var item = datas[i];
-            if (item['error']) {
-                errorList.push(item['task']);
-            } else {
-                successList.push(item['task']);
+            if (item['task']) {
+                if (item['error']) {
+                    errorList.push(item['task']);
+                } else {
+                    successList.push(item['task']);
+                }
             }
         }
 

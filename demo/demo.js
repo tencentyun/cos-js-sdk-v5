@@ -74,12 +74,6 @@ console.error = function (text) {
     logger(text, 'red');
 };
 
-function getService() {
-    cos.getService(function (err, data) {
-        console.log(err || data);
-    });
-}
-
 function getAuth() {
     var AppId = config.AppId;
     var Bucket = config.Bucket;
@@ -93,16 +87,7 @@ function getAuth() {
         method: 'get',
         pathname: '/' + key
     }, function (auth) {
-        console.log('http://' + Bucket + '-' + AppId + '.' + config.Region + '.myqcloud.com' + '/' + key + '?sign=' + encodeURIComponent(auth));
-    });
-}
-
-function putBucket() {
-    cos.putBucket({
-        Bucket: 'testnew',
-        Region: config.Region
-    }, function (err, data) {
-        console.log(err || data);
+        console.log('http://' + Bucket + '-' + AppId + '.cos.' + config.Region + '.myqcloud.com' + '/' + key + '?sign=' + encodeURIComponent(auth));
     });
 }
 
@@ -378,7 +363,7 @@ function putObjectCopy() {
         Bucket: config.Bucket,
         Region: config.Region,
         Key: '1mb.copy.zip',
-        CopySource: Bucket + '-' + AppId + '.' + config.Region + '.myqcloud.com/1mb.zip',
+        CopySource: Bucket + '-' + AppId + '.cos.' + config.Region + '.myqcloud.com/1mb.zip',
     }, function (err, data) {
         console.log(err || data);
     });
@@ -562,9 +547,7 @@ function restartTask() {
     console.log('restart');
 }
 
-// getService();
 // getAuth();
-// putBucket();
 // getBucket();
 // headBucket();
 // putBucketAcl();

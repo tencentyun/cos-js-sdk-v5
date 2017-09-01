@@ -736,10 +736,12 @@ function abortUploadTaskArray(params, callback) {
 
         for (var i = 0, len = datas.length; i < len; i++) {
             var item = datas[i];
-            if (item['error']) {
-                errorList.push(item['task']);
-            } else {
-                successList.push(item['task']);
+            if (item['task']) {
+                if (item['error']) {
+                    errorList.push(item['task']);
+                } else {
+                    successList.push(item['task']);
+                }
             }
         }
 
