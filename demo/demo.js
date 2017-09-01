@@ -294,7 +294,7 @@ function putBucketLifecycle() {
                 'Status': 'Enabled',
                 'Transition': {
                     'Date': '2016-10-31T00:00:00+08:00',
-                    'StorageClass': 'Standard_IA'
+                    'StorageClass': 'STANDARD_IA'
                 }
             }]
         }

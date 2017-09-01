@@ -37,8 +37,8 @@ var getAuthorization = function (options, callback) {
 
     // 方法二（适用于前端调试）
     var authorization = COS.getAuthorization({
-        SecretId: 'AKIDCIYwwlYPlLQ92cxDDh4uUGjoqWQ6lKfg',
-        SecretKey: 'kfjo40IGLMGUal6OJmphImD5omqZRDY2',
+        SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
         method: (options.method || 'get').toLowerCase(),
         pathname: options.pathname || '/',
     });
