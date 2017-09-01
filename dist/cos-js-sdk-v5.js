@@ -29176,7 +29176,7 @@ function plural(ms, n, name) {
 
 module.exports = {
 	"name": "cos-js-sdk-v5",
-	"version": "0.0.7",
+	"version": "0.0.8",
 	"description": "cos js sdk v5",
 	"main": "index.js",
 	"scripts": {
