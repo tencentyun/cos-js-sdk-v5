@@ -180,7 +180,7 @@ function putBucketCors() {
                     "x-cos-grant-full-control",
                 ],
                 "ExposeHeader": ["ETag"],
-                "MaxAgeSeconds": "600"
+                "MaxAgeSeconds": "5"
             }]
         }
     }, function (err, data) {
