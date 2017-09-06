@@ -787,7 +787,6 @@ function _putObject(params, callback) {
     headers['Content-Type'] = params['ContentType'];
     headers['Expect'] = params['Expect'];
     headers['Expires'] = params['Expires'];
-    // headers['x-cos-content-sha1'] = params['ContentSha1'];
     headers['x-cos-acl'] = params['ACL'];
     headers['x-cos-grant-read'] = params['GrantRead'];
     headers['x-cos-grant-write'] = params['GrantWrite'];
@@ -1113,7 +1112,6 @@ function putObjectCopy(params, callback) {
     headers['Content-Type'] = params['ContentType'];
     headers['Expect'] = params['Expect'];
     headers['Expires'] = params['Expires'];
-    // headers['x-cos-content-sha1'] = params['ContentSha1'];
 
     for (var key in params) {
         if (key.indexOf('x-cos-meta-') > -1) {
@@ -1281,7 +1279,6 @@ function multipartUpload(params, callback) {
 
     headers['Content-Length'] = params['ContentLength'];
     headers['Expect'] = params['Expect'];
-    // headers['x-cos-content-sha1'] = params['ContentSha1'];
 
     var PartNumber = params['PartNumber'];
     var UploadId = params['UploadId'];
@@ -1558,7 +1555,11 @@ function getUrl(params) {
     var appId = params.appId;
     var protocol = util.isBrowser && location.protocol === 'https:' ? 'https:' : 'http:';
     if (!domain) {
-        domain = '{{Bucket}}-{{AppId}}.cos.{{Region}}.myqcloud.com';
+        if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
+            domain = '{{Bucket}}-{{AppId}}.{{Region}}.myqcloud.com';
+        } else {
+            domain = '{{Bucket}}-{{AppId}}.cos.{{Region}}.myqcloud.com';
+        }
     }
     domain = domain.replace(/\{\{AppId\}\}/ig, appId)
         .replace(/\{\{Bucket\}\}/ig, bucket)
@@ -1573,7 +1574,7 @@ function getUrl(params) {
     var url = domain;
 
     if (object) {
-        url += '/' + encodeURIComponent(object);
+        url += '/' + encodeURIComponent(object).replace(/%2F/g, '/');
     }
 
     if (action) {
