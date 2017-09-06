@@ -7,82 +7,91 @@
 var http = require('http');
 var crypto = require('crypto');
 
-var cos = {
-    // 获取个人 API 密钥 https://console.qcloud.com/capi
-    SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    getAuthorization: function (method, pathname, callback) {
-        method = (method ? method : 'post').toLowerCase();
-        pathname = pathname ? pathname : '/';
-        pathname.substr(0, 1) != '/' && (pathname = '/' + pathname);
-        var queryParams = {};
-        var headers = {};
+var SecretId = 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+var SecretKey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 
-        // 工具方法
-        var getObjectKeys = function (obj) {
-            var list = [];
-            for (var key in obj) {
-                if (obj.hasOwnProperty(key)) {
-                    list.push(key);
-                }
+
+function camSafeUrlEncode(str) {
+    return encodeURIComponent(str)
+        .replace(/!/g, '%21')
+        .replace(/'/g, '%27')
+        .replace(/\(/g, '%28')
+        .replace(/\)/g, '%29')
+        .replace(/\*/g, '%2A');
+}
+
+function getAuthorization (method, pathname) {
+
+    var queryParams = {};
+    var headers = {};
+    method = (method ? method : 'get').toLowerCase();
+    pathname = pathname ? pathname : '/';
+    pathname.indexOf('/') === -1 && (pathname = '/' + pathname);
+
+    // 工具方法
+    var getObjectKeys = function (obj) {
+        var list = [];
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                list.push(key);
             }
-            return list.sort();
-        };
-        var obj2str = function (obj) {
-            var i, key, val;
-            var list = [];
-            var keyList = getObjectKeys(obj);
-            for (i = 0; i < keyList.length; i++) {
-                key = keyList[i];
-                val = obj[key] || '';
-                key = key.toLowerCase();
-                key = encodeURIComponent(key);
-                list.push(key + '=' + encodeURIComponent(val));
-            }
-            return list.join('&');
-        };
+        }
+        return list.sort();
+    };
 
-        // 签名有效起止时间
-        var now = parseInt(new Date().getTime() / 1000) - 1;
-        var expired = now + 600; // 签名过期时刻，600 秒后
+    var obj2str = function (obj) {
+        var i, key, val;
+        var list = [];
+        var keyList = getObjectKeys(obj);
+        for (i = 0; i < keyList.length; i++) {
+            key = keyList[i];
+            val = obj[key] || '';
+            key = key.toLowerCase();
+            list.push(camSafeUrlEncode(key) + '=' + camSafeUrlEncode(val));
+        }
+        return list.join('&');
+    };
 
-        // 要用到的 Authorization 参数列表
-        var qSignAlgorithm = 'sha1';
-        var qAk = cos.SecretId;
-        var qSignTime = now + ';' + expired;
-        var qKeyTime = now + ';' + expired;
-        var qHeaderList = getObjectKeys(headers).join(';').toLowerCase();
-        var qUrlParamList = getObjectKeys(queryParams).join(';').toLowerCase();
+    // 签名有效起止时间
+    var now = parseInt(new Date().getTime() / 1000) - 1;
+    var expired = now + 600; // 签名过期时刻，600 秒后
 
-        // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
-        // 步骤一：计算 SignKey
-        var signKey = crypto.createHmac('sha1', cos.SecretKey).update(qKeyTime).digest('hex');
+    // 要用到的 Authorization 参数列表
+    var qSignAlgorithm = 'sha1';
+    var qAk = SecretId;
+    var qSignTime = now + ';' + expired;
+    var qKeyTime = now + ';' + expired;
+    var qHeaderList = getObjectKeys(headers).join(';').toLowerCase();
+    var qUrlParamList = getObjectKeys(queryParams).join(';').toLowerCase();
 
-        // 步骤二：构成 FormatString
-        var formatString = [method.toLowerCase(), pathname, obj2str(queryParams), obj2str(headers), ''].join('\n');
+    // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
+    // 步骤一：计算 SignKey
+    var signKey = crypto.createHmac('sha1', SecretKey).update(qKeyTime).digest('hex');
 
-        // 步骤三：计算 StringToSign
-        var stringToSign = ['sha1', qSignTime, crypto.createHash('sha1').update(formatString).digest('hex'), ''].join('\n');
+    // 步骤二：构成 FormatString
+    var formatString = [method.toLowerCase(), pathname, obj2str(queryParams), obj2str(headers), ''].join('\n');
 
-        // 步骤四：计算 Signature
-        var qSignature = crypto.createHmac('sha1', signKey).update(stringToSign).digest('hex');
+    // 步骤三：计算 StringToSign
+    var stringToSign = ['sha1', qSignTime, crypto.createHash('sha1').update(formatString).digest('hex'), ''].join('\n');
 
-        // 步骤五：构造 Authorization
-        var authorization  = [
-            'q-sign-algorithm=' + qSignAlgorithm,
-            'q-ak=' + qAk,
-            'q-sign-time=' + qSignTime,
-            'q-key-time=' + qKeyTime,
-            'q-header-list=' + qHeaderList,
-            'q-url-param-list=' + qUrlParamList,
-            'q-signature=' + qSignature
-        ].join('&');
+    // 步骤四：计算 Signature
+    var qSignature = crypto.createHmac('sha1', signKey).update(stringToSign).digest('hex');
 
-        callback && callback(authorization);
-    }
+    // 步骤五：构造 Authorization
+    var authorization  = [
+        'q-sign-algorithm=' + qSignAlgorithm,
+        'q-ak=' + qAk,
+        'q-sign-time=' + qSignTime,
+        'q-key-time=' + qKeyTime,
+        'q-header-list=' + qHeaderList,
+        'q-url-param-list=' + qUrlParamList,
+        'q-signature=' + qSignature
+    ].join('&');
+
+    return authorization;
 };
 
-var getParam = function (url, name) {
+function getParam(url, name) {
     var query, params = {}, index = url.indexOf('?');
     if (index >= 0) {
         query = url.substr(index + 1).split('&');
@@ -92,20 +101,26 @@ var getParam = function (url, name) {
         });
     }
     return params[name];
-};
+}
 
 http.createServer(function(req, res){
-    var method = getParam(req.url, 'method');
-    var pathname = getParam(req.url, 'pathname');
-    cos.getAuthorization(method, pathname, function (authorization) {
+    if (req.url.substr(0, '/auth?'.indexOf('?')) === '/auth') {
+        var method = getParam(req.url, 'method');
+        var pathname = getParam(req.url, 'pathname');
+        var auth = getAuthorization(method, pathname);
+        console.log(method, pathname);
         res.writeHead(200, {
             'Content-Type': 'text/plain',
-            'Access-Control-Allow-Methods': 'OPTIONS,GET,POST',
             'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'OPTIONS,GET,POST',
             'Access-Control-Allow-Headers': 'accept,content-type',
             'Access-Control-Max-Age': 60
         });
-        res.write(authorization || '');
+        res.write(auth || '');
         res.end();
-    });
-}).listen(3333);
+    } else {
+        res.writeHead(404, {'Content-Type': 'text/html'});
+        res.write('404 Not Found');
+        res.end();
+    }
+}).listen(3000);

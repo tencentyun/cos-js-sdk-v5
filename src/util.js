@@ -26,6 +26,7 @@ var getAuth = function (opt) {
     var pathname = opt.pathname || '/';
     var queryParams = opt.params || '';
     var headers = opt.headers || '';
+    pathname.indexOf('/') === -1 && (pathname = '/' + pathname);
 
     if (!SecretId) return console.error('lack of param SecretId');
     if (!SecretKey) return console.error('lack of param SecretKey');
@@ -43,13 +44,12 @@ var getAuth = function (opt) {
     var obj2str = function (obj) {
         var i, key, val;
         var list = [];
-        var keyList = Object.keys(obj);
+        var keyList = getObjectKeys(obj);
         for (i = 0; i < keyList.length; i++) {
             key = keyList[i];
             val = obj[key] || '';
             key = key.toLowerCase();
-            key = camSafeUrlEncode(key);
-            list.push(key + '=' + camSafeUrlEncode(val));
+            list.push(camSafeUrlEncode(key) + '=' + camSafeUrlEncode(val));
         }
         return list.join('&');
     };
@@ -247,10 +247,10 @@ var checkParams = function (apiName, params) {
 
 var apiWrapper = function (apiName, apiFn) {
     var regionMap = {
-        'gz': 'cn-south',
-        'tj': 'cn-north',
-        'sh': 'cn-east',
-        'cd': 'cn-southwest'
+        'gz': 'ap-guangzhou',
+        'tj': 'ap-beijing-2',
+        'sh': 'ap-shanghai',
+        'cd': 'ap-chengdu'
     };
     return function (params, callback) {
         callback = callback || function () {

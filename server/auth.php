@@ -9,15 +9,17 @@
 
 function getAuthorization($method, $pathname)
 {
-    $method = strtolower($method ? $method : 'post');
-    $pathname = $pathname ? $pathname : '/';
-    substr($pathname, 0, 1) != '/' && ($pathname = '/' . $pathname);
-    $queryParams = array();
-    $headers = array();
 
     // 获取个人 API 密钥 https://console.qcloud.com/capi
     $SecretId = 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
     $SecretKey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+
+    // 整理参数
+    $queryParams = array();
+    $headers = array();
+    $method = strtolower($method ? $method : 'get');
+    $pathname = $pathname ? $pathname : '/';
+    substr($pathname, 0, 1) != '/' && ($pathname = '/' . $pathname);
 
     // 工具方法
     function getObjectKeys($obj)
@@ -36,8 +38,7 @@ function getAuthorization($method, $pathname)
             $key = $keyList[$i];
             $val = isset($obj[$key]) ? $obj[$key] : '';
             $key = strtolower($key);
-            $key = urlencode($key);
-            $list[] = $key . '=' . urlencode($val);
+            $list[] = rawurlencode($key) . '=' . rawurlencode($val);
         }
         return implode('&', $list);
     }
