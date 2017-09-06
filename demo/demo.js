@@ -17,7 +17,7 @@ var getAuthorization = function (options, callback) {
     // 方法一（推荐）
     var method = (options.method || 'get').toLowerCase();
     var pathname = options.pathname || '/';
-    var url = '../server/auth.php?method=' + method + '&pathname=' + pathname;
+    var url = '../server/auth.php?method=' + method + '&pathname=' + encodeURIComponent(pathname);
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
     xhr.onload = function (e) {
@@ -27,7 +27,7 @@ var getAuthorization = function (options, callback) {
 
     // // 方法二（适用于前端调试）
     // var authorization = COS.getAuthorization({
-    //     SecretId: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    //     SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     //     method: (options.method || 'get').toLowerCase(),
     //     pathname: options.pathname || '/',
@@ -113,23 +113,23 @@ function putBucketAcl() {
     cos.putBucketAcl({
         Bucket: config.Bucket,
         Region: config.Region,
-        // GrantFullControl: 'uin="1001", uin="1002"',
-        // GrantWrite: 'uin="1001", uin="1002"',
-        // GrantRead: 'uin="1001", uin="1002"',
+        // GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
+        // GrantWrite: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
+        // GrantRead: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
         // ACL: 'public-read-write',
         // ACL: 'public-read',
-        // ACL: 'private',
-        AccessControlPolicy: {
-            "Owner": {
-                "ID": 'qcs::cam::uin/10001:uin/10001' // 10001 是 QQ 号
-            },
-            "Grants": [{
-                "Grantee": {
-                    "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 QQ 号
-                },
-                "Permission": "READ"
-            }]
-        }
+        ACL: 'private',
+        // AccessControlPolicy: {
+        //     "Owner": { // AccessControlPolicy 里必须有 owner
+        //         "ID": 'qcs::cam::uin/10001:uin/10001' // 10001 是 QQ 号
+        //     },
+        //     "Grants": [{
+        //         "Grantee": {
+        //             "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 QQ 号
+        //         },
+        //         "Permission": "READ"
+        //     }]
+        // }
     }, function (err, data) {
         console.log(err || data);
     });
@@ -251,7 +251,7 @@ function putBucketPolicy() {
                         "name/cos:AbortMultipartUpload",
                         "name/cos:AppendObject"
                     ],
-                    // "resource": ["qcs::cos:cn-south:uid/1250000000:test-1250000000.cn-south.myqcloud.com//1250000000/test/*"] // 1250000000 是 appid
+                    // "resource": ["qcs::cos:ap-guangzhou:uid/1250000000:test-1250000000.cos.ap-guangzhou.myqcloud.com//1250000000/test/*"] // 1250000000 是 appid
                     "resource": ["qcs::cos:" + config.Region + ":uid/" + AppId + ":" + Bucket + "-" + AppId + ".cos." + config.Region + ".myqcloud.com//" + AppId + "/" + Bucket + "/*"] // 1250000000 是 appid
                 }
             ]
@@ -333,7 +333,7 @@ function deleteBucket() {
 function putObject() {
     // 创建测试文件
     var filename = '1mb.zip';
-    var blob = util.createFile({size: 1024 * 1024});
+    var blob = util.createFile({size: 10});
     // 调用方法
     cos.putObject({
         Bucket: config.Bucket, /* 必须 */
@@ -394,23 +394,23 @@ function putObjectAcl() {
         Bucket: config.Bucket,
         Region: config.Region,
         Key: '1mb.zip',
-        // GrantFullControl: 'uin="1001", uin="1002"',
-        // GrantWrite: 'uin="1001", uin="1002"',
-        // GrantRead: 'uin="1001", uin="1002"',
+        // GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
+        // GrantWrite: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
+        // GrantRead: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
         // ACL: 'public-read-write',
         // ACL: 'public-read',
-        // ACL: 'private',
-        AccessControlPolicy: {
-            "Owner": {
-                "ID": 'qcs::cam::uin/10001:uin/10001' // 10001 是 QQ 号
-            },
-            "Grants": [{
-                "Grantee": {
-                    "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 QQ 号
-                },
-                "Permission": "READ"
-            }]
-        }
+        ACL: 'private',
+        // AccessControlPolicy: {
+        //     "Owner": { // AccessControlPolicy 里必须有 owner
+        //         "ID": 'qcs::cam::uin/10001:uin/10001' // 10001 是 QQ 号
+        //     },
+        //     "Grants": [{
+        //         "Grantee": {
+        //             "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 QQ 号
+        //         },
+        //         "Permission": "READ"
+        //     }]
+        // }
     }, function (err, data) {
         console.log(err || data);
     });

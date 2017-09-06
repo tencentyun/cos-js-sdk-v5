@@ -29,7 +29,7 @@ var cos = new COS({
 // 分片上传
 cos.sliceUploadFile({
     Bucket: 'test',
-    Region: 'cn-south',
+    Region: 'ap-guangzhou',
     Key: '1.zip',
     Body: file
 }, function (err, data) {

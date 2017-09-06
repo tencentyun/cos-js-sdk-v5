@@ -3022,6 +3022,7 @@ var getAuth = function (opt) {
     var pathname = opt.pathname || '/';
     var queryParams = opt.params || '';
     var headers = opt.headers || '';
+    pathname.indexOf('/') === -1 && (pathname = '/' + pathname);
 
     if (!SecretId) return console.error('lack of param SecretId');
     if (!SecretKey) return console.error('lack of param SecretKey');
@@ -3039,13 +3040,12 @@ var getAuth = function (opt) {
     var obj2str = function (obj) {
         var i, key, val;
         var list = [];
-        var keyList = Object.keys(obj);
+        var keyList = getObjectKeys(obj);
         for (i = 0; i < keyList.length; i++) {
             key = keyList[i];
             val = obj[key] || '';
             key = key.toLowerCase();
-            key = camSafeUrlEncode(key);
-            list.push(key + '=' + camSafeUrlEncode(val));
+            list.push(camSafeUrlEncode(key) + '=' + camSafeUrlEncode(val));
         }
         return list.join('&');
     };
@@ -3238,10 +3238,10 @@ var checkParams = function (apiName, params) {
 
 var apiWrapper = function (apiName, apiFn) {
     var regionMap = {
-        'gz': 'cn-south',
-        'tj': 'cn-north',
-        'sh': 'cn-east',
-        'cd': 'cn-southwest'
+        'gz': 'ap-guangzhou',
+        'tj': 'ap-beijing-2',
+        'sh': 'ap-shanghai',
+        'cd': 'ap-chengdu'
     };
     return function (params, callback) {
         callback = callback || function () {};
@@ -16174,7 +16174,6 @@ function _putObject(params, callback) {
     headers['Content-Type'] = params['ContentType'];
     headers['Expect'] = params['Expect'];
     headers['Expires'] = params['Expires'];
-    // headers['x-cos-content-sha1'] = params['ContentSha1'];
     headers['x-cos-acl'] = params['ACL'];
     headers['x-cos-grant-read'] = params['GrantRead'];
     headers['x-cos-grant-write'] = params['GrantWrite'];
@@ -16503,7 +16502,6 @@ function putObjectCopy(params, callback) {
     headers['Content-Type'] = params['ContentType'];
     headers['Expect'] = params['Expect'];
     headers['Expires'] = params['Expires'];
-    // headers['x-cos-content-sha1'] = params['ContentSha1'];
 
     for (var key in params) {
         if (key.indexOf('x-cos-meta-') > -1) {
@@ -16669,7 +16667,6 @@ function multipartUpload(params, callback) {
 
     headers['Content-Length'] = params['ContentLength'];
     headers['Expect'] = params['Expect'];
-    // headers['x-cos-content-sha1'] = params['ContentSha1'];
 
     var PartNumber = params['PartNumber'];
     var UploadId = params['UploadId'];
@@ -16943,7 +16940,11 @@ function getUrl(params) {
     var appId = params.appId;
     var protocol = util.isBrowser && location.protocol === 'https:' ? 'https:' : 'http:';
     if (!domain) {
-        domain = '{{Bucket}}-{{AppId}}.cos.{{Region}}.myqcloud.com';
+        if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
+            domain = '{{Bucket}}-{{AppId}}.{{Region}}.myqcloud.com';
+        } else {
+            domain = '{{Bucket}}-{{AppId}}.cos.{{Region}}.myqcloud.com';
+        }
     }
     domain = domain.replace(/\{\{AppId\}\}/ig, appId).replace(/\{\{Bucket\}\}/ig, bucket).replace(/\{\{Region\}\}/ig, region).replace(/\{\{.*?\}\}/ig, '');
     if (!/^[a-zA-Z]+:\/\//.test(domain)) {
@@ -16955,7 +16956,7 @@ function getUrl(params) {
     var url = domain;
 
     if (object) {
-        url += '/' + encodeURIComponent(object);
+        url += '/' + encodeURIComponent(object).replace(/%2F/g, '/');
     }
 
     if (action) {
@@ -29176,7 +29177,7 @@ function plural(ms, n, name) {
 
 module.exports = {
 	"name": "cos-js-sdk-v5",
-	"version": "0.0.8",
+	"version": "0.0.9",
 	"description": "cos js sdk v5",
 	"main": "index.js",
 	"scripts": {
@@ -29187,8 +29188,6 @@ module.exports = {
 		"type": "git",
 		"url": "git+https://github.com/tencentyun/cos-js-sdk-v5.git"
 	},
-	"keywords": [],
-	"author": "carsonxu",
 	"license": "ISC",
 	"bugs": {
 		"url": "https://github.com/tencentyun/cos-js-sdk-v5/issues"

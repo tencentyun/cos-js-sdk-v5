@@ -24,25 +24,25 @@ var util = {
 
 var getAuthorization = function (options, callback) {
 
-    // // 方法一（推荐）
-    // var method = (options.method || 'get').toLowerCase();
-    // var pathname = options.pathname || '/';
-    // var url = '../server/auth.php?method=' + method + '&pathname=' + pathname;
-    // var xhr = new XMLHttpRequest();
-    // xhr.open('GET', url, true);
-    // xhr.onload = function (e) {
-    //     callback(e.target.responseText);
-    // };
-    // xhr.send();
+    // 方法一（推荐）
+    var method = (options.method || 'get').toLowerCase();
+    var pathname = options.pathname || '/';
+    var url = '../server/auth.php?method=' + method + '&pathname=' + pathname;
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.onload = function (e) {
+        callback(e.target.responseText);
+    };
+    xhr.send();
 
-    // 方法二（适用于前端调试）
-    var authorization = COS.getAuthorization({
-        SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        method: (options.method || 'get').toLowerCase(),
-        pathname: options.pathname || '/',
-    });
-    callback(authorization);
+    // // 方法二（适用于前端调试）
+    // var authorization = COS.getAuthorization({
+    //     SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    //     method: (options.method || 'get').toLowerCase(),
+    //     pathname: options.pathname || '/',
+    // });
+    // callback(authorization);
 
 };
 
@@ -427,6 +427,21 @@ QUnit.test('putObject()', function (assert) {
                 assert.ok(data.ETag === ETag, 'Blob 创建 object');
                 done();
             });
+        });
+    });
+});
+
+QUnit.test('Key 特殊字符', function (assert) {
+    return new Promise(function (done) {
+        cos.putObject({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '(!\'*) "#$%&+,-./0123456789:;<=>@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~',
+            Body: Date.now().toString()
+        }, function (err, data) {
+            if (err) throw err;
+            assert.ok(data, 'putObject 特殊字符的 Key 能通过');
+            done();
         });
     });
 });
@@ -1429,7 +1444,7 @@ QUnit.test('params check', function (assert) {
             Bucket: config.Bucket,
             Region: 'gz'
         }, function (err, data) {
-            assert.ok(err.error === 'Region should be cn-south');
+            assert.ok(err.error === 'Region should be ap-guangzhou');
             done();
         });
     });
@@ -1439,7 +1454,7 @@ QUnit.test('params check', function (assert) {
     return new Promise(function (done) {
         cos.headBucket({
             Bucket: config.Bucket,
-            Region: 'cos.cn-south'
+            Region: 'cos.ap-guangzhou'
         }, function (err, data) {
             assert.ok(err.error === 'Region should not be start with "cos."');
             done();

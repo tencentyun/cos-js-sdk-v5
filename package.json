@@ -1,6 +1,6 @@
 {
   "name": "cos-js-sdk-v5",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "cos js sdk v5",
   "main": "index.js",
   "scripts": {
@@ -28,6 +28,6 @@
   "devDependencies": {
     "babel-core": "^6.25.0",
     "babel-loader": "^7.1.1",
-    "webpack": "^3.2.0"
+    "express": "^4.15.4"
   }
 }
