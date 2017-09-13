@@ -27,7 +27,7 @@ var getAuthorization = function (options, callback) {
     // 方法一（推荐）
     var method = (options.method || 'get').toLowerCase();
     var pathname = options.pathname || '/';
-    var url = '../server/auth.php?method=' + method + '&pathname=' + pathname;
+    var url = '../server/auth.php?method=' + method + '&pathname=' + encodeURIComponent(pathname);
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
     xhr.onload = function (e) {
@@ -447,56 +447,23 @@ QUnit.test('Key 特殊字符', function (assert) {
 });
 
 QUnit.test('getObject()', function (assert) {
-    new Promise(function (done) {
+    return new Promise(function (done) {
         var key = '1.txt';
-        var objectContent = util.str2blob([]);
-        var outputStream = new Writable({
-            write: function (chunk, encoding, callback) {
-                objectContent = Buffer.concat([objectContent, chunk]);
-            }
-        });
         var content = Date.now().toString(36);
         cos.putObject({
             Bucket: config.Bucket,
             Region: config.Region,
             Key: key,
-            Body: util.str2blob(content)
+            Body: content
         }, function (err, data) {
             setTimeout(function () {
                 cos.getObject({
                     Bucket: config.Bucket,
                     Region: config.Region,
                     Key: key,
-                    Output: outputStream
                 }, function (err, data) {
                     if (err) throw err;
-                    objectContent = objectContent.toString();
-                    assert.ok(data.headers['content-length'] === '' + content.length);
-                    assert.ok(objectContent === content);
-                    done();
-                });
-            }, 2000);
-        });
-    });
-    new Promise(function (done) {
-        var key = '1.txt';
-        var content = Date.now().toString();
-        cos.putObject({
-            Bucket: config.Bucket,
-            Region: config.Region,
-            Key: key,
-            Body: util.str2blob(content)
-        }, function (err, data) {
-            setTimeout(function () {
-                cos.getObject({
-                    Bucket: config.Bucket,
-                    Region: config.Region,
-                    Key: key
-                }, function (err, data) {
-                    if (err) throw err;
-                    var objectContent = data.Body.toString();
-                    assert.ok(data.headers['content-length'] === '' + content.length);
-                    assert.ok(objectContent === content);
+                    assert.ok(data.Body === content);
                     done();
                 });
             }, 2000);
@@ -1383,7 +1350,7 @@ QUnit.test('getBucketLocation()', function (assert) {
                         Bucket: config.Bucket,
                         Region: config.Region
                     }, function (err, data) {
-                        assert.ok(err.statusCode === 404);
+                        assert.ok(err && err.statusCode === 404);
                         done();
                     });
                 }, 2000);

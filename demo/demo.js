@@ -16,7 +16,7 @@ var getAuthorization = function (options, callback) {
 
     // 方法一（推荐）
     var method = (options.method || 'get').toLowerCase();
-    var pathname = options.pathname || '/';
+    var pathname = options.pathname || '/'
     var url = '../server/auth.php?method=' + method + '&pathname=' + encodeURIComponent(pathname);
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
@@ -113,9 +113,9 @@ function putBucketAcl() {
     cos.putBucketAcl({
         Bucket: config.Bucket,
         Region: config.Region,
-        // GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
-        // GrantWrite: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
-        // GrantRead: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
+        // GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
+        // GrantWrite: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
+        // GrantRead: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
         // ACL: 'public-read-write',
         // ACL: 'public-read',
         ACL: 'private',
@@ -152,18 +152,7 @@ function putBucketCors() {
             "CORSRules": [{
                 "AllowedOrigin": ["*"],
                 "AllowedMethod": ["GET", "POST", "PUT", "DELETE", "HEAD"],
-                "AllowedHeader": [
-                    "origin",
-                    "accept",
-                    "content-type",
-                    "authorization",
-                    "content-md5",
-                    "x-cos-copy-source",
-                    "x-cos-acl",
-                    "x-cos-grant-read",
-                    "x-cos-grant-write",
-                    "x-cos-grant-full-control",
-                ],
+                "AllowedHeader": ["*"],
                 "ExposeHeader": ["ETag"],
                 "MaxAgeSeconds": "5"
             }]
@@ -394,9 +383,9 @@ function putObjectAcl() {
         Bucket: config.Bucket,
         Region: config.Region,
         Key: '1mb.zip',
-        // GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
-        // GrantWrite: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
-        // GrantRead: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
+        // GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
+        // GrantWrite: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
+        // GrantRead: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
         // ACL: 'public-read-write',
         // ACL: 'public-read',
         ACL: 'private',
