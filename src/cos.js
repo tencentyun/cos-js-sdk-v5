@@ -32,4 +32,4 @@ util.extend(COS.prototype, advance);
 COS.getAuthorization = util.getAuth;
 COS.version = pkg.version;
 
-module.exports = COS;
+module.exports = window.COS = COS;
