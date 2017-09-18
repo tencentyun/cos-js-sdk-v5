@@ -1,12 +1,11 @@
 'use strict';
 
-var util = require('./util');
-var event = require('./event');
-var task = require('./task');
-var base = require('./base');
-var advance = require('./advance');
-var pkg = require('../package.json');
-
+import util from './util';
+import event from './event';
+import task from './task';
+import base from './base';
+import advance from './advance';
+import pkg from '../package.json';
 
 var defaultOptions = {
     AppId: '',
