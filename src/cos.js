@@ -1,11 +1,11 @@
 'use strict';
 
-import util from './util';
-import event from './event';
-import task from './task';
-import base from './base';
-import advance from './advance';
-import pkg from '../package.json';
+var util = require('./util');
+var event = require('./event');
+var task = require('./task');
+var base = require('./base');
+var advance = require('./advance');
+var pkg = require('../package.json');
 
 var defaultOptions = {
     AppId: '',
@@ -32,4 +32,4 @@ util.extend(COS.prototype, advance);
 COS.getAuthorization = util.getAuth;
 COS.version = pkg.version;
 
-module.exports = window.COS = COS;
+module.exports = COS;

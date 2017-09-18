@@ -15,10 +15,11 @@ module.exports = {
                 loader: 'babel-loader',
                 exclude: /node_modules/
             },
-            {
-                test: /\.json$/,
-                use: 'json-loader'
-            }
+            // {
+            //     test: /\.json$/,
+            //     use: 'json-loader',
+            //     // loader: 'json-loader',
+            // }
         ]
     },
     devServer: {
