@@ -1,6 +1,6 @@
 {
   "name": "cos-js-sdk-v5",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "cos js sdk v5",
   "main": "index.js",
   "scripts": {
@@ -22,6 +22,7 @@
     "async": "^2.2.0",
     "eventproxy": "^0.3.5",
     "lodash": "^4.17.4",
+    "querystring": "^0.2.0",
     "request": "^2.81.0",
     "xml2js": "^0.4.17"
   },
