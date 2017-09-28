@@ -15,8 +15,10 @@ var util = {
 var getAuthorization = function (options, callback) {
 
     // 方法一（推荐）
-    var method = (options.method || 'get').toLowerCase();
-    var pathname = options.pathname || '/'
+    var method = (options.Method || 'get').toLowerCase();
+    var key = options.Key || '';
+    var pathname = key.indexOf('/') === 0 ? key : '/' + key;
+
     var url = '../server/auth.php?method=' + method + '&pathname=' + encodeURIComponent(pathname);
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
@@ -29,8 +31,8 @@ var getAuthorization = function (options, callback) {
     // var authorization = COS.getAuthorization({
     //     SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    //     method: (options.method || 'get').toLowerCase(),
-    //     pathname: options.pathname || '/',
+    //     Method: options.Method,
+    //     Key: options.Key,
     // });
     // callback(authorization);
 
@@ -84,8 +86,8 @@ function getAuth() {
     }
     var key = '1.png';
     getAuthorization({
-        method: 'get',
-        pathname: '/' + key
+        Method: 'get',
+        Key: key
     }, function (auth) {
         console.log('http://' + Bucket + '-' + AppId + '.cos.' + config.Region + '.myqcloud.com' + '/' + key + '?sign=' + encodeURIComponent(auth));
     });

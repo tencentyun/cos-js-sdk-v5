@@ -22,8 +22,8 @@ var getAuth = function (opt) {
 
     var SecretId = opt.SecretId;
     var SecretKey = opt.SecretKey;
-    var method = (opt.method || 'get').toLowerCase();
-    var pathname = opt.pathname || '/';
+    var method = (opt.method || opt.Method || 'get').toLowerCase();
+    var pathname = opt.pathname || opt.Key || '/';
     var queryParams = opt.params || '';
     var headers = opt.headers || '';
     pathname.indexOf('/') === -1 && (pathname = '/' + pathname);

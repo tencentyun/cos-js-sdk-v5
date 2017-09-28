@@ -1541,8 +1541,8 @@ function multipartAbort(params, callback) {
  */
 function getAuth(params) {
     return util.getAuth({
-        method: params.Method || 'get',
-        pathname: '/' + (params.Key + ''),
+        Method: params.Method || 'get',
+        Key: params.Key || '',
         SecretId: params.SecretId || this.options.SecretId || '',
         SecretKey: params.SecretKey || this.options.SecretKey || ''
     });
@@ -1658,10 +1658,6 @@ function submitRequest(params, callback) {
         json: json,
     };
 
-    if (object) {
-        object = '/' + object;
-    }
-
     var innerSender;
     var outerSender = {
         abort: function () {
@@ -1760,13 +1756,15 @@ function submitRequest(params, callback) {
     // 获取签名
     if (this.options.getAuthorization) {
         this.options.getAuthorization({
+            Method: opt.method,
+            Key: object || '',
             method: opt.method,
-            pathname: object || '/'
+            pathname: '/' + (object || '')
         }, getAuthorizationCallback);
     } else {
         var auth = util.getAuth({
-            method: opt.method,
-            pathname: object || '/',
+            Method: opt.method,
+            Key: object || '',
             SecretId: params.SecretId || this.options.SecretId,
             SecretKey: params.SecretKey || this.options.SecretKey,
         });

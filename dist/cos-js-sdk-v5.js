@@ -2891,8 +2891,8 @@ var getAuth = function (opt) {
 
     var SecretId = opt.SecretId;
     var SecretKey = opt.SecretKey;
-    var method = (opt.method || 'get').toLowerCase();
-    var pathname = opt.pathname || '/';
+    var method = (opt.method || opt.Method || 'get').toLowerCase();
+    var pathname = opt.pathname || opt.Key || '/';
     var queryParams = opt.params || '';
     var headers = opt.headers || '';
     pathname.indexOf('/') === -1 && (pathname = '/' + pathname);
@@ -13319,8 +13319,8 @@ function multipartAbort(params, callback) {
  */
 function getAuth(params) {
     return util.getAuth({
-        method: params.Method || 'get',
-        pathname: '/' + (params.Key + ''),
+        Method: params.Method || 'get',
+        Key: params.Key || '',
         SecretId: params.SecretId || this.options.SecretId || '',
         SecretKey: params.SecretKey || this.options.SecretKey || ''
     });
@@ -13432,10 +13432,6 @@ function submitRequest(params, callback) {
         json: json
     };
 
-    if (object) {
-        object = '/' + object;
-    }
-
     var innerSender;
     var outerSender = {
         abort: function () {
@@ -13536,13 +13532,15 @@ function submitRequest(params, callback) {
     // 获取签名
     if (this.options.getAuthorization) {
         this.options.getAuthorization({
+            Method: opt.method,
+            Key: object || '',
             method: opt.method,
-            pathname: object || '/'
+            pathname: '/' + (object || '')
         }, getAuthorizationCallback);
     } else {
         var auth = util.getAuth({
-            method: opt.method,
-            pathname: object || '/',
+            Method: opt.method,
+            Key: object || '',
             SecretId: params.SecretId || this.options.SecretId,
             SecretKey: params.SecretKey || this.options.SecretKey
         });
@@ -17869,8 +17867,7 @@ var request = function (options, callback) {
 
     // qs
     if (options.qs) {
-        // var qsStr = queryString.stringify(options.qs);
-        var qsStr = 1;
+        var qsStr = queryString.stringify(options.qs);
         if (qsStr) {
             options.url += (options.url.indexOf('?') === -1 ? '?' : '&') + qsStr;
         }
@@ -25462,7 +25459,7 @@ function plural(ms, n, name) {
 /* 79 */
 /***/ (function(module, exports) {
 
-module.exports = {"name":"cos-js-sdk-v5","version":"0.1.1","description":"cos js sdk v5","main":"index.js","scripts":{"dev":"SET NODE_ENV=development&& webpack -w","build":"SET NODE_ENV=production&& webpack"},"repository":{"type":"git","url":"git+https://github.com/tencentyun/cos-js-sdk-v5.git"},"keywords":[],"author":"carsonxu","license":"ISC","bugs":{"url":"https://github.com/tencentyun/cos-js-sdk-v5/issues"},"homepage":"https://github.com/tencentyun/cos-js-sdk-v5#readme","dependencies":{"async":"^2.2.0","eventproxy":"^0.3.5","json-loader":"^0.5.7","lodash":"^4.17.4","querystring":"^0.2.0","request":"^2.81.0","xml2js":"^0.4.17"},"devDependencies":{"babel-core":"^6.25.0","babel-loader":"^7.1.1","express":"^4.15.4"}}
+module.exports = {"name":"cos-js-sdk-v5","version":"0.1.2","description":"cos js sdk v5","main":"index.js","scripts":{"dev":"SET NODE_ENV=development&& webpack -w","build":"SET NODE_ENV=production&& webpack"},"repository":{"type":"git","url":"git+https://github.com/tencentyun/cos-js-sdk-v5.git"},"keywords":[],"author":"carsonxu","license":"ISC","bugs":{"url":"https://github.com/tencentyun/cos-js-sdk-v5/issues"},"homepage":"https://github.com/tencentyun/cos-js-sdk-v5#readme","dependencies":{"async":"^2.2.0","eventproxy":"^0.3.5","json-loader":"^0.5.7","lodash":"^4.17.4","querystring":"^0.2.0","request":"^2.81.0","xml2js":"^0.4.17"},"devDependencies":{"babel-core":"^6.25.0","babel-loader":"^7.1.1","express":"^4.15.4","webpack":"^3.6.0"}}
 
 /***/ })
 /******/ ]);
