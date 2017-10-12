@@ -1564,25 +1564,24 @@ function decodeAcl(AccessControlPolicy) {
         'WRITE': 'GrantWrite',
         'READ': 'GrantRead',
     };
-    var AclMap  = {
-        'FULL_CONTROL': 'public-read-write',
-        'READ': 'public-read',
-    };
     var Grant = AccessControlPolicy.AccessControlList.Grant;
     if (Grant) {
         Grant = util.isArray(Grant) ? Grant : [Grant];
     }
-    if (Grant.length) {
-        util.each(Grant, function (item) {
-            if (item.Grantee.ID === 'qcs::cam::anyone:anyone') {
-                result.ACL = AclMap[item.Permission];
-            } else if (item.Grantee.ID !== AccessControlPolicy.Owner.ID) {
-                result[GrantMap[item.Permission]].push('id="' + item.Grantee.ID + '"');
-            }
-        });
-        if (!result.ACL && AccessControlPolicy.Owner.ID === Grant[0].Grantee.ID && Grant[0].Permission === 'FULL_CONTROL') {
-            result.ACL = 'private';
+    var PublicAcl = {READ: 0, WRITE: 0, FULL_CONTROL: 0};
+    Grant.length && util.each(Grant, function (item) {
+        if (item.Grantee.ID === 'qcs::cam::anyone:anyone' || item.Grantee.URI === 'http://cam.qcloud.com/groups/global/AllUsers') {
+            PublicAcl[item.Permission] = 1;
+        } else if (item.Grantee.ID !== AccessControlPolicy.Owner.ID) {
+            result[GrantMap[item.Permission]].push('id="' + item.Grantee.ID + '"');
         }
+    });
+    if (PublicAcl.FULL_CONTROL || (PublicAcl.WRITE && PublicAcl.READ)) {
+        result.ACL = 'public-read-write';
+    } else if (PublicAcl.READ) {
+        result.ACL = 'public-read';
+    } else {
+        result.ACL = 'private';
     }
     util.each(GrantMap, function (item) {
         result[item] = result[item].join(',');
