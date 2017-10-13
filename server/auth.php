@@ -31,7 +31,7 @@ function getAuthorization($method, $pathname)
 
     function obj2str($obj)
     {
-        $list = [];
+        $list = array();
         $keyList = getObjectKeys($obj);
         $len = count($keyList);
         for ($i = 0; $i < $len; $i++) {
@@ -85,3 +85,5 @@ function getAuthorization($method, $pathname)
 $method = isset($_GET['method']) ? $_GET['method'] : 'POST';
 $pathname = isset($_GET['pathname']) ? $_GET['pathname'] : '/';
 echo getAuthorization($method, $pathname);
+
+?>
