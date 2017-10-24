@@ -981,78 +981,26 @@ QUnit.test('sliceUploadFile()', function (assert) {
     var CORSRules = [{
         "AllowedOrigins": ["*"],
         "AllowedMethods": ["GET", "POST", "PUT", "DELETE", "HEAD"],
-        "AllowedHeaders": [
-            "origin",
-            "accept",
-            "content-type",
-            "authorization",
-            "content-md5",
-            "x-cos-copy-source",
-            "x-cos-acl",
-            "x-cos-grant-read",
-            "x-cos-grant-write",
-            "x-cos-grant-full-control",
-        ],
+        "AllowedHeaders": ["*"],
         "ExposeHeaders": ["ETag"],
-        "MaxAgeSeconds": "5"
-    }];
-    var CORSRules1 = [{
-        "AllowedOrigin": "*",
-        "AllowedMethods": ["GET", "POST", "PUT", "DELETE", "HEAD"],
-        "AllowedHeader": [
-            "origin",
-            "accept",
-            "content-type",
-            "authorization",
-            "content-md5",
-            "x-cos-copy-source",
-            "x-cos-acl",
-            "x-cos-grant-read",
-            "x-cos-grant-write",
-            "x-cos-grant-full-control",
-        ],
-        "ExposeHeader": "ETag",
         "MaxAgeSeconds": "5"
     }];
     var CORSRulesMulti = [{
         "AllowedOrigins": ["*"],
         "AllowedMethods": ["GET", "POST", "PUT", "DELETE", "HEAD"],
-        "AllowedHeaders": [
-            "origin",
-            "accept",
-            "content-type",
-            "authorization",
-            "content-md5",
-            "x-cos-copy-source",
-            "x-cos-acl",
-            "x-cos-grant-read",
-            "x-cos-grant-write",
-            "x-cos-grant-full-control",
-        ],
+        "AllowedHeaders": ["*"],
         "ExposeHeaders": ["ETag"],
         "MaxAgeSeconds": "5"
     }, {
         "AllowedOrigins": ["http://qq.com", "http://qcloud.com"],
         "AllowedMethods": ["GET", "POST", "PUT", "DELETE", "HEAD"],
-        "AllowedHeaders": [
-            "origin",
-            "accept",
-            "content-type",
-            "authorization",
-            "content-md5",
-            "x-cos-copy-source",
-            "x-cos-acl",
-            "x-cos-grant-read",
-            "x-cos-grant-write",
-            "x-cos-grant-full-control",
-        ],
+        "AllowedHeaders": ["*"],
         "ExposeHeaders": ["ETag"],
         "MaxAgeSeconds": "5"
     }];
     QUnit.test('putBucketCors(),getBucketCors()', function (assert) {
         return new Promise(function (done) {
-            CORSRules[0].AllowedHeaders[CORSRules[0].AllowedHeaders.length - 1] =
-                'test-' + Date.now().toString(36);
+            CORSRules[0].AllowedHeaders.push('test-' + Date.now().toString(36));
             cos.putBucketCors({
                 Bucket: config.Bucket,
                 Region: config.Region,
@@ -1075,37 +1023,13 @@ QUnit.test('sliceUploadFile()', function (assert) {
     });
     QUnit.test('putBucketCors() old', function (assert) {
         return new Promise(function (done) {
-            CORSRules[0].AllowedHeaders[CORSRules[0].AllowedHeaders.length - 1] =
-                CORSRules1[0].AllowedHeader[CORSRules1[0].AllowedHeader.length - 1] =
-                    'test-' + Date.now().toString(36);
+            CORSRules[0].AllowedHeaders.push('test-' + Date.now().toString(36));
             cos.putBucketCors({
                 Bucket: config.Bucket,
                 Region: config.Region,
                 CORSConfiguration: {
-                    CORSRules: CORSRules1
+                    CORSRules: CORSRules
                 }
-            }, function (err, data) {
-                assert.ok(!err);
-                setTimeout(function () {
-                    cos.getBucketCors({
-                        Bucket: config.Bucket,
-                        Region: config.Region
-                    }, function (err, data) {
-                        assert.ok(comparePlainObject(CORSRules, data.CORSRules));
-                        done();
-                    });
-                }, 2000);
-            });
-        });
-    });
-    QUnit.test('putBucketCors() old', function (assert) {
-        return new Promise(function (done) {
-            CORSRules[0].AllowedHeaders[CORSRules[0].AllowedHeaders.length - 1] =
-                'test-' + Date.now().toString(36);
-            cos.putBucketCors({
-                Bucket: config.Bucket,
-                Region: config.Region,
-                CORSRules: CORSRules
             }, function (err, data) {
                 assert.ok(!err);
                 setTimeout(function () {
