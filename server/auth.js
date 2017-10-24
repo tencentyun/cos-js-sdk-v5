@@ -26,7 +26,7 @@ function getAuthorization (method, pathname) {
     var headers = {};
     method = (method ? method : 'get').toLowerCase();
     pathname = pathname ? pathname : '/';
-    pathname.indexOf('/') === -1 && (pathname = '/' + pathname);
+    pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
 
     // 工具方法
     var getObjectKeys = function (obj) {
