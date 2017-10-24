@@ -498,6 +498,9 @@ function uploadSliceList(params, cb) {
             },
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
+            if (!err && !data.ETag) {
+                err = 'get ETag error, please add "ETag" to CORS ExposeHeader setting.';
+            }
             if (err) {
                 FinishSize -= preAddSize;
             } else {
