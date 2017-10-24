@@ -1,12 +1,15 @@
 var path = require('path');
 var webpack = require('webpack');
+var bmdWebpackPlugin = require('bmd-webpack-plugin');
 
 module.exports = {
     entry: path.resolve(__dirname, './index.js'),
     output: {
         path: path.resolve(__dirname, './dist'),
         publicPath: '/dist/',
-        filename: 'cos-js-sdk-v5.js'
+        filename: 'cos-js-sdk-v5.js',
+        libraryTarget: 'umd',
+        library: 'COS',
     },
     module: {
         rules: [
@@ -42,6 +45,7 @@ if (process.env.NODE_ENV === 'production') {
         }),
         new webpack.LoaderOptionsPlugin({
             minimize: true
-        })
+        }),
+        new bmdWebpackPlugin()
     ])
 }
