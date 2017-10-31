@@ -1,22 +1,16 @@
-var Async = require('async');
-var EventProxy = require('eventproxy');
+var Async = require('../lib/async');
+var EventProxy = require('./event').EventProxy;
 var util = require('./util');
 
-// 分块上传入口
-function sliceUploadFile(params, callback) {
-    var taskId = util.uuid();
-    params.TaskReady && params.TaskReady(taskId);
-    this._addTask(taskId, '_sliceUploadFile', params, callback);
-}
-
 // 文件分块上传全过程，暴露的分块上传接口
-function _sliceUploadFile (params, callback) {
-    var proxy = new EventProxy();
+function sliceUploadFile(params, callback) {
+    var ep = new EventProxy();
     var TaskId = params.TaskId;
     var Bucket = params.Bucket;
     var Region = params.Region;
     var Key = params.Key;
     var Body = params.Body;
+    var AppId = params.AppId;
     var SliceSize = params.SliceSize || this.options.ChunkSize;
     var AsyncLimit = params.AsyncLimit;
     var StorageClass = params.StorageClass || 'Standard';
@@ -29,40 +23,42 @@ function _sliceUploadFile (params, callback) {
     StorageClass = null;
 
     // 上传过程中出现错误，返回错误
-    proxy.all('error', function (err) {
+    ep.on('error', function (err) {
         if (!self._isRunningTask(TaskId)) return;
         return callback(err);
     });
 
     // 上传分块完成，开始 uploadSliceComplete 操作
-    proxy.all('upload_complete', function (UploadCompleteData) {
+    ep.on('upload_complete', function (UploadCompleteData) {
         callback(null, UploadCompleteData);
     });
 
     // 上传分块完成，开始 uploadSliceComplete 操作
-    proxy.all('upload_slice_complete', function (data) {
+    ep.on('upload_slice_complete', function (data) {
         uploadSliceComplete.call(self, {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
+            AppId: AppId,
             UploadId: data.UploadId,
             SliceList: data.SliceList
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (err) {
-                return proxy.emit('error', err);
+                return ep.emit('error', err);
             }
-            proxy.emit('upload_complete', data);
+            ep.emit('upload_complete', data);
         });
     });
 
     // 获取 UploadId 完成，开始上传每个分片
-    proxy.all('get_upload_data_finish', function (UploadData) {
+    ep.on('get_upload_data_finish', function (UploadData) {
         uploadSliceList.call(self, {
             TaskId: TaskId,
             Bucket: Bucket,
             Region: Region,
             Key: Key,
+            AppId: AppId,
             Body: Body,
             FileSize: FileSize,
             SliceSize: SliceSize,
@@ -71,41 +67,35 @@ function _sliceUploadFile (params, callback) {
             onProgress: onProgress
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
-            if (err) return proxy.emit('error', err);
-            proxy.emit('upload_slice_complete', data);
+            if (err) return ep.emit('error', err);
+            ep.emit('upload_slice_complete', data);
         });
     });
 
     // 开始获取文件 UploadId，里面会视情况计算 ETag，并比对，保证文件一致性，也优化上传
-    proxy.all('get_file_size_finish', function () {
+    ep.on('get_file_size_finish', function () {
         if (params.UploadData.UploadId) {
-            proxy.emit('get_upload_data_finish', params.UploadData);
+            ep.emit('get_upload_data_finish', params.UploadData);
         } else {
-            getUploadIdAndPartList.call(self, {
+            var _params = util.extend({}, params);
+            _params = util.extend(_params, {
                 TaskId: TaskId,
                 Bucket: Bucket,
                 Region: Region,
                 Key: Key,
+                AppId: AppId,
                 StorageClass: StorageClass,
                 Body: Body,
                 FileSize: FileSize,
                 SliceSize: SliceSize,
                 onHashProgress: onHashProgress,
-                // init params
-                CacheControl: params.CacheControl,
-                ContentDisposition: params.ContentDisposition,
-                ContentEncoding: params.ContentEncoding,
-                ContentType: params.ContentType,
-                ACL: params.ACL,
-                GrantRead: params.GrantRead,
-                GrantWrite: params.GrantWrite,
-                GrantFullControl: params.GrantFullControl
-            }, function (err, UploadData) {
+            });
+            getUploadIdAndPartList.call(self, _params, function (err, UploadData) {
                 if (!self._isRunningTask(TaskId)) return;
-                if (err) return proxy.emit('error', err);
+                if (err) return ep.emit('error', err);
                 params.UploadData.UploadId = UploadData.UploadId;
                 params.UploadData.PartList = UploadData.PartList;
-                proxy.emit('get_upload_data_finish', params.UploadData);
+                ep.emit('get_upload_data_finish', params.UploadData);
             });
         }
     });
@@ -113,7 +103,7 @@ function _sliceUploadFile (params, callback) {
     // 获取上传文件大小
     FileSize = Body.size || params.ContentLength;
     SliceCount = Math.ceil(FileSize / SliceSize);
-    proxy.emit('get_file_size_finish');
+    ep.emit('get_file_size_finish');
 
 }
 
@@ -123,6 +113,7 @@ function getUploadIdAndPartList(params, callback) {
     var Bucket = params.Bucket;
     var Region = params.Region;
     var Key = params.Key;
+    var AppId = params.AppId;
     var Body = params.Body;
     var StorageClass = params.StorageClass;
     var self = this;
@@ -137,38 +128,7 @@ function getUploadIdAndPartList(params, callback) {
     var progressTimer = 0;
     var time0 = 0;
     var size0 = 0;
-    var onHashProgress = function (immediately) {
-        var update = function () {
-            if (!self._isRunningTask(TaskId)) return;
-            progressTimer = 0;
-            var time1 = Date.now();
-            var speed = parseInt((FinishSize - size0) / ((time1 - time0) / 1000) * 100) / 100 || 0;
-            var percent = parseInt(FinishSliceCount / SliceCount * 100) / 100 || 0;
-            time0 = time1;
-            size0 = FinishSize;
-            if (params.onHashProgress && typeof params.onHashProgress === 'function') {
-                try {
-                    params.onHashProgress({
-                        loaded: FinishSize,
-                        total: FileSize,
-                        speed: speed,
-                        percent: percent
-                    });
-                } catch (e) {
-                }
-            }
-        };
-        if (immediately) {
-            if (progressTimer) {
-                clearTimeout(progressTimer);
-                progressTimer = 0;
-                update();
-            }
-        } else {
-            if (progressTimer) return;
-            progressTimer = setTimeout(update, self.options.ProgressInterval || 1000);
-        }
-    };
+    var onHashProgress = util.throttleOnProgress.call(self, FileSize, params.onHashProgress);
     var getChunkETag = function (PartNumber, callback) {
         var start = SliceSize * (PartNumber - 1);
         var end = Math.min(start + SliceSize, FileSize);
@@ -193,7 +153,7 @@ function getUploadIdAndPartList(params, callback) {
                     ETag: ETag,
                     Size: ChunkSize
                 });
-                onHashProgress();
+                onHashProgress({loaded: FinishSize, total: FileSize});
             });
         }
     };
@@ -234,14 +194,14 @@ function getUploadIdAndPartList(params, callback) {
         next(0);
     };
 
-    var proxy = new EventProxy();
-    proxy.all('error', function (errData) {
+    var ep = new EventProxy();
+    ep.on('error', function (errData) {
         if (!self._isRunningTask(TaskId)) return;
         return callback(errData);
     });
 
     // 不存在 UploadId
-    proxy.all('upload_id_ready', function (UploadData) {
+    ep.on('upload_id_ready', function (UploadData) {
         // 转换成 map
         var map = {};
         var list = [];
@@ -267,34 +227,29 @@ function getUploadIdAndPartList(params, callback) {
     });
 
     // 不存在 UploadId, 初始化生成 UploadId
-    proxy.all('no_available_upload_id', function () {
+    ep.on('no_available_upload_id', function () {
         if (!self._isRunningTask(TaskId)) return;
-        self.multipartInit({
+        var _params = util.extend({}, params);
+        _params = util.extend(_params, {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
+            AppId: AppId,
             StorageClass: StorageClass,
-            CacheControl: params.CacheControl,
-            ContentDisposition: params.ContentDisposition,
-            ContentEncoding: params.ContentEncoding,
-            ContentType: params.ContentType,
-            ACL: params.ACL,
-            GrantRead: params.GrantRead,
-            GrantWrite: params.GrantWrite,
-            GrantFullControl: params.GrantFullControl,
-        }, function (err, data) {
+        });
+        self.multipartInit(_params, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
-            if (err) return proxy.emit('error', err);
+            if (err) return ep.emit('error', err);
             var UploadId = data.UploadId;
             if (!UploadId) {
                 return callback({Message: 'no upload id'});
             }
-            proxy.emit('upload_id_ready', {UploadId: UploadId, PartList: []});
+            ep.emit('upload_id_ready', {UploadId: UploadId, PartList: []});
         });
     });
 
     // 如果已存在 UploadId，找一个可以用的 UploadId
-    proxy.all('has_upload_id', function (UploadIdList) {
+    ep.on('has_upload_id', function (UploadIdList) {
         // 串行地，找一个内容一致的 UploadId
         UploadIdList = UploadIdList.reverse();
         Async.eachLimit(UploadIdList, 1, function (UploadId, asyncCallback) {
@@ -303,10 +258,11 @@ function getUploadIdAndPartList(params, callback) {
                 Bucket: Bucket,
                 Region: Region,
                 Key: Key,
+                AppId: AppId,
                 UploadId: UploadId,
             }, function (err, PartListData) {
                 if (!self._isRunningTask(TaskId)) return;
-                if (err) return proxy.emit('error', err);
+                if (err) return ep.emit('error', err);
                 var PartList = PartListData.PartList;
                 PartList.forEach(function (item) {
                     item.PartNumber *= 1;
@@ -315,7 +271,7 @@ function getUploadIdAndPartList(params, callback) {
                 });
                 isAvailableUploadList(PartList, function (err, isAvailable) {
                     if (!self._isRunningTask(TaskId)) return;
-                    if (err) return proxy.emit('error', err);
+                    if (err) return ep.emit('error', err);
                     if (isAvailable) {
                         asyncCallback({
                             UploadId: UploadId,
@@ -328,11 +284,11 @@ function getUploadIdAndPartList(params, callback) {
             });
         }, function(AvailableUploadData){
             if (!self._isRunningTask(TaskId)) return;
-            onHashProgress(true);
+            onHashProgress(null, true);
             if (AvailableUploadData && AvailableUploadData.UploadId) {
-                proxy.emit('upload_id_ready', AvailableUploadData);
+                ep.emit('upload_id_ready', AvailableUploadData);
             } else {
-                proxy.emit('no_available_upload_id');
+                ep.emit('no_available_upload_id');
             }
         });
     });
@@ -341,11 +297,12 @@ function getUploadIdAndPartList(params, callback) {
     wholeMultipartList.call(self, {
         Bucket: Bucket,
         Region: Region,
-        Key: Key
+        Key: Key,
+        AppId: AppId
     }, function (err, data) {
         if (!self._isRunningTask(TaskId)) return;
         if (err) {
-            return proxy.emit('error', err);
+            return ep.emit('error', err);
         }
         var UploadIdList = data.UploadList.filter(function (item) {
             return item.Key === Key && (!StorageClass || item.StorageClass.toUpperCase() === StorageClass.toUpperCase());
@@ -353,9 +310,9 @@ function getUploadIdAndPartList(params, callback) {
             return item.UploadId || item.UploadID;
         });
         if (UploadIdList.length) {
-            proxy.emit('has_upload_id', UploadIdList);
+            ep.emit('has_upload_id', UploadIdList);
         } else {
-            proxy.emit('no_available_upload_id');
+            ep.emit('no_available_upload_id');
         }
     });
 }
@@ -367,6 +324,7 @@ function wholeMultipartList(params, callback) {
     var sendParams = {
         Bucket: params.Bucket,
         Region: params.Region,
+        AppId: params.AppId,
         Prefix: params.Key
     };
     var next = function () {
@@ -393,6 +351,7 @@ function wholeMultipartListPart(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         Key: params.Key,
+        AppId: params.AppId,
         UploadId: params.UploadId
     };
     var next = function () {
@@ -426,12 +385,12 @@ function uploadSliceList(params, cb) {
     var Bucket = params.Bucket;
     var Region = params.Region;
     var Key = params.Key;
+    var AppId = params.AppId;
     var UploadData = params.UploadData;
     var FileSize = params.FileSize;
     var SliceSize = params.SliceSize;
     var ChunkParallel = params.AsyncLimit || self.options.ChunkParallelLimit || 1;
     var Body = params.Body;
-    var onProgress = params.onProgress;
     var SliceCount = Math.ceil(FileSize / SliceSize);
     var FinishSize = 0;
     var needUploadSlices = util.filter(UploadData.PartList, function (SliceItem) {
@@ -441,44 +400,11 @@ function uploadSliceList(params, cb) {
         return !SliceItem['Uploaded'];
     });
 
-    var onFileProgress = (function () {
-        var time0 = Date.now();
-        var size0 = FinishSize;
-        var progressTimer;
-        var update = function () {
-            if (!self._isRunningTask(TaskId)) return;
-            progressTimer = 0;
-            if (onProgress && (typeof onProgress === 'function')) {
-                var time1 = Date.now();
-                var speed = parseInt((FinishSize - size0) / ((time1 - time0) / 1000) * 100) / 100 || 0;
-                var percent = parseInt(FinishSize / FileSize * 100) / 100 || 0;
-                time0 = time1;
-                size0 = FinishSize;
-                try {
-                    onProgress({
-                        loaded: FinishSize,
-                        total: FileSize,
-                        speed: speed,
-                        percent: percent
-                    });
-                } catch (e) {
-                }
-            }
-        };
-        return function (immediately) {
-            if (immediately) {
-                clearTimeout(progressTimer);
-                update();
-            } else {
-                if (progressTimer) return;
-                progressTimer = setTimeout(update, self.options.ProgressInterval || 1000);
-            }
-        };
-    })();
-    Async.mapLimit(needUploadSlices, ChunkParallel, function (SliceItem, asyncCallback) {
+    var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
+
+    Async.eachLimit(needUploadSlices, ChunkParallel, function (SliceItem, asyncCallback) {
         if (!self._isRunningTask(TaskId)) return;
         var PartNumber = SliceItem['PartNumber'];
-        var ETag = SliceItem['ETag'];
         var currentSize = Math.min(FileSize, SliceItem['PartNumber'] * SliceSize) - (SliceItem['PartNumber'] - 1) * SliceSize;
         var preAddSize = 0;
         uploadSliceItem.call(self, {
@@ -486,6 +412,7 @@ function uploadSliceList(params, cb) {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
+            AppId: AppId,
             SliceSize: SliceSize,
             FileSize: FileSize,
             PartNumber: PartNumber,
@@ -494,10 +421,13 @@ function uploadSliceList(params, cb) {
             onProgress: function (data) {
                 FinishSize += data.loaded - preAddSize;
                 preAddSize = data.loaded;
-                onFileProgress();
+                onProgress({loaded: FinishSize, total: FileSize});
             },
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
+            if (!err && !data.ETag) {
+                err = 'get ETag error, please add "ETag" to CORS ExposeHeader setting.';
+            }
             if (err) {
                 FinishSize -= preAddSize;
             } else {
@@ -507,14 +437,13 @@ function uploadSliceList(params, cb) {
             asyncCallback(err || null, data);
         });
 
-    }, function (err, datas) {
+    }, function (err) {
         if (!self._isRunningTask(TaskId)) return;
-        onFileProgress(true);
+        onProgress(null, true);
         if (err) {
             return cb(err);
         }
         cb(null, {
-            datas: datas,
             UploadId: UploadData.UploadId,
             SliceList: UploadData.PartList
         });
@@ -527,6 +456,7 @@ function uploadSliceItem(params, callback) {
     var Bucket = params.Bucket;
     var Region = params.Region;
     var Key = params.Key;
+    var AppId = params.AppId;
     var FileSize = params.FileSize;
     var FileBody = params.Body;
     var PartNumber = params.PartNumber * 1;
@@ -556,6 +486,7 @@ function uploadSliceItem(params, callback) {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
+            AppId: AppId,
             ContentLength: ContentLength,
             ContentSha1: ContentSha1,
             PartNumber: PartNumber,
@@ -584,6 +515,7 @@ function uploadSliceComplete(params, callback) {
     var Bucket = params.Bucket;
     var Region = params.Region;
     var Key = params.Key;
+    var AppId = params.AppId;
     var UploadId = params.UploadId;
     var SliceList = params.SliceList;
     var self = this;
@@ -598,6 +530,7 @@ function uploadSliceComplete(params, callback) {
         Bucket: Bucket,
         Region: Region,
         Key: Key,
+        AppId: AppId,
         UploadId: UploadId,
         Parts: Parts
     }, function (err, data) {
@@ -619,6 +552,7 @@ function abortUploadTask(params, callback) {
     var Bucket = params.Bucket;
     var Region = params.Region;
     var Key = params.Key;
+    var AppId = params.AppId;
     var UploadId = params.UploadId;
     var Level = params.Level || 'task';
     var AsyncLimit = params.AsyncLimit;
@@ -626,16 +560,17 @@ function abortUploadTask(params, callback) {
 
     var ep = new EventProxy();
 
-    ep.all('error', function (errData) {
+    ep.on('error', function (errData) {
         return callback(errData);
     });
 
     // 已经获取到需要抛弃的任务列表
-    ep.all('get_abort_array', function (AbortArray) {
+    ep.on('get_abort_array', function (AbortArray) {
         abortUploadTaskArray.call(self, {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
+            AppId: AppId,
             AsyncLimit: AsyncLimit,
             AbortArray: AbortArray
         }, function (err, data) {
@@ -693,7 +628,10 @@ function abortUploadTaskArray(params, callback) {
     var AsyncLimit = params.AsyncLimit || 1;
     var self = this;
 
-    Async.mapLimit(AbortArray, AsyncLimit, function (AbortItem, callback) {
+    var index = 0;
+    var resultList = new Array(AbortArray.length);
+    Async.eachLimit(AbortArray, AsyncLimit, function (AbortItem, callback) {
+        var eachIndex = index;
         if (Key && Key != AbortItem.Key) {
             return callback(null, {
                 KeyNotMatch: true
@@ -713,20 +651,12 @@ function abortUploadTaskArray(params, callback) {
                 Key: AbortItem.Key,
                 UploadId: UploadId
             };
-            if (err) {
-                return callback(null, {
-                    error: err,
-                    task: task
-                });
-            }
-
-            return callback(null, {
-                error: false,
-                task: task
-            });
+            resultList[eachIndex] = {error: err, task: task};
+            callback(null);
         });
+        index ++;
 
-    }, function (err, datas) {
+    }, function (err) {
         if (err) {
             return callback(err);
         }
@@ -734,8 +664,8 @@ function abortUploadTaskArray(params, callback) {
         var successList = [];
         var errorList = [];
 
-        for (var i = 0, len = datas.length; i < len; i++) {
-            var item = datas[i];
+        for (var i = 0, len = resultList.length; i < len; i++) {
+            var item = resultList[i];
             if (item['task']) {
                 if (item['error']) {
                     errorList.push(item['task']);
@@ -753,10 +683,96 @@ function abortUploadTaskArray(params, callback) {
 }
 
 
+// 批量上传文件
+function uploadFiles(params, callback) {
+    var self = this;
+
+    // 判断多大的文件使用分片上传
+    var SliceSize = params.SliceSize === undefined ? self.options.SliceSize : params.SliceSize;
+
+    // 汇总返回进度
+    var TotalSize = 0;
+    var TotalFinish = 0;
+    var onTotalProgress = util.throttleOnProgress.call(self, TotalFinish, params.onProgress);
+
+    // 汇总返回回调
+    var unFinishCount = params.files.length;
+    var _onTotalFileFinish = params.onFileFinish;
+    var resultList = Array(unFinishCount);
+    var onTotalFileFinish = function (err, data, options) {
+        onTotalProgress(null, true);
+        _onTotalFileFinish && _onTotalFileFinish(err, data, options);
+        resultList[options.Index] = {
+            options: options,
+            error: err,
+            data: data
+        };
+        if (--unFinishCount <= 0 && callback) {
+            callback(null, {
+                files: resultList,
+            });
+        }
+    };
+
+    // 开始处理每个文件
+    var taskList = [];
+    util.each(params.files, function (fileParams, index) {
+
+        var Body = fileParams.Body;
+        var FileSize = Body.size || Body.length || 0;
+        var fileInfo = {Index: index, TaskId: ''};
+
+        // 更新文件总大小
+        TotalSize += FileSize;
+
+        // 整理 option，用于返回给回调
+        util.each(fileParams, function (v, k) {
+            if (typeof v !== 'object' && typeof v !== 'function') {
+                fileInfo[k] = v;
+            }
+        });
+
+        // 处理单个文件 TaskReady
+        var _TaskReady = fileParams.TaskReady;
+        var TaskReady = function (tid) {
+            fileInfo.TaskId = tid;
+            _TaskReady && _TaskReady(tid);
+        };
+        fileParams.TaskReady = TaskReady;
+
+        // 处理单个文件进度
+        var PreAddSize = 0;
+        var _onProgress = fileParams.onProgress;
+        var onProgress = function (info) {
+            TotalFinish = TotalFinish - PreAddSize + info.loaded;
+            PreAddSize = info.loaded;
+            _onProgress && _onProgress(info);
+            onTotalProgress({loaded: TotalFinish, total: TotalSize});
+        };
+        fileParams.onProgress = onProgress;
+
+        // 处理单个文件完成
+        var _onFileFinish = fileParams.onFileFinish;
+        var onFileFinish = function (err, data) {
+            _onFileFinish && _onFileFinish(err, data);
+            onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
+        };
+
+        // 添加上传任务
+        taskList.push({
+            api: FileSize >= SliceSize ? 'sliceUploadFile' : 'putObject',
+            params: fileParams,
+            callback: onFileFinish,
+        });
+    });
+    self._addTasks(taskList);
+}
+
+
 var API_MAP = {
     sliceUploadFile: sliceUploadFile,
-    _sliceUploadFile: _sliceUploadFile,
     abortUploadTask: abortUploadTask,
+    uploadFiles: uploadFiles,
 };
 
 util.each(API_MAP, function (fn, apiName) {
