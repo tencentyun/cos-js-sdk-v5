@@ -323,8 +323,8 @@ function deleteBucket() {
 
 function putObject() {
     // 创建测试文件
+    var blob = util.createFile({size: 1024 * 1024 * 10});
     var filename = '1mb.zip';
-    var blob = util.createFile({size: 10});
     // 调用方法
     cos.putObject({
         Bucket: config.Bucket, /* 必须 */
@@ -538,6 +538,40 @@ function restartTask() {
     console.log('restart');
 }
 
+function uploadFiles() {
+    var filename = 'mb.zip';
+    var blob = util.createFile({size: 1024 * 1024 * 10});
+    cos.uploadFiles({
+        files: [{
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '1' + filename,
+            Body: blob,
+        }, {
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '2' + filename,
+            Body: blob,
+        }, {
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '3' + filename,
+            Body: blob,
+        }],
+        SliceSize: 1024 * 1024,
+        onProgress: function (info) {
+            var percent = parseInt(info.percent * 10000) / 100;
+            var speed = parseInt(info.speed / 1024 / 1024 * 100) / 100;
+            console.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
+        },
+        onFileFinish: function (err, data, options) {
+            console.log(options.Key + ' 上传' + (err ? '失败' : '完成'));
+        },
+    }, function (err, data) {
+        console.log(err || data);
+    });
+}
+
 // getAuth();
 // getBucket();
 // headBucket();
@@ -569,6 +603,7 @@ function restartTask() {
 // cancelTask();
 // pauseTask();
 // restartTask();
+// uploadFiles();
 
 
 (function () {
@@ -607,6 +642,7 @@ function restartTask() {
         'cancelTask',
         'pauseTask',
         'restartTask',
+        'uploadFiles',
     ];
     var container = document.querySelector('.main');
     var html = [];
