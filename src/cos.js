@@ -5,7 +5,6 @@ var event = require('./event');
 var task = require('./task');
 var base = require('./base');
 var advance = require('./advance');
-var pkg = require('../package.json');
 
 var defaultOptions = {
     AppId: '',
@@ -14,6 +13,7 @@ var defaultOptions = {
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
     ChunkSize: 1024 * 1024,
+    SliceSize: 1024 * 1024 * 20,
     ProgressInterval: 1000,
     Domain: '',
     ServiceDomain: '',
@@ -30,6 +30,6 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = pkg.version;
+COS.version = '0.1.5';
 
 module.exports = window.COS = COS;
