@@ -2,9 +2,8 @@
 
 var md5 = require('../lib/md5');
 var CryptoJS = require('../lib/crypto');
-var xml2js = require('xml2js');
-var xmlParser = new xml2js.Parser({explicitArray: false, ignoreAttrs: true});
-var xmlBuilder = new xml2js.Builder();
+var xml2json = require('../lib/xml2json');
+var json2xml = require('../lib/json2xml');
 
 function camSafeUrlEncode(str) {
     return encodeURIComponent(str)
@@ -26,7 +25,7 @@ var getAuth = function (opt) {
     var pathname = opt.pathname || opt.Key || '/';
     var queryParams = opt.params || '';
     var headers = opt.headers || '';
-    pathname.indexOf('/') === -1 && (pathname = '/' + pathname);
+    pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
 
     if (!SecretId) return console.error('lack of param SecretId');
     if (!SecretKey) return console.error('lack of param SecretKey');
@@ -98,22 +97,6 @@ var getAuth = function (opt) {
 
     return authorization;
 
-};
-
-// XML 对象转 JSON 对象
-var xml2json = function (bodyStr) {
-    var d = {};
-    xmlParser.parseString(bodyStr, function (err, result) {
-        d = result;
-    });
-
-    return d;
-};
-
-// JSON 对象转 XML 对象
-var json2xml = function (json) {
-    var xml = xmlBuilder.buildObject(json);
-    return xml;
 };
 
 // 清除对象里值为的 undefined 或 null 的属性
@@ -272,11 +255,10 @@ var apiWrapper = function (apiName, apiFn) {
                 return;
             }
             // 兼容带有 AppId 的 Bucket
-            var appId, bucket = params.Bucket;
-            if (bucket && bucket.indexOf('-') > -1) {
-                var arr = bucket.split('-');
-                appId = arr[1];
-                bucket = arr[0];
+            var appId, m, bucket = params.Bucket;
+            if (bucket && (m = bucket.match(/^(.+)-(\d+)$/))) {
+                appId = m[2];
+                bucket = m[1];
                 params.AppId = appId;
                 params.Bucket = bucket;
             }
@@ -290,6 +272,42 @@ var apiWrapper = function (apiName, apiFn) {
             return res;
         }
     }
+};
+
+var throttleOnProgress = function (total, onProgress) {
+    var self = this;
+    var size0 = 0;
+    var size1 = 0;
+    var time0 = Date.now();
+    var time1;
+    var timer;
+    var update = function () {
+        timer = 0;
+        if (onProgress && (typeof onProgress === 'function')) {
+            time1 = Date.now();
+            var speed = Math.max(0, parseInt((size1 - size0) / ((time1 - time0) / 1000) * 100) / 100);
+            var percent = size1 === 0 && total === 0 ? 1 : parseInt(size1 / total * 100) / 100 || 0;
+            time0 = time1;
+            size0 = size1;
+            try {
+                onProgress({loaded: size1, total: total, speed: speed, percent: percent});
+            } catch (e) {
+            }
+        }
+    };
+    return function (info, immediately) {
+        if (info) {
+            size1 = info.loaded;
+            total = info.total;
+        }
+        if (immediately) {
+            clearTimeout(timer);
+            update();
+        } else {
+            if (timer) return;
+            timer = setTimeout(update, self.options.ProgressInterval);
+        }
+    };
 };
 
 var fileSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
@@ -311,6 +329,7 @@ var util = {
     filter: filter,
     clone: clone,
     uuid: uuid,
+    throttleOnProgress: throttleOnProgress,
     isBrowser: !!global.window
 };
 
