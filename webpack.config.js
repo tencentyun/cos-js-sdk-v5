@@ -6,7 +6,9 @@ module.exports = {
     output: {
         path: path.resolve(__dirname, './dist'),
         publicPath: '/dist/',
-        filename: 'cos-js-sdk-v5.js'
+        filename: 'cos-js-sdk-v5.js',
+        libraryTarget: 'umd',
+        library: 'COS',
     },
     module: {
         rules: [
@@ -42,6 +44,6 @@ if (process.env.NODE_ENV === 'production') {
         }),
         new webpack.LoaderOptionsPlugin({
             minimize: true
-        })
+        }),
     ])
 }
