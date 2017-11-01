@@ -55,12 +55,21 @@ var cos = new COS({
     FileParallelLimit: 3,    // 控制文件上传并发数
     ChunkParallelLimit: 3,   // 控制单个文件下分片上传并发数
     ChunkSize: 1024 * 1024,  // 控制分片大小，单位 B
-    ProgressInterval: 1000,  // 控制 onProgress 回调的间隔
+    ProgressInterval: 1,  // 控制 onProgress 回调的间隔
 });
 
 var AppId = config.AppId;
 var Bucket = config.Bucket;
+var BucketShortName = Bucket;
+var BucketLongName = Bucket + '-' + AppId;
 var TaskId;
+
+var match = config.Bucket.match(/^(.+)-(\d+)$/);
+if (match) {
+    BucketLongName = config.Bucket;
+    BucketShortName = match[1];
+    AppId = match[2];
+}
 
 function comparePlainObject(a, b) {
     if (Object.keys(a).length !== Object.keys(b).length) {
@@ -92,7 +101,7 @@ QUnit.test('getAuth()', function (assert) {
                 Method: 'get',
                 Key: key
             }, function (auth) {
-                var link = 'http://' + Bucket + '-' + AppId + '.cos.' + config.Region + '.myqcloud.com/' + key +
+                var link = 'http://' + BucketLongName + '.cos.' + config.Region + '.myqcloud.com/' + key +
                     '?sign=' + encodeURIComponent(auth);
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', link, true);
@@ -150,65 +159,80 @@ QUnit.test('pauseTask(),restartTask()', function (assert) {
         var blob = util.createFile({size: 1024 * 1024 * 10});
         var paused = false;
         var restarted = false;
-        cos.sliceUploadFile({
+        cos.abortUploadTask({
             Bucket: config.Bucket,
             Region: config.Region,
             Key: filename,
-            Body: blob,
-            TaskReady: function (taskId) {
-                TaskId = taskId;
-            },
-            onProgress: function (info) {
-                if (!paused && info.percent > 0.6) {
-                    cos.pauseTask(TaskId);
-                    paused = true;
-                    setTimeout(function () {
-                        cos.restartTask(TaskId);
-                        restarted = true;
-                    }, 1000);
-                }
-                if (restarted) {
-                    assert.ok(info.percent > 0.3, '暂停和重试成功');
-                    done();
-                }
-            }
+            Level: 'file',
         }, function (err, data) {
+            cos.sliceUploadFile({
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: filename,
+                Body: blob,
+                TaskReady: function (taskId) {
+                    TaskId = taskId;
+                },
+                onProgress: function (info) {
+                    if (!paused && info.percent > 0.6) {
+                        cos.pauseTask(TaskId);
+                        paused = true;
+                        setTimeout(function () {
+                            cos.restartTask(TaskId);
+                            restarted = true;
+                        }, 1000);
+                    }
+                    if (restarted) {
+                        assert.ok(info.percent > 0.3, '暂停和重试成功');
+                        done();
+                    }
+                }
+            }, function (err, data) {
+            });
         });
     });
 });
 
-QUnit.test('分片续传', function (assert) {
+QUnit.test('分片上传', function (assert) {
     return new Promise(function (done) {
         var filename = '10mb.zip';
         var blob = util.createFile({size: 1024 * 1024 * 10});
         var paused = false;
-        cos.sliceUploadFile({
+        cos.abortUploadTask({
             Bucket: config.Bucket,
             Region: config.Region,
             Key: filename,
-            Body: blob,
-            TaskReady: function (taskId) {
-                TaskId = taskId;
-            },
-            onProgress: function (info) {
-                if (!paused && info.percent > 0.6) {
-                    cos.cancelTask(TaskId);
-                    cos.sliceUploadFile({
-                        Bucket: config.Bucket,
-                        Region: config.Region,
-                        Key: filename,
-                        Body: blob,
-                        TaskReady: function (taskId) {
-                            TaskId = taskId;
-                        },
-                        onProgress: function (info) {
-                            assert.ok(info.percent > 0.3, '分片续传成功');
-                            cos.cancelTask(TaskId);
-                            done();
-                        }
-                    });
+            Level: 'file',
+        }, function (err, data) {
+            cos.sliceUploadFile({
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: filename,
+                Body: blob,
+                TaskReady: function (taskId) {
+                    TaskId = taskId;
+                },
+                onProgress: function (info) {
+                    if (!paused && info.percent >= 0.6) {
+                        paused = true;
+                        cos.cancelTask(TaskId);
+                        cos.sliceUploadFile({
+                            Bucket: config.Bucket,
+                            Region: config.Region,
+                            Key: filename,
+                            Body: blob,
+                            TaskReady: function (taskId) {
+                                TaskId = taskId;
+                            },
+                            onProgress: function (info) {
+                                assert.ok(info.percent > 0.3, '分片续传成功');
+                                cos.cancelTask(TaskId);
+                                done();
+                            }
+                        });
+                    }
                 }
-            }
+            });
         });
     });
 });
@@ -257,7 +281,6 @@ QUnit.test('mock readAsBinaryString', function (assert) {
 QUnit.test('abortUploadTask(),Level=task', function (assert) {
     return new Promise(function (done) {
         var filename = '10mb.zip';
-        var blob = util.createFile({size: 1024 * 1024 * 10});
         cos.multipartInit({
             Bucket: config.Bucket,
             Region: config.Region,
@@ -389,7 +412,7 @@ QUnit.test('getBucket()', function (assert) {
             Bucket: config.Bucket,
             Region: config.Region
         }, function (err, data) {
-            assert.equal(true, data.Name === Bucket || data.Name === Bucket + '-' + config.AppId, '能列出 bucket');
+            assert.equal(true, data.Name === BucketLongName, '能列出 bucket');
             assert.equal(data.Contents.constructor, Array, '正常获取 bucket 里的文件列表');
             done();
         });
@@ -491,7 +514,7 @@ QUnit.test('putObjectCopy()', function (assert) {
                     Bucket: config.Bucket,
                     Region: config.Region,
                     Key: '1.copy.txt',
-                    CopySource: Bucket + '-' + AppId + '.cos.' + config.Region + '.myqcloud.com/1.txt',
+                    CopySource: BucketLongName + '.cos.' + config.Region + '.myqcloud.com/1.txt',
                 }, function (err, data) {
                     cos.headObject({
                         Bucket: config.Bucket,
@@ -519,37 +542,31 @@ QUnit.test('deleteMultipleObject()', function (assert) {
             cos.putObject({
                 Bucket: config.Bucket,
                 Region: config.Region,
-                Key: '1.txt',
+                Key: '2.txt',
                 Body: content,
             }, function (err, data) {
-                cos.putObject({
+                cos.deleteMultipleObject({
                     Bucket: config.Bucket,
                     Region: config.Region,
-                    Key: '2.txt',
-                    Body: content,
+                    Objects : [
+                        {Key: '1.txt'},
+                        {Key: '2.txt'}
+                    ],
                 }, function (err, data) {
-                    cos.deleteMultipleObject({
+                    assert.ok(data.Deleted.length === 2);
+                    cos.headObject({
                         Bucket: config.Bucket,
                         Region: config.Region,
-                        Objects : [
-                            {Key: '1.txt'},
-                            {Key: '2.txt'}
-                        ],
+                        Key: '1.txt',
                     }, function (err, data) {
+                        assert.ok(err.statusCode === 404, '1.txt 删除成功');
                         cos.headObject({
                             Bucket: config.Bucket,
                             Region: config.Region,
-                            Key: '1.txt',
+                            Key: '2.txt',
                         }, function (err, data) {
-                            assert.ok(err.statusCode === 404, '1.txt 删除成功');
-                            cos.headObject({
-                                Bucket: config.Bucket,
-                                Region: config.Region,
-                                Key: '2.txt',
-                            }, function (err, data) {
-                                assert.ok(err.statusCode === 404, '2.txt 删除成功');
-                                done();
-                            });
+                            assert.ok(err.statusCode === 404, '2.txt 删除成功');
+                            done();
                         });
                     });
                 });
@@ -614,7 +631,9 @@ QUnit.test('sliceUploadFile()', function (assert) {
             }, function (err, data) {
                 assert.ok(!err, 'putBucketAcl 成功');
                 cos.getBucketAcl({Bucket: config.Bucket, Region: config.Region}, function (err, data) {
-                    assert.ok(data.Grants.length === 1, '正常返回有一条权限');
+                    AccessControlPolicy.Owner.ID = data.Owner.ID;
+                    AccessControlPolicy2.Owner.ID = data.Owner.ID;
+                    assert.ok(data.ACL === 'private');
                     done();
                 });
             });
@@ -629,9 +648,7 @@ QUnit.test('sliceUploadFile()', function (assert) {
             }, function (err, data) {
                 assert.ok(!err, 'putBucketAcl 成功');
                 cos.getBucketAcl({Bucket: config.Bucket, Region: config.Region}, function (err, data) {
-                    assert.ok(data.Grants.length === 1);
-                    assert.ok(data.Grants[0] && data.Grants[0].Grantee.ID === 'qcs::cam::anyone:anyone', '设置权限 ID 正确');
-                    assert.ok(data.Grants[0] && data.Grants[0].Permission === 'READ', '设置权限 Permission 正确');
+                    assert.ok(data.ACL === 'public-read');
                     done();
                 });
             });
@@ -646,9 +663,7 @@ QUnit.test('sliceUploadFile()', function (assert) {
             }, function (err, data) {
                 assert.ok(!err, 'putBucketAcl 成功');
                 cos.getBucketAcl({Bucket: config.Bucket, Region: config.Region}, function (err, data) {
-                    assert.ok(data.Grants.length === 1);
-                    assert.ok(data.Grants[0] && data.Grants[0].Grantee.ID === 'qcs::cam::anyone:anyone', '设置权限 ID 正确');
-                    assert.ok(data.Grants[0] && data.Grants[0].Permission === 'FULL_CONTROL', '设置权限 Permission 正确');
+                    assert.ok(data.ACL === 'public-read-write');
                     done();
                 });
             });
@@ -656,18 +671,15 @@ QUnit.test('sliceUploadFile()', function (assert) {
     });
     QUnit.test('putBucketAcl() header GrantRead:1001,1002"', function (assert) {
         return new Promise(function (done) {
+            var GrantRead = 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"';
             cos.putBucketAcl({
                 Bucket: config.Bucket,
                 Region: config.Region,
-                GrantRead: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
+                GrantRead: GrantRead,
             }, function (err, data) {
                 assert.ok(!err, 'putBucketAcl 成功');
                 cos.getBucketAcl({Bucket: config.Bucket, Region: config.Region}, function (err, data) {
-                    assert.ok(data.Grants.length === 2);
-                    assert.ok(data.Grants[0] && data.Grants[0].Grantee.ID === 'qcs::cam::uin/1001:uin/1001', '设置权限第一个 ID 正确');
-                    assert.ok(data.Grants[0] && data.Grants[0].Permission === 'READ', '设置权限第一个 Permission 正确');
-                    assert.ok(data.Grants[1] && data.Grants[1].Grantee.ID === 'qcs::cam::uin/1002:uin/1002', '设置权限第二个 ID 正确');
-                    assert.ok(data.Grants[1] && data.Grants[1].Permission === 'READ', '设置权限第二个 Permission 正确');
+                    assert.ok(data.GrantRead = GrantRead);
                     done();
                 });
             });
@@ -675,18 +687,15 @@ QUnit.test('sliceUploadFile()', function (assert) {
     });
     QUnit.test('putBucketAcl() header GrantWrite:1001,1002', function (assert) {
         return new Promise(function (done) {
+            var GrantWrite = 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"';
             cos.putBucketAcl({
                 Bucket: config.Bucket,
                 Region: config.Region,
-                GrantWrite: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
+                GrantWrite: GrantWrite,
             }, function (err, data) {
                 assert.ok(!err, 'putBucketAcl 成功');
                 cos.getBucketAcl({Bucket: config.Bucket, Region: config.Region}, function (err, data) {
-                    assert.ok(data.Grants.length === 2);
-                    assert.ok(data.Grants[0] && data.Grants[0].Grantee.ID === 'qcs::cam::uin/1001:uin/1001', '设置权限第一个 ID 正确');
-                    assert.ok(data.Grants[0] && data.Grants[0].Permission === 'WRITE', '设置权限第一个 Permission 正确');
-                    assert.ok(data.Grants[1] && data.Grants[1].Grantee.ID === 'qcs::cam::uin/1002:uin/1002', '设置权限第二个 ID 正确');
-                    assert.ok(data.Grants[1] && data.Grants[1].Permission === 'WRITE', '设置权限第二个 Permission 正确');
+                    assert.ok(data.GrantWrite = GrantWrite);
                     done();
                 });
             });
@@ -694,18 +703,15 @@ QUnit.test('sliceUploadFile()', function (assert) {
     });
     QUnit.test('putBucketAcl() header GrantFullControl:1001,1002', function (assert) {
         return new Promise(function (done) {
+            var GrantFullControl = 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"';
             cos.putBucketAcl({
                 Bucket: config.Bucket,
                 Region: config.Region,
-                GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
+                GrantFullControl: GrantFullControl,
             }, function (err, data) {
                 assert.ok(!err, 'putBucketAcl 成功');
                 cos.getBucketAcl({Bucket: config.Bucket, Region: config.Region}, function (err, data) {
-                    assert.ok(data.Grants.length === 2);
-                    assert.ok(data.Grants[0] && data.Grants[0].Grantee.ID === 'qcs::cam::uin/1001:uin/1001', '设置权限第一个 ID 正确');
-                    assert.ok(data.Grants[0] && data.Grants[0].Permission === 'FULL_CONTROL', '设置权限第一个 Permission 正确');
-                    assert.ok(data.Grants[1] && data.Grants[1].Grantee.ID === 'qcs::cam::uin/1002:uin/1002', '设置权限第二个 ID 正确');
-                    assert.ok(data.Grants[1] && data.Grants[1].Permission === 'FULL_CONTROL', '设置权限第二个 Permission 正确');
+                    assert.ok(data.GrantFullControl = GrantFullControl);
                     done();
                 });
             });
@@ -713,21 +719,17 @@ QUnit.test('sliceUploadFile()', function (assert) {
     });
     QUnit.test('putBucketAcl() header ACL:public-read, GrantFullControl:1001,1002', function (assert) {
         return new Promise(function (done) {
+            var GrantFullControl = 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"';
             cos.putBucketAcl({
                 Bucket: config.Bucket,
                 Region: config.Region,
-                GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
+                GrantFullControl: GrantFullControl,
                 ACL: 'public-read',
             }, function (err, data) {
                 assert.ok(!err, 'putBucketAcl 成功');
                 cos.getBucketAcl({Bucket: config.Bucket, Region: config.Region}, function (err, data) {
-                    assert.ok(data.Grants.length === 3);
-                    assert.ok(data.Grants[0] && data.Grants[0].Grantee.ID === 'qcs::cam::anyone:anyone', '设置 ACL ID 正确');
-                    assert.ok(data.Grants[0] && data.Grants[0].Permission === 'READ', '设置 ACL Permission 正确');
-                    assert.ok(data.Grants[1] && data.Grants[1].Grantee.ID === 'qcs::cam::uin/1001:uin/1001', '设置权限第一个 ID 正确');
-                    assert.ok(data.Grants[1] && data.Grants[1].Permission === 'FULL_CONTROL', '设置权限第一个 Permission 正确');
-                    assert.ok(data.Grants[2] && data.Grants[2].Grantee.ID === 'qcs::cam::uin/1002:uin/1002', '设置权限第二个 ID 正确');
-                    assert.ok(data.Grants[2] && data.Grants[2].Permission === 'FULL_CONTROL', '设置权限第二个 Permission 正确');
+                    assert.ok(data.GrantFullControl = GrantFullControl);
+                    assert.ok(data.ACL === 'public-read');
                     done();
                 });
             });
@@ -813,7 +815,38 @@ QUnit.test('sliceUploadFile()', function (assert) {
                         Region: config.Region,
                         Key: '1.txt'
                     }, function (err, data) {
+                        assert.ok(data.ACL = 'private');
+                        AccessControlPolicy.Owner.ID = data.Owner.ID;
+                        AccessControlPolicy2.Owner.ID = data.Owner.ID;
                         assert.ok(data.Grants.length === 1);
+                        done();
+                    });
+                });
+            });
+        });
+    });
+    QUnit.test('putObjectAcl() header ACL:default', function (assert) {
+        return new Promise(function (done) {
+            cos.putObject({
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: '1.txt',
+                Body: util.str2blob('hello!'),
+            }, function (err, data) {
+                assert.ok(!err);
+                cos.putObjectAcl({
+                    Bucket: config.Bucket,
+                    Region: config.Region,
+                    ACL: 'default',
+                    Key: '1.txt',
+                }, function (err, data) {
+                    assert.ok(!err, 'putObjectAcl 成功');
+                    cos.getObjectAcl({
+                        Bucket: config.Bucket,
+                        Region: config.Region,
+                        Key: '1.txt'
+                    }, function (err, data) {
+                        assert.ok(data.ACL = 'default');
                         done();
                     });
                 });
@@ -830,9 +863,7 @@ QUnit.test('sliceUploadFile()', function (assert) {
             }, function (err, data) {
                 assert.ok(!err, 'putObjectAcl 成功');
                 cos.getObjectAcl({Bucket: config.Bucket, Region: config.Region, Key: '1.txt'}, function (err, data) {
-                    assert.ok(data.Grants.length === 1);
-                    assert.ok(data.Grants[0] && data.Grants[0].Grantee.ID === 'qcs::cam::anyone:anyone', '设置权限 ID 正确');
-                    assert.ok(data.Grants[0] && data.Grants[0].Permission === 'READ', '设置权限 Permission 正确');
+                    assert.ok(data.ACL = 'public-read');
                     done();
                 });
             });
@@ -848,9 +879,7 @@ QUnit.test('sliceUploadFile()', function (assert) {
             }, function (err, data) {
                 assert.ok(!err, 'putObjectAcl 成功');
                 cos.getObjectAcl({Bucket: config.Bucket, Region: config.Region, Key: '1.txt'}, function (err, data) {
-                    assert.ok(data.Grants.length === 1);
-                    assert.ok(data.Grants[0] && data.Grants[0].Grantee.ID === 'qcs::cam::anyone:anyone', '设置权限 ID 正确');
-                    assert.ok(data.Grants[0] && data.Grants[0].Permission === 'FULL_CONTROL', '设置权限 Permission 正确');
+                    assert.ok(data.ACL = 'public-read-write');
                     done();
                 });
             });
@@ -858,19 +887,16 @@ QUnit.test('sliceUploadFile()', function (assert) {
     });
     QUnit.test('putObjectAcl() header GrantRead:1001,1002', function (assert) {
         return new Promise(function (done) {
+            var GrantRead = 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"';
             cos.putObjectAcl({
                 Bucket: config.Bucket,
                 Region: config.Region,
-                GrantRead: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
+                GrantRead: GrantRead,
                 Key: '1.txt',
             }, function (err, data) {
                 assert.ok(!err, 'putObjectAcl 成功');
                 cos.getObjectAcl({Bucket: config.Bucket, Region: config.Region, Key: '1.txt'}, function (err, data) {
-                    assert.ok(data.Grants.length === 2);
-                    assert.ok(data.Grants[0] && data.Grants[0].Grantee.ID === 'qcs::cam::uin/1001:uin/1001', '设置权限第一个 ID 正确');
-                    assert.ok(data.Grants[0] && data.Grants[0].Permission === 'READ', '设置权限第一个 Permission 正确');
-                    assert.ok(data.Grants[1] && data.Grants[1].Grantee.ID === 'qcs::cam::uin/1002:uin/1002', '设置权限第二个 ID 正确');
-                    assert.ok(data.Grants[1] && data.Grants[1].Permission === 'READ', '设置权限第二个 Permission 正确');
+                    assert.ok(data.GrantRead = GrantRead);
                     done();
                 });
             });
@@ -878,19 +904,16 @@ QUnit.test('sliceUploadFile()', function (assert) {
     });
     QUnit.test('putObjectAcl() header GrantWrite:1001,1002', function (assert) {
         return new Promise(function (done) {
+            var GrantWrite = 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"';
             cos.putObjectAcl({
                 Bucket: config.Bucket,
                 Region: config.Region,
-                GrantWrite: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
+                GrantWrite: GrantWrite,
                 Key: '1.txt',
             }, function (err, data) {
                 assert.ok(!err, 'putObjectAcl 成功');
                 cos.getObjectAcl({Bucket: config.Bucket, Region: config.Region, Key: '1.txt'}, function (err, data) {
-                    assert.ok(data.Grants.length === 2);
-                    assert.ok(data.Grants[0] && data.Grants[0].Grantee.ID === 'qcs::cam::uin/1001:uin/1001', '设置权限第一个 ID 正确');
-                    assert.ok(data.Grants[0] && data.Grants[0].Permission === 'WRITE', '设置权限第一个 Permission 正确');
-                    assert.ok(data.Grants[1] && data.Grants[1].Grantee.ID === 'qcs::cam::uin/1002:uin/1002', '设置权限第二个 ID 正确');
-                    assert.ok(data.Grants[1] && data.Grants[1].Permission === 'WRITE', '设置权限第二个 Permission 正确');
+                    assert.ok(data.GrantWrite = GrantWrite);
                     done();
                 });
             });
@@ -898,19 +921,16 @@ QUnit.test('sliceUploadFile()', function (assert) {
     });
     QUnit.test('putObjectAcl() header GrantFullControl:1001,1002', function (assert) {
         return new Promise(function (done) {
+            var GrantFullControl = 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"';
             cos.putObjectAcl({
                 Bucket: config.Bucket,
                 Region: config.Region,
-                GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
+                GrantFullControl: GrantFullControl,
                 Key: '1.txt',
             }, function (err, data) {
                 assert.ok(!err, 'putObjectAcl 成功');
                 cos.getObjectAcl({Bucket: config.Bucket, Region: config.Region, Key: '1.txt'}, function (err, data) {
-                    assert.ok(data.Grants.length === 2);
-                    assert.ok(data.Grants[0] && data.Grants[0].Grantee.ID === 'qcs::cam::uin/1001:uin/1001', '设置权限第一个 ID 正确');
-                    assert.ok(data.Grants[0] && data.Grants[0].Permission === 'FULL_CONTROL', '设置权限第一个 Permission 正确');
-                    assert.ok(data.Grants[1] && data.Grants[1].Grantee.ID === 'qcs::cam::uin/1002:uin/1002', '设置权限第二个 ID 正确');
-                    assert.ok(data.Grants[1] && data.Grants[1].Permission === 'FULL_CONTROL', '设置权限第二个 Permission 正确');
+                    assert.ok(data.GrantFullControl = GrantFullControl);
                     done();
                 });
             });
@@ -918,22 +938,18 @@ QUnit.test('sliceUploadFile()', function (assert) {
     });
     QUnit.test('putObjectAcl() header ACL:public-read, GrantRead:1001,1002', function (assert) {
         return new Promise(function (done) {
+            var GrantFullControl = 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"';
             cos.putObjectAcl({
                 Bucket: config.Bucket,
                 Region: config.Region,
-                GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"',
+                GrantFullControl: GrantFullControl,
                 ACL: 'public-read',
                 Key: '1.txt',
             }, function (err, data) {
                 assert.ok(!err, 'putObjectAcl 成功');
                 cos.getObjectAcl({Bucket: config.Bucket, Region: config.Region, Key: '1.txt'}, function (err, data) {
-                    assert.ok(data.Grants.length === 3);
-                    assert.ok(data.Grants[0] && data.Grants[0].Grantee.ID === 'qcs::cam::anyone:anyone', '设置 ACL ID 正确');
-                    assert.ok(data.Grants[0] && data.Grants[0].Permission === 'READ', '设置 ACL Permission 正确');
-                    assert.ok(data.Grants[1] && data.Grants[1].Grantee.ID === 'qcs::cam::uin/1001:uin/1001', '设置权限第一个 ID 正确');
-                    assert.ok(data.Grants[1] && data.Grants[1].Permission === 'FULL_CONTROL', '设置权限第一个 Permission 正确');
-                    assert.ok(data.Grants[2] && data.Grants[2].Grantee.ID === 'qcs::cam::uin/1002:uin/1002', '设置权限第二个 ID 正确');
-                    assert.ok(data.Grants[2] && data.Grants[2].Permission === 'FULL_CONTROL', '设置权限第二个 Permission 正确');
+                    assert.ok(data.GrantFullControl = GrantFullControl);
+                    assert.ok(data.ACL = 'public-read');
                     done();
                 });
             });
@@ -1162,7 +1178,7 @@ QUnit.test('sliceUploadFile()', function (assert) {
                 "name/cos:AbortMultipartUpload",
                 "name/cos:AppendObject"
             ],
-            "resource": ["qcs::cos:" + config.Region + ":uid/" + AppId + ":" + Bucket + "-" + AppId + ".cos." + config.Region + ".myqcloud.com//" + AppId + "/" + Bucket + "/" + Prefix + "/*"] // 1250000000 是 appid
+            "resource": ["qcs::cos:" + config.Region + ":uid/" + AppId + ":" + BucketLongName + ".cos." + config.Region + ".myqcloud.com//" + AppId + "/" + BucketShortName + "/" + Prefix + "/*"] // 1250000000 是 appid
         }]
     };
     QUnit.test('putBucketPolicy(),getBucketPolicy()', function (assert) {

@@ -5,6 +5,9 @@ var initEvent = function (cos) {
         return listeners[action];
     };
     cos.on = function (action, callback) {
+        if (action === 'task-list-update') {
+            console.warn('Event "' + action + '" has been deprecated. Please use "list-update" instead.');
+        }
         getList(action).push(callback);
     };
     cos.off = function (action, callback) {
@@ -23,4 +26,9 @@ var initEvent = function (cos) {
     };
 };
 
+var EventProxy = function () {
+    initEvent(this);
+};
+
 module.exports.init = initEvent;
+module.exports.EventProxy = EventProxy;

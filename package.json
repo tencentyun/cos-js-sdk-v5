@@ -1,6 +1,6 @@
 {
   "name": "cos-js-sdk-v5",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "cos js sdk v5",
   "main": "index.js",
   "scripts": {
@@ -19,19 +19,10 @@
   },
   "homepage": "https://github.com/tencentyun/cos-js-sdk-v5#readme",
   "dependencies": {
-    "async": "^2.2.0",
-    "eventproxy": "^0.3.5",
-    "json-loader": "^0.5.7",
-    "lodash": "^4.17.4",
-    "querystring": "^0.2.0",
-    "request": "^2.81.0",
-    "xml2js": "^0.4.17"
+    "querystring": "^0.2.0"
   },
   "devDependencies": {
-    "babel-core": "^6.25.0",
-    "babel-loader": "^7.1.1",
-    "bmd-webpack-plugin": "^1.0.1",
-    "express": "^4.15.4",
-    "webpack": "^3.6.0"
+    "babel-loader": "^7.1.2",
+    "webpack": "^3.8.1"
   }
 }

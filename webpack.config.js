@@ -1,6 +1,5 @@
 var path = require('path');
 var webpack = require('webpack');
-var bmdWebpackPlugin = require('bmd-webpack-plugin');
 
 module.exports = {
     entry: path.resolve(__dirname, './index.js'),
@@ -46,6 +45,5 @@ if (process.env.NODE_ENV === 'production') {
         new webpack.LoaderOptionsPlugin({
             minimize: true
         }),
-        new bmdWebpackPlugin()
     ])
 }
