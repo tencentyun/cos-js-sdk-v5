@@ -242,7 +242,17 @@ function getBucketCors(params, callback) {
         action: '/?cors',
     }, function (err, data) {
         if (err) {
-            return callback(err);
+            if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchCORSConfiguration') {
+                var result  = {
+                    CORSRules: [],
+                    statusCode: err.statusCode,
+                };
+                err.headers && (result.headers = err.headers);
+                callback(null, result);
+            } else {
+                callback(err);
+            }
+            return;
         }
         var CORSConfiguration = data.CORSConfiguration || {};
         var CORSRules = CORSConfiguration.CORSRules || CORSConfiguration.CORSRule || [];
@@ -596,7 +606,17 @@ function getBucketLifecycle(params, callback) {
         action: '/?lifecycle',
     }, function (err, data) {
         if (err) {
-            return callback(err);
+            if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchLifecycleConfiguration') {
+                var result  = {
+                    Rules: [],
+                    statusCode: err.statusCode,
+                };
+                err.headers && (result.headers = err.headers);
+                callback(null, result);
+            } else {
+                callback(err);
+            }
+            return;
         }
         var Rules = [];
         try {

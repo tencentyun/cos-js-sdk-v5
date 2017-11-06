@@ -20,7 +20,6 @@ function sliceUploadFile(params, callback) {
 
     var onProgress = params.onProgress;
     var onHashProgress = params.onHashProgress;
-    StorageClass = null;
 
     // 上传过程中出现错误，返回错误
     ep.on('error', function (err) {

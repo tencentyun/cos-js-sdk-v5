@@ -2324,7 +2324,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.2.0';
+COS.version = '0.2.1';
 
 module.exports = window.COS = COS;
 
@@ -3792,7 +3792,17 @@ function getBucketCors(params, callback) {
         action: '/?cors'
     }, function (err, data) {
         if (err) {
-            return callback(err);
+            if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchCORSConfiguration') {
+                var result = {
+                    CORSRules: [],
+                    statusCode: err.statusCode
+                };
+                err.headers && (result.headers = err.headers);
+                callback(null, result);
+            } else {
+                callback(err);
+            }
+            return;
         }
         var CORSConfiguration = data.CORSConfiguration || {};
         var CORSRules = CORSConfiguration.CORSRules || CORSConfiguration.CORSRule || [];
@@ -4143,7 +4153,17 @@ function getBucketLifecycle(params, callback) {
         action: '/?lifecycle'
     }, function (err, data) {
         if (err) {
-            return callback(err);
+            if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchLifecycleConfiguration') {
+                var result = {
+                    Rules: [],
+                    statusCode: err.statusCode
+                };
+                err.headers && (result.headers = err.headers);
+                callback(null, result);
+            } else {
+                callback(err);
+            }
+            return;
         }
         var Rules = [];
         try {
@@ -9666,7 +9686,6 @@ function sliceUploadFile(params, callback) {
 
     var onProgress = params.onProgress;
     var onHashProgress = params.onHashProgress;
-    StorageClass = null;
 
     // 上传过程中出现错误，返回错误
     ep.on('error', function (err) {
