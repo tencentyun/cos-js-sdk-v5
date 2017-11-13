@@ -106,7 +106,7 @@ function getParam(url, name) {
 http.createServer(function(req, res){
     if (req.url.substr(0, '/auth?'.indexOf('?')) === '/auth') {
         var method = getParam(req.url, 'method');
-        var pathname = getParam(req.url, 'pathname');
+        var pathname = decodeURIComponent(getParam(req.url, 'pathname'));
         var auth = getAuthorization(method, pathname);
         console.log(method, pathname);
         res.writeHead(200, {
