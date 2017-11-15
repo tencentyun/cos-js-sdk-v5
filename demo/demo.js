@@ -2,7 +2,7 @@ var util = {
     createFile: function (options) {
         var buffer = new ArrayBuffer(options.size || 0);
         var arr = new Uint8Array(buffer);
-        arr.forEach(function (char, i) {
+        [].forEach.call(arr, function (char, i) {
             arr[i] = 0;
         });
         var opt = {};
@@ -61,18 +61,18 @@ var logger = function (text, color) {
     var div = document.createElement('div');
     div.innerText = text;
     color && (div.style.color = color);
-    pre.append(div);
+    pre.appendChild(div);
     pre.style.display = 'block';
     pre.scrollTop = pre.scrollHeight;
 };
 console._log = console.log;
 console._error = console.error;
 console.log = function (text) {
-    console._log.apply(console._log, arguments);
+    console._log.apply(console, arguments);
     logger(text);
 };
 console.error = function (text) {
-    console._error.apply(console._error, arguments);
+    console._error.apply(console, arguments);
     logger(text, 'red');
 };
 
