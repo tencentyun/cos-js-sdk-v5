@@ -310,7 +310,7 @@ var throttleOnProgress = function (total, onProgress) {
     };
 };
 
-var fileSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
+var fileSlice = window.File && (File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice);
 
 var util = {
     fileSlice: fileSlice,

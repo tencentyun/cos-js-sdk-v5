@@ -380,7 +380,7 @@ var throttleOnProgress = function (total, onProgress) {
     };
 };
 
-var fileSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
+var fileSlice = window.File && (File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice);
 
 var util = {
     fileSlice: fileSlice,
@@ -2326,7 +2326,7 @@ util.extend(COS.prototype, advance);
 COS.getAuthorization = util.getAuth;
 COS.version = '0.2.1';
 
-module.exports = window.COS = COS;
+module.exports = COS;
 
 /***/ }),
 /* 7 */
