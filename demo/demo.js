@@ -1,5 +1,5 @@
 var config = {
-    Bucket: 'test-1251902136',
+    Bucket: 'test-1250000000',
     Region: 'ap-guangzhou'
 };
 
