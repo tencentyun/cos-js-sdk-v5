@@ -11,8 +11,8 @@ function getAuthorization($method, $pathname)
 {
 
     // 获取个人 API 密钥 https://console.qcloud.com/capi
-    $SecretId = 'AKIDa5PXeakqAIEyW6xQJB21pStcDbxCqNBn';
-    $SecretKey = 'aJqCMK5nNlLl9LPZY0LWVItQmvsdhaHs';
+    $SecretId = 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+    $SecretKey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 
     // 整理参数
     $queryParams = array();
