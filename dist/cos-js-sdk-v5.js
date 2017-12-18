@@ -2335,7 +2335,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.3.0';
+COS.version = '0.3.1';
 
 module.exports = COS;
 
@@ -9143,7 +9143,6 @@ var $ = function () {
                     }, s.timeout);
                 }
 
-                debugger;
                 try {
                     state = 1;
                     transport.send(requestHeaders, done);
