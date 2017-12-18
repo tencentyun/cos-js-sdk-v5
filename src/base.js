@@ -243,7 +243,7 @@ function getBucketCors(params, callback) {
     }, function (err, data) {
         if (err) {
             if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchCORSConfiguration') {
-                var result  = {
+                var result = {
                     CORSRules: [],
                     statusCode: err.statusCode,
                 };
@@ -376,7 +376,7 @@ function putBucketPolicy(params, callback) {
         Region: params.Region,
         AppId: params.AppId,
         action: '/?policy',
-        body: PolicyStr,
+        body: util.isBrowser ? PolicyStr : Policy,
         headers: headers,
         json: true,
     }, function (err, data) {
@@ -477,7 +477,17 @@ function getBucketTagging(params, callback) {
         action: '/?tagging',
     }, function (err, data) {
         if (err) {
-            return callback(err);
+            if (err.statusCode === 404 && err.error && (err.error === "Not Found" || err.error.Code === 'NoSuchLifecycleConfiguration')) {
+                var result = {
+                    Tags: [],
+                    statusCode: err.statusCode,
+                };
+                err.headers && (result.headers = err.headers);
+                callback(null, result);
+            } else {
+                callback(err);
+            }
+            return;
         }
         var Tags = [];
         try {
@@ -607,7 +617,7 @@ function getBucketLifecycle(params, callback) {
     }, function (err, data) {
         if (err) {
             if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchLifecycleConfiguration') {
-                var result  = {
+                var result = {
                     Rules: [],
                     statusCode: err.statusCode,
                 };
@@ -639,6 +649,132 @@ function deleteBucketLifecycle(params, callback) {
         Region: params.Region,
         AppId: params.AppId,
         action: '/?lifecycle',
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+function putBucketVersioning(params, callback) {
+    var VersioningConfiguration = params['VersioningConfiguration'] || {};
+    var xml = util.json2xml({VersioningConfiguration: VersioningConfiguration});
+
+    var headers = {};
+    headers['x-cos-mfa'] = params.MFA;
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        AppId: params.AppId,
+        body: xml,
+        action: '/?versioning',
+        headers: headers,
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+function getBucketVersioning(params, callback) {
+    submitRequest.call(this, {
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        AppId: params.AppId,
+        action: '/?versioning',
+    }, function (err, data) {
+        if (!err) {
+            !data.VersioningConfiguration && (data.VersioningConfiguration = {});
+            !data.VersioningConfiguration.MFADelete && (data.VersioningConfiguration.MFADelete = 'Disabled');
+            !data.VersioningConfiguration.Status && (data.VersioningConfiguration.Status = 'Disabled');
+        }
+        callback(err, data);
+    });
+}
+
+function putBucketReplication(params, callback) {
+    var ReplicationConfiguration = util.clone(params.ReplicationConfiguration);
+    ReplicationConfiguration.Rule = ReplicationConfiguration.Rules;
+    delete ReplicationConfiguration.Rules;
+    var xml = util.json2xml({ReplicationConfiguration: ReplicationConfiguration});
+
+    var headers = {};
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        AppId: params.AppId,
+        body: xml,
+        action: '/?replication',
+        headers: headers,
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+function getBucketReplication(params, callback) {
+    submitRequest.call(this, {
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        AppId: params.AppId,
+        action: '/?replication',
+    }, function (err, data) {
+        if (err) {
+            if (err.statusCode === 404 && err.error && (err.error === 'Not Found' || err.error.Code === 'ReplicationConfigurationnotFoundError')) {
+                var result = {
+                    ReplicationConfiguration: {Rules: []},
+                    statusCode: err.statusCode,
+                };
+                err.headers && (result.headers = err.headers);
+                callback(null, result);
+            } else {
+                callback(err);
+            }
+            return;
+        }
+        if (!err) {
+            !data.ReplicationConfiguration && (data.ReplicationConfiguration = {});
+        }
+        callback(err, data);
+    });
+}
+
+function deleteBucketReplication(params, callback) {
+    submitRequest.call(this, {
+        method: 'DELETE',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        AppId: params.AppId,
+        action: '/?replication',
     }, function (err, data) {
         if (err && err.statusCode === 204) {
             return callback(null, {statusCode: err.statusCode});
@@ -714,6 +850,7 @@ function headObject(params, callback) {
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
 function getObject(params, callback) {
+    var self = this;
     var headers = {};
     var reqParams = {};
 
@@ -848,7 +985,7 @@ function putObject(params, callback) {
         Key: params.Key,
         headers: headers,
         body: Body,
-        onProgress: onProgress
+        onProgress: onProgress,
     }, function (err, data) {
         onProgress(null, true);
         if (err) {
@@ -1114,6 +1251,38 @@ function putObjectCopy(params, callback) {
     });
 }
 
+function uploadPartCopy(params, callback) {
+    var headers = {};
+
+    headers['x-cos-copy-source'] = params['CopySource'];
+    headers['x-cos-copy-source-Range'] = params['CopySourceRange'];
+    headers['x-cos-copy-source-If-Modified-Since'] = params['CopySourceIfModifiedSince'];
+    headers['x-cos-copy-source-If-Unmodified-Since'] = params['CopySourceIfUnmodifiedSince'];
+    headers['x-cos-copy-source-If-Match'] = params['CopySourceIfMatch'];
+    headers['x-cos-copy-source-If-None-Match'] = params['CopySourceIfNoneMatch'];
+
+    var action = '?partNumber=' + params['PartNumber'] + '&uploadId=' + params['UploadId'];
+
+    submitRequest.call(this, {
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        AppId: params.AppId,
+        Key: params.Key,
+        action: action,
+        headers: headers,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        var result = util.clone(data.CopyObjectResult);
+        util.extend(result, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+        callback(null, result);
+    });
+}
 
 function deleteMultipleObject(params, callback) {
     var headers = {};
@@ -1258,7 +1427,7 @@ function multipartUpload(params, callback) {
 
     var action = '?partNumber=' + PartNumber + '&uploadId=' + UploadId;
 
-    var sender = submitRequest.call(this, {
+    submitRequest.call(this, {
         TaskId: params.TaskId,
         method: 'PUT',
         Bucket: params.Bucket,
@@ -1267,8 +1436,8 @@ function multipartUpload(params, callback) {
         Key: params.Key,
         action: action,
         headers: headers,
-        body: params.Body || null,
-        onProgress: params.onProgress
+        onProgress: params.onProgress,
+        body: params.Body || null
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -1516,7 +1685,7 @@ function decodeAcl(AccessControlPolicy) {
         GrantRead: [],
         ACL: '',
     };
-    var GrantMap  = {
+    var GrantMap = {
         'FULL_CONTROL': 'GrantFullControl',
         'WRITE': 'GrantWrite',
         'READ': 'GrantRead',
@@ -1584,10 +1753,76 @@ function getUrl(params) {
     return url;
 }
 
-// 发起请求
+// 获取签名并发起请求
 function submitRequest(params, callback) {
     var self = this;
+    var Key = params.Key || '';
+    if (self.options.getAuthorization) { // 外部计算签名
+        self.options.getAuthorization.call(self, {
+            Method: params.method,
+            Key: Key,
+            method: params.method,
+            pathname: '/' + Key,
+        }, function (AuthData) {
+            if (typeof AuthData === 'object') {
+                params.AuthData = AuthData;
+            } else {
+                params.AuthData = {Authorization: AuthData};
+            }
+            _submitRequest.call(self, params, callback);
+        });
+    } else if (self.options.getSTS) { // 外部获取临时密钥
+        var Bucket = params.Bucket || '';
+        var AppId = params.AppId || self.options.AppId || '';
+        var StsBucket = Bucket ? Bucket + '-' + AppId : '';
+        self._StsMap = self._StsMap || {};
+        var StsData = self._StsMap[StsBucket] || {};
+        var runTemp = function () {
+            var Authorization = util.getAuth({
+                SecretId: StsData.SecretId,
+                SecretKey: StsData.SecretKey,
+                Method: params.method,
+                Key: Key,
+            });
+            params.AuthData = {
+                Authorization: Authorization,
+                XCosSecurityToken: StsData.XCosSecurityToken || '',
+                Token: StsData.Token || '',
+                ClientIP: StsData.ClientIP || '',
+                ClientUA: StsData.ClientUA || '',
+            };
+            _submitRequest.call(self, params, callback);
+        };
+        if (StsData.ExpiredTime && StsData.ExpiredTime - (Date.now() / 1000 > 60)) { // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
+            runTemp();
+        } else { // 如果有效时间小于 60 秒就重新获取临时密钥
+            self.options.getSTS.call(self, {
+                Bucket: StsBucket
+            }, function (data) {
+                StsData = self._StsMap[StsBucket] = data || {};
+                runTemp();
+            });
+        }
+    } else { // 内部计算获取签名
+        var Authorization = util.getAuth({
+            SecretId: params.SecretId || self.options.SecretId,
+            SecretKey: params.SecretKey || self.options.SecretKey,
+            Method: params.method,
+            Key: Key,
+            // headers: opt.headers,
+        });
+        params.AuthData = {Authorization: Authorization};
+        _submitRequest.call(self, params, callback);
+    }
+}
+
+// 发起请求
+function _submitRequest(params, callback) {
+
+    var self = this;
     var TaskId = params.TaskId;
+    if (TaskId && !self._isRunningTask(TaskId)) return;
+
     var bucket = params.Bucket;
     var region = params.Region;
     var object = params.Key;
@@ -1616,121 +1851,88 @@ function submitRequest(params, callback) {
         json: json,
     };
 
-    // 发送请求
-    var getAuthorizationCallback = function (auth) {
-        if (TaskId && !self._isRunningTask(TaskId)) return;
+    // 获取签名
+    opt.headers.Authorization = params.AuthData.Authorization;
+    params.AuthData.Token && (opt.headers['token'] = params.AuthData.Token);
+    params.AuthData.ClientIP && (opt.headers['clientIP'] = params.AuthData.ClientIP);
+    params.AuthData.ClientUA && (opt.headers['clientUA'] = params.AuthData.ClientUA);
+    params.AuthData.XCosSecurityToken && (opt.headers['x-cos-security-token'] = params.AuthData.XCosSecurityToken);
 
-        var token, clientIP, clientUA;
-        if (typeof auth === 'object') {
-            token = auth.Token;
-            clientIP = auth.ClientIP;
-            clientUA = auth.ClientUA;
-            auth = auth.Authorization;
-        }
+    // 预先处理 undefined 和 null 的属性
+    opt.headers && (opt.headers = util.clearKey(opt.headers));
+    opt.qs && (opt.qs = util.clearKey(opt.qs));
+    opt = util.clearKey(opt);
 
-        opt.headers.Authorization = auth;
-        token && (opt.headers['token'] = token);
-        clientIP && (opt.headers['clientIP'] = clientIP);
-        clientUA && (opt.headers['clientUA'] = clientUA);
+    // progress
+    if (params.onProgress && typeof params.onProgress === 'function') {
+        var contentLength = body && body.size || 0;
+        opt.onProgress = function (e) {
+            if (TaskId && !self._isRunningTask(TaskId)) return;
+            var loaded = e ? e.loaded : 0;
+            params.onProgress({loaded: loaded, total: contentLength});
+        };
+    }
 
-        // 预先处理 undefined 的属性
-        if (opt.headers) {
-            opt.headers = util.clearKey(opt.headers);
-        }
+    var sender = REQUEST(opt, function (err, response, body) {
 
-        if (opt.qs) {
-            opt.qs = util.clearKey(opt.qs);
-        }
-        opt = util.clearKey(opt);
-
-        // progress
-        if (params.onProgress && typeof params.onProgress === 'function') {
-            var contentLength = body && body.size || 0;
-            opt.onProgress = function (e) {
-                if (TaskId && !self._isRunningTask(TaskId)) return;
-                var loaded = e ? e.loaded : 0;
-                params.onProgress({loaded: loaded, total: contentLength});
-            };
-        }
-
-        var sender = REQUEST(opt, function (err, response, body) {
-
-            // 返回内容添加 状态码 和 headers
-            var cb = function (err, data) {
-                TaskId && self.off('inner-kill-task', killTask);
-                if (TaskId && !self._isRunningTask(TaskId)) return;
-                if (err) {
-                    err = err || {};
-                    response && response.statusCode && (err.statusCode = response.statusCode);
-                    callback(err, null);
-                } else {
-                    data = data || {};
-                    response && response.statusCode && (data.statusCode = response.statusCode);
-                    response && response.headers && (data.headers = response.headers);
-                    callback(null, data);
-                }
-            };
-
-            // 请求错误，发生网络错误
+        // 返回内容添加 状态码 和 headers
+        var cb = function (err, data) {
+            TaskId && self.off('inner-kill-task', killTask);
+            if (TaskId && !self._isRunningTask(TaskId)) return;
             if (err) {
-                cb({error: err});
-                return;
-            }
-
-            var jsonRes;
-            try {
-                jsonRes = util.xml2json(body) || {};
-            } catch (e) {
-                jsonRes = body || {};
-            }
-
-            // 请求返回码不为 200
-            var statusCode = response.statusCode;
-            if (statusCode !== 200 && statusCode !== 204 && statusCode !== 206) {
-                cb({error: jsonRes.Error || jsonRes});
-                return;
-            }
-
-            // 不对 body 进行转换，body 直接挂载返回
-            if (rawBody) {
-                jsonRes = {};
-                jsonRes.body = body;
-            }
-
-            if (jsonRes.Error) {
-                cb({error: jsonRes.Error});
-                return;
-            }
-            cb(null, jsonRes);
-        });
-
-        // kill task
-        var killTask = function (data) {
-            if (data.TaskId === TaskId) {
-                sender && sender.abort && sender.abort();
-                self.off('inner-kill-task', killTask);
+                err = err || {};
+                response && response.statusCode && (err.statusCode = response.statusCode);
+                response && response.headers && (err.headers = response.headers);
+                callback(err, null);
+            } else {
+                data = data || {};
+                response && response.statusCode && (data.statusCode = response.statusCode);
+                response && response.headers && (data.headers = response.headers);
+                callback(null, data);
             }
         };
-        TaskId && self.on('inner-kill-task', killTask);
-    };
 
-    // 获取签名
-    if (self.options.getAuthorization) {
-        self.options.getAuthorization({
-            Method: opt.method,
-            Key: object || '',
-            method: opt.method,
-            pathname: '/' + (object || '')
-        }, getAuthorizationCallback);
-    } else {
-        var auth = util.getAuth({
-            Method: opt.method,
-            Key: object || '',
-            SecretId: params.SecretId || self.options.SecretId,
-            SecretKey: params.SecretKey || self.options.SecretKey,
-        });
-        getAuthorizationCallback(auth);
-    }
+        // 请求错误，发生网络错误
+        if (err) {
+            cb({error: err});
+            return;
+        }
+
+        var jsonRes;
+        try {
+            jsonRes = util.xml2json(body) || {};
+        } catch (e) {
+            jsonRes = body || {};
+        }
+
+        // 请求返回码不为 200
+        var statusCode = response.statusCode;
+        if (statusCode !== 200 && statusCode !== 204 && statusCode !== 206) {
+            cb({error: jsonRes.Error || jsonRes});
+            return;
+        }
+
+        // 不对 body 进行转换，body 直接挂载返回
+        if (rawBody) {
+            jsonRes = {};
+            jsonRes.body = body;
+        }
+
+        if (jsonRes.Error) {
+            cb({error: jsonRes.Error});
+            return;
+        }
+        cb(null, jsonRes);
+    });
+
+    // kill task
+    var killTask = function (data) {
+        if (data.TaskId === TaskId) {
+            sender && sender.abort && sender.abort();
+            self.off('inner-kill-task', killTask);
+        }
+    };
+    TaskId && self.on('inner-kill-task', killTask);
 
 }
 
@@ -1754,6 +1956,11 @@ var API_MAP = {
     getBucketLifecycle: getBucketLifecycle,
     putBucketLifecycle: putBucketLifecycle,
     deleteBucketLifecycle: deleteBucketLifecycle,
+    putBucketVersioning: putBucketVersioning,
+    getBucketVersioning: getBucketVersioning,
+    putBucketReplication: putBucketReplication,
+    getBucketReplication: getBucketReplication,
+    deleteBucketReplication: deleteBucketReplication,
 
     // Object 相关方法
     getObject: getObject,
@@ -1766,6 +1973,7 @@ var API_MAP = {
     putObjectCopy: putObjectCopy,
 
     // 分块上传相关方法
+    uploadPartCopy: uploadPartCopy,
     multipartInit: multipartInit,
     multipartUpload: multipartUpload,
     multipartComplete: multipartComplete,

@@ -310,10 +310,17 @@ var throttleOnProgress = function (total, onProgress) {
     };
 };
 
-var fileSlice = window.File && (File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice);
+var fileSlice = function (file, start, end) {
+    if (file.slice) {
+        return file.slice(start, end);
+    } else if (file.mozSlice) {
+        return file.mozSlice(start, end);
+    } else if (file.webkitSlice) {
+        return file.webkitSlice(start, end);
+    }
+};
 
 var util = {
-    fileSlice: fileSlice,
     apiWrapper: apiWrapper,
     getAuth: getAuth,
     xml2json: xml2json,
@@ -329,6 +336,7 @@ var util = {
     filter: filter,
     clone: clone,
     uuid: uuid,
+    fileSlice: fileSlice,
     throttleOnProgress: throttleOnProgress,
     isBrowser: !!global.window
 };

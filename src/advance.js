@@ -140,7 +140,7 @@ function getUploadIdAndPartList(params, callback) {
                 Size: ChunkSize
             });
         } else {
-            var blob = util.fileSlice.call(Body, start, end);
+            var blob = util.fileSlice(Body, start, end);
             util.getFileMd5(blob, function (err, md5) {
                 if (err) return callback(err);
                 var ETag = '"' + md5 + '"';
@@ -281,7 +281,7 @@ function getUploadIdAndPartList(params, callback) {
                     }
                 });
             });
-        }, function(AvailableUploadData){
+        }, function (AvailableUploadData) {
             if (!self._isRunningTask(TaskId)) return;
             onHashProgress(null, true);
             if (AvailableUploadData && AvailableUploadData.UploadId) {
@@ -475,7 +475,7 @@ function uploadSliceItem(params, callback) {
         ContentLength = end - start;
     }
 
-    var Body = util.fileSlice.call(FileBody, start, end);
+    var Body = util.fileSlice(FileBody, start, end);
     var PartItem = UploadData.PartList[PartNumber - 1];
     var ContentSha1 = PartItem.ETag;
     Async.retry(sliceRetryTimes, function (tryCallback) {
@@ -501,12 +501,11 @@ function uploadSliceItem(params, callback) {
                 return tryCallback(null, data);
             }
         });
-    }, function(err, data) {
+    }, function (err, data) {
         if (!self._isRunningTask(TaskId)) return;
         return callback(err, data);
     });
 }
-
 
 
 // 完成分块上传
@@ -653,7 +652,7 @@ function abortUploadTaskArray(params, callback) {
             resultList[eachIndex] = {error: err, task: task};
             callback(null);
         });
-        index ++;
+        index++;
 
     }, function (err) {
         if (err) {
