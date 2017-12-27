@@ -77,7 +77,10 @@ document.getElementById('file-selector').onchange = function () {
 npm i cos-js-sdk-v5 --save
 ```
 
-## 其他文档和例子
+## 说明文档
 
-[更多例子](demo/demo.js)
-[完整文档](https://cloud.tencent.com/document/product/436/11459)
+[使用例子](demo/demo.js)
+
+[快速入门](https://cloud.tencent.com/document/product/436/11459)
+
+[接口文档](https://cloud.tencent.com/document/product/436/12260)
