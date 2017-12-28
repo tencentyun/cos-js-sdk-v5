@@ -332,7 +332,7 @@ function putBucketReplication() {
         Bucket: config.Bucket,
         Region: config.Region,
         ReplicationConfiguration: {
-            Role: "qcs::cam::uin/459452372:uin/459452372",
+            Role: "qcs::cam::uin/459000000:uin/459000000",
             Rules: [{
                 ID: "1",
                 Status: "Enabled",
@@ -440,7 +440,7 @@ function putObjectAcl() {
         ACL: 'default', // 继承上一级目录权限
         // AccessControlPolicy: {
         //     "Owner": { // AccessControlPolicy 里必须有 owner
-        //         "ID": 'qcs::cam::uin/10001:uin/10001' // 10001 是 Bucket 所属用户的 QQ 号
+        //         "ID": 'qcs::cam::uin/459000000:uin/459000000' // 459000000 是 Bucket 所属用户的 QQ 号
         //     },
         //     "Grants": [{
         //         "Grantee": {
