@@ -352,19 +352,24 @@ var throttleOnProgress = function (total, onProgress) {
     var time0 = Date.now();
     var time1;
     var timer;
-    var update = function () {
+    function update() {
         timer = 0;
         if (onProgress && typeof onProgress === 'function') {
             time1 = Date.now();
-            var speed = Math.max(0, parseInt((size1 - size0) / ((time1 - time0) / 1000) * 100) / 100);
-            var percent = size1 === 0 && total === 0 ? 1 : parseInt(size1 / total * 100) / 100 || 0;
+            var speed = Math.max(0, Math.round((size1 - size0) / ((time1 - time0) / 1000) * 100) / 100);
+            var percent;
+            if (size1 === 0 && total === 0) {
+                percent = 1;
+            } else {
+                percent = Math.round(size1 / total * 100) / 100 || 0;
+            }
             time0 = time1;
             size0 = size1;
             try {
                 onProgress({ loaded: size1, total: total, speed: speed, percent: percent });
             } catch (e) {}
         }
-    };
+    }
     return function (info, immediately) {
         if (info) {
             size1 = info.loaded;
@@ -408,7 +413,7 @@ var util = {
     uuid: uuid,
     fileSlice: fileSlice,
     throttleOnProgress: throttleOnProgress,
-    isBrowser: !!global.window
+    isBrowser: !!global.document
 };
 
 module.exports = util;
@@ -2335,7 +2340,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.3.1';
+COS.version = '0.3.2';
 
 module.exports = COS;
 
@@ -3400,7 +3405,8 @@ var initTask = function (cos) {
             size: task.size,
             speed: task.speed,
             percent: task.percent,
-            hashPercent: task.hashPercent
+            hashPercent: task.hashPercent,
+            error: task.error
         };
         if (task.FilePath) t.FilePath = task.FilePath;
         return t;
@@ -3422,6 +3428,7 @@ var initTask = function (cos) {
                     if (!cos._isRunningTask(task.id)) return;
                     if (task.state === 'checking' || task.state === 'uploading') {
                         task.state = err ? 'error' : 'success';
+                        err && (task.error = err);
                         uploadingFileCount--;
                         emitListUpdate();
                         startNextTask(cos);
@@ -3505,7 +3512,8 @@ var initTask = function (cos) {
             size: size,
             speed: 0,
             percent: 0,
-            hashPercent: 0
+            hashPercent: 0,
+            error: null
         };
         var onHashProgress = params.onHashProgress;
         params.onHashProgress = function (info) {
@@ -3750,6 +3758,8 @@ function putBucketAcl(params, callback) {
     headers['x-cos-acl'] = params['ACL'];
     headers['x-cos-grant-read'] = params['GrantRead'];
     headers['x-cos-grant-write'] = params['GrantWrite'];
+    headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
+    headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
     headers['x-cos-grant-full-control'] = params['GrantFullControl'];
 
     var xml = '';
@@ -4037,7 +4047,7 @@ function getBucketTagging(params, callback) {
         action: '/?tagging'
     }, function (err, data) {
         if (err) {
-            if (err.statusCode === 404 && err.error && (err.error === "Not Found" || err.error.Code === 'NoSuchLifecycleConfiguration')) {
+            if (err.statusCode === 404 && err.error && (err.error === "Not Found" || err.error.Code === 'NoSuchTagSet')) {
                 var result = {
                     Tags: [],
                     statusCode: err.statusCode
@@ -5239,12 +5249,16 @@ function decodeAcl(AccessControlPolicy) {
         GrantFullControl: [],
         GrantWrite: [],
         GrantRead: [],
+        GrantReadAcp: [],
+        GrantWriteAcp: [],
         ACL: ''
     };
     var GrantMap = {
         'FULL_CONTROL': 'GrantFullControl',
         'WRITE': 'GrantWrite',
-        'READ': 'GrantRead'
+        'READ': 'GrantRead',
+        'READ_ACP': 'GrantReadAcp',
+        'WRITE_ACP': 'GrantWriteAcp'
     };
     var Grant = AccessControlPolicy.AccessControlList.Grant;
     if (Grant) {
@@ -5376,7 +5390,6 @@ function submitRequest(params, callback) {
 
 // 发起请求
 function _submitRequest(params, callback) {
-
     var self = this;
     var TaskId = params.TaskId;
     if (TaskId && !self._isRunningTask(TaskId)) return;
@@ -9874,7 +9887,11 @@ var request = function (options, callback) {
         callback(null, getResponse(xhr), data);
     };
     options.error = function (xhr) {
-        callback(xhr.statusText, getResponse(xhr), xhr.responseText);
+        if (xhr.responseText) {
+            callback(null, getResponse(xhr), xhr.responseText);
+        } else {
+            callback(xhr.statusText, getResponse(xhr), xhr.responseText);
+        }
     };
 
     options.dataType = 'text';
@@ -9993,7 +10010,13 @@ function sliceUploadFile(params, callback) {
     // 获取上传文件大小
     FileSize = Body.size || params.ContentLength;
     SliceCount = Math.ceil(FileSize / SliceSize);
-    ep.emit('get_file_size_finish');
+
+    if (FileSize === 0) {
+        params.Body = '';
+        self.putObject(params, callback);
+    } else {
+        ep.emit('get_file_size_finish');
+    }
 }
 
 // 获取上传任务的 UploadId

@@ -34,6 +34,7 @@ var initTask = function (cos) {
             speed: task.speed,
             percent: task.percent,
             hashPercent: task.hashPercent,
+            error: task.error,
         };
         if (task.FilePath) t.FilePath = task.FilePath;
         return t;
@@ -56,6 +57,7 @@ var initTask = function (cos) {
                     if (!cos._isRunningTask(task.id)) return;
                     if (task.state === 'checking' || task.state === 'uploading') {
                         task.state = err ? 'error' : 'success';
+                        err && (task.error = err);
                         uploadingFileCount--;
                         emitListUpdate();
                         startNextTask(cos);
@@ -142,6 +144,7 @@ var initTask = function (cos) {
             speed: 0,
             percent: 0,
             hashPercent: 0,
+            error: null,
         };
         var onHashProgress = params.onHashProgress;
         params.onHashProgress = function (info) {

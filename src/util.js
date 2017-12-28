@@ -281,12 +281,17 @@ var throttleOnProgress = function (total, onProgress) {
     var time0 = Date.now();
     var time1;
     var timer;
-    var update = function () {
+    function update() {
         timer = 0;
         if (onProgress && (typeof onProgress === 'function')) {
             time1 = Date.now();
-            var speed = Math.max(0, parseInt((size1 - size0) / ((time1 - time0) / 1000) * 100) / 100);
-            var percent = size1 === 0 && total === 0 ? 1 : parseInt(size1 / total * 100) / 100 || 0;
+            var speed = Math.max(0, Math.round((size1 - size0) / ((time1 - time0) / 1000) * 100) / 100);
+            var percent;
+            if (size1 === 0 && total === 0) {
+                percent = 1;
+            } else {
+                percent = Math.round(size1 / total * 100) / 100 || 0;
+            }
             time0 = time1;
             size0 = size1;
             try {
@@ -294,7 +299,7 @@ var throttleOnProgress = function (total, onProgress) {
             } catch (e) {
             }
         }
-    };
+    }
     return function (info, immediately) {
         if (info) {
             size1 = info.loaded;
@@ -338,7 +343,7 @@ var util = {
     uuid: uuid,
     fileSlice: fileSlice,
     throttleOnProgress: throttleOnProgress,
-    isBrowser: !!global.window
+    isBrowser: !!global.document
 };
 
 

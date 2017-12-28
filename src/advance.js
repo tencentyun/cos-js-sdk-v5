@@ -102,7 +102,13 @@ function sliceUploadFile(params, callback) {
     // 获取上传文件大小
     FileSize = Body.size || params.ContentLength;
     SliceCount = Math.ceil(FileSize / SliceSize);
-    ep.emit('get_file_size_finish');
+
+    if (FileSize === 0) {
+        params.Body = '';
+        self.putObject(params, callback);
+    } else {
+        ep.emit('get_file_size_finish');
+    }
 
 }
 
