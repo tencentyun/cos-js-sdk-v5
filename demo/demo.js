@@ -91,6 +91,18 @@ function getAuth() {
     });
 }
 
+function getObjectUrl() {
+    var url = cos.getObjectUrl({
+        Bucket: config.Bucket, // Bucket 格式：test-1250000000
+        Region: config.Region,
+        Key: '1mb.zip',
+        Expires: 60,
+    }, function (err, data) {
+        console.log(err || data);
+    });
+    console.log(url);
+}
+
 function getBucket() {
     cos.getBucket({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
@@ -621,6 +633,7 @@ function uploadFiles() {
 
 // uploadFiles();
 // getAuth();
+// getObjectUrl();
 // getBucket();
 // headBucket();
 // putBucketAcl();
@@ -662,6 +675,7 @@ function uploadFiles() {
     var list = [
         // 'getService', // 不支持
         'getAuth',
+        'getObjectUrl',
         // 'putBucket', // 不支持
         'getBucket',
         'headBucket',

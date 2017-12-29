@@ -16,7 +16,6 @@ function camSafeUrlEncode(str) {
 
 //测试用的key后面可以去掉
 var getAuth = function (opt) {
-
     opt = opt || {};
 
     var SecretId = opt.SecretId;
@@ -55,19 +54,20 @@ var getAuth = function (opt) {
 
     // 签名有效起止时间
     var now = parseInt(new Date().getTime() / 1000) - 1;
-    var expired = now;
+    var exp = now;
 
-    if (opt.expires === undefined) {
-        expired += 3600; // 签名过期时间为当前 + 3600s
+    var Expires = opt.Expires || opt.expires;
+    if (Expires === undefined) {
+        exp += 900; // 签名过期时间为当前 + 900s
     } else {
-        expired += (opt.expires * 1) || 0;
+        exp += (Expires * 1) || 0;
     }
 
     // 要用到的 Authorization 参数列表
     var qSignAlgorithm = 'sha1';
     var qAk = SecretId;
-    var qSignTime = now + ';' + expired;
-    var qKeyTime = now + ';' + expired;
+    var qSignTime = now + ';' + exp;
+    var qKeyTime = now + ';' + exp;
     var qHeaderList = getObjectKeys(headers).join(';').toLowerCase();
     var qUrlParamList = getObjectKeys(queryParams).join(';').toLowerCase();
 
@@ -254,13 +254,21 @@ var apiWrapper = function (apiName, apiFn) {
                 callback({error: 'Region should not be start with "cos."'});
                 return;
             }
-            // 兼容带有 AppId 的 Bucket
+            // 兼容不带 AppId 的 Bucket
             var appId, m, bucket = params.Bucket;
-            if (bucket && (m = bucket.match(/^(.+)-(\d+)$/))) {
-                appId = m[2];
-                bucket = m[1];
-                params.AppId = appId;
-                params.Bucket = bucket;
+            if (bucket) {
+                if (m = bucket.match(/^(.+)-(\d+)$/)) {
+                    appId = m[2];
+                    bucket = m[1];
+                    params.AppId = appId;
+                    params.Bucket = bucket;
+                } else if (!params.AppId) {
+                    if (this.options.AppId) {
+                        params.AppId = this.options.AppId;
+                    } else {
+                        callback({error: 'Bucket should format as "test-1250000000".'});
+                    }
+                }
             }
             // 兼容带有斜杠开头的 Key
             if (params.Key && params.Key.substr(0, 1) === '/') {
@@ -268,7 +276,7 @@ var apiWrapper = function (apiName, apiFn) {
             }
         }
         var res = apiFn.call(this, params, callback);
-        if (apiName === 'getAuth') {
+        if (apiName === 'getAuth' || apiName === 'getObjectUrl') {
             return res;
         }
     }

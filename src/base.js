@@ -969,7 +969,7 @@ function putObject(params, callback) {
             callback({error: 'lack of param ContentLength'});
             return;
         }
-    } else if (Body && typeof Body.pipe === 'string' && util.isBrowser) { // 在浏览器允许传入字符串作为内容 'hello'
+    } else if (Body && typeof Body === 'string' && util.isBrowser) { // 在浏览器允许传入字符串作为内容 'hello'
         headers['Content-Length'] = Body.length;
     } else {
         callback({error: 'params body format error, Only allow Buffer, Stream, Blob.'});
@@ -1665,15 +1665,61 @@ function multipartAbort(params, callback) {
  * @param  {Object}  params             参数对象，必须
  *     @param  {String}  params.Method  请求方法，必须
  *     @param  {String}  params.Key     object名称，必须
+ *     @param  {String}  params.Expires 名超时时间，单位秒，可选
  * @return  {String}  data              返回签名字符串
  */
 function getAuth(params) {
     return util.getAuth({
-        Method: params.Method || 'get',
-        Key: params.Key || '',
+        Method: params.Method,
+        Key: params.Key,
+        Expires: params.Expires,
         SecretId: params.SecretId || this.options.SecretId || '',
         SecretKey: params.SecretKey || this.options.SecretKey || ''
     });
+}
+
+/**
+ * 获取文件下载链接
+ * @param  {Object}  params                 参数对象，必须
+ *     @param  {String}  params.Bucket      Bucket名称，必须
+ *     @param  {String}  params.Region      地域名称，必须
+ *     @param  {String}  params.Key         object名称，必须
+ *     @param  {String}  params.Method      请求的方法，可选
+ *     @param  {String}  params.Expires     签名超时时间，单位秒，可选
+ * @param  {Function}  callback             回调函数，必须
+ *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。
+ *     @return  {Object}    data            返回的数据
+ */
+function getObjectUrl(params, callback) {
+    var self = this;
+    var url = getUrl({
+        domain: self.options.Domain,
+        bucket: params.Bucket,
+        region: params.Region,
+        appId: params.AppId || self.options.AppId || '',
+        object: params.Key,
+    });
+    var authorization = getAuthorizationAsync.call(this, {
+        Method: params.Method || 'get',
+        Key: params.Key,
+    }, function (AuthData) {
+        if (!callback) return;
+        var result = {
+            Url: url + '?sign=' + encodeURIComponent(AuthData.Authorization),
+        };
+        AuthData.XCosSecurityToken && (result.XCosSecurityToken = AuthData.XCosSecurityToken);
+        AuthData.ClientIP && (result.ClientIP = AuthData.ClientIP);
+        AuthData.ClientUA && (result.ClientUA = AuthData.ClientUA);
+        AuthData.Token && (result.Token = AuthData.Token);
+        setTimeout(function () {
+            callback(null, result);
+        });
+    });
+    if (authorization) {
+        return url + '?sign=' + encodeURIComponent(authorization);
+    } else {
+        return url;
+    }
 }
 
 
@@ -1759,23 +1805,18 @@ function getUrl(params) {
     return url;
 }
 
-// 获取签名并发起请求
-function submitRequest(params, callback) {
+// 异步获取签名
+function getAuthorizationAsync(params, callback) {
     var self = this;
-    var Key = params.Key || '';
     if (self.options.getAuthorization) { // 外部计算签名
         self.options.getAuthorization.call(self, {
-            Method: params.method,
-            Key: Key,
-            method: params.method,
-            pathname: '/' + Key,
+            Method: params.Method,
+            Key: params.Key,
         }, function (AuthData) {
-            if (typeof AuthData === 'object') {
-                params.AuthData = AuthData;
-            } else {
-                params.AuthData = {Authorization: AuthData};
+            if (typeof AuthData === 'string') {
+                AuthData = {Authorization: AuthData};
             }
-            _submitRequest.call(self, params, callback);
+            callback && callback(AuthData);
         });
     } else if (self.options.getSTS) { // 外部获取临时密钥
         var Bucket = params.Bucket || '';
@@ -1787,17 +1828,17 @@ function submitRequest(params, callback) {
             var Authorization = util.getAuth({
                 SecretId: StsData.SecretId,
                 SecretKey: StsData.SecretKey,
-                Method: params.method,
-                Key: Key,
+                Method: params.Method,
+                Key: params.Key,
             });
-            params.AuthData = {
+            var AuthData = {
                 Authorization: Authorization,
                 XCosSecurityToken: StsData.XCosSecurityToken || '',
                 Token: StsData.Token || '',
                 ClientIP: StsData.ClientIP || '',
                 ClientUA: StsData.ClientUA || '',
             };
-            _submitRequest.call(self, params, callback);
+            callback && callback(AuthData);
         };
         if (StsData.ExpiredTime && StsData.ExpiredTime - (Date.now() / 1000 > 60)) { // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
             runTemp();
@@ -1813,13 +1854,26 @@ function submitRequest(params, callback) {
         var Authorization = util.getAuth({
             SecretId: params.SecretId || self.options.SecretId,
             SecretKey: params.SecretKey || self.options.SecretKey,
-            Method: params.method,
-            Key: Key,
+            Method: params.Method,
+            Key: params.Key,
             // headers: opt.headers,
         });
-        params.AuthData = {Authorization: Authorization};
-        _submitRequest.call(self, params, callback);
+        callback && callback({Authorization: Authorization});
+        return Authorization;
     }
+    return '';
+}
+
+// 获取签名并发起请求
+function submitRequest(params, callback) {
+    var self = this;
+    getAuthorizationAsync.call(self, {
+        Method: params.method,
+        Key: params.Key,
+    }, function (AuthData) {
+        params.AuthData = AuthData;
+        _submitRequest.call(self, params, callback);
+    });
 }
 
 // 发起请求
@@ -1988,6 +2042,7 @@ var API_MAP = {
     deleteMultipleObject: deleteMultipleObject,
 
     // 工具方法
+    getObjectUrl: getObjectUrl,
     getAuth: getAuth,
 };
 

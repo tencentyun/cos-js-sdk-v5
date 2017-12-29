@@ -123,7 +123,6 @@ var initTask = function (cos) {
             size = params.ContentLength;
         }
 
-        if (params.ContentLength === undefined) params.ContentLength = size;
         params.TaskId = id;
 
         var task = {
