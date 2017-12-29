@@ -3491,7 +3491,7 @@ var initTask = function (cos) {
         var id = util.uuid();
         params.TaskReady && params.TaskReady(id);
 
-        var size = 0;
+        var size;
         if (params.Body && params.Body.size !== undefined) {
             size = params.Body.size;
         } else if (params.Body && params.Body.length !== undefined) {
@@ -3500,6 +3500,8 @@ var initTask = function (cos) {
             size = params.ContentLength;
         }
 
+        if (params.ContentLength === undefined) params.ContentLength = size;
+        size = size || 0;
         params.TaskId = id;
 
         var task = {
@@ -9984,7 +9986,6 @@ function sliceUploadFile(params, callback) {
     var SliceSize = params.SliceSize || this.options.ChunkSize;
     var AsyncLimit = params.AsyncLimit;
     var StorageClass = params.StorageClass || 'Standard';
-    var SliceCount;
     var FileSize;
     var self = this;
 
@@ -10071,7 +10072,6 @@ function sliceUploadFile(params, callback) {
 
     // 获取上传文件大小
     FileSize = Body.size || params.ContentLength;
-    SliceCount = Math.ceil(FileSize / SliceSize);
 
     if (FileSize === 0) {
         params.Body = '';

@@ -14,7 +14,6 @@ function sliceUploadFile(params, callback) {
     var SliceSize = params.SliceSize || this.options.ChunkSize;
     var AsyncLimit = params.AsyncLimit;
     var StorageClass = params.StorageClass || 'Standard';
-    var SliceCount;
     var FileSize;
     var self = this;
 
@@ -101,7 +100,6 @@ function sliceUploadFile(params, callback) {
 
     // 获取上传文件大小
     FileSize = Body.size || params.ContentLength;
-    SliceCount = Math.ceil(FileSize / SliceSize);
 
     if (FileSize === 0) {
         params.Body = '';

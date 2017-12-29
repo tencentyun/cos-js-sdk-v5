@@ -114,7 +114,7 @@ var initTask = function (cos) {
         var id = util.uuid();
         params.TaskReady && params.TaskReady(id);
 
-        var size = 0;
+        var size;
         if (params.Body && params.Body.size !== undefined) {
             size = params.Body.size;
         } else if (params.Body && params.Body.length !== undefined) {
@@ -123,6 +123,8 @@ var initTask = function (cos) {
             size = params.ContentLength;
         }
 
+        if (params.ContentLength === undefined) params.ContentLength = size;
+        size = size || 0;
         params.TaskId = id;
 
         var task = {
