@@ -128,9 +128,6 @@ function getUploadIdAndPartList(params, callback) {
     var SliceCount = Math.ceil(FileSize / SliceSize);
     var FinishSliceCount = 0;
     var FinishSize = 0;
-    var progressTimer = 0;
-    var time0 = 0;
-    var size0 = 0;
     var onHashProgress = util.throttleOnProgress.call(self, FileSize, params.onHashProgress);
     var getChunkETag = function (PartNumber, callback) {
         var start = SliceSize * (PartNumber - 1);

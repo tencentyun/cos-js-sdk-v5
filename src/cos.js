@@ -33,6 +33,6 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.3.3';
+COS.version = '0.3.4';
 
 module.exports = COS;

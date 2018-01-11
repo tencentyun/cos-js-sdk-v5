@@ -97,6 +97,7 @@ function getObjectUrl() {
         Region: config.Region,
         Key: '1mb.zip',
         Expires: 60,
+        Sign: true,
     }, function (err, data) {
         console.log(err || data);
     });
@@ -380,7 +381,7 @@ function deleteBucketReplication() {
 function deleteBucket() {
     cos.deleteBucket({
         Bucket: 'testnew',
-        Region: config.Region
+        Region: 'ap-guangzhou'
     }, function (err, data) {
         console.log(err || data);
     });
