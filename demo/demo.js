@@ -342,7 +342,7 @@ function getBucketVersioning() {
 function putBucketReplication() {
     var AppId = config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1);
     cos.putBucketReplication({
-        Bucket: config.Bucket,
+        Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
         ReplicationConfiguration: {
             Role: "qcs::cam::uin/459000000:uin/459000000",
@@ -351,7 +351,7 @@ function putBucketReplication() {
                 Status: "Enabled",
                 Prefix: "img/",
                 Destination: {
-                    Bucket: "qcs::cos:" + config.Region + "::tianjin-" + AppId
+                    Bucket: "qcs::cos:ap-guangzhou::test-" + AppId
                 },
             }]
         }
@@ -380,7 +380,7 @@ function deleteBucketReplication() {
 
 function deleteBucket() {
     cos.deleteBucket({
-        Bucket: 'testnew',
+        Bucket: 'testnew-' + config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1),
         Region: 'ap-guangzhou'
     }, function (err, data) {
         console.log(err || data);
