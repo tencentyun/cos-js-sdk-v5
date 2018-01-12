@@ -77,6 +77,7 @@ var initTask = function (cos) {
 
     var killTask = function (id, switchToState) {
         var task = tasks[id];
+        if (!task) return;
         var waiting = task && task.state === 'waiting';
         var running = task && (task.state === 'checking' || task.state === 'uploading');
         if (switchToState === 'canceled' && task.state !== 'canceled' ||

@@ -1,5 +1,5 @@
 var config = {
-    Bucket: 'test-1251902136',
+    Bucket: 'test-1250000000',
     Region: 'ap-guangzhou'
 };
 
@@ -62,7 +62,7 @@ var cos = new COS({
     ProgressInterval: 1,  // 控制 onProgress 回调的间隔
 });
 
-var AppId;
+var AppId = config.AppId;
 var Bucket = config.Bucket;
 var BucketShortName = Bucket;
 var BucketLongName = Bucket + '-' + AppId;

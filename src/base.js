@@ -20,7 +20,6 @@ function headBucket(params, callback) {
     submitRequest.call(this, {
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         method: 'HEAD',
     }, function (err, data) {
         var exist, auth, statusCode;
@@ -79,7 +78,6 @@ function getBucket(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         qs: reqParams,
     }, function (err, data) {
         if (err) {
@@ -118,7 +116,6 @@ function deleteBucket(params, callback) {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
     }, function (err, data) {
         if (err && err.statusCode === 204) {
             return callback(null, {statusCode: err.statusCode});
@@ -147,7 +144,6 @@ function getBucketAcl(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?acl',
     }, function (err, data) {
         if (err) {
@@ -210,7 +206,6 @@ function putBucketAcl(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?acl',
         headers: headers,
         body: xml,
@@ -240,7 +235,6 @@ function getBucketCors(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?cors',
     }, function (err, data) {
         if (err) {
@@ -311,7 +305,6 @@ function putBucketCors(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         body: xml,
         action: '/?cors',
         headers: headers,
@@ -340,7 +333,6 @@ function deleteBucketCors(params, callback) {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?cors',
     }, function (err, data) {
         if (err && err.statusCode === 204) {
@@ -376,7 +368,6 @@ function putBucketPolicy(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?policy',
         body: util.isBrowser ? PolicyStr : Policy,
         headers: headers,
@@ -408,7 +399,6 @@ function getBucketLocation(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?location',
     }, function (err, data) {
         if (err) {
@@ -432,7 +422,6 @@ function getBucketPolicy(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?policy',
         rawBody: true,
     }, function (err, data) {
@@ -475,7 +464,6 @@ function getBucketTagging(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?tagging',
     }, function (err, data) {
         if (err) {
@@ -530,7 +518,6 @@ function putBucketTagging(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         body: xml,
         action: '/?tagging',
         headers: headers,
@@ -562,7 +549,6 @@ function deleteBucketTagging(params, callback) {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?tagging',
     }, function (err, data) {
         if (err && err.statusCode === 204) {
@@ -592,7 +578,6 @@ function putBucketLifecycle(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         body: xml,
         action: '/?lifecycle',
         headers: headers,
@@ -614,7 +599,6 @@ function getBucketLifecycle(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?lifecycle',
     }, function (err, data) {
         if (err) {
@@ -649,7 +633,6 @@ function deleteBucketLifecycle(params, callback) {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?lifecycle',
     }, function (err, data) {
         if (err && err.statusCode === 204) {
@@ -677,7 +660,6 @@ function putBucketVersioning(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         body: xml,
         action: '/?versioning',
         headers: headers,
@@ -699,7 +681,6 @@ function getBucketVersioning(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?versioning',
     }, function (err, data) {
         if (!err) {
@@ -725,7 +706,6 @@ function putBucketReplication(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         body: xml,
         action: '/?replication',
         headers: headers,
@@ -747,7 +727,6 @@ function getBucketReplication(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?replication',
     }, function (err, data) {
         if (err) {
@@ -775,7 +754,6 @@ function deleteBucketReplication(params, callback) {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?replication',
     }, function (err, data) {
         if (err && err.statusCode === 204) {
@@ -812,7 +790,6 @@ function headObject(params, callback) {
         method: 'HEAD',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         headers: headers,
     }, function (err, data) {
@@ -878,7 +855,6 @@ function getObject(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         headers: headers,
         qs: reqParams,
@@ -958,7 +934,9 @@ function putObject(params, callback) {
     var Body = params.Body;
     var readStream;
 
-    if (util.isBrowser && (typeof Body === 'string' || Body instanceof global.Blob || Body instanceof global.File)) { // 在浏览器传入 String、Blob 或者 File 文件内容
+    if (util.isBrowser && Body && (Body instanceof global.Blob || Body instanceof global.File)) { // 在浏览器允许传入 Blob 或者 File 文件内容
+        headers['Content-Length'] = Body.size;
+    } else if (util.isBrowser && Body && typeof Body === 'string') { // 在浏览器允许传入字符串作为内容 'hello'
         headers['Content-Length'] = Body.length;
     } else if (Body && Body instanceof Buffer) { // 传入 fs.readFileSync(filepath) 或者 文件内容
         headers['Content-Length'] = Body.length;
@@ -969,13 +947,10 @@ function putObject(params, callback) {
             callback({error: 'lack of param ContentLength'});
             return;
         }
-    } else if (Body && typeof Body === 'string' && util.isBrowser) { // 在浏览器允许传入字符串作为内容 'hello'
-        headers['Content-Length'] = Body.length;
     } else {
         callback({error: 'params body format error, Only allow Buffer, Stream, Blob.'});
         return;
     }
-
     var onProgress = util.throttleOnProgress.call(self, headers['Content-Length'], params.onProgress);
 
     submitRequest.call(this, {
@@ -983,7 +958,6 @@ function putObject(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         headers: headers,
         body: Body,
@@ -998,7 +972,6 @@ function putObject(params, callback) {
                 domain: self.options.Domain,
                 bucket: params.Bucket,
                 region: params.Region,
-                appId: params.AppId,
                 object: params.Key,
             });
             return callback(null, {
@@ -1027,7 +1000,6 @@ function deleteObject(params, callback) {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
     }, function (err, data) {
         if (err) {
@@ -1064,7 +1036,6 @@ function getObjectAcl(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         action: '?acl',
     }, function (err, data) {
@@ -1123,7 +1094,6 @@ function putObjectAcl(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         action: '?acl',
         headers: headers,
@@ -1160,7 +1130,6 @@ function optionsObject(params, callback) {
         method: 'OPTIONS',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         headers: headers,
     }, function (err, data) {
@@ -1245,7 +1214,6 @@ function putObjectCopy(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         headers: headers,
     }, function (err, data) {
@@ -1277,7 +1245,6 @@ function uploadPartCopy(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         action: action,
         headers: headers,
@@ -1318,7 +1285,6 @@ function deleteMultipleObject(params, callback) {
         method: 'POST',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         body: xml,
         action: '/?delete',
         headers: headers,
@@ -1393,7 +1359,6 @@ function multipartInit(params, callback) {
         method: 'POST',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         action: '?uploads',
         headers: headers,
@@ -1442,7 +1407,6 @@ function multipartUpload(params, callback) {
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         action: action,
         headers: headers,
@@ -1510,7 +1474,6 @@ function multipartComplete(params, callback) {
         method: 'POST',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         action: action,
         body: xml,
@@ -1523,7 +1486,6 @@ function multipartComplete(params, callback) {
             domain: self.options.Domain,
             bucket: params.Bucket,
             region: params.Region,
-            appId: params.AppId,
             object: params.Key,
             isLocation: true,
         });
@@ -1570,7 +1532,6 @@ function multipartList(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         action: '/?uploads&' + queryString.stringify(reqParams),
     }, function (err, data) {
         if (err) {
@@ -1625,7 +1586,6 @@ function multipartListPart(params, callback) {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         qs: reqParams,
     }, function (err, data) {
@@ -1664,7 +1624,6 @@ function multipartAbort(params, callback) {
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
-        AppId: params.AppId,
         Key: params.Key,
         qs: reqParams,
     }, function (err, data) {
@@ -1714,7 +1673,6 @@ function getObjectUrl(params, callback) {
         domain: self.options.Domain,
         bucket: params.Bucket,
         region: params.Region,
-        appId: params.AppId || self.options.AppId || '',
         object: params.Key,
     });
     if (params.Sign !== undefined && !params.Sign) {
@@ -1791,12 +1749,13 @@ function decodeAcl(AccessControlPolicy) {
 
 // 生成操作 url
 function getUrl(params) {
+    var longBucket = params.bucket;
+    var shortBucket = longBucket.substr(0, longBucket.lastIndexOf('-'));
+    var appId = longBucket.substr(longBucket.lastIndexOf('-') + 1);
     var domain = params.domain;
-    var bucket = params.bucket;
     var region = params.region;
     var object = params.object;
     var action = params.action;
-    var appId = params.appId;
     var protocol = util.isBrowser && location.protocol === 'https:' ? 'https:' : 'http:';
     if (!domain) {
         if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
@@ -1806,7 +1765,7 @@ function getUrl(params) {
         }
     }
     domain = domain.replace(/\{\{AppId\}\}/ig, appId)
-        .replace(/\{\{Bucket\}\}/ig, bucket)
+        .replace(/\{\{Bucket\}\}/ig, shortBucket)
         .replace(/\{\{Region\}\}/ig, region)
         .replace(/\{\{.*?\}\}/ig, '');
     if (!/^[a-zA-Z]+:\/\//.test(domain)) {
@@ -1845,10 +1804,8 @@ function getAuthorizationAsync(params, callback) {
         });
     } else if (self.options.getSTS) { // 外部获取临时密钥
         var Bucket = params.Bucket || '';
-        var AppId = params.AppId || self.options.AppId || '';
-        var StsBucket = Bucket ? Bucket + '-' + AppId : '';
         self._StsMap = self._StsMap || {};
-        var StsData = self._StsMap[StsBucket] || {};
+        var StsData = self._StsMap[Bucket] || {};
         var runTemp = function () {
             var Authorization = util.getAuth({
                 SecretId: StsData.SecretId,
@@ -1869,9 +1826,9 @@ function getAuthorizationAsync(params, callback) {
             runTemp();
         } else { // 如果有效时间小于 60 秒就重新获取临时密钥
             self.options.getSTS.call(self, {
-                Bucket: StsBucket
+                Bucket: Bucket
             }, function (data) {
-                StsData = self._StsMap[StsBucket] = data || {};
+                StsData = self._StsMap[Bucket] = data || {};
                 runTemp();
             });
         }
@@ -1926,7 +1883,6 @@ function _submitRequest(params, callback) {
             region: region,
             object: object,
             action: action,
-            appId: params.AppId || self.options.AppId,
         }),
         method: method,
         headers: headers || {},
@@ -1949,7 +1905,7 @@ function _submitRequest(params, callback) {
 
     // progress
     if (params.onProgress && typeof params.onProgress === 'function') {
-        var contentLength = body && body.size || 0;
+        var contentLength = body && (body.size || body.length) || 0;
         opt.onProgress = function (e) {
             if (TaskId && !self._isRunningTask(TaskId)) return;
             var loaded = e ? e.loaded : 0;

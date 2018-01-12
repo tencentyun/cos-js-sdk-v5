@@ -237,7 +237,7 @@ var apiWrapper = function (apiName, apiFn) {
     };
     return function (params, callback) {
         callback = callback || function () {
-            };
+        };
         if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
             // 判断参数是否完整
             if (!checkParams(apiName, params)) {
@@ -255,19 +255,20 @@ var apiWrapper = function (apiName, apiFn) {
                 return;
             }
             // 兼容不带 AppId 的 Bucket
-            var appId, m, bucket = params.Bucket;
-            if (bucket) {
-                if (m = bucket.match(/^(.+)-(\d+)$/)) {
-                    appId = m[2];
-                    bucket = m[1];
-                    params.AppId = appId;
-                    params.Bucket = bucket;
-                } else if (!params.AppId) {
-                    if (this.options.AppId) {
-                        params.AppId = this.options.AppId;
+            if (params.Bucket) {
+                if (!/^(.+)-(\d+)$/.test(params.Bucket)) {
+                    if (params.AppId) {
+                        params.Bucket = params.Bucket + '-' + params.AppId;
+                    } else if (this.options.AppId) {
+                        params.Bucket = params.Bucket + '-' + this.options.AppId;
                     } else {
                         callback({error: 'Bucket should format as "test-1250000000".'});
+                        return;
                     }
+                }
+                if (params.AppId) {
+                    console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g Bucket:"test-1250000000" ).');
+                    delete params.AppId;
                 }
             }
             // 兼容带有斜杠开头的 Key
@@ -349,9 +350,9 @@ var util = {
     filter: filter,
     clone: clone,
     uuid: uuid,
-    fileSlice: fileSlice,
     throttleOnProgress: throttleOnProgress,
-    isBrowser: !!global.document
+    isBrowser: !!global.document,
+    fileSlice: fileSlice,
 };
 
 

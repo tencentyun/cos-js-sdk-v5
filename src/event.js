@@ -6,7 +6,7 @@ var initEvent = function (cos) {
     };
     cos.on = function (action, callback) {
         if (action === 'task-list-update') {
-            console.warn('Event "' + action + '" has been deprecated. Please use "list-update" instead.');
+            console.warn('warning: Event "' + action + '" has been deprecated. Please use "list-update" instead.');
         }
         getList(action).push(callback);
     };
