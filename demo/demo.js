@@ -390,7 +390,7 @@ function deleteBucket() {
 function putObject() {
     // 创建测试文件
     var filename = '1mb.zip';
-    var blob = util.createFile({size: 1024 * 1024 * 10});
+    var blob = util.createFile({size: 1024 * 1024 * 1});
     // 调用方法
     cos.putObject({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
@@ -544,7 +544,7 @@ function selectFileToUpload() {
     input.onchange = function (e) {
         var file = this.files[0]
         if (file) {
-            if (file.size > 1024 * 1024) {
+            if (file.size > 0) {
                 cos.sliceUploadFile({
                     Bucket: config.Bucket, // Bucket 格式：test-1250000000
                     Region: config.Region,
