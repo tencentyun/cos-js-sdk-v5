@@ -544,7 +544,7 @@ function selectFileToUpload() {
     input.onchange = function (e) {
         var file = this.files[0]
         if (file) {
-            if (file.size > 0) {
+            if (file.size > 1024 * 1024) {
                 cos.sliceUploadFile({
                     Bucket: config.Bucket, // Bucket 格式：test-1250000000
                     Region: config.Region,
