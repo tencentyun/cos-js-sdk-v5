@@ -39,7 +39,7 @@
             var method = (options.Method || 'get').toLowerCase();
             var key = options.Key || '';
             var pathname = key.indexOf('/') === 0 ? key : '/' + key;
-            var url = '../server/key.php?method=' + method + '&pathname=' + encodeURIComponent(pathname);
+            var url = '../server/sts.php?method=' + method + '&pathname=' + encodeURIComponent(pathname);
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.onreadystatechange = function (e) {
