@@ -4,7 +4,7 @@
 
 [releases and changelog](https://github.com/tencentyun/cos-js-sdk-v5/releases)
 
-## get started
+## Get started
 
 ### 一、前期准备
 
