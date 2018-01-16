@@ -99,7 +99,7 @@ function sliceUploadFile(params, callback) {
 
     // 控制分片大小
     (function () {
-        var SIZE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1024 * 2, 1024 * 4, 1024 * 8, 1024 * 10];
+        var SIZE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1024 * 2, 1024 * 4, 1024 * 5];
         var AutoChunkSize = 1024 * 1024;
         for (var i = 0; i < SIZE.length; i++) {
             AutoChunkSize = SIZE[i] * 1024 * 1024;
