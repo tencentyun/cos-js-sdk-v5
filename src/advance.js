@@ -10,7 +10,7 @@ function sliceUploadFile(params, callback) {
     var Region = params.Region;
     var Key = params.Key;
     var Body = params.Body;
-    var SliceSize = params.SliceSize || this.options.ChunkSize;
+    var ChunkSize = params.ChunkSize || params.SliceSize || this.options.ChunkSize;
     var AsyncLimit = params.AsyncLimit;
     var StorageClass = params.StorageClass || 'Standard';
     var FileSize;
@@ -56,7 +56,7 @@ function sliceUploadFile(params, callback) {
             Key: Key,
             Body: Body,
             FileSize: FileSize,
-            SliceSize: SliceSize,
+            SliceSize: ChunkSize,
             AsyncLimit: AsyncLimit,
             UploadData: UploadData,
             onProgress: onProgress
@@ -81,7 +81,7 @@ function sliceUploadFile(params, callback) {
                 StorageClass: StorageClass,
                 Body: Body,
                 FileSize: FileSize,
-                SliceSize: SliceSize,
+                SliceSize: ChunkSize,
                 onHashProgress: onHashProgress,
             });
             getUploadIdAndPartList.call(self, _params, function (err, UploadData) {
@@ -96,6 +96,17 @@ function sliceUploadFile(params, callback) {
 
     // 获取上传文件大小
     FileSize = Body.size || params.ContentLength;
+
+    // 控制分片大小
+    (function () {
+        var SIZE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1024 * 2, 1024 * 4, 1024 * 8, 1024 * 10];
+        var AutoChunkSize = 1024 * 1024;
+        for (var i = 0; i < SIZE.length; i++) {
+            AutoChunkSize = SIZE[i] * 1024 * 1024;
+            if (FileSize / AutoChunkSize < 10000) break;
+        }
+        ChunkSize = Math.max(ChunkSize, AutoChunkSize);
+    })();
 
     if (FileSize === 0) {
         params.Body = '';
