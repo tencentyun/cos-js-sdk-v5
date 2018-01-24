@@ -152,7 +152,6 @@ function getTempKeys() {
     curl_setopt($ch, CURLOPT_HEADER, 0);
     curl_setopt($ch,CURLOPT_SSL_VERIFYPEER,0);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_PROXY, $proxy);
     $result = curl_exec($ch);
     if(curl_errno($ch)) $result = curl_error($ch);
     curl_close($ch);
