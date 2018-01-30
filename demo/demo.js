@@ -43,9 +43,18 @@ var getAuthorization = function (options, callback) {
 
 };
 
+var getSTS = function (params, callback) {
+    callback({
+        SecretId: 'xxx',
+        SecretKey: 'xxx',
+        XCosSecurityToken: 'xxx',
+    });
+};
+
 var cos = new COS({
     // 必选参数
     getAuthorization: getAuthorization,
+    // getSTS: getSTS,       // 支持使用临时密钥
     // 可选参数
     FileParallelLimit: 3,    // 控制文件上传并发数
     ChunkParallelLimit: 3,   // 控制单个文件下分片上传并发数
