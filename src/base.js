@@ -901,6 +901,7 @@ function getObject(params, callback) {
  *     @param  {String}  params.GrantRead                           赋予被授权者读的权限，格式 x-cos-grant-read: uin=" ",uin=" "，非必须
  *     @param  {String}  params.GrantWrite                          赋予被授权者写的权限，格式 x-cos-grant-write: uin=" ",uin=" "，非必须
  *     @param  {String}  params.GrantFullControl                    赋予被授权者读写权限，格式 x-cos-grant-full-control: uin=" ",uin=" "，非必须
+ *     @param  {String}  params.ServiceSideEncryption               支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
  *     @param  {Function}  params.onProgress                        上传进度回调函数
  * @param  {Function}  callback                                     回调函数，必须
  * @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。
@@ -924,6 +925,7 @@ function putObject(params, callback) {
     headers['x-cos-grant-write'] = params['GrantWrite'];
     headers['x-cos-grant-full-control'] = params['GrantFullControl'];
     headers['x-cos-storage-class'] = params['StorageClass'];
+    headers['x-cos-server-side-encryption'] = params['ServiceSideEncryption'];
 
     for (var key in params) {
         if (key.indexOf('x-cos-meta-') > -1) {
@@ -1180,6 +1182,7 @@ function optionsObject(params, callback) {
  *     @param  {String}  Expect                         请求的特定的服务器行为
  *     @param  {String}  Expires                        响应过期的日期和时间
  *     @param  {String}  ContentLanguage                指定内容语言
+ *     @param  {String}  params.ServiceSideEncryption   支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
  *     @param  {String}  x-cos-meta-*                   允许用户自定义的头部信息，将作为 Object 元数据返回。大小限制2K。
  */
 function putObjectCopy(params, callback) {
@@ -1203,6 +1206,7 @@ function putObjectCopy(params, callback) {
     headers['Content-Type'] = params['ContentType'];
     headers['Expect'] = params['Expect'];
     headers['Expires'] = params['Expires'];
+    headers['x-cos-server-side-encryption'] = params['ServiceSideEncryption'];
 
     for (var key in params) {
         if (key.indexOf('x-cos-meta-') > -1) {
@@ -1330,6 +1334,7 @@ function deleteMultipleObject(params, callback) {
  *     @param  {String}  params.GrantWrite                      赋予被授权者写的权限 ，非必须
  *     @param  {String}  params.GrantFullControl                赋予被授权者读写权限 ，非必须
  *     @param  {String}  params.StorageClass                    设置Object的存储级别，枚举值：Standard，Standard_IA，Nearline，非必须
+ *     @param  {String}  params.ServiceSideEncryption           支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
  * @param  {Function}  callback                                 回调函数，必须
  * @return  {Object}  err                                       请求失败的错误，如果请求成功，则为空。
  * @return  {Object}  data                                      返回的数据
@@ -1348,6 +1353,7 @@ function multipartInit(params, callback) {
     headers['x-cos-grant-write'] = params['GrantWrite'];
     headers['x-cos-grant-full-control'] = params['GrantFullControl'];
     headers['x-cos-storage-class'] = params['StorageClass'];
+    headers['x-cos-server-side-encryption'] = params['ServiceSideEncryption'];
 
     for (var key in params) {
         if (key.indexOf('x-cos-meta-') > -1) {
