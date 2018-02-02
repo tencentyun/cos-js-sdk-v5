@@ -20,7 +20,6 @@
   "homepage": "https://github.com/tencentyun/cos-js-sdk-v5#readme",
   "dependencies": {
     "babel-core": "^6.26.0",
-    "dev-server": "0.0.2",
     "querystring": "^0.2.0"
   },
   "devDependencies": {
