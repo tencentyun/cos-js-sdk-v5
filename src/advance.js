@@ -13,6 +13,7 @@ function sliceUploadFile(params, callback) {
     var ChunkSize = params.ChunkSize || params.SliceSize || this.options.ChunkSize;
     var AsyncLimit = params.AsyncLimit;
     var StorageClass = params.StorageClass || 'Standard';
+    var ServerSideEncryption = params.ServerSideEncryption;
     var FileSize;
     var self = this;
 
@@ -58,6 +59,7 @@ function sliceUploadFile(params, callback) {
             FileSize: FileSize,
             SliceSize: ChunkSize,
             AsyncLimit: AsyncLimit,
+	    ServerSideEncryption: ServerSideEncryption,
             UploadData: UploadData,
             onProgress: onProgress
         }, function (err, data) {
@@ -390,6 +392,7 @@ function uploadSliceList(params, cb) {
     var FileSize = params.FileSize;
     var SliceSize = params.SliceSize;
     var ChunkParallel = params.AsyncLimit || self.options.ChunkParallelLimit || 1;
+    var ServerSideEncryption = params.ServerSideEncryption;
     var Body = params.Body;
     var SliceCount = Math.ceil(FileSize / SliceSize);
     var FinishSize = 0;
@@ -415,6 +418,7 @@ function uploadSliceList(params, cb) {
             SliceSize: SliceSize,
             FileSize: FileSize,
             PartNumber: PartNumber,
+	    ServerSideEncryption: ServerSideEncryption,
             Body: Body,
             UploadData: UploadData,
             onProgress: function (data) {
@@ -460,6 +464,7 @@ function uploadSliceItem(params, callback) {
     var PartNumber = params.PartNumber * 1;
     var SliceSize = params.SliceSize;
     var UploadData = params.UploadData;
+    var ServerSideEncryption = params.ServerSideEncryption;
     var sliceRetryTimes = 3;
     var self = this;
 
@@ -488,6 +493,7 @@ function uploadSliceItem(params, callback) {
             ContentSha1: ContentSha1,
             PartNumber: PartNumber,
             UploadId: UploadData.UploadId,
+	    ServerSideEncryption: ServerSideEncryption,
             Body: Body,
             onProgress: params.onProgress
         }, function (err, data) {
