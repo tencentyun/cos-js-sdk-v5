@@ -59,7 +59,7 @@ function sliceUploadFile(params, callback) {
             FileSize: FileSize,
             SliceSize: ChunkSize,
             AsyncLimit: AsyncLimit,
-	    ServerSideEncryption: ServerSideEncryption,
+            ServerSideEncryption: ServerSideEncryption,
             UploadData: UploadData,
             onProgress: onProgress
         }, function (err, data) {

@@ -612,7 +612,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.3.9';
+COS.version = '0.3.10';
 
 module.exports = COS;
 
@@ -2547,7 +2547,7 @@ function putObject(params, callback) {
     if (util.isBrowser && Body && (Body instanceof global.Blob || Body instanceof global.File)) {
         // 在浏览器允许传入 Blob 或者 File 文件内容
         headers['Content-Length'] = Body.size;
-    } else if (util.isBrowser && Body && typeof Body === 'string') {
+    } else if (util.isBrowser && typeof Body === 'string') {
         // 在浏览器允许传入字符串作为内容 'hello'
         headers['Content-Length'] = Body.length;
     } else if (Body && typeof Body.pipe === 'function') {
@@ -3318,7 +3318,7 @@ function getUrl(params) {
     var region = params.region;
     var object = params.object;
     var action = params.action;
-    var protocol = util.isBrowser && location.protocol === 'https:' ? 'https:' : 'http:';
+    var protocol = util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:';
     if (!domain) {
         if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
             domain = '{{Bucket}}-{{AppId}}.{{Region}}.myqcloud.com';
