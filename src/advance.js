@@ -80,6 +80,7 @@ function sliceUploadFile(params, callback) {
                 Bucket: Bucket,
                 Region: Region,
                 Key: Key,
+                Headers: params.Headers,
                 StorageClass: StorageClass,
                 Body: Body,
                 FileSize: FileSize,
@@ -208,7 +209,7 @@ function getUploadIdAndPartList(params, callback) {
         return callback(errData);
     });
 
-    // 不存在 UploadId
+    // 存在 UploadId
     ep.on('upload_id_ready', function (UploadData) {
         // 转换成 map
         var map = {};
@@ -242,6 +243,7 @@ function getUploadIdAndPartList(params, callback) {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
+            Headers: params.Headers,
             StorageClass: StorageClass,
         });
         self.multipartInit(_params, function (err, data) {
@@ -392,10 +394,10 @@ function uploadSliceList(params, cb) {
     var FileSize = params.FileSize;
     var SliceSize = params.SliceSize;
     var ChunkParallel = params.AsyncLimit || self.options.ChunkParallelLimit || 1;
-    var ServerSideEncryption = params.ServerSideEncryption;
     var Body = params.Body;
     var SliceCount = Math.ceil(FileSize / SliceSize);
     var FinishSize = 0;
+    var ServerSideEncryption = params.ServerSideEncryption;
     var needUploadSlices = util.filter(UploadData.PartList, function (SliceItem) {
         if (SliceItem['Uploaded']) {
             FinishSize += SliceItem['PartNumber'] >= SliceCount ? (FileSize % SliceSize || SliceSize) : SliceSize;
@@ -418,7 +420,7 @@ function uploadSliceList(params, cb) {
             SliceSize: SliceSize,
             FileSize: FileSize,
             PartNumber: PartNumber,
-	    ServerSideEncryption: ServerSideEncryption,
+            ServerSideEncryption: ServerSideEncryption,
             Body: Body,
             UploadData: UploadData,
             onProgress: function (data) {
@@ -463,8 +465,8 @@ function uploadSliceItem(params, callback) {
     var FileBody = params.Body;
     var PartNumber = params.PartNumber * 1;
     var SliceSize = params.SliceSize;
-    var UploadData = params.UploadData;
     var ServerSideEncryption = params.ServerSideEncryption;
+    var UploadData = params.UploadData;
     var sliceRetryTimes = 3;
     var self = this;
 
@@ -493,7 +495,7 @@ function uploadSliceItem(params, callback) {
             ContentSha1: ContentSha1,
             PartNumber: PartNumber,
             UploadId: UploadData.UploadId,
-	    ServerSideEncryption: ServerSideEncryption,
+            ServerSideEncryption: ServerSideEncryption,
             Body: Body,
             onProgress: params.onProgress
         }, function (err, data) {
@@ -569,6 +571,7 @@ function abortUploadTask(params, callback) {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
+            Headers: params.Headers,
             AsyncLimit: AsyncLimit,
             AbortArray: AbortArray
         }, function (err, data) {
@@ -641,6 +644,7 @@ function abortUploadTaskArray(params, callback) {
             Bucket: Bucket,
             Region: Region,
             Key: AbortItem.Key,
+            Headers: params.Headers,
             UploadId: UploadId
         }, function (err, data) {
             var task = {

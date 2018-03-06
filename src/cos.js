@@ -22,7 +22,7 @@ var defaultOptions = {
 // 对外暴露的类
 var COS = function (options) {
     this.options = util.extend(util.clone(defaultOptions), options || {});
-    if (options.AppId) {
+    if (this.options.AppId) {
         console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").');
     }
     event.init(this);
@@ -33,6 +33,6 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.3.7';
+COS.version = '0.3.9';
 
 module.exports = COS;

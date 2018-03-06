@@ -138,19 +138,37 @@ function putBucketAcl() {
         // GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
         // GrantWrite: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
         // GrantRead: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
+        // GrantReadAcp: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
+        // GrantWriteAcp: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
         // ACL: 'public-read-write',
         // ACL: 'public-read',
         ACL: 'private',
         // AccessControlPolicy: {
-        //     "Owner": { // AccessControlPolicy 里必须有 owner
-        //         "ID": 'qcs::cam::uin/10001:uin/10001' // 10001 是 Bucket 所属用户的 QQ 号
+        // "Owner": { // AccessControlPolicy 里必须有 owner
+        //     "ID": 'qcs::cam::uin/459000000:uin/459000000' // 459000000 是 Bucket 所属用户的 QQ 号
+        // },
+        // "Grants": [{
+        //     "Grantee": {
+        //         "ID": "qcs::cam::uin/1001:uin/1001", // 10002 是 QQ 号
+        //         "DisplayName": "qcs::cam::uin/1001:uin/1001" // 10002 是 QQ 号
         //     },
-        //     "Grants": [{
-        //         "Grantee": {
-        //             "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 QQ 号
-        //         },
-        //         "Permission": "READ"
-        //     }]
+        //     "Permission": "READ"
+        // }, {
+        //     "Grantee": {
+        //         "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 QQ 号
+        //     },
+        //     "Permission": "WRITE"
+        // }, {
+        //     "Grantee": {
+        //         "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 QQ 号
+        //     },
+        //     "Permission": "READ_ACP"
+        // }, {
+        //     "Grantee": {
+        //         "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 QQ 号
+        //     },
+        //     "Permission": "WRITE_ACP"
+        // }]
         // }
     }, function (err, data) {
         console.log(err || data);
@@ -175,7 +193,7 @@ function putBucketCors() {
                 "AllowedOrigin": ["*"],
                 "AllowedMethod": ["GET", "POST", "PUT", "DELETE", "HEAD"],
                 "AllowedHeader": ["*"],
-                "ExposeHeader": ["ETag"],
+                "ExposeHeader": ["ETag", "x-cos-acl", "x-cos-version-id", "x-cos-delete-marker", "x-cos-server-side-encryption"],
                 "MaxAgeSeconds": "5"
             }]
         }
@@ -348,6 +366,16 @@ function getBucketVersioning() {
     });
 }
 
+function listObjectVersions() {
+    cos.listObjectVersions({
+        Bucket: config.Bucket, // Bucket 格式：test-1250000000
+        Region: config.Region,
+        Prefix: "1mb.zip"
+    }, function (err, data) {
+        console.log(err || JSON.stringify(data.Versions, null, '    '));
+    });
+}
+
 function putBucketReplication() {
     var AppId = config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1);
     cos.putBucketReplication({
@@ -432,7 +460,7 @@ function getObject() {
     cos.getObject({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
-        Key: './1mb.zip',
+        Key: '1mb.zip',
     }, function (err, data) {
         console.log(err || data);
     });
@@ -504,6 +532,22 @@ function deleteMultipleObject() {
             {Key: '1mb.zip'},
             {Key: '3mb.zip'},
         ]
+    }, function (err, data) {
+        console.log(err || data);
+    });
+}
+
+function restoreObject() {
+    cos.restoreObject({
+        Bucket: config.Bucket, // Bucket 格式：test-1250000000
+        Region: config.Region,
+        Key: '1.txt',
+        RestoreRequest: {
+            Days: 1,
+            CASJobParameters: {
+                Tier: 'Expedited'
+            }
+        }
     }, function (err, data) {
         console.log(err || data);
     });
@@ -641,45 +685,6 @@ function uploadFiles() {
     });
 }
 
-// uploadFiles();
-// getAuth();
-// getObjectUrl();
-// getBucket();
-// headBucket();
-// putBucketAcl();
-// getBucketAcl();
-// putBucketCors();
-// getBucketCors();
-// deleteBucketCors();
-// putBucketTagging();
-// getBucketTagging();
-// deleteBucketTagging();
-// putBucketPolicy();
-// getBucketPolicy();
-// getBucketLocation();
-// getBucketLifecycle();
-// putBucketLifecycle();
-// deleteBucketLifecycle();
-// getBucketVersioning();
-// putBucketVersioning();
-// getBucketReplication();
-// putBucketReplication();
-// deleteBucket();
-// putObject();
-// putObjectCopy();
-// getObject();
-// headObject();
-// putObjectAcl();
-// getObjectAcl();
-// deleteObject();
-// deleteMultipleObject();
-// abortUploadTask();
-// sliceUploadFile();
-// cancelTask();
-// pauseTask();
-// restartTask();
-// uploadFiles();
-
 
 (function () {
     var list = [
@@ -718,6 +723,7 @@ function uploadFiles() {
         'getObjectAcl',
         'deleteObject',
         'deleteMultipleObject',
+        'restoreObject',
         'abortUploadTask',
         'sliceUploadFile',
         'selectFileToUpload',

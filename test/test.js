@@ -381,7 +381,7 @@ it('headBucket()', function (assert) {
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: config.Region
         }, function (err, data) {
-            assert.ok(data.BucketExist, '正常获取 head bucket');
+            assert.ok(data, '正常获取 head bucket');
             done();
         });
     });
