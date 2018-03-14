@@ -17,6 +17,7 @@ var defaultOptions = {
     Domain: '',
     ServiceDomain: '',
     SliceSize: 1024 * 1024 * 20,
+    Protocol: '',
 };
 
 // 对外暴露的类
