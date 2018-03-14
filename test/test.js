@@ -1398,7 +1398,7 @@ it('params check', function (assert) {
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: 'gz'
         }, function (err, data) {
-            assert.ok(err.error === 'Region should be ap-guangzhou');
+            assert.ok(err.error.indexOf('Region format error') === 0);
             done();
         });
     });
