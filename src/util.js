@@ -237,6 +237,9 @@ var apiWrapper = function (apiName, apiFn) {
             params = {};
         }
 
+        // 复制参数对象
+        params = extend({}, params);
+
         // 统一处理 Headers
         var Headers = params.Headers || {};
         if (params && typeof params === 'object') {
@@ -278,7 +281,7 @@ var apiWrapper = function (apiName, apiFn) {
             Headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
             Headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
             Headers['x-cos-storage-class'] = params['StorageClass'];
-            params.Headers = Headers;
+            params.Headers = clearKey(Headers);
         }
 
         // 代理回调函数
