@@ -91,7 +91,7 @@
                 document.getElementById('msg').innerText = '未选择上传文件';
                 return;
             }
-            Key = filePath.match(/[\\\/]?([^\\\/]+)$/)[1];
+            Key = 'dir/' + filePath.match(/[\\\/]?([^\\\/]+)$/)[1]; // 这里指定上传路径
             getAuthorization({Method: 'POST', Key: '/'}, function (err, auth) {
                 // 在当前目录下放一个空的 empty.html 以便让接口上传完成跳转回来
                 document.getElementById('success_action_redirect').value = location.href.substr(0, location.href.lastIndexOf('/') + 1) + 'empty.html';
