@@ -80,7 +80,7 @@
 
         // 上传文件
         var uploadFile = function (file, callback) {
-            var Key = file.name;
+            var Key = 'dir/' + file.name; // 这里指定上传路径
 
             getAuthorization({Method: 'POST', Key: ''}, function (err, info) {
                 var auth = info.Authorization;
