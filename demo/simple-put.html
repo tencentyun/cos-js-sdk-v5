@@ -61,7 +61,7 @@
 
         // 上传文件
         var uploadFile = function (file, callback) {
-            var Key = file.name;
+            var Key = 'dir/' + file.name; // 这里指定目录
             getAuthorization({Method: 'PUT', Key: Key}, function (err, auth) {
                 var url = prefix + Key;
                 var xhr = new XMLHttpRequest();
