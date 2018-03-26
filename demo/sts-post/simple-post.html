@@ -34,57 +34,57 @@
 
         // 计算签名
         var getAuthorization = function (options, callback) {
-            // 方法一（适用于前端调试）
             var method = (options.Method || 'get').toLowerCase();
             var key = options.Key || '';
-            var pathname = key.indexOf('/') === 0 ? key : '/' + key;
-            var url = '../server/auth.php?method=' + method + '&pathname=' + encodeURIComponent(pathname);
+            var url = './sts-post-object.php' +
+                '?method=' + method +
+                '&pathname=' + encodeURIComponent('/') +
+                '&key=' + encodeURIComponent(key);
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.onload = function (e) {
-                callback(null, e.target.responseText);
+                var data = JSON.parse(e.target.responseText);
+                callback(null, {
+                    Authorization: data.authorization,
+                    XCosSecurityToken: data.credentials.sessionToken,
+                });
             };
             xhr.onerror = function (e) {
                 callback('获取签名出错');
             };
             xhr.send();
-
-            // // 方法二（适用于前端调试），需要引入../dist/cos-js-sdk-v5.min.js
-            // var authorization = COS.getAuthorization({
-            //     SecretId: SecretId,
-            //     SecretKey: SecretKey,
-            //     Method: options.Method,
-            //     Key: options.Key,
-            // });
-            // callback(null, authorization);
         };
 
         // 上传文件
         var uploadFile = function (file, callback) {
             var Key = file.name;
 
-            getAuthorization({Method: 'POST', Key: ''}, function (err, auth) {
+            getAuthorization({Method: 'POST', Key: Key}, function (err, info) {
+                var auth = info.Authorization;
+                var XCosSecurityToken = info.XCosSecurityToken;
+
                 var fd = new FormData();
                 fd.append('key', Key);
                 fd.append('Signature', auth);
-                fd.append('success_action_status', '200');
+                XCosSecurityToken && fd.append('x-cos-security-token', XCosSecurityToken);
                 fd.append('file', file);
-
                 var url = prefix;
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', url, true);
                 xhr.onload = function () {
-                    if (xhr.status === 200 || xhr.status === 206) {
+                    if (Math.floor(xhr.status / 100) === 2) {
                         var ETag = xhr.getResponseHeader('etag');
                         callback(null, {url: url, ETag: ETag});
                     } else {
                         callback('文件 ' + Key + ' 上传失败，状态码：' + xhr.status);
                     }
+
                 };
                 xhr.onerror = function () {
                     callback('文件 ' + Key + ' 上传失败，请检查是否没配置 CORS 跨域规则');
                 };
                 xhr.send(fd);
+
             });
         };
 

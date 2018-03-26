@@ -26,76 +26,56 @@
 <script>
     (function () {
         // 请求用到的参数
-        var Bucket = 'test-125000000';
+        var Bucket = 'test-1250000000';
         var Region = 'ap-guangzhou';
         var protocol = location.protocol === 'https:' ? 'https:' : 'http:';
         var prefix = protocol + '//' + Bucket + '.cos.' + Region + '.myqcloud.com/';
 
         // 计算签名
         var getAuthorization = function (options, callback) {
-            // 方法一（适用于前端调试）
             var method = (options.Method || 'get').toLowerCase();
             var key = options.Key || '';
-            var pathname = key.indexOf('/') === 0 ? key : '/' + key;
-            var url = '../server/sts.php?method=' + method + '&pathname=' + encodeURIComponent(pathname);
+            // var url = 'http://127.0.0.1:3000/sts-post-object' +
+                var url = '../server/sts-post-object.php' +
+                '?method=' + method +
+                '&pathname=' + encodeURIComponent('/') +
+                '&key=' + encodeURIComponent(key);
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.onload = function (e) {
                 var data = JSON.parse(e.target.responseText);
+                if (data.authorization === '') {
+
+                }
                 callback(null, {
                     Authorization: data.authorization,
-                    XCosSecurityToken: data.credentials.sessionToken,
+                    XCosSecurityToken: data.sessionToken,
                 });
             };
             xhr.onerror = function (e) {
                 callback('获取签名出错');
             };
             xhr.send();
-
-            // // 方法二（适用于前端调试）
-            // var method = (options.Method || 'get').toLowerCase();
-            // var key = options.Key || '';
-            // var pathname = key.indexOf('/') === 0 ? key : '/' + key;
-            // var url = '../server/key.php?method=' + method + '&pathname=' + encodeURIComponent(pathname);
-            // var xhr = new XMLHttpRequest();
-            // xhr.open('GET', url, true);
-            // xhr.onload = function (e) {
-            //     var data = JSON.parse(e.target.responseText);
-            //     var authorization = COS.getAuthorization({
-            //         SecretId: data.credentials.tmpSecretId,
-            //         SecretKey: data.credentials.tmpSecretKey,
-            //         Method: options.Method,
-            //         Key: options.Key,
-            //     });
-            //     callback(null, {
-            //         Authorization: authorization,
-            //         XCosSecurityToken: data.credentials.sessionToken,
-            //     });
-            // };
-            // xhr.onerror = function (e) {
-            //     callback('获取签名出错');
-            // };
-            // xhr.send();
         };
 
         // 上传文件
         var uploadFile = function (file, callback) {
-            var Key = file.name;
+            var Key = 'dir/' + file.name; // 这里指定上传目录和文件名
 
-            getAuthorization({Method: 'POST', Key: ''}, function (err, info) {
+            getAuthorization({Method: 'POST', Key: Key}, function (err, info) {
                 var auth = info.Authorization;
                 var XCosSecurityToken = info.XCosSecurityToken;
+
                 var fd = new FormData();
                 fd.append('key', Key);
                 fd.append('Signature', auth);
                 XCosSecurityToken && fd.append('x-cos-security-token', XCosSecurityToken);
                 fd.append('file', file);
-
                 var url = prefix;
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', url, true);
                 xhr.onload = function () {
-                    if (xhr.status === 200 || xhr.status === 206) {
+                    if (Math.floor(xhr.status / 100) === 2) {
                         var ETag = xhr.getResponseHeader('etag');
                         callback(null, {url: url, ETag: ETag});
                     } else {
@@ -106,6 +86,7 @@
                     callback('文件 ' + Key + ' 上传失败，请检查是否没配置 CORS 跨域规则');
                 };
                 xhr.send(fd);
+
             });
         };
 

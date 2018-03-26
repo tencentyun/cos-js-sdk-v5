@@ -1,7 +1,7 @@
 /**
  * nodejs 签名样例
  * 命令行启动服务: node auth.js
- * 浏览器访问: http://127.0.0.1:3333
+ * 浏览器访问: http://127.0.0.1:3000
  */
 
 var http = require('http');
@@ -20,13 +20,57 @@ function camSafeUrlEncode(str) {
         .replace(/\*/g, '%2A');
 }
 
-function getAuthorization (method, pathname) {
+function isActionAllow(method, pathname, query, headers) {
 
-    var queryParams = {};
-    var headers = {};
+    var allow = true;
+
+    // // TODO 这里判断自己网站的登录态
+    // if (!logined) {
+    //     allow = false;
+    //     return allow;
+    // }
+
+    // 请求可能带有点所有 action
+    // acl,cors,policy,location,tagging,lifecycle,versioning,replication,versions,delete,restore,uploads
+
+    // 请求跟路径，只允许获取 UploadId
+    if (pathname === '/' && !(method === 'get' && query['uploads'] !== undefined)) {
+        allow = false;
+    }
+
+    // 不允许前端获取和修改文件权限
+    if (pathname !== '/' && query['acl'] !== undefined) {
+        allow = false;
+    }
+
+    // 这里应该根据需要，限制当前站点的用户只允许操作什么样的路径
+    if (method === 'delete' && pathname !== '/') { // 这里控制是否允许删除文件
+        // TODO 这里控制是否允许删除文件
+    }
+    if (method === 'put' && pathname !== '/') { // 这里控制是否允许上传和修改文件
+        // TODO 这里控制是否允许上传和修改文件
+    }
+    if (method === 'get' && pathname !== '/') { // 这里控制是否获取文件和文件相关信息
+        // TODO 这里控制是否允许获取文件和文件相关信息
+    }
+
+    return allow;
+
+}
+
+function getAuthorization (method, pathname, query, headers) {
+
+    // 整理参数
+    !query && (query = {});
+    !headers && (headers = {});
     method = (method ? method : 'get').toLowerCase();
     pathname = pathname ? pathname : '/';
     pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
+
+    // 注意这里要过滤好允许什么样的操作
+    if (!isActionAllow(method, pathname, query, headers)) {
+        return 'action deny';
+    }
 
     // 工具方法
     var getObjectKeys = function (obj) {
@@ -62,14 +106,14 @@ function getAuthorization (method, pathname) {
     var qSignTime = now + ';' + expired;
     var qKeyTime = now + ';' + expired;
     var qHeaderList = getObjectKeys(headers).join(';').toLowerCase();
-    var qUrlParamList = getObjectKeys(queryParams).join(';').toLowerCase();
+    var qUrlParamList = getObjectKeys(query).join(';').toLowerCase();
 
     // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
     // 步骤一：计算 SignKey
     var signKey = crypto.createHmac('sha1', SecretKey).update(qKeyTime).digest('hex');
 
     // 步骤二：构成 FormatString
-    var formatString = [method.toLowerCase(), pathname, obj2str(queryParams), obj2str(headers), ''].join('\n');
+    var formatString = [method.toLowerCase(), pathname, obj2str(query), obj2str(headers), ''].join('\n');
 
     // 步骤三：计算 StringToSign
     var stringToSign = ['sha1', qSignTime, crypto.createHash('sha1').update(formatString).digest('hex'), ''].join('\n');
@@ -89,38 +133,47 @@ function getAuthorization (method, pathname) {
     ].join('&');
 
     return authorization;
-};
-
-function getParam(url, name) {
-    var query, params = {}, index = url.indexOf('?');
-    if (index >= 0) {
-        query = url.substr(index + 1).split('&');
-        query.forEach(function (v) {
-            var arr = v.split('=');
-            params[arr[0]] = arr[1];
-        });
-    }
-    return params[name];
 }
 
+function getBody(req, callback) {
+    var body = [];
+    req.on('data', function (chunk) {
+        body.push(chunk);
+    });
+    req.on('end', function () {
+        try {
+            body = Buffer.concat(body).toString();
+            body && console.log(body);
+            body = JSON.parse(body);
+        } catch (e) {
+            body = {};
+        }
+        callback(body);
+    });
+}
+
+
+// 启动简单的签名服务
 http.createServer(function(req, res){
-    if (req.url.substr(0, '/auth?'.indexOf('?')) === '/auth') {
-        var method = getParam(req.url, 'method');
-        var pathname = decodeURIComponent(getParam(req.url, 'pathname'));
-        var auth = getAuthorization(method, pathname);
-        console.log(method, pathname);
-        res.writeHead(200, {
-            'Content-Type': 'text/plain',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'OPTIONS,GET,POST',
-            'Access-Control-Allow-Headers': 'accept,content-type',
-            'Access-Control-Max-Age': 60
+    if (req.url.indexOf('/auth') === 0) {
+        // 获取前端过来的参数
+        getBody(req, function (body) {
+            // 计算签名
+            var auth = getAuthorization(body.method, body.pathname, body.query, body.headers);
+
+            // 返回数据给前端
+            res.writeHead(200, {
+                'Content-Type': 'text/plain',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'origin,accept,content-type',
+            });
+            res.write(auth || '');
+            res.end();
         });
-        res.write(auth || '');
-        res.end();
     } else {
-        res.writeHead(404, {'Content-Type': 'text/html'});
+        res.writeHead(404);
         res.write('404 Not Found');
         res.end();
     }
 }).listen(3000);
+console.log('app is listening at http://127.0.0.1:3000');

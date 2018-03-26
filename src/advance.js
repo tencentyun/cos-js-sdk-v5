@@ -74,8 +74,7 @@ function sliceUploadFile(params, callback) {
         if (params.UploadData.UploadId) {
             ep.emit('get_upload_data_finish', params.UploadData);
         } else {
-            var _params = util.extend({}, params);
-            _params = util.extend(_params, {
+            var _params = util.extend({
                 TaskId: TaskId,
                 Bucket: Bucket,
                 Region: Region,
@@ -86,7 +85,7 @@ function sliceUploadFile(params, callback) {
                 FileSize: FileSize,
                 SliceSize: ChunkSize,
                 onHashProgress: onHashProgress,
-            });
+            }, params);
             getUploadIdAndPartList.call(self, _params, function (err, UploadData) {
                 if (!self._isRunningTask(TaskId)) return;
                 if (err) return ep.emit('error', err);
@@ -99,6 +98,13 @@ function sliceUploadFile(params, callback) {
 
     // 获取上传文件大小
     FileSize = Body.size || params.ContentLength;
+    delete params.ContentLength;
+    !params.Headers && (params.Headers = {});
+    util.each(params.Headers, function (item, key) {
+        if (key.toLowerCase() === 'content-length') {
+            delete params.Headers[key];
+        }
+    });
 
     // 控制分片大小
     (function () {
@@ -238,14 +244,13 @@ function getUploadIdAndPartList(params, callback) {
     // 不存在 UploadId, 初始化生成 UploadId
     ep.on('no_available_upload_id', function () {
         if (!self._isRunningTask(TaskId)) return;
-        var _params = util.extend({}, params);
-        _params = util.extend(_params, {
+        var _params = util.extend({
             Bucket: Bucket,
             Region: Region,
             Key: Key,
             Headers: params.Headers,
             StorageClass: StorageClass,
-        });
+        }, params);
         self.multipartInit(_params, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (err) return ep.emit('error', err);

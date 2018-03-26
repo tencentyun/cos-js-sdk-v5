@@ -19,20 +19,58 @@ var util = {
 
 var getAuthorization = function (options, callback) {
 
-    // 方法一（推荐）
+    // 方法一、后端计算签名（推荐）
     var method = (options.Method || 'get').toLowerCase();
     var key = options.Key || '';
+    var query = options.Query || {};
+    var headers = options.Headers || {};
     var pathname = key.indexOf('/') === 0 ? key : '/' + key;
-
-    var url = '../server/auth.php?method=' + method + '&pathname=' + encodeURIComponent(pathname);
+    // var url = 'http://127.0.0.1:3000/auth';
+    var url = '../server/auth.php';
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
+    var data = {
+        method: method,
+        pathname: pathname,
+        query: query,
+        headers: headers,
+    };
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('content-type', 'application/json');
     xhr.onload = function (e) {
         callback(e.target.responseText);
     };
-    xhr.send();
+    xhr.send(JSON.stringify(data));
 
-    // // 方法二（适用于前端调试）
+    // // 方法二、后端通过获取临时密钥，计算签名给到前端（适用于前端调试）
+    // var method = (options.Method || 'get').toLowerCase();
+    // var key = options.Key || '';
+    // var query = options.Query || {};
+    // var headers = options.Headers || {};
+    // var pathname = key.indexOf('/') === 0 ? key : '/' + key;
+    // // var url = 'http://127.0.0.1:3000/sts';
+    // var url = '../server/sts.php';
+    // var xhr = new XMLHttpRequest();
+    // var data = {
+    //     method: method,
+    //     pathname: pathname,
+    //     query: query,
+    //     headers: headers,
+    // };
+    // xhr.open('POST', url, true);
+    // xhr.setRequestHeader('content-type', 'application/json');
+    // xhr.onload = function (e) {
+    //     try {
+    //         var AuthData = JSON.parse(e.target.responseText);
+    //     } catch (e) {
+    //     }
+    //     callback({
+    //         Authorization: AuthData.authorization,
+    //         XCosSecurityToken: AuthData.sessionToken,
+    //     });
+    // };
+    // xhr.send(JSON.stringify(data));
+
+    // // 方法三、前端计算签名（适用于前端调试）
     // var authorization = COS.getAuthorization({
     //     SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
@@ -52,14 +90,8 @@ var getSTS = function (params, callback) {
 };
 
 var cos = new COS({
-    // 必选参数
     getAuthorization: getAuthorization,
-    // getSTS: getSTS,       // 支持使用临时密钥
-    // 可选参数
-    FileParallelLimit: 3,    // 控制文件上传并发数
-    ChunkParallelLimit: 3,   // 控制单个文件下分片上传并发数
-    ChunkSize: 1024 * 1024,  // 控制分片大小，单位 B
-    ProgressInterval: 1000,  // 控制 onProgress 回调的间隔
+    // getSTS: getSTS,
 });
 var TaskId;
 
@@ -572,7 +604,7 @@ function abortUploadTask() {
 }
 
 function sliceUploadFile() {
-    var blob = util.createFile({size: 1024 * 1024 * 30});
+    var blob = util.createFile({size: 1024 * 1024 * 2});
     cos.sliceUploadFile({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,

@@ -34,35 +34,33 @@
 
         // 计算签名
         var getAuthorization = function (options, callback) {
-            // 方法一（适用于前端调试）
             var method = (options.Method || 'get').toLowerCase();
             var key = options.Key || '';
             var pathname = key.indexOf('/') === 0 ? key : '/' + key;
-            var url = '../server/auth.php?method=' + method + '&pathname=' + encodeURIComponent(pathname);
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', url, true);
-            xhr.onload = function (e) {
-                callback(null, e.target.responseText);
-            };
-            xhr.onerror = function (e) {
-                callback('获取签名出错');
-            };
-            xhr.send();
 
-            // // 方法二（适用于前端调试），需要引入../dist/cos-js-sdk-v5.min.js
-            // var authorization = COS.getAuthorization({
-            //     SecretId: SecretId,
-            //     SecretKey: SecretKey,
-            //     Method: options.Method,
-            //     Key: options.Key,
-            // });
-            // callback(null, authorization);
+            var url = '../server/auth.php';
+            var xhr = new XMLHttpRequest();
+            var data = {
+                method: method,
+                pathname: pathname,
+            };
+            xhr.open('POST', url, true);
+            xhr.setRequestHeader('content-type', 'application/json');
+            xhr.onload = function (e) {
+                if (e.target.responseText === 'action deny') {
+                    alert('action deny');
+                } else {
+                    callback(e.target.responseText);
+                }
+            };
+            xhr.send(JSON.stringify(data));
         };
 
         // 上传文件
         var uploadFile = function (file, callback) {
-            var Key = file.name;
-            getAuthorization({Method: 'PUT', Key: Key}, function (err, auth) {
+            var Key = 'dir/' + file.name; // 这里指定上传目录和文件名
+            getAuthorization({Method: 'PUT', Key: Key}, function (auth) {
+
                 var url = prefix + Key;
                 var xhr = new XMLHttpRequest();
                 xhr.open('PUT', url, true);

@@ -16,6 +16,7 @@
     <input id="success_action_redirect" name="success_action_redirect" type="hidden" value="">
     <input id="key" name="key" type="hidden" value="">
     <input id="Signature" name="Signature" type="hidden" value="">
+    <input id="x-cos-security-token" name="x-cos-security-token" type="hidden" value="">
     <input id="fileSelector" name="file" type="file">
     <input id="submitBtn" type="button" value="提交">
 </form>
@@ -38,8 +39,11 @@
         var getAuthorization = function (options, callback) {
             var method = (options.Method || 'get').toLowerCase();
             var key = options.Key || '';
-            var pathname = key.indexOf('/') === 0 ? key : '/' + key;
-            var url = '../server/sts.php?method=' + method + '&pathname=' + encodeURIComponent(pathname);
+            // var url = 'http://127.0.0.1:3000/sts-post-object' +
+            var url = '../server/sts-post-object.php' +
+                '?method=' + method +
+                '&pathname=' + encodeURIComponent('/') +
+                '&key=' + encodeURIComponent(key);
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.onreadystatechange = function (e) {
@@ -48,7 +52,7 @@
                         var data = JSON.parse(xhr.responseText);
                         callback(null, {
                             Authorization: data.authorization,
-                            XCosSecurityToken: data.credentials.sessionToken,
+                            XCosSecurityToken: data.sessionToken,
                         });
                     } else {
                         callback('获取签名出错');
@@ -91,12 +95,13 @@
                 document.getElementById('msg').innerText = '未选择上传文件';
                 return;
             }
-            Key = filePath.match(/[\\\/]?([^\\\/]+)$/)[1];
-            getAuthorization({Method: 'POST', Key: '/'}, function (err, auth) {
+            Key = 'dir/' + filePath.match(/[\\\/]?([^\\\/]+)$/)[1]; // 这里指定上传目录和文件名
+            getAuthorization({Method: 'POST', Key: Key}, function (err, AuthData) {
                 // 在当前目录下放一个空的 empty.html 以便让接口上传完成跳转回来
                 document.getElementById('success_action_redirect').value = location.href.substr(0, location.href.lastIndexOf('/') + 1) + 'empty.html';
                 document.getElementById('key').value = Key;
-                document.getElementById('Signature').value = auth;
+                document.getElementById('Signature').value = AuthData.Authorization;
+                document.getElementById('x-cos-security-token').value = AuthData.XCosSecurityToken;
                 form.submit();
             });
         };

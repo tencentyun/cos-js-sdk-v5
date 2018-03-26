@@ -29,19 +29,58 @@ var util = {
 
 var getAuthorization = function (options, callback) {
 
-    // 方法一（推荐）
+    // 方法一、后端计算签名（推荐）
     var method = (options.Method || 'get').toLowerCase();
     var key = options.Key || '';
+    var query = options.Query || {};
+    var headers = options.Headers || {};
     var pathname = key.indexOf('/') === 0 ? key : '/' + key;
-    var url = '../server/auth.php?method=' + method + '&pathname=' + encodeURIComponent(pathname);
+    // var url = 'http://127.0.0.1:3000/auth';
+    var url = '../server/auth.php';
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
+    var data = {
+        method: method,
+        pathname: pathname,
+        query: query,
+        headers: headers,
+    };
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('content-type', 'application/json');
     xhr.onload = function (e) {
         callback(e.target.responseText);
     };
-    xhr.send();
+    xhr.send(JSON.stringify(data));
 
-    // // 方法二（适用于前端调试）
+    // // 方法二、后端通过获取临时密钥，计算签名给到前端（适用于前端调试）
+    // var method = (options.Method || 'get').toLowerCase();
+    // var key = options.Key || '';
+    // var query = options.Query || {};
+    // var headers = options.Headers || {};
+    // var pathname = key.indexOf('/') === 0 ? key : '/' + key;
+    // var url = 'http://127.0.0.1:3000/sts';
+    // // var url = '../server/sts.php';
+    // var xhr = new XMLHttpRequest();
+    // var data = {
+    //     method: method,
+    //     pathname: pathname,
+    //     query: query,
+    //     headers: headers,
+    // };
+    // xhr.open('POST', url, true);
+    // xhr.setRequestHeader('content-type', 'application/json');
+    // xhr.onload = function (e) {
+    //     try {
+    //         var AuthData = JSON.parse(e.target.responseText);
+    //     } catch (e) {
+    //     }
+    //     callback({
+    //         Authorization: AuthData.authorization,
+    //         XCosSecurityToken: AuthData.sessionToken,
+    //     });
+    // };
+    // xhr.send(JSON.stringify(data));
+
+    // // 方法三、前端计算签名（适用于前端调试）
     // var authorization = COS.getAuthorization({
     //     SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
@@ -105,12 +144,16 @@ it('getAuth()', function (assert) {
             getAuthorization({
                 Method: 'get',
                 Key: key
-            }, function (auth) {
+            }, function (AuthData) {
+                if (typeof AuthData === 'string') {
+                    AuthData = {Authorization: AuthData};
+                }
+
                 var link = 'http://' + BucketLongName + '.cos.' + config.Region + '.myqcloud.com/' + key +
-                    '?sign=' + encodeURIComponent(auth);
+                    '?sign=' + encodeURIComponent(AuthData.Authorization);
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', link, true);
-                // xhr.setRequestHeader('Authorization', auth);
+                AuthData.XCosSecurityToken && xhr.setRequestHeader('x-cos-security-token', AuthData.XCosSecurityToken);
                 xhr.onload = function (e) {
                     assert.ok(xhr.status === 200, '获取文件 200');
                     assert.ok(xhr.responseText === content, '通过获取签名能正常获取文件');
@@ -122,6 +165,21 @@ it('getAuth()', function (assert) {
                 };
                 xhr.send();
             });
+        });
+    });
+});
+
+it('auth check', function (assert) {
+    return new Promise(function (done) {
+        cos.getBucketCors({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Headers: {
+                'x-cos-test': 'aksjhdlash sajlhj!@#$%^&*()_+=-[]{}\';:\"/.<>?.,??sadasd#/.,/~`',
+            },
+        }, function (err, data) {
+            assert.ok(!err);
+            done();
         });
     });
 });

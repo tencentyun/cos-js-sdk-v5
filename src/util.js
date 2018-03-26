@@ -22,8 +22,8 @@ var getAuth = function (opt) {
     var SecretKey = opt.SecretKey;
     var method = (opt.method || opt.Method || 'get').toLowerCase();
     var pathname = opt.pathname || opt.Key || '/';
-    var queryParams = opt.params || '';
-    var headers = opt.headers || '';
+    var queryParams = clone(opt.Query || opt.params || {});
+    var headers = clone(opt.Headers || opt.headers || {});
     pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
 
     if (!SecretId) return console.error('lack of param SecretId');
@@ -47,7 +47,9 @@ var getAuth = function (opt) {
             key = keyList[i];
             val = obj[key] || '';
             key = key.toLowerCase();
-            list.push(camSafeUrlEncode(key) + '=' + camSafeUrlEncode(val));
+            key = camSafeUrlEncode(key);
+            val = camSafeUrlEncode(val) || '';
+            list.push(key + '=' +  val)
         }
         return list.join('&');
     };
@@ -303,7 +305,7 @@ var apiWrapper = function (apiName, apiFn) {
                 return;
             }
             // 判断 region 格式
-            if (params.Region && params.Region.indexOf('-') === -1) {
+            if (params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb') {
                 _callback({error: 'Region format error, find help here: https://cloud.tencent.com/document/product/436/6224'});
                 return;
             }
@@ -382,16 +384,6 @@ var throttleOnProgress = function (total, onProgress) {
     };
 };
 
-var fileSlice = function (file, start, end) {
-    if (file.slice) {
-        return file.slice(start, end);
-    } else if (file.mozSlice) {
-        return file.mozSlice(start, end);
-    } else if (file.webkitSlice) {
-        return file.webkitSlice(start, end);
-    }
-};
-
 var util = {
     apiWrapper: apiWrapper,
     getAuth: getAuth,
@@ -410,8 +402,16 @@ var util = {
     uuid: uuid,
     throttleOnProgress: throttleOnProgress,
     isBrowser: !!global.document,
-    fileSlice: fileSlice,
 };
 
+util.fileSlice = function (file, start, end) {
+    if (file.slice) {
+        return file.slice(start, end);
+    } else if (file.mozSlice) {
+        return file.mozSlice(start, end);
+    } else if (file.webkitSlice) {
+        return file.webkitSlice(start, end);
+    }
+};
 
 module.exports = util;

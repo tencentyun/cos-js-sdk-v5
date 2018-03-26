@@ -44,66 +44,22 @@ var util = {
 // 拼接获取临时密钥的参数
 var getTempKeys = function (key, callback) {
 
+    var keyPath = key ? key : '/';
+    keyPath.substr(0, 1) !== '/' && (keyPath = '/' + keyPath);
+
     var ShortBucketName = config.Bucket.substr(0 , config.Bucket.lastIndexOf('-'));
     var AppId = config.Bucket.substr(1 + config.Bucket.lastIndexOf('-'));
     var policy = {
         'version': '2.0',
         'statement': [{
             'action': [
-                // 这里可以从临时密钥的权限上控制前端允许的操作
-                // 'name/cos:*', // 这样写可以包含下面所有权限
-
-                // // 列出所有允许的操作
-                // // ACL 读写
-                // 'name/cos:GetBucketACL',
-                // 'name/cos:PutBucketACL',
-                // 'name/cos:GetObjectACL',
-                // 'name/cos:PutObjectACL',
-                // // 简单 Bucket 操作
-                // 'name/cos:PutBucket',
-                // 'name/cos:HeadBucket',
-                // 'name/cos:GetBucket',
-                // 'name/cos:DeleteBucket',
-                // 'name/cos:GetBucketLocation',
-                // // Versioning
-                // 'name/cos:PutBucketVersioning',
-                // 'name/cos:GetBucketVersioning',
-                // // CORS
-                // 'name/cos:PutBucketCORS',
-                // 'name/cos:GetBucketCORS',
-                // 'name/cos:DeleteBucketCORS',
-                // // Lifecycle
-                // 'name/cos:PutBucketLifecycle',
-                // 'name/cos:GetBucketLifecycle',
-                // 'name/cos:DeleteBucketLifecycle',
-                // // Replication
-                // 'name/cos:PutBucketReplication',
-                // 'name/cos:GetBucketReplication',
-                // 'name/cos:DeleteBucketReplication',
-                // // 删除文件
-                // 'name/cos:DeleteMultipleObject',
-                // 'name/cos:DeleteObject',
-                // 简单文件操作
-                'name/cos:PutObject',
-                'name/cos:AppendObject',
-                'name/cos:GetObject',
-                'name/cos:HeadObject',
-                'name/cos:OptionsObject',
-                'name/cos:PutObjectCopy',
-                'name/cos:PostObjectRestore',
-                // 分片上传操作
-                'name/cos:InitiateMultipartUpload',
-                'name/cos:ListMultipartUploads',
-                'name/cos:ListParts',
-                'name/cos:UploadPart',
-                'name/cos:CompleteMultipartUpload',
-                'name/cos:AbortMultipartUpload',
+                'name/cos:PostObject',
+                'name/cos:PutObject', // 某些旧的园区的 PostObject 对应了 PutObject 权限
             ],
             'effect': 'allow',
             'principal': {'qcs': ['*']},
             'resource': [
-                'qcs::cos:ap-guangzhou:uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName,
-                'qcs::cos:ap-guangzhou:uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/*'
+                'qcs::cos:ap-guangzhou:uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + keyPath
             ]
         }]
     };
@@ -158,7 +114,7 @@ function camSafeUrlEncode(str) {
         .replace(/\*/g, '%2A');
 }
 
-function isActionAllow(method, pathname, query, headers) {
+function isActionAllow(method, pathname) {
 
     var allow = true;
 
@@ -168,48 +124,29 @@ function isActionAllow(method, pathname, query, headers) {
     //     return allow;
     // }
 
-    // 请求可能带有点所有 action
-    // acl,cors,policy,location,tagging,lifecycle,versioning,replication,versions,delete,restore,uploads
-
-    // 请求跟路径，只允许获取 UploadId
-    if (pathname === '/' && !(method === 'get' && query['uploads'])) {
-        allow = false;
-    }
-
-    // 不允许前端获取和修改文件权限
-    if (pathname !== '/' && query['acl']) {
-        allow = false;
-    }
-
     // 这里应该根据需要，限制当前站点的用户只允许操作什么样的路径
-    if (method === 'delete' && pathname !== '/') { // 这里控制是否允许删除文件
-        // TODO 这里控制是否允许删除文件
-    }
-    if (method === 'put' && pathname !== '/') { // 这里控制是否允许上传和修改文件
-        // TODO 这里控制是否允许上传和修改文件
-    }
-    if (method === 'get' && pathname !== '/') { // 这里控制是否获取文件和文件相关信息
-        // TODO 这里控制是否允许获取文件和文件相关信息
+    if (pathname !== '/') {
+        // TODO 这里控制是否允许操作当前文件
     }
 
     return allow;
 
 }
 
-function getAuthorization (keys, method, pathname, query, headers) {
+function getAuthorization (keys, method, pathname) {
 
     var SecretId = keys.credentials.tmpSecretId;
     var SecretKey = keys.credentials.tmpSecretKey;
 
     // 整理参数
-    !query && (query = {});
-    !headers && (headers = {});
+    var query = {};
+    var headers = {};
     method = (method ? method : 'get').toLowerCase();
     pathname = pathname ? pathname : '/';
     pathname.indexOf('/') === -1 && (pathname = '/' + pathname);
 
     // 注意这里要过滤好允许什么样的操作
-    if (!isActionAllow(method, pathname, query, headers)) {
+    if (!isActionAllow(method, pathname)) {
         return 'action deny';
     }
 
@@ -276,49 +213,45 @@ function getAuthorization (keys, method, pathname, query, headers) {
     return authorization;
 }
 
-function getBody(req, callback) {
-    var body = [];
-    req.on('data', function (chunk) {
-        body.push(chunk);
-    });
-    req.on('end', function () {
-        try {
-            body = Buffer.concat(body).toString();
-            body && console.log(body);
-            body = JSON.parse(body);
-        } catch (e) {
-            body = {};
-        }
-        callback(body);
-    });
+// 获取 query 参数
+function getParam(url, name) {
+    var query, params = {}, index = url.indexOf('?');
+    if (index >= 0) {
+        query = url.substr(index + 1).split('&');
+        query.forEach(function (v) {
+            var arr = v.split('=');
+            params[arr[0]] = arr[1];
+        });
+    }
+    return params[name];
 }
-
 
 // 启动简单的签名服务
 http.createServer(function(req, res){
-    if (req.url.indexOf('/sts') === 0) {
+    if (req.url.indexOf('/sts-post-object') === 0) {
         // 获取前端过来的参数
-        getBody(req, function (body) {
+        var method = getParam(req.url, 'method');
+        var key = decodeURIComponent(getParam(req.url, 'key'));
+        var pathname = decodeURIComponent(getParam(req.url, 'pathname'));
 
-            // 获取临时密钥，计算签名
-            getTempKeys(body.key, function (err, tempKeys) {
-                var data = {
-                    authorization: getAuthorization(tempKeys, body.method, body.pathname, body.query, body.headers),
-                    sessionToken: tempKeys['credentials'] && tempKeys['credentials']['sessionToken'],
-                };
-                if (data.authorization === 'action deny') {
-                    data = {error: 'action deny'};
-                }
+        // 获取临时密钥，计算签名
+        getTempKeys(key, function (err, tempKeys) {
+            var data = {
+                authorization: getAuthorization(tempKeys, method, pathname),
+                sessionToken: tempKeys['credentials'] && tempKeys['credentials']['sessionToken'],
+            };
+            if (data.authorization === 'action deny') {
+                data = {error: 'action deny'};
+            }
 
-                // 返回数据给前端
-                res.writeHead(200, {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': 'http://127.0.0.1',
-                    'Access-Control-Allow-Headers': 'origin,accept,content-type',
-                });
-                res.write(JSON.stringify(data) || '');
-                res.end();
+            // 返回数据给前端
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'http://127.0.0.1',
+                'Access-Control-Allow-Headers': 'origin,accept,content-type',
             });
+            res.write(JSON.stringify(data) || '');
+            res.end();
         });
     } else {
         res.writeHead(404);

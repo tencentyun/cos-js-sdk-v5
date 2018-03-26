@@ -2,12 +2,56 @@
 
 /**
  * php 签名样例
- * @param string $method 请求类型 method
- * @param string $pathname 文件名称
- * @return string 签名字符串
  */
 
-function getAuthorization($method, $pathname)
+function isActionAllow($method, $pathname, $query, $headers)
+{
+
+    $allow = true;
+
+    // // TODO 这里判断自己网站的登录态
+    // if ($!logined) {
+    //     $allow = false;
+    //     return $allow;
+    // }
+
+    // 请求可能带有点所有 action
+    // acl,cors,policy,location,tagging,lifecycle,versioning,replication,versions,delete,restore,uploads
+
+    // 请求跟路径，只允许获取 UploadId
+    if ($pathname === '/' && !($method === 'get' && isset($query['uploads']))) {
+        $allow = false;
+    }
+
+    // 不允许前端获取和修改文件权限
+    if ($pathname !== '/' && isset($query['acl'])) {
+        $allow = false;
+    }
+
+    // 这里应该根据需要，限制当前站点的用户只允许操作什么样的路径
+    if ($method === 'delete' && $pathname !== '/') { // 这里控制是否允许删除文件
+        // TODO 这里控制是否允许删除文件
+    }
+    if ($method === 'put' && $pathname !== '/') { // 这里控制是否允许上传和修改文件
+        // TODO 这里控制是否允许上传和修改文件
+    }
+    if ($method === 'get' && $pathname !== '/') { // 这里控制是否获取文件和文件相关信息
+        // TODO 这里控制是否允许获取文件和文件相关信息
+    }
+
+    return $allow;
+
+}
+
+/*
+ * 获取签名
+ * @param string $method 请求类型 method
+ * @param string $pathname 文件名称
+ * @param array $query query参数
+ * @param array $headers headers
+ * @return string 签名字符串
+ */
+function getAuthorization($method, $pathname, $query, $headers)
 {
 
     // 获取个人 API 密钥 https://console.qcloud.com/capi
@@ -15,11 +59,16 @@ function getAuthorization($method, $pathname)
     $SecretKey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 
     // 整理参数
-    $queryParams = array();
-    $headers = array();
+    !$query && ($query = array());
+    !$headers && ($headers = array());
     $method = strtolower($method ? $method : 'get');
     $pathname = $pathname ? $pathname : '/';
     substr($pathname, 0, 1) != '/' && ($pathname = '/' . $pathname);
+
+    // 注意这里要过滤好允许什么样的操作
+    if (!isActionAllow($method, $pathname, $query, $headers)) {
+        return 'action deny';
+    }
 
     // 工具方法
     function getObjectKeys($obj)
@@ -53,14 +102,14 @@ function getAuthorization($method, $pathname)
     $qSignTime = $now . ';' . $expired;
     $qKeyTime = $now . ';' . $expired;
     $qHeaderList = strtolower(implode(';', getObjectKeys($headers)));
-    $qUrlParamList = strtolower(implode(';', getObjectKeys($queryParams)));
+    $qUrlParamList = strtolower(implode(';', getObjectKeys($query)));
 
     // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
     // 步骤一：计算 SignKey
     $signKey = hash_hmac("sha1", $qKeyTime, $SecretKey);
 
     // 步骤二：构成 FormatString
-    $formatString = implode("\n", array(strtolower($method), $pathname, obj2str($queryParams), obj2str($headers), ''));
+    $formatString = implode("\n", array(strtolower($method), $pathname, obj2str($query), obj2str($headers), ''));
 
     // 步骤三：计算 StringToSign
     $stringToSign = implode("\n", array('sha1', $qSignTime, sha1($formatString), ''));
@@ -82,8 +131,16 @@ function getAuthorization($method, $pathname)
     return $authorization;
 }
 
-$method = isset($_GET['method']) ? $_GET['method'] : 'POST';
-$pathname = isset($_GET['pathname']) ? $_GET['pathname'] : '/';
-echo getAuthorization($method, $pathname);
 
-?>
+// 获取前端过来的参数
+$params = json_decode(file_get_contents("php://input"), 1);
+$pathname = isset($params['pathname']) ? $params['pathname'] : '/';
+$method = isset($params['method']) ? $params['method'] : 'get';
+$query = isset($params['query']) ? $params['query'] : array();
+$headers = isset($params['headers']) ? $params['headers'] : array();
+
+// 返回数据给前端
+header('Content-Type: text/plain');
+header('Allow-Control-Allow-Origin: http://127.0.0.1'); // 这里修改允许跨域访问的网站
+header('Allow-Control-Allow-Headers: origin,accept,content-type');
+echo getAuthorization($method, $pathname, $query, $headers);
