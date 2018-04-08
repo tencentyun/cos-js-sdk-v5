@@ -167,9 +167,11 @@ function getAuthorization (keys, method, pathname) {
         var keyList = getObjectKeys(obj);
         for (i = 0; i < keyList.length; i++) {
             key = keyList[i];
-            val = obj[key] || '';
+            val = (obj[key] === undefined || obj[key] === null) ? '' : ('' + obj[key]);
             key = key.toLowerCase();
-            list.push(camSafeUrlEncode(key) + '=' + camSafeUrlEncode(val));
+            key = camSafeUrlEncode(key);
+            val = camSafeUrlEncode(val) || '';
+            list.push(key + '=' +  val)
         }
         return list.join('&');
     };

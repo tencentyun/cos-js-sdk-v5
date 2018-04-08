@@ -120,7 +120,7 @@ var getAuth = function (opt) {
         var keyList = getObjectKeys(obj);
         for (i = 0; i < keyList.length; i++) {
             key = keyList[i];
-            val = obj[key] || '';
+            val = obj[key] === undefined || obj[key] === null ? '' : '' + obj[key];
             key = key.toLowerCase();
             key = camSafeUrlEncode(key);
             val = camSafeUrlEncode(val) || '';
@@ -611,7 +611,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.0';
+COS.version = '0.4.2';
 
 module.exports = COS;
 

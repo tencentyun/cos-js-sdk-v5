@@ -45,7 +45,7 @@ var getAuth = function (opt) {
         var keyList = getObjectKeys(obj);
         for (i = 0; i < keyList.length; i++) {
             key = keyList[i];
-            val = obj[key] || '';
+            val = (obj[key] === undefined || obj[key] === null) ? '' : ('' + obj[key]);
             key = key.toLowerCase();
             key = camSafeUrlEncode(key);
             val = camSafeUrlEncode(val) || '';
