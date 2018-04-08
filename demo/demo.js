@@ -19,14 +19,14 @@ var util = {
 
 var getAuthorization = function (options, callback) {
 
-    // 方法一、后端计算签名（推荐）
+    // 方法一、后端通过获取临时密钥，计算签名给到前端（适用于前端调试）
     var method = (options.Method || 'get').toLowerCase();
     var key = options.Key || '';
     var query = options.Query || {};
     var headers = options.Headers || {};
     var pathname = key.indexOf('/') === 0 ? key : '/' + key;
-    // var url = 'http://127.0.0.1:3000/auth';
-    var url = '../server/auth.php';
+    // var url = 'http://127.0.0.1:3000/sts';
+    var url = '../server/sts.php';
     var xhr = new XMLHttpRequest();
     var data = {
         method: method,
@@ -37,18 +37,25 @@ var getAuthorization = function (options, callback) {
     xhr.open('POST', url, true);
     xhr.setRequestHeader('content-type', 'application/json');
     xhr.onload = function (e) {
-        callback(e.target.responseText);
+        try {
+            var AuthData = JSON.parse(e.target.responseText);
+        } catch (e) {
+        }
+        callback({
+            Authorization: AuthData.authorization,
+            XCosSecurityToken: AuthData.sessionToken,
+        });
     };
     xhr.send(JSON.stringify(data));
 
-    // // 方法二、后端通过获取临时密钥，计算签名给到前端（适用于前端调试）
+    // // 方法二、后端计算签名（推荐）
     // var method = (options.Method || 'get').toLowerCase();
     // var key = options.Key || '';
     // var query = options.Query || {};
     // var headers = options.Headers || {};
     // var pathname = key.indexOf('/') === 0 ? key : '/' + key;
-    // // var url = 'http://127.0.0.1:3000/sts';
-    // var url = '../server/sts.php';
+    // // var url = 'http://127.0.0.1:3000/auth';
+    // var url = '../server/auth.php';
     // var xhr = new XMLHttpRequest();
     // var data = {
     //     method: method,
@@ -59,14 +66,7 @@ var getAuthorization = function (options, callback) {
     // xhr.open('POST', url, true);
     // xhr.setRequestHeader('content-type', 'application/json');
     // xhr.onload = function (e) {
-    //     try {
-    //         var AuthData = JSON.parse(e.target.responseText);
-    //     } catch (e) {
-    //     }
-    //     callback({
-    //         Authorization: AuthData.authorization,
-    //         XCosSecurityToken: AuthData.sessionToken,
-    //     });
+    //     callback(e.target.responseText);
     // };
     // xhr.send(JSON.stringify(data));
 
@@ -81,17 +81,8 @@ var getAuthorization = function (options, callback) {
 
 };
 
-var getSTS = function (params, callback) {
-    callback({
-        SecretId: 'xxx',
-        SecretKey: 'xxx',
-        XCosSecurityToken: 'xxx',
-    });
-};
-
 var cos = new COS({
     getAuthorization: getAuthorization,
-    // getSTS: getSTS,
 });
 var TaskId;
 
