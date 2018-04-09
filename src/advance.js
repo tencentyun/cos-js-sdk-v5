@@ -114,7 +114,7 @@ function sliceUploadFile(params, callback) {
             AutoChunkSize = SIZE[i] * 1024 * 1024;
             if (FileSize / AutoChunkSize < 10000) break;
         }
-        ChunkSize = Math.max(ChunkSize, AutoChunkSize);
+        params.ChunkSize = params.SliceSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
     })();
 
     if (FileSize === 0) {
@@ -398,7 +398,7 @@ function uploadSliceList(params, cb) {
     var UploadData = params.UploadData;
     var FileSize = params.FileSize;
     var SliceSize = params.SliceSize;
-    var ChunkParallel = params.AsyncLimit || self.options.ChunkParallelLimit || 1;
+    var ChunkParallel = Math.min(params.AsyncLimit || self.options.ChunkParallelLimit || 1, 256);
     var Body = params.Body;
     var SliceCount = Math.ceil(FileSize / SliceSize);
     var FinishSize = 0;
