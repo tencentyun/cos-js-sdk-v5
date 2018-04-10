@@ -8819,7 +8819,11 @@ var retry = function (times, iterator, callback) {
             }
         });
     };
-    next(1);
+    if (times < 1) {
+        callback();
+    } else {
+        next(1);
+    }
 };
 
 var async = {
