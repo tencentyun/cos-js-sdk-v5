@@ -113,6 +113,8 @@ function isActionAllow($method, $pathname, $query, $headers)
         $allow = true;
     }
 
+    // TODO 这里判断用户允许上传到什么文件路径，做好文件权限控制限制
+
     return $allow;
 
 }
