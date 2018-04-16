@@ -69,6 +69,7 @@
                 var fd = new FormData();
                 fd.append('key', Key);
                 fd.append('Signature', auth);
+                fd.append('Content-Type', '');
                 XCosSecurityToken && fd.append('x-cos-security-token', XCosSecurityToken);
                 fd.append('file', file);
                 var url = prefix;
