@@ -50,6 +50,12 @@ function sliceUploadFile(params, callback) {
 
     // 获取 UploadId 完成，开始上传每个分片
     ep.on('get_upload_data_finish', function (UploadData) {
+        if (UploadData.UploadId) {
+            var uuid = getFileUuid(Body, params.ChunkSize);
+            uuid && setUploadId.call(self, uuid, UploadData.UploadId);
+        }
+
+        // 获取 UploadId
         uploadSliceList.call(self, {
             TaskId: TaskId,
             Bucket: Bucket,
@@ -124,6 +130,49 @@ function sliceUploadFile(params, callback) {
         ep.emit('get_file_size_finish');
     }
 
+}
+
+
+// 按照文件特征值，缓存 UploadId
+var uploadIdCacheKey = 'cos_sdk_upload_cache';
+var uploadIdCache = [];
+try {
+    uploadIdCache = JSON.parse(localStorage.getItem(uploadIdCacheKey)) || [];
+} catch (e) {}
+function setUploadId(uuid, UploadId) {
+    for (var i = uploadIdCache.length - 1; i >= 0; i--) {
+        if (uploadIdCache[i][0] === uuid) {
+            uploadIdCache.splice(i, 1)
+        }
+    }
+    uploadIdCache.unshift([uuid, UploadId]);
+    var cacheLimit = this.options.UploadIdCacheLimit;
+    if (uploadIdCache.length > cacheLimit) {
+        uploadIdCache.splice(cacheLimit);
+    }
+    cacheLimit && setTimeout(function () {
+        try {
+            localStorage.setItem(uploadIdCacheKey, JSON.stringify(uploadIdCache));
+        } catch (e) {}
+    });
+}
+function getUploadId(uuid) {
+    var UploadId;
+    for (var i = 0; i < uploadIdCache.length; i++) {
+        if (uploadIdCache[i][0] === uuid) {
+            UploadId = uploadIdCache[i][1];
+            break;
+        }
+    }
+    return UploadId;
+}
+function getFileUuid(file, ChunkSize) {
+    // 如果信息不完整，不获取
+    if (file.name && file.size && file.lastModifiedDate && ChunkSize) {
+        return util.md5([file.name, file.size, file.lastModifiedDate, ChunkSize].join('::'));
+    } else {
+        return null;
+    }
 }
 
 // 获取上传任务的 UploadId
@@ -306,27 +355,45 @@ function getUploadIdAndPartList(params, callback) {
         });
     });
 
-    // 获取符合条件的 UploadId 列表，因为同一个文件可以有多个上传任务。
-    wholeMultipartList.call(self, {
-        Bucket: Bucket,
-        Region: Region,
-        Key: Key,
-    }, function (err, data) {
-        if (!self._isRunningTask(TaskId)) return;
-        if (err) {
-            return ep.emit('error', err);
-        }
-        var UploadIdList = data.UploadList.filter(function (item) {
-            return item.Key === Key && (!StorageClass || item.StorageClass.toUpperCase() === StorageClass.toUpperCase());
-        }).reverse().map(function (item) {
-            return item.UploadId || item.UploadID;
+    // 获取缓存的 UploadId
+    var uuid = getFileUuid(params.Body, params.ChunkSize), UploadId;
+    if (uuid && (UploadId = getUploadId(uuid))) {
+        wholeMultipartListPart.call(self, {
+            Bucket: Bucket,
+            Region: Region,
+            Key: Key,
+            UploadId: UploadId,
+        }, function (err, PartListData) {
+            if (!self._isRunningTask(TaskId)) return;
+            if (err) return ep.emit('error', err);
+            ep.emit('upload_id_ready', {
+                UploadId: UploadId,
+                PartList: PartListData.PartList,
+            });
         });
-        if (UploadIdList.length) {
-            ep.emit('has_upload_id', UploadIdList);
-        } else {
-            ep.emit('no_available_upload_id');
-        }
-    });
+    } else {
+        // 获取符合条件的 UploadId 列表，因为同一个文件可以有多个上传任务。
+        wholeMultipartList.call(self, {
+            Bucket: Bucket,
+            Region: Region,
+            Key: Key,
+        }, function (err, data) {
+            if (!self._isRunningTask(TaskId)) return;
+            if (err) {
+                return ep.emit('error', err);
+            }
+            var UploadIdList = data.UploadList.filter(function (item) {
+                return item.Key === Key && (!StorageClass || item.StorageClass.toUpperCase() === StorageClass.toUpperCase());
+            }).reverse().map(function (item) {
+                return item.UploadId || item.UploadID;
+            });
+            if (UploadIdList.length) {
+                ep.emit('has_upload_id', UploadIdList);
+            } else {
+                ep.emit('no_available_upload_id');
+            }
+        });
+    }
 }
 
 // 获取符合条件的全部上传任务 (条件包括 Bucket, Region, Prefix)

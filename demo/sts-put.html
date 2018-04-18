@@ -35,28 +35,32 @@
         var getAuthorization = function (options, callback) {
             var method = (options.Method || 'get').toLowerCase();
             var key = options.Key || '';
-            var query = options.Query || {};
-            var headers = options.Headers || {};
             var pathname = key.indexOf('/') === 0 ? key : '/' + key;
-            // var url = 'http://127.0.0.1:3000/auth';
-            var url = '../server/sts.php';
+            // var url = 'http://127.0.0.1:3000/sts-auth' +
+            var url = '../server/sts-auth.php' +
+                '?method=' + method +
+                '&pathname=' + encodeURIComponent(pathname);
             var xhr = new XMLHttpRequest();
-            var data = {
-                method: method,
-                pathname: pathname,
-                query: query,
-                headers: headers,
-            };
-            xhr.open('POST', url, true);
-            xhr.setRequestHeader('content-type', 'application/json');
+            xhr.open('GET', url, true);
             xhr.onload = function (e) {
-                var data = JSON.parse(e.target.responseText);
-                callback(data.error, {
-                    Authorization: data.authorization,
-                    XCosSecurityToken: data.credentials && data.credentials.sessionToken,
-                });
+                var AuthData;
+                try {
+                    AuthData = JSON.parse(xhr.responseText)
+                } catch (e) {}
+                if (AuthData && AuthData.Authorization) {
+                    callback(null, {
+                        Authorization: AuthData.Authorization,
+                        XCosSecurityToken: AuthData.XCosSecurityToken,
+                    });
+                } else {
+                    console.error(AuthData);
+                    callback('获取签名出错');
+                }
             };
-            xhr.send(JSON.stringify(data));
+            xhr.onerror = function (e) {
+                callback('获取签名出错');
+            };
+            xhr.send();
         };
 
         // 上传文件

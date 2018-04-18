@@ -10,6 +10,7 @@ var defaultOptions = {
     AppId: '', // AppId 已废弃，请拼接到 Bucket 后传入，例如：test-1250000000
     SecretId: '',
     SecretKey: '',
+    UploadIdCacheLimit: 50,
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
     ChunkSize: 1024 * 1024,
@@ -34,6 +35,6 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.3';
+COS.version = '0.4.4';
 
 module.exports = COS;

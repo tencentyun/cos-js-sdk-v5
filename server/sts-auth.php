@@ -1,15 +1,26 @@
 <?php
 // 临时密钥计算样例
 
-// 固定密钥
+// 配置参数
 $config = array(
-    'Url'=> 'https://sts.api.qcloud.com/v2/index.php',
-    'Domain'=> 'sts.api.qcloud.com',
-    'SecretId'=> 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    'SecretKey'=> 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    'Bucket'=> 'test-1250000000',
+    'Url' => 'https://sts.api.qcloud.com/v2/index.php',
+    'Domain' => 'sts.api.qcloud.com',
+    'Proxy' => 'http://dev-proxy.oa.com:8080',
+    'SecretId' => 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 固定密钥
+    'SecretKey' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 固定密钥
+    'Bucket' => 'test-1250000000',
+    'Region' => 'ap-guangzhou',
+    'AllowPrefix' => '_ALLOW_DIR_/*', // 这里改成允许的路径前缀，这里可以根据自己网站的用户登录态判断允许上传的目录，例子：* 或者 a/* 或者 a.jpg
 );
 
+
+// 缓存临时密钥
+if (!isset($_SESSION['tempKeysCache'])) {
+    $_SESSION['tempKeysCache'] = array(
+        'policyStr' => '',
+        'expiredTime' => 0
+    );
+}
 
 // json 转 query string
 function json2str($obj, $notEncode = false) {
@@ -32,16 +43,13 @@ function getSignature($opt, $key, $method) {
 }
 
 // 获取临时密钥
-function getTempKeys($key) {
+function getTempKeys() {
 
     global $config;
 
-    $keyPath = $key ? $key : '/';
-    substr($keyPath, 0, 1) != '/' && ($keyPath = '/' . $keyPath);
-
-    // TODO 这里控制是否允许 Post 上传该文件路径
-    if ($keyPath ===  '/*') {
-        return array('error'=> 'action deny');
+    // 判断是否修改了 AllowPrefix
+    if ($config['AllowPrefix'] === '_ALLOW_DIR_/*') {
+        return array('error'=> '请修改 AllowPrefix 配置项，指定允许上传的路径前缀');
     }
 
     $ShortBucketName = substr($config['Bucket'],0, strripos($config['Bucket'], '-'));
@@ -51,14 +59,61 @@ function getTempKeys($key) {
         'statement'=> array(
             array(
                 'action'=> array(
-                    // 这里可以从临时密钥的权限上控制前端允许的操作
-                    'name/cos:PostObject',
+                    // // 这里可以从临时密钥的权限上控制前端允许的操作
+                    //  'name/cos:*', // 这样写可以包含下面所有权限
+
+                    // // 列出所有允许的操作
+                    // // ACL 读写
+                    // 'name/cos:GetBucketACL',
+                    // 'name/cos:PutBucketACL',
+                    // 'name/cos:GetObjectACL',
+                    // 'name/cos:PutObjectACL',
+                    // // 简单 Bucket 操作
+                    // 'name/cos:PutBucket',
+                    // 'name/cos:HeadBucket',
+                    // 'name/cos:GetBucket',
+                    // 'name/cos:DeleteBucket',
+                    // 'name/cos:GetBucketLocation',
+                    // // Versioning
+                    // 'name/cos:PutBucketVersioning',
+                    // 'name/cos:GetBucketVersioning',
+                    // // CORS
+                    // 'name/cos:PutBucketCORS',
+                    // 'name/cos:GetBucketCORS',
+                    // 'name/cos:DeleteBucketCORS',
+                    // // Lifecycle
+                    // 'name/cos:PutBucketLifecycle',
+                    // 'name/cos:GetBucketLifecycle',
+                    // 'name/cos:DeleteBucketLifecycle',
+                    // // Replication
+                    // 'name/cos:PutBucketReplication',
+                    // 'name/cos:GetBucketReplication',
+                    // 'name/cos:DeleteBucketReplication',
+                    // // 删除文件
+                    // 'name/cos:DeleteMultipleObject',
+                    // 'name/cos:DeleteObject',
+                    // 简单文件操作
                     'name/cos:PutObject',
+                    'name/cos:PostObject',
+                    'name/cos:AppendObject',
+                    'name/cos:GetObject',
+                    'name/cos:HeadObject',
+                    'name/cos:OptionsObject',
+                    'name/cos:PutObjectCopy',
+                    'name/cos:PostObjectRestore',
+                    // 分片上传操作
+                    'name/cos:InitiateMultipartUpload',
+                    'name/cos:ListMultipartUploads',
+                    'name/cos:ListParts',
+                    'name/cos:UploadPart',
+                    'name/cos:CompleteMultipartUpload',
+                    'name/cos:AbortMultipartUpload',
                 ),
                 'effect'=> 'allow',
                 'principal'=> array('qcs'=> array('*')),
                 'resource'=> array(
-                    'qcs::cos:ap-guangzhou:uid/' . $AppId . ':prefix//' . $AppId . '/' . $ShortBucketName . $keyPath
+                    'qcs::cos:' . $config['Region'] . ':uid/' . $AppId . ':prefix//' . $AppId . '/' . $ShortBucketName . '/',
+                    'qcs::cos:' . $config['Region'] . ':uid/' . $AppId . ':prefix//' . $AppId . '/' . $ShortBucketName . '/' . $config['AllowPrefix']
                 )
             )
         )
@@ -84,7 +139,7 @@ function getTempKeys($key) {
 
     $url = $config['Url'] . '?' . json2str($params, 1);
     $ch = curl_init($url);
-    // curl_setopt($ch, CURLOPT_PROXY, '');
+    $config['Proxy'] && curl_setopt($ch, CURLOPT_PROXY, $config['Proxy']);
     curl_setopt($ch, CURLOPT_HEADER, 0);
     curl_setopt($ch,CURLOPT_SSL_VERIFYPEER,0);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -93,31 +148,11 @@ function getTempKeys($key) {
     curl_close($ch);
 
     $result = json_decode($result, 1);
+    $_SESSION['tempKeysCache'] = $result['data'];
+    $_SESSION['tempKeysCache']['policyStr'] = $policyStr;
+
     return $result['data'];
 };
-
-// 判断允许的操作
-function isActionAllow($method, $pathname, $query, $headers)
-{
-
-    $allow = false;
-
-    // // TODO 这里判断自己网站的登录态
-    // if ($!logined) {
-    //     return $allow;
-    //     $allow = false;
-    // }
-
-    // 请求跟路径，只允许获取 PostObject
-    if ($pathname === '/' && $method === 'post' && !isset($query['delete'])) {
-        $allow = true;
-    }
-
-    // TODO 这里判断用户允许上传到什么文件路径，做好文件权限控制限制
-
-    return $allow;
-
-}
 
 // 计算 COS API 请求用的签名
 function getAuthorization($keys, $method, $pathname)
@@ -132,11 +167,6 @@ function getAuthorization($keys, $method, $pathname)
     $method = strtolower($method ? $method : 'get');
     $pathname = $pathname ? $pathname : '/';
     substr($pathname, 0, 1) != '/' && ($pathname = '/' . $pathname);
-
-    // 注意这里要过滤好允许什么样的操作
-    if (!isActionAllow($method, $pathname, $query, $headers)) {
-        return 'action deny';
-    }
 
     // 工具方法
     function getObjectKeys($obj)
@@ -202,20 +232,22 @@ function getAuthorization($keys, $method, $pathname)
     return $authorization;
 }
 
+// 开启 session 缓存临时密钥
+session_start();
 
 // 获取前端过来的参数
-$method = isset($_GET['bucket']) ? $_GET['method'] : 'post';
+$method = isset($_GET['method']) ? $_GET['method'] : 'get';
 $pathname = isset($_GET['pathname']) ? $_GET['pathname'] : '/';
-$key = isset($_GET['key']) ? $_GET['key'] : '';
 
 // 获取临时密钥，计算签名
-$tempKeys = getTempKeys($key);
-$data = array(
-    'authorization' => getAuthorization($tempKeys, $method, $pathname),
-    'sessionToken' => $tempKeys['credentials']['sessionToken'],
-);
-if ($data['authorization'] === 'action deny') {
-    $data = array('error'=> 'action deny');
+$tempKeys = getTempKeys();
+if ($tempKeys && isset($tempKeys['credentials'])) {
+    $data = array(
+        'Authorization' => getAuthorization($tempKeys, $method, $pathname),
+        'XCosSecurityToken' => $tempKeys['credentials']['sessionToken'],
+    );
+} else {
+    $data = array('error'=> $tempKeys);
 }
 
 // 返回数据给前端

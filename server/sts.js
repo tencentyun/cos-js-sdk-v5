@@ -1,21 +1,21 @@
+// 临时密钥计算样例
+
 var http = require('http');
 var crypto = require('crypto');
 var request = require('request');
 
-// 固定分配给CSG的密钥
+// 配置参数
 var config = {
     Url: 'https://sts.api.qcloud.com/v2/index.php',
     Domain: 'sts.api.qcloud.com',
-    SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    Bucket: 'test-1250000000', // 这里指定 bucket
+    Proxy: 'http://dev-proxy.oa.com:8080',
+    SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 固定密钥
+    SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 固定密钥
+    Bucket: 'test-1250000000',
+    Region: 'ap-guangzhou',
+    AllowPrefix: '_ALLOW_DIR_/*', // 这里改成允许的路径前缀，这里可以根据自己网站的用户登录态判断允许上传的目录，例子：* 或者 a/* 或者 a.jpg
 };
 
-// 缓存缓存临时密钥
-var tempKeysCache = {
-    policyStr: '',
-    expiredTime: 0
-};
 
 var util = {
     // 获取随机数
@@ -42,8 +42,15 @@ var util = {
 };
 
 // 拼接获取临时密钥的参数
-var getTempKeys = function (key, callback) {
+var getTempKeys = function (callback) {
 
+    // 判断是否修改了 AllowPrefix
+    if (config.AllowPrefix === '_ALLOW_DIR_/*') {
+        callback({'error': '请修改 AllowPrefix 配置项，指定允许上传的路径前缀'});
+        return;
+    }
+
+    // 定义绑定临时密钥的权限策略
     var ShortBucketName = config.Bucket.substr(0 , config.Bucket.lastIndexOf('-'));
     var AppId = config.Bucket.substr(1 + config.Bucket.lastIndexOf('-'));
     var policy = {
@@ -85,6 +92,7 @@ var getTempKeys = function (key, callback) {
                 // 'name/cos:DeleteObject',
                 // 简单文件操作
                 'name/cos:PutObject',
+                'name/cos:PostObject',
                 'name/cos:AppendObject',
                 'name/cos:GetObject',
                 'name/cos:HeadObject',
@@ -102,18 +110,13 @@ var getTempKeys = function (key, callback) {
             'effect': 'allow',
             'principal': {'qcs': ['*']},
             'resource': [
-                'qcs::cos:ap-guangzhou:uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName,
-                'qcs::cos:ap-guangzhou:uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/*'
+                'qcs::cos:' + config.Region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/',
+                'qcs::cos:' + config.Region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/' + config.AllowPrefix
             ]
         }]
     };
-    var policyStr = JSON.stringify(policy);
 
-    // 有效时间小于 30 秒就重新获取临时密钥，否则使用缓存的临时密钥
-    if (tempKeysCache.expiredTime - Date.now() / 1000 > 30 && tempKeysCache.policyStr === policyStr) {
-        callback(null, tempKeysCache);
-        return;
-    }
+    var policyStr = JSON.stringify(policy);
 
     var Action = 'GetFederationToken';
     var Nonce = util.getRandom(10000, 20000);
@@ -138,189 +141,27 @@ var getTempKeys = function (key, callback) {
         rejectUnauthorized: false,
         headers: {
             Host: config.Domain
-        }
+        },
+        proxy: config.Proxy || '',
     };
     request(opt, function (err, response, body) {
         body = body && JSON.parse(body);
         var data = body.data;
-        tempKeysCache = data;
-        tempKeysCache.policyStr = policyStr;
         callback(err, data);
     });
 };
 
-function camSafeUrlEncode(str) {
-    return encodeURIComponent(str)
-        .replace(/!/g, '%21')
-        .replace(/'/g, '%27')
-        .replace(/\(/g, '%28')
-        .replace(/\)/g, '%29')
-        .replace(/\*/g, '%2A');
-}
-
-function isActionAllow(method, pathname, query, headers) {
-
-    var allow = true;
-
-    // // TODO 这里判断自己网站的登录态
-    // if (!logined) {
-    //     allow = false;
-    //     return allow;
-    // }
-
-    // 请求可能带有点所有 action
-    // acl,cors,policy,location,tagging,lifecycle,versioning,replication,versions,delete,restore,uploads
-
-    // 请求跟路径，只允许获取 UploadId
-    if (pathname === '/' && !(method === 'get' && query['uploads'])) {
-        allow = false;
-    }
-
-    // 不允许前端获取和修改文件权限
-    if (pathname !== '/' && query['acl']) {
-        allow = false;
-    }
-
-    // 这里应该根据需要，限制当前站点的用户只允许操作什么样的路径
-    if (method === 'delete' && pathname !== '/') { // 这里控制是否允许删除文件
-        // TODO 这里控制是否允许删除文件
-    }
-    if (method === 'put' && pathname !== '/') { // 这里控制是否允许上传和修改文件
-        // TODO 这里控制是否允许上传和修改文件
-    }
-    if (method === 'get' && pathname !== '/') { // 这里控制是否获取文件和文件相关信息
-        // TODO 这里控制是否允许获取文件和文件相关信息
-    }
-
-    return allow;
-
-}
-
-function getAuthorization (keys, method, pathname, query, headers) {
-
-    var SecretId = keys.credentials.tmpSecretId;
-    var SecretKey = keys.credentials.tmpSecretKey;
-
-    // 整理参数
-    !query && (query = {});
-    !headers && (headers = {});
-    method = (method ? method : 'get').toLowerCase();
-    pathname = pathname ? pathname : '/';
-    pathname.indexOf('/') === -1 && (pathname = '/' + pathname);
-
-    // 注意这里要过滤好允许什么样的操作
-    if (!isActionAllow(method, pathname, query, headers)) {
-        return 'action deny';
-    }
-
-    // 工具方法
-    var getObjectKeys = function (obj) {
-        var list = [];
-        for (var key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                list.push(key);
-            }
-        }
-        return list.sort();
-    };
-
-    var obj2str = function (obj) {
-        var i, key, val;
-        var list = [];
-        var keyList = getObjectKeys(obj);
-        for (i = 0; i < keyList.length; i++) {
-            key = keyList[i];
-            val = (obj[key] === undefined || obj[key] === null) ? '' : ('' + obj[key]);
-            key = key.toLowerCase();
-            key = camSafeUrlEncode(key);
-            val = camSafeUrlEncode(val) || '';
-            list.push(key + '=' +  val)
-        }
-        return list.join('&');
-    };
-
-    // 签名有效起止时间
-    var now = parseInt(new Date().getTime() / 1000) - 1;
-    var expired = now + 600; // 签名过期时刻，600 秒后
-
-    // 要用到的 Authorization 参数列表
-    var qSignAlgorithm = 'sha1';
-    var qAk = SecretId;
-    var qSignTime = now + ';' + expired;
-    var qKeyTime = now + ';' + expired;
-    var qHeaderList = getObjectKeys(headers).join(';').toLowerCase();
-    var qUrlParamList = getObjectKeys(query).join(';').toLowerCase();
-
-    // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
-    // 步骤一：计算 SignKey
-    var signKey = crypto.createHmac('sha1', SecretKey).update(qKeyTime).digest('hex');
-
-    // 步骤二：构成 FormatString
-    var formatString = [method.toLowerCase(), pathname, obj2str(query), obj2str(headers), ''].join('\n');
-
-    // 步骤三：计算 StringToSign
-    var stringToSign = ['sha1', qSignTime, crypto.createHash('sha1').update(formatString).digest('hex'), ''].join('\n');
-
-    // 步骤四：计算 Signature
-    var qSignature = crypto.createHmac('sha1', signKey).update(stringToSign).digest('hex');
-
-    // 步骤五：构造 Authorization
-    var authorization  = [
-        'q-sign-algorithm=' + qSignAlgorithm,
-        'q-ak=' + qAk,
-        'q-sign-time=' + qSignTime,
-        'q-key-time=' + qKeyTime,
-        'q-header-list=' + qHeaderList,
-        'q-url-param-list=' + qUrlParamList,
-        'q-signature=' + qSignature
-    ].join('&');
-
-    return authorization;
-}
-
-function getBody(req, callback) {
-    var body = [];
-    req.on('data', function (chunk) {
-        body.push(chunk);
-    });
-    req.on('end', function () {
-        try {
-            body = Buffer.concat(body).toString();
-            body && console.log(body);
-            body = JSON.parse(body);
-        } catch (e) {
-            body = {};
-        }
-        callback(body);
-    });
-}
-
-
 // 启动简单的签名服务
 http.createServer(function(req, res){
     if (req.url.indexOf('/sts') === 0) {
-        // 获取前端过来的参数
-        getBody(req, function (body) {
-
-            // 获取临时密钥，计算签名
-            getTempKeys(body.key, function (err, tempKeys) {
-                var data = {
-                    authorization: getAuthorization(tempKeys, body.method, body.pathname, body.query, body.headers),
-                    sessionToken: tempKeys['credentials'] && tempKeys['credentials']['sessionToken'],
-                };
-                if (data.authorization === 'action deny') {
-                    data = {error: 'action deny'};
-                }
-
-                // 返回数据给前端
-                res.writeHead(200, {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': 'http://127.0.0.1',
-                    'Access-Control-Allow-Headers': 'origin,accept,content-type',
-                });
-                res.write(JSON.stringify(data) || '');
-                res.end();
+        getTempKeys(function (err, tempKeys) {
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'http://127.0.0.1',
+                'Access-Control-Allow-Headers': 'origin,accept,content-type',
             });
+            res.write(JSON.stringify(err || tempKeys) || '');
+            res.end();
         });
     } else {
         res.writeHead(404);

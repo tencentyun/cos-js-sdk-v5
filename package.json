@@ -1,6 +1,6 @@
 {
   "name": "cos-js-sdk-v5",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "cos js sdk v5",
   "main": "index.js",
   "scripts": {
@@ -22,12 +22,12 @@
   },
   "homepage": "https://github.com/tencentyun/cos-js-sdk-v5#readme",
   "dependencies": {
-    "babel-core": "^6.26.0",
     "querystring": "^0.2.0"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
+    "request": "^2.85.0",
     "webpack": "^3.8.1"
   }
 }

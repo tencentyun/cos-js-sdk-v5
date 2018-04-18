@@ -1653,6 +1653,8 @@ function getObjectUrl(params, callback) {
         return url;
     }
     var authorization = getAuthorizationAsync.call(this, {
+        Bucket: params.Bucket || '',
+        Region: params.Region || '',
         Method: params.Method || 'get',
         Key: params.Key,
     }, function (AuthData) {
@@ -1779,8 +1781,37 @@ function getUrl(params) {
 // 异步获取签名
 function getAuthorizationAsync(params, callback) {
     var self = this;
-    if (self.options.getAuthorization) { // 外部计算签名
+    var Bucket = params.Bucket || '';
+    var Region = params.Region || '';
+    self._StsMap = self._StsMap || {};
+    var StsData = self._StsMap[Bucket + '.' + Region] || {};
+
+    var calcAuthByTmpKey = function () {
+        var Authorization = util.getAuth({
+            SecretId: StsData.TmpSecretId,
+            SecretKey: StsData.TmpSecretKey,
+            Method: params.Method,
+            Key: params.Key,
+            Query: params.Query,
+            Headers: params.Headers,
+        });
+        var AuthData = {
+            Authorization: Authorization,
+            XCosSecurityToken: StsData.XCosSecurityToken || '',
+            Token: StsData.Token || '',
+            ClientIP: StsData.ClientIP || '',
+            ClientUA: StsData.ClientUA || '',
+        };
+        callback && callback(AuthData);
+    };
+
+    // 先判断是否有临时密钥
+    if (StsData.ExpiredTime && StsData.ExpiredTime - (Date.now() / 1000 > 60)) { // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
+        calcAuthByTmpKey();
+    } else if (self.options.getAuthorization) { // 外部计算签名或获取临时密钥
         self.options.getAuthorization.call(self, {
+            Bucket: Bucket,
+            Region: Region,
             Method: params.Method,
             Key: params.Key,
             Query: params.Query,
@@ -1789,40 +1820,26 @@ function getAuthorizationAsync(params, callback) {
             if (typeof AuthData === 'string') {
                 AuthData = {Authorization: AuthData};
             }
-            callback && callback(AuthData);
+            if (AuthData.TmpSecretId &&
+                AuthData.TmpSecretKey &&
+                AuthData.XCosSecurityToken &&
+                AuthData.ExpiredTime) {
+                StsData = self._StsMap[Bucket + '.' + Region] = AuthData;
+                calcAuthByTmpKey();
+            } else {
+                callback && callback(AuthData);
+            }
         });
     } else if (self.options.getSTS) { // 外部获取临时密钥
-        var Bucket = params.Bucket || '';
-        self._StsMap = self._StsMap || {};
-        var StsData = self._StsMap[Bucket] || {};
-        var runTemp = function () {
-            var Authorization = util.getAuth({
-                SecretId: StsData.SecretId,
-                SecretKey: StsData.SecretKey,
-                Method: params.Method,
-                Key: params.Key,
-                Query: params.Query,
-                Headers: params.Headers,
-            });
-            var AuthData = {
-                Authorization: Authorization,
-                XCosSecurityToken: StsData.XCosSecurityToken || '',
-                Token: StsData.Token || '',
-                ClientIP: StsData.ClientIP || '',
-                ClientUA: StsData.ClientUA || '',
-            };
-            callback && callback(AuthData);
-        };
-        if (StsData.ExpiredTime && StsData.ExpiredTime - (Date.now() / 1000 > 60)) { // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
-            runTemp();
-        } else { // 如果有效时间小于 60 秒就重新获取临时密钥
-            self.options.getSTS.call(self, {
-                Bucket: Bucket
-            }, function (data) {
-                StsData = self._StsMap[Bucket] = data || {};
-                runTemp();
-            });
-        }
+        self.options.getSTS.call(self, {
+            Bucket: Bucket,
+            Region: Region,
+        }, function (data) {
+            StsData = self._StsMap[Bucket + '.' + Region] = data || {};
+            StsData.TmpSecretId = StsData.SecretId;
+            StsData.TmpSecretKey = StsData.SecretKey;
+            calcAuthByTmpKey();
+        });
     } else { // 内部计算获取签名
         var Authorization = util.getAuth({
             SecretId: params.SecretId || self.options.SecretId,
@@ -1857,6 +1874,8 @@ function submitRequest(params, callback) {
     var Query = util.clone(params.qs);
     params.action && (Query[params.action] = '');
     getAuthorizationAsync.call(self, {
+        Bucket: params.Bucket || '',
+        Region: params.Region || '',
         Method: params.method,
         Key: params.Key,
         Query: Query,
@@ -1889,7 +1908,7 @@ function submitRequest(params, callback) {
             }
         }
         if (!formatAllow) {
-            callback('authorization format error');
+            callback('authorization error');
             return;
         }
 

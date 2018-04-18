@@ -587,6 +587,7 @@ var defaultOptions = {
     AppId: '', // AppId 已废弃，请拼接到 Bucket 后传入，例如：test-1250000000
     SecretId: '',
     SecretKey: '',
+    UploadIdCacheLimit: 50,
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
     ChunkSize: 1024 * 1024,
@@ -611,7 +612,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.3';
+COS.version = '0.4.4';
 
 module.exports = COS;
 
@@ -1289,7 +1290,7 @@ var process_to_xml = function (node_data, options) {
                 var nodes = [];
                 for (var name in node_data) {
                     if (node_data[name] instanceof Array) {
-                        for (var j in node_data[name]) {
+                        for (var j = 0; j < node_data[name].length; j++) {
                             nodes.push(makeNode(name, fn(node_data[name][j], 0, level + 1), null, level + 1, objKeys(node_data[name][j]).length));
                         }
                     } else {
@@ -3222,6 +3223,8 @@ function getObjectUrl(params, callback) {
         return url;
     }
     var authorization = getAuthorizationAsync.call(this, {
+        Bucket: params.Bucket || '',
+        Region: params.Region || '',
         Method: params.Method || 'get',
         Key: params.Key
     }, function (AuthData) {
@@ -3344,9 +3347,39 @@ function getUrl(params) {
 // 异步获取签名
 function getAuthorizationAsync(params, callback) {
     var self = this;
-    if (self.options.getAuthorization) {
-        // 外部计算签名
+    var Bucket = params.Bucket || '';
+    var Region = params.Region || '';
+    self._StsMap = self._StsMap || {};
+    var StsData = self._StsMap[Bucket + '.' + Region] || {};
+
+    var calcAuthByTmpKey = function () {
+        var Authorization = util.getAuth({
+            SecretId: StsData.TmpSecretId,
+            SecretKey: StsData.TmpSecretKey,
+            Method: params.Method,
+            Key: params.Key,
+            Query: params.Query,
+            Headers: params.Headers
+        });
+        var AuthData = {
+            Authorization: Authorization,
+            XCosSecurityToken: StsData.XCosSecurityToken || '',
+            Token: StsData.Token || '',
+            ClientIP: StsData.ClientIP || '',
+            ClientUA: StsData.ClientUA || ''
+        };
+        callback && callback(AuthData);
+    };
+
+    // 先判断是否有临时密钥
+    if (StsData.ExpiredTime && StsData.ExpiredTime - (Date.now() / 1000 > 60)) {
+        // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
+        calcAuthByTmpKey();
+    } else if (self.options.getAuthorization) {
+        // 外部计算签名或获取临时密钥
         self.options.getAuthorization.call(self, {
+            Bucket: Bucket,
+            Region: Region,
             Method: params.Method,
             Key: params.Key,
             Query: params.Query,
@@ -3355,43 +3388,24 @@ function getAuthorizationAsync(params, callback) {
             if (typeof AuthData === 'string') {
                 AuthData = { Authorization: AuthData };
             }
-            callback && callback(AuthData);
+            if (AuthData.TmpSecretId && AuthData.TmpSecretKey && AuthData.XCosSecurityToken && AuthData.ExpiredTime) {
+                StsData = self._StsMap[Bucket + '.' + Region] = AuthData;
+                calcAuthByTmpKey();
+            } else {
+                callback && callback(AuthData);
+            }
         });
     } else if (self.options.getSTS) {
         // 外部获取临时密钥
-        var Bucket = params.Bucket || '';
-        self._StsMap = self._StsMap || {};
-        var StsData = self._StsMap[Bucket] || {};
-        var runTemp = function () {
-            var Authorization = util.getAuth({
-                SecretId: StsData.SecretId,
-                SecretKey: StsData.SecretKey,
-                Method: params.Method,
-                Key: params.Key,
-                Query: params.Query,
-                Headers: params.Headers
-            });
-            var AuthData = {
-                Authorization: Authorization,
-                XCosSecurityToken: StsData.XCosSecurityToken || '',
-                Token: StsData.Token || '',
-                ClientIP: StsData.ClientIP || '',
-                ClientUA: StsData.ClientUA || ''
-            };
-            callback && callback(AuthData);
-        };
-        if (StsData.ExpiredTime && StsData.ExpiredTime - (Date.now() / 1000 > 60)) {
-            // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
-            runTemp();
-        } else {
-            // 如果有效时间小于 60 秒就重新获取临时密钥
-            self.options.getSTS.call(self, {
-                Bucket: Bucket
-            }, function (data) {
-                StsData = self._StsMap[Bucket] = data || {};
-                runTemp();
-            });
-        }
+        self.options.getSTS.call(self, {
+            Bucket: Bucket,
+            Region: Region
+        }, function (data) {
+            StsData = self._StsMap[Bucket + '.' + Region] = data || {};
+            StsData.TmpSecretId = StsData.SecretId;
+            StsData.TmpSecretKey = StsData.SecretKey;
+            calcAuthByTmpKey();
+        });
     } else {
         // 内部计算获取签名
         var Authorization = util.getAuth({
@@ -3427,6 +3441,8 @@ function submitRequest(params, callback) {
     var Query = util.clone(params.qs);
     params.action && (Query[params.action] = '');
     getAuthorizationAsync.call(self, {
+        Bucket: params.Bucket || '',
+        Region: params.Region || '',
         Method: params.method,
         Key: params.Key,
         Query: Query,
@@ -3451,7 +3467,7 @@ function submitRequest(params, callback) {
             }
         }
         if (!formatAllow) {
-            callback('authorization format error');
+            callback('authorization error');
             return;
         }
 
@@ -8036,6 +8052,12 @@ function sliceUploadFile(params, callback) {
 
     // 获取 UploadId 完成，开始上传每个分片
     ep.on('get_upload_data_finish', function (UploadData) {
+        if (UploadData.UploadId) {
+            var uuid = getFileUuid(Body, params.ChunkSize);
+            uuid && setUploadId.call(self, uuid, UploadData.UploadId);
+        }
+
+        // 获取 UploadId
         uploadSliceList.call(self, {
             TaskId: TaskId,
             Bucket: Bucket,
@@ -8108,6 +8130,48 @@ function sliceUploadFile(params, callback) {
         self.putObject(params, callback);
     } else {
         ep.emit('get_file_size_finish');
+    }
+}
+
+// 按照文件特征值，缓存 UploadId
+var uploadIdCacheKey = 'cos_sdk_upload_cache';
+var uploadIdCache = [];
+try {
+    uploadIdCache = JSON.parse(localStorage.getItem(uploadIdCacheKey)) || [];
+} catch (e) {}
+function setUploadId(uuid, UploadId) {
+    for (var i = uploadIdCache.length - 1; i >= 0; i--) {
+        if (uploadIdCache[i][0] === uuid) {
+            uploadIdCache.splice(i, 1);
+        }
+    }
+    uploadIdCache.unshift([uuid, UploadId]);
+    var cacheLimit = this.options.UploadIdCacheLimit;
+    if (uploadIdCache.length > cacheLimit) {
+        uploadIdCache.splice(cacheLimit);
+    }
+    cacheLimit && setTimeout(function () {
+        try {
+            localStorage.setItem(uploadIdCacheKey, JSON.stringify(uploadIdCache));
+        } catch (e) {}
+    });
+}
+function getUploadId(uuid) {
+    var UploadId;
+    for (var i = 0; i < uploadIdCache.length; i++) {
+        if (uploadIdCache[i][0] === uuid) {
+            UploadId = uploadIdCache[i][1];
+            break;
+        }
+    }
+    return UploadId;
+}
+function getFileUuid(file, ChunkSize) {
+    // 如果信息不完整，不获取
+    if (file.name && file.size && file.lastModifiedDate && ChunkSize) {
+        return util.md5([file.name, file.size, file.lastModifiedDate, ChunkSize].join('::'));
+    } else {
+        return null;
     }
 }
 
@@ -8291,27 +8355,46 @@ function getUploadIdAndPartList(params, callback) {
         });
     });
 
-    // 获取符合条件的 UploadId 列表，因为同一个文件可以有多个上传任务。
-    wholeMultipartList.call(self, {
-        Bucket: Bucket,
-        Region: Region,
-        Key: Key
-    }, function (err, data) {
-        if (!self._isRunningTask(TaskId)) return;
-        if (err) {
-            return ep.emit('error', err);
-        }
-        var UploadIdList = data.UploadList.filter(function (item) {
-            return item.Key === Key && (!StorageClass || item.StorageClass.toUpperCase() === StorageClass.toUpperCase());
-        }).reverse().map(function (item) {
-            return item.UploadId || item.UploadID;
+    // 获取缓存的 UploadId
+    var uuid = getFileUuid(params.Body, params.ChunkSize),
+        UploadId;
+    if (uuid && (UploadId = getUploadId(uuid))) {
+        wholeMultipartListPart.call(self, {
+            Bucket: Bucket,
+            Region: Region,
+            Key: Key,
+            UploadId: UploadId
+        }, function (err, PartListData) {
+            if (!self._isRunningTask(TaskId)) return;
+            if (err) return ep.emit('error', err);
+            ep.emit('upload_id_ready', {
+                UploadId: UploadId,
+                PartList: PartListData.PartList
+            });
         });
-        if (UploadIdList.length) {
-            ep.emit('has_upload_id', UploadIdList);
-        } else {
-            ep.emit('no_available_upload_id');
-        }
-    });
+    } else {
+        // 获取符合条件的 UploadId 列表，因为同一个文件可以有多个上传任务。
+        wholeMultipartList.call(self, {
+            Bucket: Bucket,
+            Region: Region,
+            Key: Key
+        }, function (err, data) {
+            if (!self._isRunningTask(TaskId)) return;
+            if (err) {
+                return ep.emit('error', err);
+            }
+            var UploadIdList = data.UploadList.filter(function (item) {
+                return item.Key === Key && (!StorageClass || item.StorageClass.toUpperCase() === StorageClass.toUpperCase());
+            }).reverse().map(function (item) {
+                return item.UploadId || item.UploadID;
+            });
+            if (UploadIdList.length) {
+                ep.emit('has_upload_id', UploadIdList);
+            } else {
+                ep.emit('no_available_upload_id');
+            }
+        });
+    }
 }
 
 // 获取符合条件的全部上传任务 (条件包括 Bucket, Region, Prefix)

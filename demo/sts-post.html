@@ -33,24 +33,26 @@
 
         // 计算签名
         var getAuthorization = function (options, callback) {
-            var method = (options.Method || 'get').toLowerCase();
-            var key = options.Key || '';
-            // var url = 'http://127.0.0.1:3000/sts-post-object' +
-                var url = '../server/sts-post-object.php' +
-                '?method=' + method +
-                '&pathname=' + encodeURIComponent('/') +
-                '&key=' + encodeURIComponent(key);
+            // var url = 'http://127.0.0.1:3000/sts-auth' +
+            var url = '../server/sts-auth.php' +
+                '?method=post' +
+                '&pathname=' + encodeURIComponent('/');
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.onload = function (e) {
-                var data = JSON.parse(e.target.responseText);
-                if (data.authorization === '') {
-
+                var AuthData;
+                try {
+                    AuthData = JSON.parse(xhr.responseText)
+                } catch (e) {}
+                if (AuthData && AuthData.Authorization) {
+                    callback(null, {
+                        Authorization: AuthData.Authorization,
+                        XCosSecurityToken: AuthData.XCosSecurityToken,
+                    });
+                } else {
+                    console.error(AuthData);
+                    callback('获取签名出错');
                 }
-                callback(null, {
-                    Authorization: data.authorization,
-                    XCosSecurityToken: data.sessionToken,
-                });
             };
             xhr.onerror = function (e) {
                 callback('获取签名出错');
@@ -63,14 +65,11 @@
             var Key = 'dir/' + file.name; // 这里指定上传目录和文件名
 
             getAuthorization({Method: 'POST', Key: Key}, function (err, info) {
-                var auth = info.Authorization;
-                var XCosSecurityToken = info.XCosSecurityToken;
-
                 var fd = new FormData();
                 fd.append('key', Key);
-                fd.append('Signature', auth);
+                fd.append('Signature', info.Authorization);
                 fd.append('Content-Type', '');
-                XCosSecurityToken && fd.append('x-cos-security-token', XCosSecurityToken);
+                info.XCosSecurityToken && fd.append('x-cos-security-token', info.XCosSecurityToken);
                 fd.append('file', file);
                 var url = prefix;
                 var xhr = new XMLHttpRequest();

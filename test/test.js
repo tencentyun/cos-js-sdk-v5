@@ -29,27 +29,26 @@ var util = {
 
 var getAuthorization = function (options, callback) {
 
-    // 方法一、后端计算签名（推荐）
-    var method = (options.Method || 'get').toLowerCase();
-    var key = options.Key || '';
-    var query = options.Query || {};
-    var headers = options.Headers || {};
-    var pathname = key.indexOf('/') === 0 ? key : '/' + key;
-    // var url = 'http://127.0.0.1:3000/auth';
-    var url = '../server/auth.php';
+    // 方法一、后端通过获取临时密钥，计算签名给到前端（适用于前端调试）
+    // var url = 'http://127.0.0.1:3000/sts?Bucket=' + options.Bucket + '&Region=' + options.Region;
+    // var url = '../server/sts.php?Bucket=' + options.Bucket + '&Region=' + options.Region;
+    var url = '../server/sts.php';
     var xhr = new XMLHttpRequest();
-    var data = {
-        method: method,
-        pathname: pathname,
-        query: query,
-        headers: headers,
-    };
-    xhr.open('POST', url, true);
-    xhr.setRequestHeader('content-type', 'application/json');
+    xhr.open('GET', url, true);
     xhr.onload = function (e) {
-        callback(e.target.responseText);
+        try {
+            var data = JSON.parse(e.target.responseText);
+        } catch (e) {
+        }
+        callback({
+            TmpSecretId: data.credentials && data.credentials.tmpSecretId,
+            TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
+            XCosSecurityToken: data.credentials && data.credentials.sessionToken,
+            ExpiredTime: data.expiredTime,
+        });
     };
-    xhr.send(JSON.stringify(data));
+    xhr.send();
+
 
     // // 方法二、后端通过获取临时密钥，计算签名给到前端（适用于前端调试）
     // var method = (options.Method || 'get').toLowerCase();
@@ -57,8 +56,8 @@ var getAuthorization = function (options, callback) {
     // var query = options.Query || {};
     // var headers = options.Headers || {};
     // var pathname = key.indexOf('/') === 0 ? key : '/' + key;
-    // var url = 'http://127.0.0.1:3000/sts';
-    // // var url = '../server/sts.php';
+    // // var url = 'http://127.0.0.1:3000/sts-auth';
+    // var url = '../server/sts-auth.php';
     // var xhr = new XMLHttpRequest();
     // var data = {
     //     method: method,
@@ -74,11 +73,12 @@ var getAuthorization = function (options, callback) {
     //     } catch (e) {
     //     }
     //     callback({
-    //         Authorization: AuthData.authorization,
-    //         XCosSecurityToken: AuthData.sessionToken,
+    //         Authorization: AuthData.Authorization,
+    //         XCosSecurityToken: AuthData.XCosSecurityToken,
     //     });
     // };
     // xhr.send(JSON.stringify(data));
+
 
     // // 方法三、前端计算签名（适用于前端调试）
     // var authorization = COS.getAuthorization({
@@ -141,19 +141,15 @@ it('getAuth()', function (assert) {
             Key: key,
             Body: content
         }, function (err, data) {
-            getAuthorization({
-                Method: 'get',
-                Key: key
-            }, function (AuthData) {
-                if (typeof AuthData === 'string') {
-                    AuthData = {Authorization: AuthData};
-                }
-
-                var link = 'http://' + BucketLongName + '.cos.' + config.Region + '.myqcloud.com/' + key +
-                    '?sign=' + encodeURIComponent(AuthData.Authorization);
+            cos.getObjectUrl({
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: key,
+            }, function (err, data) {
+                var link = data.Url;
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', link, true);
-                AuthData.XCosSecurityToken && xhr.setRequestHeader('x-cos-security-token', AuthData.XCosSecurityToken);
+                data.XCosSecurityToken && xhr.setRequestHeader('x-cos-security-token', data.XCosSecurityToken);
                 xhr.onload = function (e) {
                     assert.ok(xhr.status === 200, '获取文件 200');
                     assert.ok(xhr.responseText === content, '通过获取签名能正常获取文件');

@@ -39,22 +39,28 @@
         // 计算签名
         var getAuthorization = function (options, callback) {
             var method = (options.Method || 'get').toLowerCase();
-            var key = options.Key || '';
-            // var url = 'http://127.0.0.1:3000/sts-post-object' +
-            var url = '../server/sts-post-object.php' +
+            // var url = 'http://127.0.0.1:3000/sts-auth' +
+            var url = '../server/sts-auth.php' +
                 '?method=' + method +
-                '&pathname=' + encodeURIComponent('/') +
-                '&key=' + encodeURIComponent(key);
+                '&pathname=' + encodeURIComponent('/');
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.onreadystatechange = function (e) {
                 if (xhr.readyState === 4) {
                     if (xhr.status === 200) {
-                        var data = JSON.parse(xhr.responseText);
-                        callback(null, {
-                            Authorization: data.authorization,
-                            XCosSecurityToken: data.sessionToken,
-                        });
+                        var AuthData;
+                        try {
+                            AuthData = (new Function('return ' + xhr.responseText))();
+                        } catch (e) {}
+                        if (AuthData && AuthData.Authorization) {
+                            callback(null, {
+                                Authorization: AuthData.Authorization,
+                                XCosSecurityToken: AuthData.XCosSecurityToken,
+                            });
+                        } else {
+                            console.error(AuthData);
+                            callback('获取签名出错');
+                        }
                     } else {
                         callback('获取签名出错');
                     }
@@ -102,7 +108,7 @@
                 document.getElementById('success_action_redirect').value = location.href.substr(0, location.href.lastIndexOf('/') + 1) + 'empty.html';
                 document.getElementById('key').value = Key;
                 document.getElementById('Signature').value = AuthData.Authorization;
-                document.getElementById('x-cos-security-token').value = AuthData.XCosSecurityToken;
+                document.getElementById('x-cos-security-token').value = AuthData.XCosSecurityToken || '';
                 form.submit();
             });
         };
