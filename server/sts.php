@@ -5,7 +5,7 @@
 $config = array(
     'Url' => 'https://sts.api.qcloud.com/v2/index.php',
     'Domain' => 'sts.api.qcloud.com',
-    'Proxy' => 'http://dev-proxy.oa.com:8080',
+    'Proxy' => '',
     'SecretId' => 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 固定密钥
     'SecretKey' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 固定密钥
     'Bucket' => 'test-1250000000',

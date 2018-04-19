@@ -3357,7 +3357,7 @@ function getAuthorizationAsync(params, callback) {
             SecretId: StsData.TmpSecretId,
             SecretKey: StsData.TmpSecretKey,
             Method: params.Method,
-            Key: params.Key,
+            Key: params.Key || '',
             Query: params.Query,
             Headers: params.Headers
         });
@@ -3381,7 +3381,7 @@ function getAuthorizationAsync(params, callback) {
             Bucket: Bucket,
             Region: Region,
             Method: params.Method,
-            Key: params.Key,
+            Key: params.Key || '',
             Query: params.Query,
             Headers: params.Headers
         }, function (AuthData) {
@@ -3412,7 +3412,7 @@ function getAuthorizationAsync(params, callback) {
             SecretId: params.SecretId || self.options.SecretId,
             SecretKey: params.SecretKey || self.options.SecretKey,
             Method: params.Method,
-            Key: params.Key,
+            Key: params.Key || '',
             Query: params.Query,
             Headers: params.Headers
         });
@@ -3513,6 +3513,7 @@ function _submitRequest(params, callback) {
     };
 
     // 获取签名
+    opt.headers.Uid = '459452372';
     opt.headers.Authorization = params.AuthData.Authorization;
     params.AuthData.Token && (opt.headers['token'] = params.AuthData.Token);
     params.AuthData.ClientIP && (opt.headers['clientIP'] = params.AuthData.ClientIP);
