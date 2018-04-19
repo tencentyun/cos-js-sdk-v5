@@ -1954,7 +1954,6 @@ function _submitRequest(params, callback) {
     };
 
     // 获取签名
-    opt.headers.Uid = '459452372';
     opt.headers.Authorization = params.AuthData.Authorization;
     params.AuthData.Token && (opt.headers['token'] = params.AuthData.Token);
     params.AuthData.ClientIP && (opt.headers['clientIP'] = params.AuthData.ClientIP);

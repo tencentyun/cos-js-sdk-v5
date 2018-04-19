@@ -623,7 +623,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.4';
+COS.version = '0.4.5';
 
 module.exports = COS;
 
@@ -3524,7 +3524,6 @@ function _submitRequest(params, callback) {
     };
 
     // 获取签名
-    opt.headers.Uid = '459452372';
     opt.headers.Authorization = params.AuthData.Authorization;
     params.AuthData.Token && (opt.headers['token'] = params.AuthData.Token);
     params.AuthData.ClientIP && (opt.headers['clientIP'] = params.AuthData.ClientIP);
