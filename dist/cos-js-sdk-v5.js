@@ -237,6 +237,16 @@ function extend(target, source) {
 function isArray(arr) {
     return arr instanceof Array;
 }
+function isInArray(arr, item) {
+    var flag = false;
+    for (var i = 0; i < arr.length; i++) {
+        if (item === arr[i]) {
+            flag = true;
+            break;
+        }
+    }
+    return flag;
+}
 function each(obj, fn) {
     for (var i in obj) {
         if (obj.hasOwnProperty(i)) {
@@ -464,6 +474,7 @@ var util = {
     binaryBase64: binaryBase64,
     extend: extend,
     isArray: isArray,
+    isInArray: isInArray,
     each: each,
     map: map,
     filter: filter,
@@ -1461,7 +1472,7 @@ var initTask = function (cos) {
                 return;
             }
             task.state = switchToState;
-            cos.emit('inner-kill-task', { TaskId: id });
+            cos.emit('inner-kill-task', { TaskId: id, toState: switchToState });
             emitListUpdate();
             if (running) {
                 uploadingFileCount--;
@@ -8035,28 +8046,36 @@ function sliceUploadFile(params, callback) {
     });
 
     // 上传分块完成，开始 uploadSliceComplete 操作
-    ep.on('upload_slice_complete', function (data) {
+    ep.on('upload_slice_complete', function (UploadData) {
         uploadSliceComplete.call(self, {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
-            UploadId: data.UploadId,
-            SliceList: data.SliceList
+            UploadId: UploadData.UploadId,
+            SliceList: UploadData.SliceList
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
+            delete uploadIdUsing[UploadData.UploadId];
             if (err) {
                 return ep.emit('error', err);
             }
+            removeUploadId.call(self, UploadData.UploadId);
             ep.emit('upload_complete', data);
         });
     });
 
     // 获取 UploadId 完成，开始上传每个分片
     ep.on('get_upload_data_finish', function (UploadData) {
-        if (UploadData.UploadId) {
-            var uuid = getFileUuid(Body, params.ChunkSize);
-            uuid && setUploadId.call(self, uuid, UploadData.UploadId);
-        }
+
+        // 处理 UploadId 缓存
+        var uuid = getFileUuid(Body, params.ChunkSize);
+        uuid && setUploadId.call(self, uuid, UploadData.UploadId); // 缓存 UploadId
+        uploadIdUsing[UploadData.UploadId] = true; // 标记 UploadId 为正在使用
+        TaskId && self.on('inner-kill-task', function (data) {
+            if (data.TaskId === TaskId && data.toState === 'canceled') {
+                delete uploadIdUsing[UploadData.UploadId]; // 去除 UploadId 正在使用的标记
+            }
+        });
 
         // 获取 UploadId
         uploadSliceList.call(self, {
@@ -8126,6 +8145,7 @@ function sliceUploadFile(params, callback) {
         params.ChunkSize = params.SliceSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
     })();
 
+    // 开始上传
     if (FileSize === 0) {
         params.Body = '';
         self.putObject(params, callback);
@@ -8135,14 +8155,26 @@ function sliceUploadFile(params, callback) {
 }
 
 // 按照文件特征值，缓存 UploadId
+var uploadIdCache;
+var uploadIdUsing = {};
 var uploadIdCacheKey = 'cos_sdk_upload_cache';
-var uploadIdCache = [];
-try {
-    uploadIdCache = JSON.parse(localStorage.getItem(uploadIdCacheKey)) || [];
-} catch (e) {}
-function setUploadId(uuid, UploadId) {
+function initUploadId() {
+    var cacheLimit = this.options.UploadIdCacheLimit;
+    if (!uploadIdCache) {
+        if (cacheLimit) {
+            try {
+                uploadIdCache = JSON.parse(localStorage.getItem(uploadIdCacheKey)) || [];
+            } catch (e) {}
+        }
+        if (!uploadIdCache) {
+            uploadIdCache = [];
+        }
+    }
+}
+function setUploadId(uuid, UploadId, isDisabled) {
+    initUploadId.call(this);
     for (var i = uploadIdCache.length - 1; i >= 0; i--) {
-        if (uploadIdCache[i][0] === uuid) {
+        if (uploadIdCache[i][0] === uuid && uploadIdCache[i][1] === UploadId) {
             uploadIdCache.splice(i, 1);
         }
     }
@@ -8157,15 +8189,37 @@ function setUploadId(uuid, UploadId) {
         } catch (e) {}
     });
 }
-function getUploadId(uuid) {
-    var UploadId;
-    for (var i = 0; i < uploadIdCache.length; i++) {
-        if (uploadIdCache[i][0] === uuid) {
-            UploadId = uploadIdCache[i][1];
-            break;
+function removeUploadId(UploadId) {
+    initUploadId.call(this);
+    delete uploadIdUsing[UploadId];
+    for (var i = uploadIdCache.length - 1; i >= 0; i--) {
+        if (uploadIdCache[i][1] === UploadId) {
+            uploadIdCache.splice(i, 1);
         }
     }
-    return UploadId;
+    var cacheLimit = this.options.UploadIdCacheLimit;
+    if (uploadIdCache.length > cacheLimit) {
+        uploadIdCache.splice(cacheLimit);
+    }
+    cacheLimit && setTimeout(function () {
+        try {
+            if (uploadIdCache.length) {
+                localStorage.setItem(uploadIdCacheKey, JSON.stringify(uploadIdCache));
+            } else {
+                localStorage.removeItem(uploadIdCacheKey);
+            }
+        } catch (e) {}
+    });
+}
+function getUploadId(uuid) {
+    initUploadId.call(this);
+    var CacheUploadIdList = [];
+    for (var i = 0; i < uploadIdCache.length; i++) {
+        if (uploadIdCache[i][0] === uuid) {
+            CacheUploadIdList.push(uploadIdCache[i][1]);
+        }
+    }
+    return CacheUploadIdList.length ? CacheUploadIdList : null;
 }
 function getFileUuid(file, ChunkSize) {
     // 如果信息不完整，不获取
@@ -8318,6 +8372,12 @@ function getUploadIdAndPartList(params, callback) {
         UploadIdList = UploadIdList.reverse();
         Async.eachLimit(UploadIdList, 1, function (UploadId, asyncCallback) {
             if (!self._isRunningTask(TaskId)) return;
+            // 如果正在上传，跳过
+            if (uploadIdUsing[UploadId]) {
+                asyncCallback(); // 检查下一个 UploadId
+                return;
+            }
+            // 判断 UploadId 是否可用
             wholeMultipartListPart.call(self, {
                 Bucket: Bucket,
                 Region: Region,
@@ -8325,7 +8385,10 @@ function getUploadIdAndPartList(params, callback) {
                 UploadId: UploadId
             }, function (err, PartListData) {
                 if (!self._isRunningTask(TaskId)) return;
-                if (err) return ep.emit('error', err);
+                if (err) {
+                    removeUploadId.call(self, UploadId);
+                    return ep.emit('error', err);
+                }
                 var PartList = PartListData.PartList;
                 PartList.forEach(function (item) {
                     item.PartNumber *= 1;
@@ -8356,24 +8419,58 @@ function getUploadIdAndPartList(params, callback) {
         });
     });
 
-    // 获取缓存的 UploadId
-    var uuid = getFileUuid(params.Body, params.ChunkSize),
-        UploadId;
-    if (uuid && (UploadId = getUploadId(uuid))) {
-        wholeMultipartListPart.call(self, {
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key,
-            UploadId: UploadId
-        }, function (err, PartListData) {
-            if (!self._isRunningTask(TaskId)) return;
-            if (err) return ep.emit('error', err);
-            ep.emit('upload_id_ready', {
-                UploadId: UploadId,
-                PartList: PartListData.PartList
-            });
-        });
-    } else {
+    // 在本地缓存找可用的 UploadId
+    ep.on('seek_local_avail_upload_id', function (RemoteUploadIdList) {
+        // 在本地找可用的 UploadId
+        var uuid = getFileUuid(params.Body, params.ChunkSize),
+            LocalUploadIdList;
+        if (uuid && (LocalUploadIdList = getUploadId.call(self, uuid))) {
+            var next = function (index) {
+                // 如果找不到，到线上列出 UploadId
+                if (index >= LocalUploadIdList.length) {
+                    ep.emit('has_upload_id', RemoteUploadIdList);
+                    return;
+                }
+                var UploadId = LocalUploadIdList[index];
+                // 如果不在远端 UploadId 列表里，跳过并删除
+                if (!util.isInArray(RemoteUploadIdList, UploadId)) {
+                    removeUploadId.call(self, UploadId);
+                    next(index + 1);
+                    return;
+                }
+                // 如果正在上传，跳过
+                if (uploadIdUsing[UploadId]) {
+                    next(index + 1);
+                    return;
+                }
+                // 判断 UploadId 是否存在线上
+                wholeMultipartListPart.call(self, {
+                    Bucket: Bucket,
+                    Region: Region,
+                    Key: Key,
+                    UploadId: UploadId
+                }, function (err, PartListData) {
+                    if (!self._isRunningTask(TaskId)) return;
+                    if (err) {
+                        removeUploadId.call(self, UploadId);
+                        next(index + 1);
+                    } else {
+                        // 找到可用 UploadId
+                        ep.emit('upload_id_ready', {
+                            UploadId: UploadId,
+                            PartList: PartListData.PartList
+                        });
+                    }
+                });
+            };
+            next(0);
+        } else {
+            ep.emit('has_upload_id', RemoteUploadIdList);
+        }
+    });
+
+    // 获取线上 UploadId 列表
+    ep.on('get_remote_upload_id_list', function (RemoteUploadIdList) {
         // 获取符合条件的 UploadId 列表，因为同一个文件可以有多个上传任务。
         wholeMultipartList.call(self, {
             Bucket: Bucket,
@@ -8384,18 +8481,29 @@ function getUploadIdAndPartList(params, callback) {
             if (err) {
                 return ep.emit('error', err);
             }
-            var UploadIdList = data.UploadList.filter(function (item) {
+            // 整理远端 UploadId 列表
+            var RemoteUploadIdList = data.UploadList.filter(function (item) {
                 return item.Key === Key && (!StorageClass || item.StorageClass.toUpperCase() === StorageClass.toUpperCase());
             }).reverse().map(function (item) {
                 return item.UploadId || item.UploadID;
             });
-            if (UploadIdList.length) {
-                ep.emit('has_upload_id', UploadIdList);
+            if (RemoteUploadIdList.length) {
+                ep.emit('seek_local_avail_upload_id', RemoteUploadIdList);
             } else {
+                var uuid = getFileUuid(params.Body, params.ChunkSize),
+                    LocalUploadIdList;
+                if (uuid && (LocalUploadIdList = getUploadId.call(self, uuid))) {
+                    util.each(LocalUploadIdList, function (UploadId) {
+                        removeUploadId.call(self, UploadId);
+                    });
+                }
                 ep.emit('no_available_upload_id');
             }
         });
-    }
+    });
+
+    // 开始找可用 UploadId
+    ep.emit('get_remote_upload_id_list');
 }
 
 // 获取符合条件的全部上传任务 (条件包括 Bucket, Region, Prefix)

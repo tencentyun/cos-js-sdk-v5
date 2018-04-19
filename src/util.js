@@ -170,6 +170,16 @@ function extend(target, source) {
 function isArray(arr) {
     return arr instanceof Array;
 }
+function isInArray(arr, item) {
+    var flag = false;
+    for (var i = 0; i < arr.length; i++) {
+        if (item === arr[i]) {
+            flag = true;
+            break;
+        }
+    }
+    return flag;
+}
 function each(obj, fn) {
     for (var i in obj) {
         if (obj.hasOwnProperty(i)) {
@@ -395,6 +405,7 @@ var util = {
     binaryBase64: binaryBase64,
     extend: extend,
     isArray: isArray,
+    isInArray: isInArray,
     each: each,
     map: map,
     filter: filter,

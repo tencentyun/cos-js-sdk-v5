@@ -88,7 +88,7 @@ var initTask = function (cos) {
                 return;
             }
             task.state = switchToState;
-            cos.emit('inner-kill-task', {TaskId: id});
+            cos.emit('inner-kill-task', {TaskId: id, toState: switchToState});
             emitListUpdate();
             if (running) {
                 uploadingFileCount--;

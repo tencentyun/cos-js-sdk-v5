@@ -81,7 +81,6 @@ var getAuthorization = function (options, callback) {
 };
 
 var cos = new COS({
-    UploadIdCacheLimit: 3,
     getAuthorization: getAuthorization,
 });
 var TaskId;
