@@ -37,13 +37,22 @@ var Region = 'ap-guangzhou';
 // 初始化实例
 var cos = new COS({
     getAuthorization: function (options, callback) {
-        // 异步获取签名
-        $.get('../server/auth.php', {
-            method: (options.Method || 'get').toLowerCase(),
-            pathname: '/' + (options.Key || '')
-        }, function (authorization) {
-            callback(authorization);
-        }, 'text');
+        var url = '../server/sts.php';
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.onload = function (e) {
+            try {
+                var data = JSON.parse(e.target.responseText);
+            } catch (e) {
+            }
+            callback({
+                TmpSecretId: data.credentials && data.credentials.tmpSecretId,
+                TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
+                XCosSecurityToken: data.credentials && data.credentials.sessionToken,
+                ExpiredTime: data.expiredTime,
+            });
+        };
+        xhr.send();
     }
 });
 
@@ -59,6 +68,12 @@ document.getElementById('file-selector').onchange = function () {
         Region: Region,
         Key: file.name,
         Body: file,
+        onHashProgress: function (progressData) {
+            console.log('校验中', JSON.stringify(progressData));
+        },
+        onProgress: function (progressData) {
+            console.log('上传中', JSON.stringify(progressData));
+        },
     }, function (err, data) {
         console.log(err, data);
     });
