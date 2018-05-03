@@ -514,6 +514,34 @@ it('putObject()', function (assert) {
     });
 });
 
+it('putObject(),string', function (assert) {
+    var filename = '1.txt';
+    return new Promise(function (done) {
+        var content = '中文_' + Date.now().toString(36);
+        var lastPercent = 0;
+        cos.putObject({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            Key: filename,
+            Body: content,
+            onProgress: function (processData) {
+                lastPercent = processData.percent;
+            },
+        }, function (err, data) {
+            if (err) throw err;
+            assert.ok(data.ETag.length > 0, 'putObject 有返回 ETag');
+            cos.getObject({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: filename,
+            }, function (err, data) {
+                assert.ok(data && data.headers && data.ETag === data.ETag && data.Body === content, '上传和下载内容一致');
+                done();
+            });
+        });
+    });
+});
+
 it('Key 特殊字符', function (assert) {
     return new Promise(function (done) {
         cos.putObject({
@@ -1452,7 +1480,7 @@ it('params check', function (assert) {
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: 'gz'
         }, function (err, data) {
-            assert.ok(err.error.indexOf('Region format error') === 0);
+            assert.ok(err.error.indexOf('param Region format error') === 0);
             done();
         });
     });
@@ -1464,7 +1492,7 @@ it('params check', function (assert) {
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: 'cos.ap-guangzhou'
         }, function (err, data) {
-            assert.ok(err.error === 'Region should not be start with "cos."');
+            assert.ok(err.error === 'param Region should not be start with "cos."');
             done();
         });
     });
