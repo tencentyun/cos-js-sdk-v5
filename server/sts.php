@@ -13,12 +13,11 @@ $config = array(
     'AllowPrefix' => '_ALLOW_DIR_/*', // 必填，这里改成允许的路径前缀，这里可以根据自己网站的用户登录态判断允许上传的目录，例子：* 或者 a/* 或者 a.jpg
 );
 
-// json 转 query string
-function json2str($obj, $notEncode = false) {
+// obj 转 query string
+function json2str($obj) {
     ksort($obj);
     $arr = array();
     foreach ($obj as $key => $val) {
-        !$notEncode && ($val = urlencode($val));
         array_push($arr, $key . '=' . $val);
     }
     return join('&', $arr);
@@ -27,7 +26,7 @@ function json2str($obj, $notEncode = false) {
 // 计算临时密钥用的签名
 function getSignature($opt, $key, $method) {
     global $config;
-    $formatString = $method . $config['Domain'] . '/v2/index.php?' . json2str($opt, 1);
+    $formatString = $method . $config['Domain'] . '/v2/index.php?' . json2str($opt);
     $sign = hash_hmac('sha1', $formatString, $key);
     $sign = base64_encode(hex2bin($sign));
     return $sign;
@@ -51,7 +50,7 @@ function getTempKeys() {
             array(
                 'action'=> array(
                     // // 这里可以从临时密钥的权限上控制前端允许的操作
-                      'name/cos:*', // 这样写可以包含下面所有权限
+                    // 'name/cos:*', // 这样写可以包含下面所有权限
 
                     // // 列出所有允许的操作
                     // // ACL 读写
@@ -128,7 +127,7 @@ function getTempKeys() {
     );
     $params['Signature'] = urlencode(getSignature($params, $config['SecretKey'], $Method));
 
-    $url = $config['Url'] . '?' . json2str($params, 1);
+    $url = $config['Url'] . '?' . json2str($params);
     $ch = curl_init($url);
     $config['Proxy'] && curl_setopt($ch, CURLOPT_PROXY, $config['Proxy']);
     curl_setopt($ch, CURLOPT_HEADER, 0);
@@ -139,8 +138,9 @@ function getTempKeys() {
     curl_close($ch);
 
     $result = json_decode($result, 1);
+    if (isset($result['data'])) $result = $result['data'];
 
-    return $result['data'];
+    return $result;
 };
 
 // 获取临时密钥，计算签名

@@ -22,12 +22,11 @@ if (!isset($_SESSION['tempKeysCache'])) {
     );
 }
 
-// json 转 query string
-function json2str($obj, $notEncode = false) {
+// obj 转 query string
+function json2str($obj) {
     ksort($obj);
     $arr = array();
     foreach ($obj as $key => $val) {
-        !$notEncode && ($val = urlencode($val));
         array_push($arr, $key . '=' . $val);
     }
     return join('&', $arr);
@@ -36,7 +35,7 @@ function json2str($obj, $notEncode = false) {
 // 计算临时密钥用的签名
 function getSignature($opt, $key, $method) {
     global $config;
-    $formatString = $method . $config['Domain'] . '/v2/index.php?' . json2str($opt, 1);
+    $formatString = $method . $config['Domain'] . '/v2/index.php?' . json2str($opt);
     $sign = hash_hmac('sha1', $formatString, $key);
     $sign = base64_encode(hex2bin($sign));
     return $sign;
@@ -120,6 +119,13 @@ function getTempKeys() {
     );
 
     $policyStr = str_replace('\\/', '/', json_encode($policy));
+
+    // 有效时间小于 30 秒就重新获取临时密钥，否则使用缓存的临时密钥
+    if (isset($_SESSION['tempKeysCache']) && isset($_SESSION['tempKeysCache']['expiredTime']) && isset($_SESSION['tempKeysCache']['policyStr']) &&
+        $_SESSION['tempKeysCache']['expiredTime'] - time() > 30 && $_SESSION['tempKeysCache']['policyStr'] === $policyStr) {
+        return $_SESSION['tempKeysCache'];
+    }
+
     $Action = 'GetFederationToken';
     $Nonce = rand(10000, 20000);
     $Timestamp = time() - 1;
@@ -137,7 +143,7 @@ function getTempKeys() {
     );
     $params['Signature'] = urlencode(getSignature($params, $config['SecretKey'], $Method));
 
-    $url = $config['Url'] . '?' . json2str($params, 1);
+    $url = $config['Url'] . '?' . json2str($params);
     $ch = curl_init($url);
     $config['Proxy'] && curl_setopt($ch, CURLOPT_PROXY, $config['Proxy']);
     curl_setopt($ch, CURLOPT_HEADER, 0);
@@ -148,10 +154,11 @@ function getTempKeys() {
     curl_close($ch);
 
     $result = json_decode($result, 1);
-    $_SESSION['tempKeysCache'] = $result['data'];
+    if (isset($result['data'])) $result = $result['data'];
+    $_SESSION['tempKeysCache'] = $result;
     $_SESSION['tempKeysCache']['policyStr'] = $policyStr;
 
-    return $result['data'];
+    return $result;
 };
 
 // 计算 COS API 请求用的签名
