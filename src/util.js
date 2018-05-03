@@ -101,6 +101,10 @@ var getAuth = function (opt) {
 
 };
 
+var noop = function () {
+
+};
+
 // 清除对象里值为的 undefined 或 null 的属性
 var clearKey = function (obj) {
     var retObj = {};
@@ -391,7 +395,72 @@ var throttleOnProgress = function (total, onProgress) {
     };
 };
 
+var getFileSize = function (api, params, callback) {
+    var size;
+    if (util.isBrowser) {
+        if (typeof params.Body === 'string') {
+            params.Body = new global.Blob([params.Body]);
+        }
+        if (params.Body instanceof global.File || params.Body instanceof global.Blob) {
+            size = params.Body.size;
+        } else {
+            callback({error: 'params body format error, Only allow File|Blob|String.'});
+            return;
+        }
+    } else {
+        if (api === 'sliceUploadFile') {
+            if (params.FilePath) {
+                fs.stat(params.FilePath, function (err, fileStats) {
+                    if (err) {
+                        if (params.ContentLength !== undefined) {
+                            size = params.ContentLength;
+                        } else {
+                            callback(err);
+                            return;
+                        }
+                    } else {
+                        params.FileStat = fileStats;
+                        params.FileStat.FilePath = params.FilePath;
+                        size = fileStats.size;
+                    }
+                    params.ContentLength = size = size || 0;
+                    callback(null, size);
+                });
+                return;
+            } else {
+                callback({error: 'missing param FilePath'});
+                return;
+            }
+        } else {
+            if (params.Body !== undefined) {
+                if (typeof params.Body === 'string') {
+                    params.Body = global.Buffer(params.Body);
+                }
+                if (params.Body instanceof global.Buffer) {
+                    size = params.Body.length;
+                } else if (typeof params.Body.pipe === 'function') {
+                    if (params.ContentLength === undefined) {
+                        callback({error: 'missing param ContentLength'});
+                        return;
+                    } else {
+                        size = params.ContentLength;
+                    }
+                } else {
+                    callback({error: 'params Body format error, Only allow Buffer|Stream|String.'});
+                    return;
+                }
+            } else {
+                callback({error: 'missing param Body'});
+                return;
+            }
+        }
+    }
+    params.ContentLength = size = size || 0;
+    callback(null, size);
+};
+
 var util = {
+    noop: noop,
     apiWrapper: apiWrapper,
     getAuth: getAuth,
     xml2json: xml2json,
@@ -409,9 +478,11 @@ var util = {
     clone: clone,
     uuid: uuid,
     throttleOnProgress: throttleOnProgress,
+    getFileSize: getFileSize,
     isBrowser: !!global.document,
 };
 
+util.localStorage = global.localStorage;
 util.fileSlice = function (file, start, end) {
     if (file.slice) {
         return file.slice(start, end);
@@ -421,7 +492,6 @@ util.fileSlice = function (file, start, end) {
         return file.webkitSlice(start, end);
     }
 };
-util.localStorage = global.localStorage;
 util.getFileUUID = function (file, ChunkSize) {
     // 如果信息不完整，不获取
     if (file.name && file.size && file.lastModifiedDate && ChunkSize) {

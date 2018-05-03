@@ -167,6 +167,8 @@ var getAuth = function (opt) {
     return authorization;
 };
 
+var noop = function () {};
+
 // 清除对象里值为的 undefined 或 null 的属性
 var clearKey = function (obj) {
     var retObj = {};
@@ -460,7 +462,72 @@ var throttleOnProgress = function (total, onProgress) {
     };
 };
 
+var getFileSize = function (api, params, callback) {
+    var size;
+    if (util.isBrowser) {
+        if (typeof params.Body === 'string') {
+            params.Body = new global.Blob([params.Body]);
+        }
+        if (params.Body instanceof global.File || params.Body instanceof global.Blob) {
+            size = params.Body.size;
+        } else {
+            callback({ error: 'params body format error, Only allow File|Blob|String.' });
+            return;
+        }
+    } else {
+        if (api === 'sliceUploadFile') {
+            if (params.FilePath) {
+                fs.stat(params.FilePath, function (err, fileStats) {
+                    if (err) {
+                        if (params.ContentLength !== undefined) {
+                            size = params.ContentLength;
+                        } else {
+                            callback(err);
+                            return;
+                        }
+                    } else {
+                        params.FileStat = fileStats;
+                        params.FileStat.FilePath = params.FilePath;
+                        size = fileStats.size;
+                    }
+                    params.ContentLength = size = size || 0;
+                    callback(null, size);
+                });
+                return;
+            } else {
+                callback({ error: 'missing param FilePath' });
+                return;
+            }
+        } else {
+            if (params.Body !== undefined) {
+                if (typeof params.Body === 'string') {
+                    params.Body = global.Buffer(params.Body);
+                }
+                if (params.Body instanceof global.Buffer) {
+                    size = params.Body.length;
+                } else if (typeof params.Body.pipe === 'function') {
+                    if (params.ContentLength === undefined) {
+                        callback({ error: 'missing param ContentLength' });
+                        return;
+                    } else {
+                        size = params.ContentLength;
+                    }
+                } else {
+                    callback({ error: 'params Body format error, Only allow Buffer|Stream|String.' });
+                    return;
+                }
+            } else {
+                callback({ error: 'missing param Body' });
+                return;
+            }
+        }
+    }
+    params.ContentLength = size = size || 0;
+    callback(null, size);
+};
+
 var util = {
+    noop: noop,
     apiWrapper: apiWrapper,
     getAuth: getAuth,
     xml2json: xml2json,
@@ -478,9 +545,11 @@ var util = {
     clone: clone,
     uuid: uuid,
     throttleOnProgress: throttleOnProgress,
+    getFileSize: getFileSize,
     isBrowser: !!global.document
 };
 
+util.localStorage = global.localStorage;
 util.fileSlice = function (file, start, end) {
     if (file.slice) {
         return file.slice(start, end);
@@ -490,7 +559,6 @@ util.fileSlice = function (file, start, end) {
         return file.webkitSlice(start, end);
     }
 };
-util.localStorage = global.localStorage;
 util.getFileUUID = function (file, ChunkSize) {
     // 如果信息不完整，不获取
     if (file.name && file.size && file.lastModifiedDate && ChunkSize) {
@@ -1383,7 +1451,7 @@ module.exports = function (obj, options) {
 /* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(global) {var util = __webpack_require__(0);
+var util = __webpack_require__(0);
 
 var initTask = function (cos) {
 
@@ -1495,63 +1563,8 @@ var initTask = function (cos) {
 
         // 生成 id
         var id = util.uuid();
-        params.TaskReady && params.TaskReady(id);
-
-        // 获取 filesize
-        var size;
-        if (util.isBrowser) {
-            if (typeof params.Body === 'string') {
-                params.Body = new global.Blob([params.Body]);
-            }
-            if (params.Body instanceof global.File || params.Body instanceof global.Blob) {
-                size = params.Body.size;
-            } else {
-                callback({ error: 'params body format error, Only allow File|Blob|String.' });
-                return;
-            }
-        } else {
-            if (api === 'sliceUploadFile') {
-                if (params.FilePath) {
-                    if (params.ContentLength === undefined) {
-                        try {
-                            size = fs.statSync(params.FilePath).size;
-                        } catch (err) {
-                            callback(err);
-                            return;
-                        }
-                    } else {
-                        size = params.ContentLength;
-                    }
-                } else {
-                    callback({ error: 'missing param FilePath' });
-                    return;
-                }
-            } else if (api === 'putObject') {
-                if (params.Body) {
-                    if (typeof params.Body === 'string') {
-                        params.Body = global.Buffer(params.Body);
-                    }
-                    if (params.Body instanceof global.Buffer) {
-                        size = params.Body.length;
-                    } else if (typeof params.Body.pipe === 'function') {
-                        if (params.ContentLength === undefined) {
-                            callback({ error: 'missing param ContentLength' });
-                            return;
-                        } else {
-                            size = params.ContentLength;
-                        }
-                    } else {
-                        callback({ error: 'params Body format error, Only allow Buffer|Stream|String.' });
-                        return;
-                    }
-                } else {
-                    callback({ error: 'missing param Body' });
-                    return;
-                }
-            }
-        }
-        params.ContentLength = size = size || 0;
         params.TaskId = id;
+        params.TaskReady && params.TaskReady(id);
 
         var task = {
             // env
@@ -1567,7 +1580,7 @@ var initTask = function (cos) {
             FilePath: params.FilePath || '',
             state: 'waiting',
             loaded: 0,
-            size: size,
+            size: 0,
             speed: 0,
             percent: 0,
             hashPercent: 0,
@@ -1592,8 +1605,17 @@ var initTask = function (cos) {
         };
         queue.push(task);
         tasks[id] = task;
-        !params.IgnoreAddEvent && emitListUpdate();
-        startNextTask(cos);
+
+        // 异步获取 filesize
+        util.getFileSize(api, params, function (err, size) {
+            if (err) {
+                callback(err);
+                return;
+            }
+            task.size = size;
+            !params.IgnoreAddEvent && emitListUpdate();
+            startNextTask(cos);
+        });
         return id;
     };
     cos._isRunningTask = function (id) {
@@ -1621,13 +1643,12 @@ var initTask = function (cos) {
 };
 
 module.exports.init = initTask;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ }),
 /* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(global) {var REQUEST = __webpack_require__(11);
+var REQUEST = __webpack_require__(11);
 var util = __webpack_require__(0);
 
 // Bucket 相关
@@ -2422,6 +2443,9 @@ function headObject(params, callback) {
             }
             return callback(err);
         }
+        if (data.headers && data.headers.etag) {
+            data.ETag = data.headers && data.headers.etag;
+        }
         callback(null, data);
     });
 }
@@ -2493,8 +2517,6 @@ function getObject(params, callback) {
 
     var BodyType;
 
-    BodyType = util.isBrowser ? 'string' : 'buffer';
-
     // 如果用户自己传入了 output
     submitRequest.call(this, {
         method: 'GET',
@@ -2516,8 +2538,9 @@ function getObject(params, callback) {
             return callback(err);
         }
         var result = {};
-        if (BodyType === 'string') {
-            result.Body = data.body;
+        result.Body = data.body;
+        if (data.headers && data.headers.etag) {
+            result.ETag = data.headers && data.headers.etag;
         }
         util.extend(result, {
             statusCode: data.statusCode,
@@ -2556,8 +2579,8 @@ function getObject(params, callback) {
 function putObject(params, callback) {
 
     var self = this;
-    var FileSize = params.Headers['Content-Length'];
-    var onProgress = util.throttleOnProgress.call(self, params.Headers['Content-Length'], params.onProgress);
+    var FileSize = params.ContentLength;
+    var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
     submitRequest.call(this, {
         TaskId: params.TaskId,
@@ -2976,65 +2999,31 @@ function multipartInit(params, callback) {
  */
 function multipartUpload(params, callback) {
 
-    // 获取 filesize
-    var size;
-    if (util.isBrowser) {
-        if (typeof params.Body === 'string') {
-            params.Body = new global.Blob([params.Body]);
-        }
-        if (params.Body instanceof global.File || params.Body instanceof global.Blob) {
-            size = params.Body.size;
-        } else {
-            callback({ error: 'params body format error, Only allow File|Blob|String.' });
-            return;
-        }
-    } else {
-        if (params.Body) {
-            if (typeof params.Body === 'string') {
-                params.Body = global.Buffer(params.Body);
+    var self = this;
+    util.getFileSize('multipartUpload', params, function () {
+        submitRequest.call(self, {
+            TaskId: params.TaskId,
+            method: 'PUT',
+            Bucket: params.Bucket,
+            Region: params.Region,
+            Key: params.Key,
+            qs: {
+                partNumber: params['PartNumber'],
+                uploadId: params['UploadId']
+            },
+            headers: params.Headers,
+            onProgress: params.onProgress,
+            body: params.Body || null
+        }, function (err, data) {
+            if (err) {
+                return callback(err);
             }
-            if (params.Body instanceof global.Buffer) {
-                size = params.Body.length;
-            } else if (typeof params.Body.pipe === 'function') {
-                if (params.ContentLength === undefined) {
-                    callback({ error: 'missing param ContentLength' });
-                    return;
-                } else {
-                    size = params.ContentLength;
-                }
-            } else {
-                callback({ error: 'params Body format error, Only allow Buffer|Stream|String.' });
-                return;
-            }
-        } else {
-            callback({ error: 'missing param Body' });
-            return;
-        }
-    }
-    params.ContentLength = size || 0;
-
-    submitRequest.call(this, {
-        TaskId: params.TaskId,
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        qs: {
-            partNumber: params['PartNumber'],
-            uploadId: params['UploadId']
-        },
-        headers: params.Headers,
-        onProgress: params.onProgress,
-        body: params.Body || null
-    }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
-        data['headers'] = data['headers'] || {};
-        callback(null, {
-            ETag: data['headers']['etag'] || '',
-            statusCode: data.statusCode,
-            headers: data.headers
+            data['headers'] = data['headers'] || {};
+            callback(null, {
+                ETag: data['headers']['etag'] || '',
+                statusCode: data.statusCode,
+                headers: data.headers
+            });
         });
     });
 }
@@ -3725,7 +3714,6 @@ var API_MAP = {
 util.each(API_MAP, function (fn, apiName) {
     exports[apiName] = util.apiWrapper(apiName, fn);
 });
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ }),
 /* 11 */
@@ -8497,7 +8485,7 @@ function getUploadIdAndPartList(params, callback) {
             LocalUploadIdList;
         if (uuid && (LocalUploadIdList = getUploadId.call(self, uuid))) {
             var next = function (index) {
-                // 如果找不到，到线上列出 UploadId
+                // 如果本地找不到可用 UploadId，再一个个遍历校验远端
                 if (index >= LocalUploadIdList.length) {
                     ep.emit('has_upload_id', RemoteUploadIdList);
                     return;
@@ -8553,7 +8541,7 @@ function getUploadIdAndPartList(params, callback) {
                 return ep.emit('error', err);
             }
             // 整理远端 UploadId 列表
-            var RemoteUploadIdList = data.UploadList.filter(function (item) {
+            var RemoteUploadIdList = util.filter(data.UploadList, function (item) {
                 return item.Key === Key && (!StorageClass || item.StorageClass.toUpperCase() === StorageClass.toUpperCase());
             }).reverse().map(function (item) {
                 return item.UploadId || item.UploadID;

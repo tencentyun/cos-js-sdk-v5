@@ -412,7 +412,7 @@ function getUploadIdAndPartList(params, callback) {
         var uuid = util.getFileUUID(params.Body, params.ChunkSize), LocalUploadIdList;
         if (uuid && (LocalUploadIdList = getUploadId.call(self, uuid))) {
             var next = function (index) {
-                // 如果找不到，到线上列出 UploadId
+                // 如果本地找不到可用 UploadId，再一个个遍历校验远端
                 if (index >= LocalUploadIdList.length) {
                     ep.emit('has_upload_id', RemoteUploadIdList);
                     return;
@@ -468,7 +468,7 @@ function getUploadIdAndPartList(params, callback) {
                 return ep.emit('error', err);
             }
             // 整理远端 UploadId 列表
-            var RemoteUploadIdList = data.UploadList.filter(function (item) {
+            var RemoteUploadIdList = util.filter(data.UploadList, function (item) {
                 return item.Key === Key && (!StorageClass || item.StorageClass.toUpperCase() === StorageClass.toUpperCase());
             }).reverse().map(function (item) {
                 return item.UploadId || item.UploadID;

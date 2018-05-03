@@ -116,63 +116,8 @@ var initTask = function (cos) {
 
         // 生成 id
         var id = util.uuid();
-        params.TaskReady && params.TaskReady(id);
-
-        // 获取 filesize
-        var size;
-        if (util.isBrowser) {
-            if (typeof params.Body === 'string') {
-                params.Body = new global.Blob([params.Body]);
-            }
-            if (params.Body instanceof global.File || params.Body instanceof global.Blob) {
-                size = params.Body.size;
-            } else {
-                callback({error: 'params body format error, Only allow File|Blob|String.'});
-                return;
-            }
-        } else {
-            if (api === 'sliceUploadFile') {
-                if (params.FilePath) {
-                    if (params.ContentLength === undefined) {
-                        try {
-                            size = fs.statSync(params.FilePath).size;
-                        } catch (err) {
-                            callback(err);
-                            return;
-                        }
-                    } else {
-                        size = params.ContentLength;
-                    }
-                } else {
-                    callback({error: 'missing param FilePath'});
-                    return;
-                }
-            } else if (api === 'putObject') {
-                if (params.Body) {
-                    if (typeof params.Body === 'string') {
-                        params.Body = global.Buffer(params.Body);
-                    }
-                    if (params.Body instanceof global.Buffer) {
-                        size = params.Body.length;
-                    } else if (typeof params.Body.pipe === 'function') {
-                        if (params.ContentLength === undefined) {
-                            callback({error: 'missing param ContentLength'});
-                            return;
-                        } else {
-                            size = params.ContentLength;
-                        }
-                    } else {
-                        callback({error: 'params Body format error, Only allow Buffer|Stream|String.'});
-                        return;
-                    }
-                } else {
-                    callback({error: 'missing param Body'});
-                    return;
-                }
-            }
-        }
-        params.ContentLength = size = size || 0;
         params.TaskId = id;
+        params.TaskReady && params.TaskReady(id);
 
         var task = {
             // env
@@ -188,7 +133,7 @@ var initTask = function (cos) {
             FilePath: params.FilePath || '',
             state: 'waiting',
             loaded: 0,
-            size: size,
+            size: 0,
             speed: 0,
             percent: 0,
             hashPercent: 0,
@@ -213,8 +158,17 @@ var initTask = function (cos) {
         };
         queue.push(task);
         tasks[id] = task;
-        !params.IgnoreAddEvent && emitListUpdate();
-        startNextTask(cos);
+
+        // 异步获取 filesize
+        util.getFileSize(api, params, function (err, size) {
+            if (err) {
+                callback(err);
+                return;
+            }
+            task.size = size;
+            !params.IgnoreAddEvent && emitListUpdate();
+            startNextTask(cos);
+        });
         return id;
     };
     cos._isRunningTask = function (id) {

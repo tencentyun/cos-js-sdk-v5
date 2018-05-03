@@ -798,6 +798,9 @@ function headObject(params, callback) {
             }
             return callback(err);
         }
+        if (data.headers && data.headers.etag) {
+            data.ETag = data.headers && data.headers.etag;
+        }
         callback(null, data);
     });
 }
@@ -870,8 +873,6 @@ function getObject(params, callback) {
 
     var BodyType;
 
-    BodyType = util.isBrowser ? 'string' : 'buffer';
-
     // 如果用户自己传入了 output
     submitRequest.call(this, {
         method: 'GET',
@@ -893,8 +894,9 @@ function getObject(params, callback) {
             return callback(err);
         }
         var result = {};
-        if (BodyType === 'string') {
-            result.Body = data.body;
+        result.Body = data.body;
+        if (data.headers && data.headers.etag) {
+            result.ETag = data.headers && data.headers.etag;
         }
         util.extend(result, {
             statusCode: data.statusCode,
@@ -934,8 +936,8 @@ function getObject(params, callback) {
 function putObject(params, callback) {
 
     var self = this;
-    var FileSize = params.Headers['Content-Length'];
-    var onProgress = util.throttleOnProgress.call(self, params.Headers['Content-Length'], params.onProgress);
+    var FileSize = params.ContentLength;
+    var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
     submitRequest.call(this, {
         TaskId: params.TaskId,
@@ -1355,65 +1357,31 @@ function multipartInit(params, callback) {
  */
 function multipartUpload(params, callback) {
 
-    // 获取 filesize
-    var size;
-    if (util.isBrowser) {
-        if (typeof params.Body === 'string') {
-            params.Body = new global.Blob([params.Body]);
-        }
-        if (params.Body instanceof global.File || params.Body instanceof global.Blob) {
-            size = params.Body.size;
-        } else {
-            callback({error: 'params body format error, Only allow File|Blob|String.'});
-            return;
-        }
-    } else {
-        if (params.Body) {
-            if (typeof params.Body === 'string') {
-                params.Body = global.Buffer(params.Body);
+    var self = this;
+    util.getFileSize('multipartUpload', params, function () {
+        submitRequest.call(self, {
+            TaskId: params.TaskId,
+            method: 'PUT',
+            Bucket: params.Bucket,
+            Region: params.Region,
+            Key: params.Key,
+            qs: {
+                partNumber: params['PartNumber'],
+                uploadId: params['UploadId'],
+            },
+            headers: params.Headers,
+            onProgress: params.onProgress,
+            body: params.Body || null
+        }, function (err, data) {
+            if (err) {
+                return callback(err);
             }
-            if (params.Body instanceof global.Buffer) {
-                size = params.Body.length;
-            } else if (typeof params.Body.pipe === 'function') {
-                if (params.ContentLength === undefined) {
-                    callback({error: 'missing param ContentLength'});
-                    return;
-                } else {
-                    size = params.ContentLength;
-                }
-            } else {
-                callback({error: 'params Body format error, Only allow Buffer|Stream|String.'});
-                return;
-            }
-        } else {
-            callback({error: 'missing param Body'});
-            return;
-        }
-    }
-    params.ContentLength = size || 0;
-
-    submitRequest.call(this, {
-        TaskId: params.TaskId,
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        qs: {
-            partNumber: params['PartNumber'],
-            uploadId: params['UploadId'],
-        },
-        headers: params.Headers,
-        onProgress: params.onProgress,
-        body: params.Body || null
-    }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
-        data['headers'] = data['headers'] || {};
-        callback(null, {
-            ETag: data['headers']['etag'] || '',
-            statusCode: data.statusCode,
-            headers: data.headers,
+            data['headers'] = data['headers'] || {};
+            callback(null, {
+                ETag: data['headers']['etag'] || '',
+                statusCode: data.statusCode,
+                headers: data.headers,
+            });
         });
     });
 
