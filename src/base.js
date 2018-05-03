@@ -640,7 +640,7 @@ function deleteBucketLifecycle(params, callback) {
 function putBucketVersioning(params, callback) {
 
     if (!params['VersioningConfiguration']) {
-        callback({error: 'lack of param VersioningConfiguration'});
+        callback({error: 'missing param VersioningConfiguration'});
         return;
     }
     var VersioningConfiguration = params['VersioningConfiguration'] || {};
@@ -911,7 +911,7 @@ function getObject(params, callback) {
  *     @param  {String}  params.Bucket                              Bucket名称，必须
  *     @param  {String}  params.Region                              地域名称，必须
  *     @param  {String}  params.Key                                 文件名称，必须
- *     @param  {File || Blob}  params.Body                          上传文件对象
+ *     @param  {File || Blob || String}  params.Body                上传文件对象或字符串
  *     @param  {String}  params.CacheControl                        RFC 2616 中定义的缓存策略，将作为 Object 元数据保存，非必须
  *     @param  {String}  params.ContentDisposition                  RFC 2616 中定义的文件名称，将作为 Object 元数据保存，非必须
  *     @param  {String}  params.ContentEncoding                     RFC 2616 中定义的编码格式，将作为 Object 元数据保存，非必须
@@ -932,28 +932,10 @@ function getObject(params, callback) {
  *     @return  {String}  data.ETag                                 为对应上传文件的 ETag 值
  */
 function putObject(params, callback) {
+
     var self = this;
-    var headers = params.Headers;
-
-    var Body = params.Body;
-    var readStream;
-
-    if (util.isBrowser && Body && (Body instanceof global.Blob || Body instanceof global.File)) { // 在浏览器允许传入 Blob 或者 File 文件内容
-        headers['Content-Length'] = Body.size;
-    } else if (util.isBrowser && typeof Body === 'string') { // 在浏览器允许传入字符串作为内容 'hello'
-        headers['Content-Length'] = Body.length;
-    } else if (Body && typeof Body.pipe === 'function') { // fs.createReadStream(filepath)
-        readStream = Body;
-        Body = null;
-        if (headers['Content-Length'] === undefined) {
-            callback({error: 'lack of param ContentLength'});
-            return;
-        }
-    } else {
-        callback({error: 'params body format error, Only allow Buffer, Stream, Blob.'});
-        return;
-    }
-    var onProgress = util.throttleOnProgress.call(self, headers['Content-Length'], params.onProgress);
+    var FileSize = params.Headers['Content-Length'];
+    var onProgress = util.throttleOnProgress.call(self, params.Headers['Content-Length'], params.onProgress);
 
     submitRequest.call(this, {
         TaskId: params.TaskId,
@@ -961,14 +943,15 @@ function putObject(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         Key: params.Key,
-        headers: headers,
-        body: Body,
+        headers: params.Headers,
+        body: params.Body,
         onProgress: onProgress,
     }, function (err, data) {
-        onProgress(null, true);
         if (err) {
+            onProgress(null, true);
             return callback(err);
         }
+        onProgress({loaded: FileSize, total: FileSize}, true);
         if (data && data.headers && data.headers['etag']) {
             var url = getUrl({
                 protocol: self.options.Protocol,
@@ -1281,7 +1264,7 @@ function deleteMultipleObject(params, callback) {
 function restoreObject(params, callback) {
     var headers = params.Headers;
     if (!params['RestoreRequest']) {
-        callback({error: 'lack of param RestoreRequest'});
+        callback({error: 'missing param RestoreRequest'});
         return;
     }
 
@@ -1356,20 +1339,59 @@ function multipartInit(params, callback) {
 
 /**
  * 分块上传
- * @param  {Object}  params                             参数对象，必须
- *     @param  {String}  params.Bucket                  Bucket名称，必须
- *     @param  {String}  params.Region                  地域名称，必须
- *     @param  {String}  params.Key                     object名称，必须
- * @param  {String}      params.ContentLength           RFC 2616 中定义的 HTTP 请求内容长度（字节），非必须
- * @param  {String}      params.Expect                  当使用 Expect: 100-continue 时，在收到服务端确认后，才会发送请求内容，非必须
- * @param  {String}      params.ServerSideEncryption    支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
- * @param  {String}      params.ContentSha1             RFC 3174 中定义的 160-bit 内容 SHA-1 算法校验值，非必须
- * @param  {Function}  callback                         回调函数，必须
- * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。
- * @return  {Object}  data                              返回的数据
- *     @return  {Object}  data.ETag                     返回的文件分块 sha1 值
+ * @param  {Object}  params                                 参数对象，必须
+ *     @param  {String}  params.Bucket                      Bucket名称，必须
+ *     @param  {String}  params.Region                      地域名称，必须
+ *     @param  {String}  params.Key                         object名称，必须
+ *     @param  {File || Blob || String}  params.Body        上传文件对象或字符串
+ *     @param  {String} params.ContentLength                RFC 2616 中定义的 HTTP 请求内容长度（字节），非必须
+ *     @param  {String} params.Expect                       当使用 Expect: 100-continue 时，在收到服务端确认后，才会发送请求内容，非必须
+ *     @param  {String} params.ServerSideEncryption         支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
+ *     @param  {String} params.ContentSha1                  RFC 3174 中定义的 160-bit 内容 SHA-1 算法校验值，非必须
+ * @param  {Function}  callback                             回调函数，必须
+ *     @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。
+ *     @return  {Object}  data                              返回的数据
+ *     @return  {Object}  data.ETag                         返回的文件分块 sha1 值
  */
 function multipartUpload(params, callback) {
+
+    // 获取 filesize
+    var size;
+    if (util.isBrowser) {
+        if (typeof params.Body === 'string') {
+            params.Body = new global.Blob([params.Body]);
+        }
+        if (params.Body instanceof global.File || params.Body instanceof global.Blob) {
+            size = params.Body.size;
+        } else {
+            callback({error: 'params body format error, Only allow File|Blob|String.'});
+            return;
+        }
+    } else {
+        if (params.Body) {
+            if (typeof params.Body === 'string') {
+                params.Body = global.Buffer(params.Body);
+            }
+            if (params.Body instanceof global.Buffer) {
+                size = params.Body.length;
+            } else if (typeof params.Body.pipe === 'function') {
+                if (params.ContentLength === undefined) {
+                    callback({error: 'missing param ContentLength'});
+                    return;
+                } else {
+                    size = params.ContentLength;
+                }
+            } else {
+                callback({error: 'params Body format error, Only allow Buffer|Stream|String.'});
+                return;
+            }
+        } else {
+            callback({error: 'missing param Body'});
+            return;
+        }
+    }
+    params.ContentLength = size || 0;
+
     submitRequest.call(this, {
         TaskId: params.TaskId,
         method: 'PUT',
@@ -1656,6 +1678,7 @@ function getObjectUrl(params, callback) {
         Region: params.Region || '',
         Method: params.Method || 'get',
         Key: params.Key,
+        Expires: params.Expires,
     }, function (AuthData) {
         if (!callback) return;
         var result = {
@@ -1847,6 +1870,7 @@ function getAuthorizationAsync(params, callback) {
             Key: params.Key || '',
             Query: params.Query,
             Headers: params.Headers,
+            Expires: params.Expires,
         });
         callback && callback({Authorization: Authorization});
         return Authorization;

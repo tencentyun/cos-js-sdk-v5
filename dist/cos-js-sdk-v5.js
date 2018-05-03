@@ -101,8 +101,8 @@ var getAuth = function (opt) {
     var headers = clone(opt.Headers || opt.headers || {});
     pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
 
-    if (!SecretId) return console.error('lack of param SecretId');
-    if (!SecretKey) return console.error('lack of param SecretKey');
+    if (!SecretId) return console.error('missing param SecretId');
+    if (!SecretKey) return console.error('missing param SecretKey');
 
     var getObjectKeys = function (obj) {
         var list = [];
@@ -208,14 +208,6 @@ var readAsBinaryString = function (blob, callback) {
     readFun.call(fr, blob);
 };
 
-// 获取文件 sha1 值
-var getFileSHA = function (blob, callback) {
-    readAsBinaryString(blob, function (content) {
-        var hash = CryptoJS.SHA1(content).toString();
-        callback(null, hash);
-    });
-};
-
 // 获取文件 md5 值
 var getFileMd5 = function (blob, callback) {
     readAsBinaryString(blob, function (content) {
@@ -297,17 +289,19 @@ var uuid = function () {
     return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
 };
 
-var checkParams = function (apiName, params) {
-    var bucket = params.Bucket;
-    var region = params.Region;
-    var object = params.Key;
+var hasMissingParams = function (apiName, params) {
+    var Bucket = params.Bucket;
+    var Region = params.Region;
+    var Key = params.Key;
     if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList' || apiName === 'listObjectVersions') {
-        return bucket && region;
+        if (!Bucket) return 'Bucket';
+        if (!Region) return 'Region';
+    } else if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask') {
+        if (!Bucket) return 'Bucket';
+        if (!Region) return 'Region';
+        if (!Key) return 'Key';
     }
-    if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask') {
-        return bucket && region && object;
-    }
-    return true;
+    return false;
 };
 
 var apiWrapper = function (apiName, apiFn) {
@@ -323,47 +317,49 @@ var apiWrapper = function (apiName, apiFn) {
         params = extend({}, params);
 
         // 统一处理 Headers
-        var Headers = params.Headers || {};
-        if (params && typeof params === 'object') {
-            (function () {
-                for (var key in params) {
-                    if (params.hasOwnProperty(key) && key.indexOf('x-cos-') > -1) {
-                        Headers[key] = params[key];
+        if (apiName !== 'getAuth' && apiName !== 'getObjectUrl') {
+            var Headers = params.Headers || {};
+            if (params && typeof params === 'object') {
+                (function () {
+                    for (var key in params) {
+                        if (params.hasOwnProperty(key) && key.indexOf('x-cos-') > -1) {
+                            Headers[key] = params[key];
+                        }
                     }
-                }
-            })();
+                })();
 
-            // params headers
-            Headers['x-cos-mfa'] = params['MFA'];
-            Headers['Content-MD5'] = params['ContentMD5'];
-            Headers['Content-Length'] = params['ContentLength'];
-            Headers['Content-Type'] = params['ContentType'];
-            Headers['Expect'] = params['Expect'];
-            Headers['Expires'] = params['Expires'];
-            Headers['Cache-Control'] = params['CacheControl'];
-            Headers['Content-Disposition'] = params['ContentDisposition'];
-            Headers['Content-Encoding'] = params['ContentEncoding'];
-            Headers['Range'] = params['Range'];
-            Headers['If-Modified-Since'] = params['IfModifiedSince'];
-            Headers['If-Unmodified-Since'] = params['IfUnmodifiedSince'];
-            Headers['If-Match'] = params['IfMatch'];
-            Headers['If-None-Match'] = params['IfNoneMatch'];
-            Headers['x-cos-copy-source'] = params['CopySource'];
-            Headers['x-cos-copy-source-Range'] = params['CopySourceRange'];
-            Headers['x-cos-metadata-directive'] = params['MetadataDirective'];
-            Headers['x-cos-copy-source-If-Modified-Since'] = params['CopySourceIfModifiedSince'];
-            Headers['x-cos-copy-source-If-Unmodified-Since'] = params['CopySourceIfUnmodifiedSince'];
-            Headers['x-cos-copy-source-If-Match'] = params['CopySourceIfMatch'];
-            Headers['x-cos-copy-source-If-None-Match'] = params['CopySourceIfNoneMatch'];
-            Headers['x-cos-server-side-encryption'] = params['ServerSideEncryption'];
-            Headers['x-cos-acl'] = params['ACL'];
-            Headers['x-cos-grant-read'] = params['GrantRead'];
-            Headers['x-cos-grant-write'] = params['GrantWrite'];
-            Headers['x-cos-grant-full-control'] = params['GrantFullControl'];
-            Headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
-            Headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
-            Headers['x-cos-storage-class'] = params['StorageClass'];
-            params.Headers = clearKey(Headers);
+                // params headers
+                Headers['x-cos-mfa'] = params['MFA'];
+                Headers['Content-MD5'] = params['ContentMD5'];
+                Headers['Content-Length'] = params['ContentLength'];
+                Headers['Content-Type'] = params['ContentType'];
+                Headers['Expect'] = params['Expect'];
+                Headers['Expires'] = params['Expires'];
+                Headers['Cache-Control'] = params['CacheControl'];
+                Headers['Content-Disposition'] = params['ContentDisposition'];
+                Headers['Content-Encoding'] = params['ContentEncoding'];
+                Headers['Range'] = params['Range'];
+                Headers['If-Modified-Since'] = params['IfModifiedSince'];
+                Headers['If-Unmodified-Since'] = params['IfUnmodifiedSince'];
+                Headers['If-Match'] = params['IfMatch'];
+                Headers['If-None-Match'] = params['IfNoneMatch'];
+                Headers['x-cos-copy-source'] = params['CopySource'];
+                Headers['x-cos-copy-source-Range'] = params['CopySourceRange'];
+                Headers['x-cos-metadata-directive'] = params['MetadataDirective'];
+                Headers['x-cos-copy-source-If-Modified-Since'] = params['CopySourceIfModifiedSince'];
+                Headers['x-cos-copy-source-If-Unmodified-Since'] = params['CopySourceIfUnmodifiedSince'];
+                Headers['x-cos-copy-source-If-Match'] = params['CopySourceIfMatch'];
+                Headers['x-cos-copy-source-If-None-Match'] = params['CopySourceIfNoneMatch'];
+                Headers['x-cos-server-side-encryption'] = params['ServerSideEncryption'];
+                Headers['x-cos-acl'] = params['ACL'];
+                Headers['x-cos-grant-read'] = params['GrantRead'];
+                Headers['x-cos-grant-write'] = params['GrantWrite'];
+                Headers['x-cos-grant-full-control'] = params['GrantFullControl'];
+                Headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
+                Headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
+                Headers['x-cos-storage-class'] = params['StorageClass'];
+                params.Headers = clearKey(Headers);
+            }
         }
 
         // 代理回调函数
@@ -380,18 +376,19 @@ var apiWrapper = function (apiName, apiFn) {
 
         if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
             // 判断参数是否完整
-            if (!checkParams(apiName, params)) {
-                _callback({ error: 'lack of required params' });
+            var missingResult;
+            if (missingResult = hasMissingParams(apiName, params)) {
+                _callback({ error: 'missing param ' + missingResult });
                 return;
             }
             // 判断 region 格式
             if (params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb') {
-                _callback({ error: 'Region format error, find help here: https://cloud.tencent.com/document/product/436/6224' });
+                _callback({ error: 'param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224' });
                 return;
             }
             // 判断 region 格式
             if (params.Region && params.Region.indexOf('cos.') > -1) {
-                _callback({ error: 'Region should not be start with "cos."' });
+                _callback({ error: 'param Region should not be start with "cos."' });
                 return;
             }
             // 兼容不带 AppId 的 Bucket
@@ -493,6 +490,15 @@ util.fileSlice = function (file, start, end) {
         return file.webkitSlice(start, end);
     }
 };
+util.localStorage = global.localStorage;
+util.getFileUUID = function (file, ChunkSize) {
+    // 如果信息不完整，不获取
+    if (file.name && file.size && file.lastModifiedDate && ChunkSize) {
+        return util.md5([file.name, file.size, file.lastModifiedDate, ChunkSize].join('::'));
+    } else {
+        return null;
+    }
+};
 
 module.exports = util;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
@@ -587,11 +593,11 @@ var defaultOptions = {
     AppId: '', // AppId 已废弃，请拼接到 Bucket 后传入，例如：test-1250000000
     SecretId: '',
     SecretKey: '',
-    UploadIdCacheLimit: 50,
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
     ChunkSize: 1024 * 1024,
     ProgressInterval: 1000,
+    UploadIdCacheLimit: 50,
     Domain: '',
     ServiceDomain: '',
     SliceSize: 1024 * 1024 * 20,
@@ -612,7 +618,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.5';
+COS.version = '0.4.6';
 
 module.exports = COS;
 
@@ -1291,7 +1297,9 @@ var process_to_xml = function (node_data, options) {
                 for (var name in node_data) {
                     if (node_data[name] instanceof Array) {
                         for (var j = 0; j < node_data[name].length; j++) {
-                            nodes.push(makeNode(name, fn(node_data[name][j], 0, level + 1), null, level + 1, objKeys(node_data[name][j]).length));
+                            if (node_data[name].hasOwnProperty(j)) {
+                                nodes.push(makeNode(name, fn(node_data[name][j], 0, level + 1), null, level + 1, objKeys(node_data[name][j]).length));
+                            }
                         }
                     } else {
                         nodes.push(makeNode(name, fn(node_data[name], 0, level + 1), null, level + 1));
@@ -1375,7 +1383,7 @@ module.exports = function (obj, options) {
 /* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var util = __webpack_require__(0);
+/* WEBPACK VAR INJECTION */(function(global) {var util = __webpack_require__(0);
 
 var initTask = function (cos) {
 
@@ -1474,29 +1482,75 @@ var initTask = function (cos) {
 
     cos._addTasks = function (taskList) {
         util.each(taskList, function (task) {
-            task.params.IgnoreAddEvent = true;
-            cos._addTask(task.api, task.params, task.callback);
+            cos._addTask(task.api, task.params, task.callback, true);
         });
         emitListUpdate();
     };
 
-    cos._addTask = function (api, params, callback) {
+    cos._addTask = function (api, params, callback, ignoreAddEvent) {
+
+        // 复制参数对象
+        params = util.extend({}, params);
+        ignoreAddEvent && (params.ignoreAddEvent = true);
 
         // 生成 id
         var id = util.uuid();
         params.TaskReady && params.TaskReady(id);
 
+        // 获取 filesize
         var size;
-        if (params.Body && params.Body.size !== undefined) {
-            size = params.Body.size;
-        } else if (params.Body && params.Body.length !== undefined) {
-            size = params.Body.length;
-        } else if (params.ContentLength !== undefined) {
-            size = params.ContentLength;
+        if (util.isBrowser) {
+            if (typeof params.Body === 'string') {
+                params.Body = new global.Blob([params.Body]);
+            }
+            if (params.Body instanceof global.File || params.Body instanceof global.Blob) {
+                size = params.Body.size;
+            } else {
+                callback({ error: 'params body format error, Only allow File|Blob|String.' });
+                return;
+            }
+        } else {
+            if (api === 'sliceUploadFile') {
+                if (params.FilePath) {
+                    if (params.ContentLength === undefined) {
+                        try {
+                            size = fs.statSync(params.FilePath).size;
+                        } catch (err) {
+                            callback(err);
+                            return;
+                        }
+                    } else {
+                        size = params.ContentLength;
+                    }
+                } else {
+                    callback({ error: 'missing param FilePath' });
+                    return;
+                }
+            } else if (api === 'putObject') {
+                if (params.Body) {
+                    if (typeof params.Body === 'string') {
+                        params.Body = global.Buffer(params.Body);
+                    }
+                    if (params.Body instanceof global.Buffer) {
+                        size = params.Body.length;
+                    } else if (typeof params.Body.pipe === 'function') {
+                        if (params.ContentLength === undefined) {
+                            callback({ error: 'missing param ContentLength' });
+                            return;
+                        } else {
+                            size = params.ContentLength;
+                        }
+                    } else {
+                        callback({ error: 'params Body format error, Only allow Buffer|Stream|String.' });
+                        return;
+                    }
+                } else {
+                    callback({ error: 'missing param Body' });
+                    return;
+                }
+            }
         }
-
-        if (params.ContentLength === undefined) params.ContentLength = size;
-        size = size || 0;
+        params.ContentLength = size = size || 0;
         params.TaskId = id;
 
         var task = {
@@ -1567,6 +1621,7 @@ var initTask = function (cos) {
 };
 
 module.exports.init = initTask;
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ }),
 /* 10 */
@@ -2209,7 +2264,7 @@ function deleteBucketLifecycle(params, callback) {
 function putBucketVersioning(params, callback) {
 
     if (!params['VersioningConfiguration']) {
-        callback({ error: 'lack of param VersioningConfiguration' });
+        callback({ error: 'missing param VersioningConfiguration' });
         return;
     }
     var VersioningConfiguration = params['VersioningConfiguration'] || {};
@@ -2478,7 +2533,7 @@ function getObject(params, callback) {
  *     @param  {String}  params.Bucket                              Bucket名称，必须
  *     @param  {String}  params.Region                              地域名称，必须
  *     @param  {String}  params.Key                                 文件名称，必须
- *     @param  {File || Blob}  params.Body                          上传文件对象
+ *     @param  {File || Blob || String}  params.Body                上传文件对象或字符串
  *     @param  {String}  params.CacheControl                        RFC 2616 中定义的缓存策略，将作为 Object 元数据保存，非必须
  *     @param  {String}  params.ContentDisposition                  RFC 2616 中定义的文件名称，将作为 Object 元数据保存，非必须
  *     @param  {String}  params.ContentEncoding                     RFC 2616 中定义的编码格式，将作为 Object 元数据保存，非必须
@@ -2499,31 +2554,10 @@ function getObject(params, callback) {
  *     @return  {String}  data.ETag                                 为对应上传文件的 ETag 值
  */
 function putObject(params, callback) {
+
     var self = this;
-    var headers = params.Headers;
-
-    var Body = params.Body;
-    var readStream;
-
-    if (util.isBrowser && Body && (Body instanceof global.Blob || Body instanceof global.File)) {
-        // 在浏览器允许传入 Blob 或者 File 文件内容
-        headers['Content-Length'] = Body.size;
-    } else if (util.isBrowser && typeof Body === 'string') {
-        // 在浏览器允许传入字符串作为内容 'hello'
-        headers['Content-Length'] = Body.length;
-    } else if (Body && typeof Body.pipe === 'function') {
-        // fs.createReadStream(filepath)
-        readStream = Body;
-        Body = null;
-        if (headers['Content-Length'] === undefined) {
-            callback({ error: 'lack of param ContentLength' });
-            return;
-        }
-    } else {
-        callback({ error: 'params body format error, Only allow Buffer, Stream, Blob.' });
-        return;
-    }
-    var onProgress = util.throttleOnProgress.call(self, headers['Content-Length'], params.onProgress);
+    var FileSize = params.Headers['Content-Length'];
+    var onProgress = util.throttleOnProgress.call(self, params.Headers['Content-Length'], params.onProgress);
 
     submitRequest.call(this, {
         TaskId: params.TaskId,
@@ -2531,14 +2565,15 @@ function putObject(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         Key: params.Key,
-        headers: headers,
-        body: Body,
+        headers: params.Headers,
+        body: params.Body,
         onProgress: onProgress
     }, function (err, data) {
-        onProgress(null, true);
         if (err) {
+            onProgress(null, true);
             return callback(err);
         }
+        onProgress({ loaded: FileSize, total: FileSize }, true);
         if (data && data.headers && data.headers['etag']) {
             var url = getUrl({
                 protocol: self.options.Protocol,
@@ -2851,7 +2886,7 @@ function deleteMultipleObject(params, callback) {
 function restoreObject(params, callback) {
     var headers = params.Headers;
     if (!params['RestoreRequest']) {
-        callback({ error: 'lack of param RestoreRequest' });
+        callback({ error: 'missing param RestoreRequest' });
         return;
     }
 
@@ -2925,20 +2960,59 @@ function multipartInit(params, callback) {
 
 /**
  * 分块上传
- * @param  {Object}  params                             参数对象，必须
- *     @param  {String}  params.Bucket                  Bucket名称，必须
- *     @param  {String}  params.Region                  地域名称，必须
- *     @param  {String}  params.Key                     object名称，必须
- * @param  {String}      params.ContentLength           RFC 2616 中定义的 HTTP 请求内容长度（字节），非必须
- * @param  {String}      params.Expect                  当使用 Expect: 100-continue 时，在收到服务端确认后，才会发送请求内容，非必须
- * @param  {String}      params.ServerSideEncryption    支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
- * @param  {String}      params.ContentSha1             RFC 3174 中定义的 160-bit 内容 SHA-1 算法校验值，非必须
- * @param  {Function}  callback                         回调函数，必须
- * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。
- * @return  {Object}  data                              返回的数据
- *     @return  {Object}  data.ETag                     返回的文件分块 sha1 值
+ * @param  {Object}  params                                 参数对象，必须
+ *     @param  {String}  params.Bucket                      Bucket名称，必须
+ *     @param  {String}  params.Region                      地域名称，必须
+ *     @param  {String}  params.Key                         object名称，必须
+ *     @param  {File || Blob || String}  params.Body        上传文件对象或字符串
+ *     @param  {String} params.ContentLength                RFC 2616 中定义的 HTTP 请求内容长度（字节），非必须
+ *     @param  {String} params.Expect                       当使用 Expect: 100-continue 时，在收到服务端确认后，才会发送请求内容，非必须
+ *     @param  {String} params.ServerSideEncryption         支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
+ *     @param  {String} params.ContentSha1                  RFC 3174 中定义的 160-bit 内容 SHA-1 算法校验值，非必须
+ * @param  {Function}  callback                             回调函数，必须
+ *     @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。
+ *     @return  {Object}  data                              返回的数据
+ *     @return  {Object}  data.ETag                         返回的文件分块 sha1 值
  */
 function multipartUpload(params, callback) {
+
+    // 获取 filesize
+    var size;
+    if (util.isBrowser) {
+        if (typeof params.Body === 'string') {
+            params.Body = new global.Blob([params.Body]);
+        }
+        if (params.Body instanceof global.File || params.Body instanceof global.Blob) {
+            size = params.Body.size;
+        } else {
+            callback({ error: 'params body format error, Only allow File|Blob|String.' });
+            return;
+        }
+    } else {
+        if (params.Body) {
+            if (typeof params.Body === 'string') {
+                params.Body = global.Buffer(params.Body);
+            }
+            if (params.Body instanceof global.Buffer) {
+                size = params.Body.length;
+            } else if (typeof params.Body.pipe === 'function') {
+                if (params.ContentLength === undefined) {
+                    callback({ error: 'missing param ContentLength' });
+                    return;
+                } else {
+                    size = params.ContentLength;
+                }
+            } else {
+                callback({ error: 'params Body format error, Only allow Buffer|Stream|String.' });
+                return;
+            }
+        } else {
+            callback({ error: 'missing param Body' });
+            return;
+        }
+    }
+    params.ContentLength = size || 0;
+
     submitRequest.call(this, {
         TaskId: params.TaskId,
         method: 'PUT',
@@ -3223,7 +3297,8 @@ function getObjectUrl(params, callback) {
         Bucket: params.Bucket || '',
         Region: params.Region || '',
         Method: params.Method || 'get',
-        Key: params.Key
+        Key: params.Key,
+        Expires: params.Expires
     }, function (AuthData) {
         if (!callback) return;
         var result = {
@@ -3411,7 +3486,8 @@ function getAuthorizationAsync(params, callback) {
             Method: params.Method,
             Key: params.Key || '',
             Query: params.Query,
-            Headers: params.Headers
+            Headers: params.Headers,
+            Expires: params.Expires
         });
         callback && callback({ Authorization: Authorization });
         return Authorization;
@@ -8027,7 +8103,7 @@ function sliceUploadFile(params, callback) {
     var FileSize;
     var self = this;
 
-    var onProgress = params.onProgress;
+    var onProgress;
     var onHashProgress = params.onHashProgress;
 
     // 上传过程中出现错误，返回错误
@@ -8053,8 +8129,10 @@ function sliceUploadFile(params, callback) {
             if (!self._isRunningTask(TaskId)) return;
             delete uploadIdUsing[UploadData.UploadId];
             if (err) {
+                onProgress(null, true);
                 return ep.emit('error', err);
             }
+            onProgress({ loaded: FileSize, total: FileSize }, true);
             removeUploadId.call(self, UploadData.UploadId);
             ep.emit('upload_complete', data);
         });
@@ -8064,7 +8142,7 @@ function sliceUploadFile(params, callback) {
     ep.on('get_upload_data_finish', function (UploadData) {
 
         // 处理 UploadId 缓存
-        var uuid = getFileUuid(Body, params.ChunkSize);
+        var uuid = util.getFileUUID(Body, params.ChunkSize);
         uuid && setUploadId.call(self, uuid, UploadData.UploadId); // 缓存 UploadId
         uploadIdUsing[UploadData.UploadId] = true; // 标记 UploadId 为正在使用
         TaskId && self.on('inner-kill-task', function (data) {
@@ -8088,13 +8166,19 @@ function sliceUploadFile(params, callback) {
             onProgress: onProgress
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
-            if (err) return ep.emit('error', err);
+            if (err) {
+                onProgress(null, true);
+                return ep.emit('error', err);
+            }
             ep.emit('upload_slice_complete', data);
         });
     });
 
     // 开始获取文件 UploadId，里面会视情况计算 ETag，并比对，保证文件一致性，也优化上传
     ep.on('get_file_size_finish', function () {
+
+        onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
+
         if (params.UploadData.UploadId) {
             ep.emit('get_upload_data_finish', params.UploadData);
         } else {
@@ -8121,7 +8205,7 @@ function sliceUploadFile(params, callback) {
     });
 
     // 获取上传文件大小
-    FileSize = Body.size || params.ContentLength;
+    FileSize = params.ContentLength;
     delete params.ContentLength;
     !params.Headers && (params.Headers = {});
     util.each(params.Headers, function (item, key) {
@@ -8159,7 +8243,7 @@ function initUploadId() {
     if (!uploadIdCache) {
         if (cacheLimit) {
             try {
-                uploadIdCache = JSON.parse(localStorage.getItem(uploadIdCacheKey)) || [];
+                uploadIdCache = JSON.parse(util.localStorage.getItem(uploadIdCacheKey)) || [];
             } catch (e) {}
         }
         if (!uploadIdCache) {
@@ -8181,7 +8265,7 @@ function setUploadId(uuid, UploadId, isDisabled) {
     }
     cacheLimit && setTimeout(function () {
         try {
-            localStorage.setItem(uploadIdCacheKey, JSON.stringify(uploadIdCache));
+            util.localStorage.setItem(uploadIdCacheKey, JSON.stringify(uploadIdCache));
         } catch (e) {}
     });
 }
@@ -8200,9 +8284,9 @@ function removeUploadId(UploadId) {
     cacheLimit && setTimeout(function () {
         try {
             if (uploadIdCache.length) {
-                localStorage.setItem(uploadIdCacheKey, JSON.stringify(uploadIdCache));
+                util.localStorage.setItem(uploadIdCacheKey, JSON.stringify(uploadIdCache));
             } else {
-                localStorage.removeItem(uploadIdCacheKey);
+                util.localStorage.removeItem(uploadIdCacheKey);
             }
         } catch (e) {}
     });
@@ -8217,14 +8301,6 @@ function getUploadId(uuid) {
     }
     return CacheUploadIdList.length ? CacheUploadIdList : null;
 }
-function getFileUuid(file, ChunkSize) {
-    // 如果信息不完整，不获取
-    if (file.name && file.size && file.lastModifiedDate && ChunkSize) {
-        return util.md5([file.name, file.size, file.lastModifiedDate, ChunkSize].join('::'));
-    } else {
-        return null;
-    }
-}
 
 // 获取上传任务的 UploadId
 function getUploadIdAndPartList(params, callback) {
@@ -8232,7 +8308,6 @@ function getUploadIdAndPartList(params, callback) {
     var Bucket = params.Bucket;
     var Region = params.Region;
     var Key = params.Key;
-    var Body = params.Body;
     var StorageClass = params.StorageClass;
     var self = this;
 
@@ -8256,8 +8331,8 @@ function getUploadIdAndPartList(params, callback) {
                 Size: ChunkSize
             });
         } else {
-            var blob = util.fileSlice(Body, start, end);
-            util.getFileMd5(blob, function (err, md5) {
+            var chunkItem = util.fileSlice(params.Body, start, end);
+            util.getFileMd5(chunkItem, function (err, md5) {
                 if (err) return callback(err);
                 var ETag = '"' + md5 + '"';
                 ETagMap[PartNumber] = ETag;
@@ -8418,7 +8493,7 @@ function getUploadIdAndPartList(params, callback) {
     // 在本地缓存找可用的 UploadId
     ep.on('seek_local_avail_upload_id', function (RemoteUploadIdList) {
         // 在本地找可用的 UploadId
-        var uuid = getFileUuid(params.Body, params.ChunkSize),
+        var uuid = util.getFileUUID(params.Body, params.ChunkSize),
             LocalUploadIdList;
         if (uuid && (LocalUploadIdList = getUploadId.call(self, uuid))) {
             var next = function (index) {
@@ -8486,7 +8561,7 @@ function getUploadIdAndPartList(params, callback) {
             if (RemoteUploadIdList.length) {
                 ep.emit('seek_local_avail_upload_id', RemoteUploadIdList);
             } else {
-                var uuid = getFileUuid(params.Body, params.ChunkSize),
+                var uuid = util.getFileUUID(params.Body, params.ChunkSize),
                     LocalUploadIdList;
                 if (uuid && (LocalUploadIdList = getUploadId.call(self, uuid))) {
                     util.each(LocalUploadIdList, function (UploadId) {
@@ -8584,8 +8659,7 @@ function uploadSliceList(params, cb) {
         }
         return !SliceItem['Uploaded'];
     });
-
-    var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
+    var onProgress = params.onProgress;
 
     Async.eachLimit(needUploadSlices, ChunkParallel, function (SliceItem, asyncCallback) {
         if (!self._isRunningTask(TaskId)) return;
@@ -8610,7 +8684,7 @@ function uploadSliceList(params, cb) {
             }
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
-            if (!err && !data.ETag) {
+            if (util.isBrowser && !err && !data.ETag) {
                 err = 'get ETag error, please add "ETag" to CORS ExposeHeader setting.';
             }
             if (err) {
@@ -8623,10 +8697,7 @@ function uploadSliceList(params, cb) {
         });
     }, function (err) {
         if (!self._isRunningTask(TaskId)) return;
-        onProgress(null, true);
-        if (err) {
-            return cb(err);
-        }
+        if (err) return cb(err);
         cb(null, {
             UploadId: UploadData.UploadId,
             SliceList: UploadData.PartList
@@ -8717,7 +8788,6 @@ function uploadSliceComplete(params, callback) {
         if (err) {
             return callback(err);
         }
-
         callback(null, data);
     });
 }
@@ -8895,53 +8965,56 @@ function uploadFiles(params, callback) {
     // 开始处理每个文件
     var taskList = [];
     util.each(params.files, function (fileParams, index) {
+        (function () {
 
-        var Body = fileParams.Body;
-        var FileSize = Body.size || Body.length || 0;
-        var fileInfo = { Index: index, TaskId: '' };
+            var Body = fileParams.Body;
+            var FileSize = Body.size || Body.length || 0;
+            var fileInfo = { Index: index, TaskId: '' };
 
-        // 更新文件总大小
-        TotalSize += FileSize;
+            // 更新文件总大小
+            TotalSize += FileSize;
 
-        // 整理 option，用于返回给回调
-        util.each(fileParams, function (v, k) {
-            if (typeof v !== 'object' && typeof v !== 'function') {
-                fileInfo[k] = v;
-            }
-        });
+            // 整理 option，用于返回给回调
+            util.each(fileParams, function (v, k) {
+                if (typeof v !== 'object' && typeof v !== 'function') {
+                    fileInfo[k] = v;
+                }
+            });
 
-        // 处理单个文件 TaskReady
-        var _TaskReady = fileParams.TaskReady;
-        var TaskReady = function (tid) {
-            fileInfo.TaskId = tid;
-            _TaskReady && _TaskReady(tid);
-        };
-        fileParams.TaskReady = TaskReady;
+            // 处理单个文件 TaskReady
+            var _TaskReady = fileParams.TaskReady;
+            var TaskReady = function (tid) {
+                fileInfo.TaskId = tid;
+                _TaskReady && _TaskReady(tid);
+            };
+            fileParams.TaskReady = TaskReady;
 
-        // 处理单个文件进度
-        var PreAddSize = 0;
-        var _onProgress = fileParams.onProgress;
-        var onProgress = function (info) {
-            TotalFinish = TotalFinish - PreAddSize + info.loaded;
-            PreAddSize = info.loaded;
-            _onProgress && _onProgress(info);
-            onTotalProgress({ loaded: TotalFinish, total: TotalSize });
-        };
-        fileParams.onProgress = onProgress;
+            // 处理单个文件进度
+            var PreAddSize = 0;
+            var _onProgress = fileParams.onProgress;
+            var onProgress = function (info) {
+                TotalFinish = TotalFinish - PreAddSize + info.loaded;
+                PreAddSize = info.loaded;
+                _onProgress && _onProgress(info);
+                onTotalProgress({ loaded: TotalFinish, total: TotalSize });
+            };
+            fileParams.onProgress = onProgress;
 
-        // 处理单个文件完成
-        var _onFileFinish = fileParams.onFileFinish;
-        var onFileFinish = function (err, data) {
-            _onFileFinish && _onFileFinish(err, data);
-            onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
-        };
+            // 处理单个文件完成
+            var _onFileFinish = fileParams.onFileFinish;
+            var onFileFinish = function (err, data) {
+                _onFileFinish && _onFileFinish(err, data);
+                onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
+            };
 
-        // 添加上传任务
-        taskList.push({
-            api: FileSize >= SliceSize ? 'sliceUploadFile' : 'putObject',
-            params: fileParams,
-            callback: onFileFinish
-        });
+            // 添加上传任务
+            var api = FileSize >= SliceSize ? 'sliceUploadFile' : 'putObject';
+            taskList.push({
+                api: api,
+                params: fileParams,
+                callback: onFileFinish
+            });
+        })();
     });
     self._addTasks(taskList);
 }

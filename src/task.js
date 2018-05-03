@@ -103,29 +103,75 @@ var initTask = function (cos) {
 
     cos._addTasks = function (taskList) {
         util.each(taskList, function (task) {
-            task.params.IgnoreAddEvent = true;
-            cos._addTask(task.api, task.params, task.callback);
+            cos._addTask(task.api, task.params, task.callback, true);
         });
         emitListUpdate();
     };
 
-    cos._addTask = function (api, params, callback) {
+    cos._addTask = function (api, params, callback, ignoreAddEvent) {
+
+        // 复制参数对象
+        params = util.extend({}, params);
+        ignoreAddEvent && (params.ignoreAddEvent = true);
 
         // 生成 id
         var id = util.uuid();
         params.TaskReady && params.TaskReady(id);
 
+        // 获取 filesize
         var size;
-        if (params.Body && params.Body.size !== undefined) {
-            size = params.Body.size;
-        } else if (params.Body && params.Body.length !== undefined) {
-            size = params.Body.length;
-        } else if (params.ContentLength !== undefined) {
-            size = params.ContentLength;
+        if (util.isBrowser) {
+            if (typeof params.Body === 'string') {
+                params.Body = new global.Blob([params.Body]);
+            }
+            if (params.Body instanceof global.File || params.Body instanceof global.Blob) {
+                size = params.Body.size;
+            } else {
+                callback({error: 'params body format error, Only allow File|Blob|String.'});
+                return;
+            }
+        } else {
+            if (api === 'sliceUploadFile') {
+                if (params.FilePath) {
+                    if (params.ContentLength === undefined) {
+                        try {
+                            size = fs.statSync(params.FilePath).size;
+                        } catch (err) {
+                            callback(err);
+                            return;
+                        }
+                    } else {
+                        size = params.ContentLength;
+                    }
+                } else {
+                    callback({error: 'missing param FilePath'});
+                    return;
+                }
+            } else if (api === 'putObject') {
+                if (params.Body) {
+                    if (typeof params.Body === 'string') {
+                        params.Body = global.Buffer(params.Body);
+                    }
+                    if (params.Body instanceof global.Buffer) {
+                        size = params.Body.length;
+                    } else if (typeof params.Body.pipe === 'function') {
+                        if (params.ContentLength === undefined) {
+                            callback({error: 'missing param ContentLength'});
+                            return;
+                        } else {
+                            size = params.ContentLength;
+                        }
+                    } else {
+                        callback({error: 'params Body format error, Only allow Buffer|Stream|String.'});
+                        return;
+                    }
+                } else {
+                    callback({error: 'missing param Body'});
+                    return;
+                }
+            }
         }
-
-        if (params.ContentLength === undefined) params.ContentLength = size;
-        size = size || 0;
+        params.ContentLength = size = size || 0;
         params.TaskId = id;
 
         var task = {

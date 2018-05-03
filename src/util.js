@@ -26,8 +26,8 @@ var getAuth = function (opt) {
     var headers = clone(opt.Headers || opt.headers || {});
     pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
 
-    if (!SecretId) return console.error('lack of param SecretId');
-    if (!SecretKey) return console.error('lack of param SecretKey');
+    if (!SecretId) return console.error('missing param SecretId');
+    if (!SecretKey) return console.error('missing param SecretKey');
 
     var getObjectKeys = function (obj) {
         var list = [];
@@ -141,14 +141,6 @@ var readAsBinaryString = function (blob, callback) {
     readFun.call(fr, blob);
 };
 
-// 获取文件 sha1 值
-var getFileSHA = function (blob, callback) {
-    readAsBinaryString(blob, function (content) {
-        var hash = CryptoJS.SHA1(content).toString();
-        callback(null, hash);
-    });
-};
-
 // 获取文件 md5 值
 var getFileMd5 = function (blob, callback) {
     readAsBinaryString(blob, function (content) {
@@ -227,17 +219,19 @@ var uuid = function () {
     return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
 };
 
-var checkParams = function (apiName, params) {
-    var bucket = params.Bucket;
-    var region = params.Region;
-    var object = params.Key;
+var hasMissingParams = function (apiName, params) {
+    var Bucket = params.Bucket;
+    var Region = params.Region;
+    var Key = params.Key;
     if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList' || apiName === 'listObjectVersions') {
-        return bucket && region;
+        if (!Bucket) return 'Bucket';
+        if (!Region) return 'Region';
+    } else if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask') {
+        if (!Bucket) return 'Bucket';
+        if (!Region) return 'Region';
+        if (!Key) return 'Key';
     }
-    if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask') {
-        return bucket && region && object;
-    }
-    return true;
+    return false;
 };
 
 var apiWrapper = function (apiName, apiFn) {
@@ -253,47 +247,49 @@ var apiWrapper = function (apiName, apiFn) {
         params = extend({}, params);
 
         // 统一处理 Headers
-        var Headers = params.Headers || {};
-        if (params && typeof params === 'object') {
-            (function () {
-                for (var key in params) {
-                    if (params.hasOwnProperty(key) && key.indexOf('x-cos-') > -1) {
-                        Headers[key] = params[key];
+        if (apiName !== 'getAuth' && apiName !== 'getObjectUrl') {
+            var Headers = params.Headers || {};
+            if (params && typeof params === 'object') {
+                (function () {
+                    for (var key in params) {
+                        if (params.hasOwnProperty(key) && key.indexOf('x-cos-') > -1) {
+                            Headers[key] = params[key];
+                        }
                     }
-                }
-            })();
+                })();
 
-            // params headers
-            Headers['x-cos-mfa'] = params['MFA'];
-            Headers['Content-MD5'] = params['ContentMD5'];
-            Headers['Content-Length'] = params['ContentLength'];
-            Headers['Content-Type'] = params['ContentType'];
-            Headers['Expect'] = params['Expect'];
-            Headers['Expires'] = params['Expires'];
-            Headers['Cache-Control'] = params['CacheControl'];
-            Headers['Content-Disposition'] = params['ContentDisposition'];
-            Headers['Content-Encoding'] = params['ContentEncoding'];
-            Headers['Range'] = params['Range'];
-            Headers['If-Modified-Since'] = params['IfModifiedSince'];
-            Headers['If-Unmodified-Since'] = params['IfUnmodifiedSince'];
-            Headers['If-Match'] = params['IfMatch'];
-            Headers['If-None-Match'] = params['IfNoneMatch'];
-            Headers['x-cos-copy-source'] = params['CopySource'];
-            Headers['x-cos-copy-source-Range'] = params['CopySourceRange'];
-            Headers['x-cos-metadata-directive'] = params['MetadataDirective'];
-            Headers['x-cos-copy-source-If-Modified-Since'] = params['CopySourceIfModifiedSince'];
-            Headers['x-cos-copy-source-If-Unmodified-Since'] = params['CopySourceIfUnmodifiedSince'];
-            Headers['x-cos-copy-source-If-Match'] = params['CopySourceIfMatch'];
-            Headers['x-cos-copy-source-If-None-Match'] = params['CopySourceIfNoneMatch'];
-            Headers['x-cos-server-side-encryption'] = params['ServerSideEncryption'];
-            Headers['x-cos-acl'] = params['ACL'];
-            Headers['x-cos-grant-read'] = params['GrantRead'];
-            Headers['x-cos-grant-write'] = params['GrantWrite'];
-            Headers['x-cos-grant-full-control'] = params['GrantFullControl'];
-            Headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
-            Headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
-            Headers['x-cos-storage-class'] = params['StorageClass'];
-            params.Headers = clearKey(Headers);
+                // params headers
+                Headers['x-cos-mfa'] = params['MFA'];
+                Headers['Content-MD5'] = params['ContentMD5'];
+                Headers['Content-Length'] = params['ContentLength'];
+                Headers['Content-Type'] = params['ContentType'];
+                Headers['Expect'] = params['Expect'];
+                Headers['Expires'] = params['Expires'];
+                Headers['Cache-Control'] = params['CacheControl'];
+                Headers['Content-Disposition'] = params['ContentDisposition'];
+                Headers['Content-Encoding'] = params['ContentEncoding'];
+                Headers['Range'] = params['Range'];
+                Headers['If-Modified-Since'] = params['IfModifiedSince'];
+                Headers['If-Unmodified-Since'] = params['IfUnmodifiedSince'];
+                Headers['If-Match'] = params['IfMatch'];
+                Headers['If-None-Match'] = params['IfNoneMatch'];
+                Headers['x-cos-copy-source'] = params['CopySource'];
+                Headers['x-cos-copy-source-Range'] = params['CopySourceRange'];
+                Headers['x-cos-metadata-directive'] = params['MetadataDirective'];
+                Headers['x-cos-copy-source-If-Modified-Since'] = params['CopySourceIfModifiedSince'];
+                Headers['x-cos-copy-source-If-Unmodified-Since'] = params['CopySourceIfUnmodifiedSince'];
+                Headers['x-cos-copy-source-If-Match'] = params['CopySourceIfMatch'];
+                Headers['x-cos-copy-source-If-None-Match'] = params['CopySourceIfNoneMatch'];
+                Headers['x-cos-server-side-encryption'] = params['ServerSideEncryption'];
+                Headers['x-cos-acl'] = params['ACL'];
+                Headers['x-cos-grant-read'] = params['GrantRead'];
+                Headers['x-cos-grant-write'] = params['GrantWrite'];
+                Headers['x-cos-grant-full-control'] = params['GrantFullControl'];
+                Headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
+                Headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
+                Headers['x-cos-storage-class'] = params['StorageClass'];
+                params.Headers = clearKey(Headers);
+            }
         }
 
         // 代理回调函数
@@ -310,18 +306,19 @@ var apiWrapper = function (apiName, apiFn) {
 
         if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
             // 判断参数是否完整
-            if (!checkParams(apiName, params)) {
-                _callback({error: 'lack of required params'});
+            var missingResult;
+            if (missingResult = hasMissingParams(apiName, params)) {
+                _callback({error: 'missing param ' + missingResult});
                 return;
             }
             // 判断 region 格式
             if (params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb') {
-                _callback({error: 'Region format error, find help here: https://cloud.tencent.com/document/product/436/6224'});
+                _callback({error: 'param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224'});
                 return;
             }
             // 判断 region 格式
             if (params.Region && params.Region.indexOf('cos.') > -1) {
-                _callback({error: 'Region should not be start with "cos."'});
+                _callback({error: 'param Region should not be start with "cos."'});
                 return;
             }
             // 兼容不带 AppId 的 Bucket
@@ -422,6 +419,15 @@ util.fileSlice = function (file, start, end) {
         return file.mozSlice(start, end);
     } else if (file.webkitSlice) {
         return file.webkitSlice(start, end);
+    }
+};
+util.localStorage = global.localStorage;
+util.getFileUUID = function (file, ChunkSize) {
+    // 如果信息不完整，不获取
+    if (file.name && file.size && file.lastModifiedDate && ChunkSize) {
+        return util.md5([file.name, file.size, file.lastModifiedDate, ChunkSize].join('::'));
+    } else {
+        return null;
     }
 };
 
