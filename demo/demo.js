@@ -17,71 +17,72 @@ var util = {
     }
 };
 
-var getAuthorization = function (options, callback) {
-
-    // 方法一、后端通过获取临时密钥，计算签名给到前端（适用于前端调试）
-    // var url = 'http://127.0.0.1:3000/sts';
-    var url = '../server/sts.php';
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
-    xhr.onload = function (e) {
-        try {
-            var data = JSON.parse(e.target.responseText);
-        } catch (e) {
-        }
-        callback({
-            TmpSecretId: data.credentials && data.credentials.tmpSecretId,
-            TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
-            XCosSecurityToken: data.credentials && data.credentials.sessionToken,
-            ExpiredTime: data.expiredTime,
-        });
-    };
-    xhr.send();
-
-
-    // // 方法二、后端通过获取临时密钥，计算签名给到前端（适用于前端调试）
-    // var method = (options.Method || 'get').toLowerCase();
-    // var key = options.Key || '';
-    // var query = options.Query || {};
-    // var headers = options.Headers || {};
-    // var pathname = key.indexOf('/') === 0 ? key : '/' + key;
-    // // var url = 'http://127.0.0.1:3000/sts-auth';
-    // var url = '../server/sts-auth.php';
-    // var xhr = new XMLHttpRequest();
-    // var data = {
-    //     method: method,
-    //     pathname: pathname,
-    //     query: query,
-    //     headers: headers,
-    // };
-    // xhr.open('POST', url, true);
-    // xhr.setRequestHeader('content-type', 'application/json');
-    // xhr.onload = function (e) {
-    //     try {
-    //         var AuthData = JSON.parse(e.target.responseText);
-    //     } catch (e) {
-    //     }
-    //     callback({
-    //         Authorization: AuthData.Authorization,
-    //         XCosSecurityToken: AuthData.XCosSecurityToken,
-    //     });
-    // };
-    // xhr.send(JSON.stringify(data));
-
-
-    // // 方法三、前端计算签名（适用于前端调试）
-    // var authorization = COS.getAuthorization({
-    //     SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    //     Method: options.Method,
-    //     Key: options.Key,
-    // });
-    // callback(authorization);
-
-};
-
 var cos = new COS({
-    getAuthorization: getAuthorization,
+    getAuthorization: function (options, callback) {
+
+        // 方法一、后端通过获取临时密钥给到前端，前端计算签名
+        // var url = 'http://127.0.0.1:3000/sts';
+        var url = '../server/sts.php';
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.onload = function (e) {
+            try {
+                var data = JSON.parse(e.target.responseText);
+            } catch (e) {
+            }
+            callback({
+                TmpSecretId: data.credentials && data.credentials.tmpSecretId,
+                TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
+                XCosSecurityToken: data.credentials && data.credentials.sessionToken,
+                ExpiredTime: data.expiredTime,
+            });
+        };
+        xhr.send();
+
+
+        // // 方法二、后端通过获取临时密钥，并计算好签名给到前端
+        // var method = (options.Method || 'get').toLowerCase();
+        // var key = options.Key || '';
+        // var query = options.Query || {};
+        // var headers = options.Headers || {};
+        // var pathname = key.indexOf('/') === 0 ? key : '/' + key;
+        // // var url = 'http://127.0.0.1:3000/sts-auth';
+        // var url = '../server/sts-auth.php';
+        // var xhr = new XMLHttpRequest();
+        // var data = {
+        //     method: method,
+        //     pathname: pathname,
+        //     query: query,
+        //     headers: headers,
+        // };
+        // xhr.open('POST', url, true);
+        // xhr.setRequestHeader('content-type', 'application/json');
+        // xhr.onload = function (e) {
+        //     try {
+        //         var AuthData = JSON.parse(e.target.responseText);
+        //     } catch (e) {
+        //     }
+        //     callback({
+        //         Authorization: AuthData.Authorization,
+        //         XCosSecurityToken: AuthData.XCosSecurityToken,
+        //     });
+        // };
+        // xhr.send(JSON.stringify(data));
+
+
+        // // 方法三、前端使用固定密钥计算签名（适用于前端调试）
+        // var authorization = COS.getAuthorization({
+        //     SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        //     Method: options.Method,
+        //     Key: options.Key,
+        //     Query: options.Query,
+        //     Headers: options.Headers,
+        //     Expires: 60,
+        // });
+        // callback(authorization);
+
+    },
 });
 var TaskId;
 
