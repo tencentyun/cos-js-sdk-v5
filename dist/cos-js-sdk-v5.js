@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "/dist/";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 3);
+/******/ 	return __webpack_require__(__webpack_require__.s = 2);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -569,37 +569,10 @@ util.getFileUUID = function (file, ChunkSize) {
 };
 
 module.exports = util;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)))
 
 /***/ }),
 /* 1 */
-/***/ (function(module, exports) {
-
-var g;
-
-// This works in non-strict mode
-g = (function() {
-	return this;
-})();
-
-try {
-	// This works if eval is allowed (see CSP)
-	g = g || Function("return this")() || (1,eval)("this");
-} catch(e) {
-	// This works if the window reference is available
-	if(typeof window === "object")
-		g = window;
-}
-
-// g can still be undefined, but nothing to do about it...
-// We return undefined, instead of nothing here, so it's
-// easier to handle this case. if(!global) { ...}
-
-module.exports = g;
-
-
-/***/ }),
-/* 2 */
 /***/ (function(module, exports) {
 
 var initEvent = function (cos) {
@@ -638,21 +611,21 @@ module.exports.init = initEvent;
 module.exports.EventProxy = EventProxy;
 
 /***/ }),
-/* 3 */
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var COS = __webpack_require__(4);
+var COS = __webpack_require__(3);
 module.exports = COS;
 
 /***/ }),
-/* 4 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 var util = __webpack_require__(0);
-var event = __webpack_require__(2);
+var event = __webpack_require__(1);
 var task = __webpack_require__(9);
 var base = __webpack_require__(10);
 var advance = __webpack_require__(15);
@@ -689,6 +662,33 @@ COS.getAuthorization = util.getAuth;
 COS.version = '0.4.6';
 
 module.exports = COS;
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports) {
+
+var g;
+
+// This works in non-strict mode
+g = (function() {
+	return this;
+})();
+
+try {
+	// This works if eval is allowed (see CSP)
+	g = g || Function("return this")() || (1,eval)("this");
+} catch(e) {
+	// This works if the window reference is available
+	if(typeof window === "object")
+		g = window;
+}
+
+// g can still be undefined, but nothing to do about it...
+// We return undefined, instead of nothing here, so it's
+// easier to handle this case. if(!global) { ...}
+
+module.exports = g;
+
 
 /***/ }),
 /* 5 */
@@ -1363,14 +1363,16 @@ var process_to_xml = function (node_data, options) {
             case 'object':
                 var nodes = [];
                 for (var name in node_data) {
-                    if (node_data[name] instanceof Array) {
-                        for (var j = 0; j < node_data[name].length; j++) {
-                            if (node_data[name].hasOwnProperty(j)) {
-                                nodes.push(makeNode(name, fn(node_data[name][j], 0, level + 1), null, level + 1, objKeys(node_data[name][j]).length));
+                    if (node_data.hasOwnProperty(name)) {
+                        if (node_data[name] instanceof Array) {
+                            for (var j = 0; j < node_data[name].length; j++) {
+                                if (node_data[name].hasOwnProperty(j)) {
+                                    nodes.push(makeNode(name, fn(node_data[name][j], 0, level + 1), null, level + 1, objKeys(node_data[name][j]).length));
+                                }
                             }
+                        } else {
+                            nodes.push(makeNode(name, fn(node_data[name], 0, level + 1), null, level + 1));
                         }
-                    } else {
-                        nodes.push(makeNode(name, fn(node_data[name], 0, level + 1), null, level + 1));
                     }
                 }
                 options.prettyPrint && nodes.length > 0 && nodes.push('\n');
@@ -8073,7 +8075,7 @@ var objectKeys = Object.keys || function (obj) {
 /***/ (function(module, exports, __webpack_require__) {
 
 var Async = __webpack_require__(16);
-var EventProxy = __webpack_require__(2).EventProxy;
+var EventProxy = __webpack_require__(1).EventProxy;
 var util = __webpack_require__(0);
 
 // 文件分块上传全过程，暴露的分块上传接口
