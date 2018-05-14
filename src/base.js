@@ -10,7 +10,7 @@ var util = require('./util');
  *     @param  {String}  params.Bucket          Bucket名称，必须
  *     @param  {String}  params.Region          地域名称，必须
  * @param  {Function}  callback                 回调函数，必须
- * @return  {Object}  err                       请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                       请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                      返回的数据
  *     @return  {Boolean}  data.BucketExist     Bucket是否存在
  *     @return  {Boolean}  data.BucketAuth      是否有 Bucket 的访问权限
@@ -37,7 +37,7 @@ function headBucket(params, callback) {
  *     @param  {String}  params.MaxKeys             单次返回最大的条目数量，默认1000，非必须
  *     @param  {String}  params.EncodingType        规定返回值的编码方式，非必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.ListBucketResult     返回的 object 列表信息
  */
@@ -84,7 +84,7 @@ function getBucket(params, callback) {
  *     @param  {String}  params.Bucket      Bucket名称，必须
  *     @param  {String}  params.Region      地域名称，必须
  * @param  {Function}  callback             回调函数，必须
- * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                  返回的数据
  *     @return  {String}  data.Location     操作地址
  */
@@ -113,7 +113,7 @@ function deleteBucket(params, callback) {
  *     @param  {String}  params.Bucket              Bucket名称，必须
  *     @param  {String}  params.Region              地域名称，必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.AccessControlPolicy  访问权限信息
  */
@@ -156,7 +156,7 @@ function getBucketAcl(params, callback) {
  *     @param  {String}  params.GrantWrite          赋予被授权者写的权限，格式x-cos-grant-write: uin=" ",uin=" "，非必须
  *     @param  {String}  params.GrantFullControl    赋予被授权者读写权限，格式x-cos-grant-full-control: uin=" ",uin=" "，非必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  */
 function putBucketAcl(params, callback) {
@@ -207,7 +207,7 @@ function putBucketAcl(params, callback) {
  *     @param  {String}  params.Bucket              Bucket名称，必须
  *     @param  {String}  params.Region              地域名称，必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.CORSRules            Bucket的跨域设置
  */
@@ -261,7 +261,7 @@ function getBucketCors(params, callback) {
  *     @param  {Object}  params.CORSConfiguration       相关的跨域设置，必须
  * @param  {Array}  params.CORSConfiguration.CORSRules  对应的跨域规则
  * @param  {Function}  callback                         回调函数，必须
- * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                              返回的数据
  */
 function putBucketCors(params, callback) {
@@ -308,7 +308,7 @@ function putBucketCors(params, callback) {
  *     @param  {String}  params.Bucket      Bucket名称，必须
  *     @param  {String}  params.Region      地域名称，必须
  * @param  {Function}  callback             回调函数，必须
- * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                  返回的数据
  */
 function deleteBucketCors(params, callback) {
@@ -375,7 +375,7 @@ function putBucketPolicy(params, callback) {
  *     @param  {String}  params.Bucket  Bucket名称，必须
  *     @param  {String}  params.Region  地域名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据，包含地域信息 LocationConstraint
  */
 function getBucketLocation(params, callback) {
@@ -399,7 +399,7 @@ function getBucketLocation(params, callback) {
  *     @param  {String}  params.Bucket  Bucket名称，必须
  *     @param  {String}  params.Region  地域名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
 function getBucketPolicy(params, callback) {
@@ -442,7 +442,7 @@ function getBucketPolicy(params, callback) {
  *     @param  {String}  params.Bucket  Bucket名称，必须
  *     @param  {String}  params.Region  地域名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
 function getBucketTagging(params, callback) {
@@ -487,7 +487,7 @@ function getBucketTagging(params, callback) {
  *     @param  {String}  params.Region  地域名称，必须
  *     @param  {Array}   params.TagSet  标签设置，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
 function putBucketTagging(params, callback) {
@@ -528,7 +528,7 @@ function putBucketTagging(params, callback) {
  *     @param  {String}  params.Bucket  Bucket名称，必须
  *     @param  {String}  params.Region  地域名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回的数据
  */
 function deleteBucketTagging(params, callback) {
@@ -775,7 +775,7 @@ function deleteBucketReplication(params, callback) {
  *     @param  {String}  params.Key                 文件名称，必须
  *     @param  {String}  params.IfModifiedSince     当Object在指定时间后被修改，则返回对应Object元信息，否则返回304，非必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          为指定 object 的元数据，如果设置了 IfModifiedSince ，且文件未修改，则返回一个对象，NotModified 属性为 true
  *     @return  {Boolean}  data.NotModified         是否在 IfModifiedSince 时间点之后未修改该 object，则为 true
  */
@@ -929,7 +929,7 @@ function getObject(params, callback) {
  *     @param  {String}  params.ServerSideEncryption               支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
  *     @param  {Function}  params.onProgress                        上传进度回调函数
  * @param  {Function}  callback                                     回调函数，必须
- * @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                          为对应的 object 数据
  *     @return  {String}  data.ETag                                 为对应上传文件的 ETag 值
  */
@@ -1016,7 +1016,7 @@ function deleteObject(params, callback) {
  *     @param  {String}  params.Region              地域名称，必须
  *     @param  {String}  params.Key                 object名称，必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.AccessControlPolicy  权限列表
  */
@@ -1058,7 +1058,7 @@ function getObjectAcl(params, callback) {
  *     @param  {String}  params.Region  地域名称，必须
  *     @param  {String}  params.Key     object名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回的数据
  */
 function putObjectAcl(params, callback) {
@@ -1111,7 +1111,7 @@ function putObjectAcl(params, callback) {
  *     @param  {String}  params.Region  地域名称，必须
  *     @param  {String}  params.Key     object名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回的数据
  */
 function optionsObject(params, callback) {
@@ -1313,7 +1313,7 @@ function restoreObject(params, callback) {
  *     @param  {String}  params.StorageClass                    设置Object的存储级别，枚举值：Standard，Standard_IA，Nearline，非必须
  *     @param  {String}  params.ServerSideEncryption           支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
  * @param  {Function}  callback                                 回调函数，必须
- * @return  {Object}  err                                       请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                                       请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                      返回的数据
  */
 function multipartInit(params, callback) {
@@ -1397,7 +1397,7 @@ function multipartUpload(params, callback) {
  *     @param  {String}  params.Parts[i].PartNumber     块编号，必须
  *     @param  {String}  params.Parts[i].ETag           分块的 sha1 校验值
  * @param  {Function}  callback                         回调函数，必须
- * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                              返回的数据
  *     @return  {Object}  data.CompleteMultipartUpload  完成分块上传后的文件信息，包括Location, Bucket, Key 和 ETag
  */
@@ -1465,7 +1465,7 @@ function multipartComplete(params, callback) {
  *     @param  {String}  params.KeyMarker                   与upload-id-marker一起使用 </Br>当upload-id-marker未被指定时，ObjectName字母顺序大于key-marker的条目将被列出 </Br>当upload-id-marker被指定时，ObjectName字母顺序大于key-marker的条目被列出，ObjectName字母顺序等于key-marker同时UploadId大于upload-id-marker的条目将被列出，非必须
  *     @param  {String}  params.UploadIdMarker              与key-marker一起使用 </Br>当key-marker未被指定时，upload-id-marker将被忽略 </Br>当key-marker被指定时，ObjectName字母顺序大于key-marker的条目被列出，ObjectName字母顺序等于key-marker同时UploadId大于upload-id-marker的条目将被列出，非必须
  * @param  {Function}  callback                             回调函数，必须
- * @return  {Object}  err                                   请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                  返回的数据
  *     @return  {Object}  data.ListMultipartUploadsResult   分块上传任务信息
  */
@@ -1526,7 +1526,7 @@ function multipartList(params, callback) {
  *     @param  {String}  params.MaxParts                    单次返回最大的条目数量，默认1000，非必须
  *     @param  {String}  params.PartNumberMarker            默认以UTF-8二进制顺序列出条目，所有列出条目从marker开始，非必须
  * @param  {Function}  callback                             回调函数，必须
- * @return  {Object}  err                                   请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                  返回的数据
  *     @return  {Object}  data.ListMultipartUploadsResult   分块信息
  */
