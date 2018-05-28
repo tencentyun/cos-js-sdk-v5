@@ -1215,7 +1215,7 @@ function uploadPartCopy(params, callback) {
         if (err) {
             return callback(err);
         }
-        var result = util.clone(data.CopyObjectResult || {});
+        var result = util.clone(data.CopyPartResult || {});
         util.extend(result, {
             statusCode: data.statusCode,
             headers: data.headers,
@@ -1976,6 +1976,7 @@ function _submitRequest(params, callback) {
             var attrs = {};
             response && response.statusCode && (attrs.statusCode = response.statusCode);
             response && response.headers && (attrs.headers = response.headers);
+
             if (err) {
                 err = util.extend(err || {}, attrs);
                 callback(err, null);

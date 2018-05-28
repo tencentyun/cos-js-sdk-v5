@@ -1,5 +1,5 @@
 var config = {
-    Bucket: 'test-1250000000',
+    Bucket: 'test-1256263624',
     Region: 'ap-guangzhou'
 };
 
@@ -30,9 +30,9 @@ var util = {
 var getAuthorization = function (options, callback) {
 
     // 方法一、后端通过获取临时密钥，计算签名给到前端（适用于前端调试）
-    // var url = 'http://127.0.0.1:3000/sts?Bucket=' + options.Bucket + '&Region=' + options.Region;
+    var url = 'http://127.0.0.1:3000/sts?Bucket=' + options.Bucket + '&Region=' + options.Region;
     // var url = '../server/sts.php?Bucket=' + options.Bucket + '&Region=' + options.Region;
-    var url = '../server/sts.php';
+    // var url = '../server/sts.php';
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
     xhr.onload = function (e) {
@@ -99,6 +99,7 @@ var cos = new COS({
     ChunkParallelLimit: 3,   // 控制单个文件下分片上传并发数
     ChunkSize: 1024 * 1024,  // 控制分片大小，单位 B
     ProgressInterval: 1,  // 控制 onProgress 回调的间隔
+    ChunkRetryTimes: 3,   // 控制文件切片后单片上传失败后重试次数
 });
 
 var AppId = config.AppId;
@@ -645,6 +646,7 @@ it('putObjectCopy()', function (assert) {
     });
 });
 
+
 it('deleteMultipleObject()', function (assert) {
     return new Promise(function (done) {
         var content = Date.now().toString(36);
@@ -1154,14 +1156,14 @@ it('sliceUploadFile()', function (assert) {
         "AllowedOrigins": ["*"],
         "AllowedMethods": ["GET", "POST", "PUT", "DELETE", "HEAD"],
         "AllowedHeaders": ["*"],
-        "ExposeHeaders": ["ETag"],
+        "ExposeHeaders": ["ETag","Content-Length"],
         "MaxAgeSeconds": "5"
     }];
     var CORSRulesMulti = [{
         "AllowedOrigins": ["*"],
         "AllowedMethods": ["GET", "POST", "PUT", "DELETE", "HEAD"],
         "AllowedHeaders": ["*"],
-        "ExposeHeaders": ["ETag"],
+        "ExposeHeaders": ["ETag","Content-Length"],
         "MaxAgeSeconds": "5"
     }, {
         "AllowedOrigins": ["http://qq.com", "http://qcloud.com"],
@@ -1186,6 +1188,7 @@ it('sliceUploadFile()', function (assert) {
                         Bucket: config.Bucket, // Bucket 格式：test-1250000000
                         Region: config.Region
                     }, function (err, data) {
+
                         assert.ok(comparePlainObject(CORSRules, data.CORSRules));
                         done();
                     });
@@ -1521,6 +1524,51 @@ it('params check', function (assert) {
             Region: 'cos.ap-guangzhou'
         }, function (err, data) {
             assert.ok(err.error === 'param Region should not be start with "cos."');
+            done();
+        });
+    });
+});
+
+it('sliceCopyFile() 正常分片复制', function (assert) {
+    return new Promise(function (done) {
+        var content = Date.now().toString(36);
+        var fileName = '10mb.zip';
+        var Key = '10mb.copy.zip';
+        cos.sliceCopyFile({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            Key: Key,
+            CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/'+ fileName,
+            SliceSize: 5 * 1024 * 1024,
+            onProgress:function (processData) {
+                lastPercent = processData.percent;
+            }
+        }, function (err, data) {
+            if (err) throw err;
+            assert.ok(data.ETag.length > 0, '成功进行分片复制');
+            done();
+        });
+    });
+});
+
+
+it('sliceCopyFile() 单片复制', function (assert) {
+    return new Promise(function (done) {
+        var content = Date.now().toString(36);
+        var fileName = '10mb.zip';
+        var Key = '10mb.copy.zip';
+        cos.sliceCopyFile({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            Key: Key,
+            CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/'+ fileName,
+            SliceSize: 10 * 1024 * 1024,
+            onProgress:function (processData) {
+                lastPercent = processData.percent;
+            }
+        }, function (err, data) {
+            if (err) throw err;
+            assert.ok(data.ETag.length > 0, '成功进行单片复制');
             done();
         });
     });

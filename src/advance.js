@@ -631,7 +631,7 @@ function uploadSliceItem(params, callback) {
     var SliceSize = params.SliceSize;
     var ServerSideEncryption = params.ServerSideEncryption;
     var UploadData = params.UploadData;
-    var sliceRetryTimes = 3;
+    var sliceRetryTimes = this.options.ChunkRetryTimes;
     var self = this;
 
     var start = SliceSize * (PartNumber - 1);
@@ -936,11 +936,196 @@ function uploadFiles(params, callback) {
     self._addTasks(taskList);
 }
 
+// 分片复制文件
+function sliceCopyFile(params, callback) {
+    var ep = new EventProxy();
+
+    var self = this;
+    var Bucket = params.Bucket;
+    var Region = params.Region;
+    var Key = params.Key;
+    var CopySource = params.CopySource;
+    var CopyFileName = CopySource.slice(CopySource.indexOf('/') + 1, CopySource.length);
+    var SliceSize = Math.min(params.SliceSize, 5 * 1024 * 1024 * 1024);
+
+    var ChunkSize = params.ChunkSize || this.options.ChunkSize;
+
+    var ChunkParallel = this.options.ChunkParallelLimit;
+
+    var FinishSize = 0;
+    var FileSize;
+    var onProgress;
+
+    // 分片复制完成，开始 multipartComplete 操作
+    ep.on('copy_slice_complete', function (UploadData) {
+        self.multipartComplete({
+            Bucket: Bucket,
+            Region: Region,
+            Key: Key,
+            UploadId: UploadData.UploadId,
+            Parts: UploadData.PartList,
+        },function (err,data) {
+            if (err) {
+                onProgress(null, true);
+                return callback(err);
+            }
+            onProgress({loaded: FileSize, total: FileSize}, true);
+            callback(null,data);
+        });
+    });
+
+    ep.on('get_copy_data_finish',function (UploadData) {
+        Async.eachLimit(UploadData.PartList, ChunkParallel, function (SliceItem, asyncCallback) {
+            var PartNumber = SliceItem.PartNumber;
+            var CopySourceRange = SliceItem.CopySourceRange;
+            var currentSize = SliceItem.end - SliceItem.start;
+            var preAddSize = 0;
+
+            copySliceItem.call(self,{
+                Bucket: Bucket,
+                Region: Region,
+                Key: Key,
+                CopySource: CopySource,
+                UploadId:UploadData.UploadId,
+                PartNumber:PartNumber,
+                CopySourceRange:CopySourceRange,
+                onProgress:function (data) {
+                    FinishSize += data.loaded - preAddSize;
+                    preAddSize = data.loaded;
+                    onProgress({loaded: FinishSize, total: FileSize});
+                }
+            },function (err,data) {
+                if (err) {
+                    return callback(err);
+                }
+                onProgress({loaded: FinishSize, total: FileSize});
+
+                FinishSize += currentSize - preAddSize;
+                SliceItem.ETag = data.ETag;
+                asyncCallback(err || null, data);
+            });
+        }, function (err) {
+            if (err) {
+                onProgress(null, true);
+                return callback(err);
+            }
+
+            ep.emit('copy_slice_complete',UploadData);
+        });
+    });
+
+    ep.on('get_file_size_finish',function () {
+        // 控制分片大小
+        (function () {
+            var SIZE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1024 * 2, 1024 * 4, 1024 * 5];
+            var AutoChunkSize = 1024 * 1024;
+            for (var i = 0; i < SIZE.length; i++) {
+                AutoChunkSize = SIZE[i] * 1024 * 1024;
+                if (FileSize / AutoChunkSize < 10000) break;
+            }
+            params.ChunkSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
+
+            var ChunkCount = Math.ceil(FileSize / ChunkSize);
+
+            var list = [];
+            for (var partNumber = 1; partNumber <= ChunkCount; partNumber++) {
+                var start = (partNumber - 1) * ChunkSize;
+                var end = partNumber * ChunkSize < FileSize ? partNumber * ChunkSize : FileSize - 1;
+                var item = {
+                    PartNumber: partNumber,
+                    start: start,
+                    end: end,
+                    CopySourceRange: "bytes="+start+"-"+end,
+                };
+                list.push(item);
+            }
+            params.PartList = list;
+        })();
+
+        onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
+
+        self.multipartInit({
+            Bucket: Bucket,
+            Region: Region,
+            Key: Key,
+        },function (err,data) {
+            if (err) {
+                return callback(err);
+            }
+            params.UploadId = data.UploadId;
+            ep.emit('get_copy_data_finish', params);
+        });
+    });
+
+    // 获取远端复制源文件的大小
+    self.headObject({
+        Bucket: Bucket,
+        Region: Region,
+        Key: CopyFileName,
+    },function(err, data) {
+        if (err) {
+          if (err.statusCode && err.statusCode === 404) {
+            return callback({ ErrorStatus: CopyFileName + ' Not Exist' });
+          } else {
+            callback(err);
+          }
+          return;
+        }
+
+        FileSize = params.FileSize = data.headers['content-length'];
+
+        if (FileSize === undefined || !FileSize) {
+            callback({error: 'get Content-Length error, please add "Content-Length" to CORS ExposeHeader setting.'});
+        }
+
+        // 开始上传
+        if (FileSize <= SliceSize) {
+          self.putObjectCopy(params, callback);
+        } else {
+          ep.emit('get_file_size_finish');
+        }
+    });
+}
+
+// 复制指定分片
+function copySliceItem(params,callback) {
+    var TaskId = params.TaskId;
+    var Bucket = params.Bucket;
+    var Region = params.Region;
+    var Key = params.Key;
+    var CopySource = params.CopySource;
+    var UploadId = params.UploadId;
+    var PartNumber = params.PartNumber * 1;
+    var CopySourceRange = params.CopySourceRange;
+
+    var sliceRetryTimes = this.options.ChunkRetryTimes;
+    var self = this;
+
+    Async.retry(sliceRetryTimes, function (tryCallback) {
+        self.uploadPartCopy({
+            TaskId: TaskId,
+            Bucket: Bucket,
+            Region: Region,
+            Key: Key,
+            CopySource: CopySource,
+            UploadId: UploadId,
+            PartNumber:PartNumber,
+            CopySourceRange:CopySourceRange,
+            onProgress:params.onProgress,
+        },function (err,data) {
+            tryCallback(err || null, data);
+        })
+    }, function (err, data) {
+        return callback(err, data);
+    });
+}
+
 
 var API_MAP = {
     sliceUploadFile: sliceUploadFile,
     abortUploadTask: abortUploadTask,
     uploadFiles: uploadFiles,
+    sliceCopyFile: sliceCopyFile,
 };
 
 util.each(API_MAP, function (fn, apiName) {

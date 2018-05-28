@@ -8,12 +8,12 @@ var request = require('request');
 var config = {
     Url: 'https://sts.api.qcloud.com/v2/index.php',
     Domain: 'sts.api.qcloud.com',
-    Proxy: '',
-    SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 固定密钥
-    SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 固定密钥
-    Bucket: 'test-1250000000',
+    Proxy: 'http://web-proxy.tencent.com:8080',
+    SecretId: 'AKIDRgfOs6anGTQ8amsPr55qNgkZAWeXGdpn', // 固定密钥
+    SecretKey: 'rTqxznRvBD2g7NQFqCJAm9HBtMbaO0NW', // 固定密钥
+    Bucket: 'test-1256263624',
     Region: 'ap-guangzhou',
-    AllowPrefix: '_ALLOW_DIR_/*', // 这里改成允许的路径前缀，这里可以根据自己网站的用户登录态判断允许上传的目录，例子：* 或者 a/* 或者 a.jpg
+    AllowPrefix: '*', // 这里改成允许的路径前缀，这里可以根据自己网站的用户登录态判断允许上传的目录，例子：* 或者 a/* 或者 a.jpg
 };
 
 
@@ -57,7 +57,7 @@ var getTempKeys = function (callback) {
         'statement': [{
             'action': [
                 // 这里可以从临时密钥的权限上控制前端允许的操作
-                // 'name/cos:*', // 这样写可以包含下面所有权限
+                'name/cos:*', // 这样写可以包含下面所有权限
 
                 // // 列出所有允许的操作
                 // // ACL 读写
@@ -90,21 +90,22 @@ var getTempKeys = function (callback) {
                 // 'name/cos:DeleteMultipleObject',
                 // 'name/cos:DeleteObject',
                 // 简单文件操作
-                'name/cos:PutObject',
-                'name/cos:PostObject',
-                'name/cos:AppendObject',
-                'name/cos:GetObject',
-                'name/cos:HeadObject',
-                'name/cos:OptionsObject',
-                'name/cos:PutObjectCopy',
-                'name/cos:PostObjectRestore',
+                // 'name/cos:PutObject',
+                // 'name/cos:PostObject',
+                // 'name/cos:AppendObject',
+                // 'name/cos:GetObject',
+                // 'name/cos:HeadObject',
+                // 'name/cos:OptionsObject',
+                // 'name/cos:PutObjectCopy',
+                // 'name/cos:PostObjectRestore',
+                // 'name/cos:sliceCopyFile',
                 // 分片上传操作
-                'name/cos:InitiateMultipartUpload',
-                'name/cos:ListMultipartUploads',
-                'name/cos:ListParts',
-                'name/cos:UploadPart',
-                'name/cos:CompleteMultipartUpload',
-                'name/cos:AbortMultipartUpload',
+                // 'name/cos:InitiateMultipartUpload',
+                // 'name/cos:ListMultipartUploads',
+                // 'name/cos:ListParts',
+                // 'name/cos:UploadPart',
+                // 'name/cos:CompleteMultipartUpload',
+                // 'name/cos:AbortMultipartUpload',
             ],
             'effect': 'allow',
             'principal': {'qcs': ['*']},
@@ -156,7 +157,7 @@ http.createServer(function(req, res){
         getTempKeys(function (err, tempKeys) {
             res.writeHead(200, {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': 'http://127.0.0.1',
+                'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Headers': 'origin,accept,content-type',
             });
             res.write(JSON.stringify(err || tempKeys) || '');

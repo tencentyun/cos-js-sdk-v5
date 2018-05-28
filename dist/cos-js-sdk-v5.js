@@ -7,7 +7,7 @@
 		exports["COS"] = factory();
 	else
 		root["COS"] = factory();
-})(this, function() {
+})(typeof self !== 'undefined' ? self : this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -1892,12 +1892,16 @@ var defaultOptions = {
     Domain: '',
     ServiceDomain: '',
     SliceSize: 1024 * 1024 * 20,
-    Protocol: ''
+    Protocol: '',
+    ChunkRetryTimes: 3
 };
 
 // 对外暴露的类
 var COS = function (options) {
     this.options = util.extend(util.clone(defaultOptions), options || {});
+    this.options.FileParallelLimit = Math.max(1, this.options.FileParallelLimit);
+    this.options.ChunkParallelLimit = Math.max(1, this.options.ChunkParallelLimit);
+    this.options.ChunkRetryTimes = Math.max(1, this.options.ChunkRetryTimes);
     if (this.options.AppId) {
         console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").');
     }
@@ -3808,7 +3812,7 @@ var util = __webpack_require__(0);
  *     @param  {String}  params.Bucket          Bucket名称，必须
  *     @param  {String}  params.Region          地域名称，必须
  * @param  {Function}  callback                 回调函数，必须
- * @return  {Object}  err                       请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                       请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                      返回的数据
  *     @return  {Boolean}  data.BucketExist     Bucket是否存在
  *     @return  {Boolean}  data.BucketAuth      是否有 Bucket 的访问权限
@@ -3835,7 +3839,7 @@ function headBucket(params, callback) {
  *     @param  {String}  params.MaxKeys             单次返回最大的条目数量，默认1000，非必须
  *     @param  {String}  params.EncodingType        规定返回值的编码方式，非必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.ListBucketResult     返回的 object 列表信息
  */
@@ -3882,7 +3886,7 @@ function getBucket(params, callback) {
  *     @param  {String}  params.Bucket      Bucket名称，必须
  *     @param  {String}  params.Region      地域名称，必须
  * @param  {Function}  callback             回调函数，必须
- * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                  返回的数据
  *     @return  {String}  data.Location     操作地址
  */
@@ -3911,7 +3915,7 @@ function deleteBucket(params, callback) {
  *     @param  {String}  params.Bucket              Bucket名称，必须
  *     @param  {String}  params.Region              地域名称，必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.AccessControlPolicy  访问权限信息
  */
@@ -3954,7 +3958,7 @@ function getBucketAcl(params, callback) {
  *     @param  {String}  params.GrantWrite          赋予被授权者写的权限，格式x-cos-grant-write: uin=" ",uin=" "，非必须
  *     @param  {String}  params.GrantFullControl    赋予被授权者读写权限，格式x-cos-grant-full-control: uin=" ",uin=" "，非必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  */
 function putBucketAcl(params, callback) {
@@ -4005,7 +4009,7 @@ function putBucketAcl(params, callback) {
  *     @param  {String}  params.Bucket              Bucket名称，必须
  *     @param  {String}  params.Region              地域名称，必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.CORSRules            Bucket的跨域设置
  */
@@ -4059,7 +4063,7 @@ function getBucketCors(params, callback) {
  *     @param  {Object}  params.CORSConfiguration       相关的跨域设置，必须
  * @param  {Array}  params.CORSConfiguration.CORSRules  对应的跨域规则
  * @param  {Function}  callback                         回调函数，必须
- * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                              返回的数据
  */
 function putBucketCors(params, callback) {
@@ -4106,7 +4110,7 @@ function putBucketCors(params, callback) {
  *     @param  {String}  params.Bucket      Bucket名称，必须
  *     @param  {String}  params.Region      地域名称，必须
  * @param  {Function}  callback             回调函数，必须
- * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                  返回的数据
  */
 function deleteBucketCors(params, callback) {
@@ -4173,7 +4177,7 @@ function putBucketPolicy(params, callback) {
  *     @param  {String}  params.Bucket  Bucket名称，必须
  *     @param  {String}  params.Region  地域名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据，包含地域信息 LocationConstraint
  */
 function getBucketLocation(params, callback) {
@@ -4197,7 +4201,7 @@ function getBucketLocation(params, callback) {
  *     @param  {String}  params.Bucket  Bucket名称，必须
  *     @param  {String}  params.Region  地域名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
 function getBucketPolicy(params, callback) {
@@ -4239,7 +4243,7 @@ function getBucketPolicy(params, callback) {
  *     @param  {String}  params.Bucket  Bucket名称，必须
  *     @param  {String}  params.Region  地域名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
 function getBucketTagging(params, callback) {
@@ -4283,7 +4287,7 @@ function getBucketTagging(params, callback) {
  *     @param  {String}  params.Region  地域名称，必须
  *     @param  {Array}   params.TagSet  标签设置，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
 function putBucketTagging(params, callback) {
@@ -4323,7 +4327,7 @@ function putBucketTagging(params, callback) {
  *     @param  {String}  params.Bucket  Bucket名称，必须
  *     @param  {String}  params.Region  地域名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回的数据
  */
 function deleteBucketTagging(params, callback) {
@@ -4569,7 +4573,7 @@ function deleteBucketReplication(params, callback) {
  *     @param  {String}  params.Key                 文件名称，必须
  *     @param  {String}  params.IfModifiedSince     当Object在指定时间后被修改，则返回对应Object元信息，否则返回304，非必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          为指定 object 的元数据，如果设置了 IfModifiedSince ，且文件未修改，则返回一个对象，NotModified 属性为 true
  *     @return  {Boolean}  data.NotModified         是否在 IfModifiedSince 时间点之后未修改该 object，则为 true
  */
@@ -4721,7 +4725,7 @@ function getObject(params, callback) {
  *     @param  {String}  params.ServerSideEncryption               支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
  *     @param  {Function}  params.onProgress                        上传进度回调函数
  * @param  {Function}  callback                                     回调函数，必须
- * @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                          为对应的 object 数据
  *     @return  {String}  data.ETag                                 为对应上传文件的 ETag 值
  */
@@ -4808,7 +4812,7 @@ function deleteObject(params, callback) {
  *     @param  {String}  params.Region              地域名称，必须
  *     @param  {String}  params.Key                 object名称，必须
  * @param  {Function}  callback                     回调函数，必须
- * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.AccessControlPolicy  权限列表
  */
@@ -4850,7 +4854,7 @@ function getObjectAcl(params, callback) {
  *     @param  {String}  params.Region  地域名称，必须
  *     @param  {String}  params.Key     object名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回的数据
  */
 function putObjectAcl(params, callback) {
@@ -4903,7 +4907,7 @@ function putObjectAcl(params, callback) {
  *     @param  {String}  params.Region  地域名称，必须
  *     @param  {String}  params.Key     object名称，必须
  * @param  {Function}  callback         回调函数，必须
- * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回的数据
  */
 function optionsObject(params, callback) {
@@ -5007,7 +5011,7 @@ function uploadPartCopy(params, callback) {
         if (err) {
             return callback(err);
         }
-        var result = util.clone(data.CopyObjectResult || {});
+        var result = util.clone(data.CopyPartResult || {});
         util.extend(result, {
             statusCode: data.statusCode,
             headers: data.headers
@@ -5104,7 +5108,7 @@ function restoreObject(params, callback) {
  *     @param  {String}  params.StorageClass                    设置Object的存储级别，枚举值：Standard，Standard_IA，Nearline，非必须
  *     @param  {String}  params.ServerSideEncryption           支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
  * @param  {Function}  callback                                 回调函数，必须
- * @return  {Object}  err                                       请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                                       请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                      返回的数据
  */
 function multipartInit(params, callback) {
@@ -5187,7 +5191,7 @@ function multipartUpload(params, callback) {
  *     @param  {String}  params.Parts[i].PartNumber     块编号，必须
  *     @param  {String}  params.Parts[i].ETag           分块的 sha1 校验值
  * @param  {Function}  callback                         回调函数，必须
- * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                              返回的数据
  *     @return  {Object}  data.CompleteMultipartUpload  完成分块上传后的文件信息，包括Location, Bucket, Key 和 ETag
  */
@@ -5255,7 +5259,7 @@ function multipartComplete(params, callback) {
  *     @param  {String}  params.KeyMarker                   与upload-id-marker一起使用 </Br>当upload-id-marker未被指定时，ObjectName字母顺序大于key-marker的条目将被列出 </Br>当upload-id-marker被指定时，ObjectName字母顺序大于key-marker的条目被列出，ObjectName字母顺序等于key-marker同时UploadId大于upload-id-marker的条目将被列出，非必须
  *     @param  {String}  params.UploadIdMarker              与key-marker一起使用 </Br>当key-marker未被指定时，upload-id-marker将被忽略 </Br>当key-marker被指定时，ObjectName字母顺序大于key-marker的条目被列出，ObjectName字母顺序等于key-marker同时UploadId大于upload-id-marker的条目将被列出，非必须
  * @param  {Function}  callback                             回调函数，必须
- * @return  {Object}  err                                   请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                  返回的数据
  *     @return  {Object}  data.ListMultipartUploadsResult   分块上传任务信息
  */
@@ -5316,7 +5320,7 @@ function multipartList(params, callback) {
  *     @param  {String}  params.MaxParts                    单次返回最大的条目数量，默认1000，非必须
  *     @param  {String}  params.PartNumberMarker            默认以UTF-8二进制顺序列出条目，所有列出条目从marker开始，非必须
  * @param  {Function}  callback                             回调函数，必须
- * @return  {Object}  err                                   请求失败的错误，如果请求成功，则为空。
+ * @return  {Object}  err                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                  返回的数据
  *     @return  {Object}  data.ListMultipartUploadsResult   分块信息
  */
@@ -5734,6 +5738,9 @@ function _submitRequest(params, callback) {
     opt.headers && (opt.headers = util.clearKey(opt.headers));
     opt = util.clearKey(opt);
 
+    // console.log(opt);
+
+
     // progress
     if (params.onProgress && typeof params.onProgress === 'function') {
         var contentLength = body && (body.size || body.length) || 0;
@@ -5755,6 +5762,7 @@ function _submitRequest(params, callback) {
             var attrs = {};
             response && response.statusCode && (attrs.statusCode = response.statusCode);
             response && response.headers && (attrs.headers = response.headers);
+
             if (err) {
                 err = util.extend(err || {}, attrs);
                 callback(err, null);
@@ -10854,7 +10862,7 @@ function uploadSliceItem(params, callback) {
     var SliceSize = params.SliceSize;
     var ServerSideEncryption = params.ServerSideEncryption;
     var UploadData = params.UploadData;
-    var sliceRetryTimes = 3;
+    var sliceRetryTimes = this.options.ChunkRetryTimes;
     var self = this;
 
     var start = SliceSize * (PartNumber - 1);
@@ -11156,10 +11164,196 @@ function uploadFiles(params, callback) {
     self._addTasks(taskList);
 }
 
+// 分片复制文件
+function sliceCopyFile(params, callback) {
+    var ep = new EventProxy();
+
+    var self = this;
+    var Bucket = params.Bucket;
+    var Region = params.Region;
+    var Key = params.Key;
+    var CopySource = params.CopySource;
+    var CopyFileName = CopySource.slice(CopySource.indexOf('/') + 1, CopySource.length);
+    var SliceSize = Math.min(params.SliceSize, 5 * 1024 * 1024 * 1024);
+
+    var ChunkSize = params.ChunkSize || this.options.ChunkSize;
+
+    var ChunkParallel = this.options.ChunkParallelLimit;
+
+    var FinishSize = 0;
+    var FileSize;
+    var onProgress;
+
+    // 分片复制完成，开始 multipartComplete 操作
+    ep.on('copy_slice_complete', function (UploadData) {
+        self.multipartComplete({
+            Bucket: Bucket,
+            Region: Region,
+            Key: Key,
+            UploadId: UploadData.UploadId,
+            Parts: UploadData.PartList
+        }, function (err, data) {
+            if (err) {
+                onProgress(null, true);
+                return callback(err);
+            }
+            onProgress({ loaded: FileSize, total: FileSize }, true);
+            callback(null, data);
+        });
+    });
+
+    ep.on('get_copy_data_finish', function (UploadData) {
+        Async.eachLimit(UploadData.PartList, ChunkParallel, function (SliceItem, asyncCallback) {
+            var PartNumber = SliceItem.PartNumber;
+            var CopySourceRange = SliceItem.CopySourceRange;
+            var currentSize = SliceItem.end - SliceItem.start;
+            var preAddSize = 0;
+
+            copySliceItem.call(self, {
+                Bucket: Bucket,
+                Region: Region,
+                Key: Key,
+                CopySource: CopySource,
+                UploadId: UploadData.UploadId,
+                PartNumber: PartNumber,
+                CopySourceRange: CopySourceRange,
+                onProgress: function (data) {
+                    FinishSize += data.loaded - preAddSize;
+                    preAddSize = data.loaded;
+                    onProgress({ loaded: FinishSize, total: FileSize });
+                }
+            }, function (err, data) {
+                if (err) {
+                    return callback(err);
+                }
+                onProgress({ loaded: FinishSize, total: FileSize });
+
+                FinishSize += currentSize - preAddSize;
+                SliceItem.ETag = data.ETag;
+                asyncCallback(err || null, data);
+            });
+        }, function (err) {
+            if (err) {
+                onProgress(null, true);
+                return callback(err);
+            }
+
+            ep.emit('copy_slice_complete', UploadData);
+        });
+    });
+
+    ep.on('get_file_size_finish', function () {
+        // 控制分片大小
+        (function () {
+            var SIZE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1024 * 2, 1024 * 4, 1024 * 5];
+            var AutoChunkSize = 1024 * 1024;
+            for (var i = 0; i < SIZE.length; i++) {
+                AutoChunkSize = SIZE[i] * 1024 * 1024;
+                if (FileSize / AutoChunkSize < 10000) break;
+            }
+            params.ChunkSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
+
+            var ChunkCount = Math.ceil(FileSize / ChunkSize);
+
+            var list = [];
+            for (var partNumber = 1; partNumber <= ChunkCount; partNumber++) {
+                var start = (partNumber - 1) * ChunkSize;
+                var end = partNumber * ChunkSize < FileSize ? partNumber * ChunkSize : FileSize - 1;
+                var item = {
+                    PartNumber: partNumber,
+                    start: start,
+                    end: end,
+                    CopySourceRange: "bytes=" + start + "-" + end
+                };
+                list.push(item);
+            }
+            params.PartList = list;
+        })();
+
+        onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
+
+        self.multipartInit({
+            Bucket: Bucket,
+            Region: Region,
+            Key: Key
+        }, function (err, data) {
+            if (err) {
+                return callback(err);
+            }
+            params.UploadId = data.UploadId;
+            ep.emit('get_copy_data_finish', params);
+        });
+    });
+
+    // 获取远端复制源文件的大小
+    self.headObject({
+        Bucket: Bucket,
+        Region: Region,
+        Key: CopyFileName
+    }, function (err, data) {
+        if (err) {
+            if (err.statusCode && err.statusCode === 404) {
+                return callback({ ErrorStatus: CopyFileName + ' Not Exist' });
+            } else {
+                callback(err);
+            }
+            return;
+        }
+
+        FileSize = params.FileSize = data.headers['content-length'];
+        console.log(data);
+
+        if (FileSize === undefined || !FileSize) {
+            callback({ error: 'get Content-Length error, please add "Content-Length" to CORS ExposeHeader setting.' });
+        }
+
+        // 开始上传
+        if (FileSize <= SliceSize) {
+            self.putObjectCopy(params, callback);
+        } else {
+            ep.emit('get_file_size_finish');
+        }
+    });
+}
+
+// 复制指定分片
+function copySliceItem(params, callback) {
+    var TaskId = params.TaskId;
+    var Bucket = params.Bucket;
+    var Region = params.Region;
+    var Key = params.Key;
+    var CopySource = params.CopySource;
+    var UploadId = params.UploadId;
+    var PartNumber = params.PartNumber * 1;
+    var CopySourceRange = params.CopySourceRange;
+
+    var sliceRetryTimes = this.options.ChunkRetryTimes;
+    var self = this;
+
+    Async.retry(sliceRetryTimes, function (tryCallback) {
+        self.uploadPartCopy({
+            TaskId: TaskId,
+            Bucket: Bucket,
+            Region: Region,
+            Key: Key,
+            CopySource: CopySource,
+            UploadId: UploadId,
+            PartNumber: PartNumber,
+            CopySourceRange: CopySourceRange,
+            onProgress: params.onProgress
+        }, function (err, data) {
+            tryCallback(err || null, data);
+        });
+    }, function (err, data) {
+        return callback(err, data);
+    });
+}
+
 var API_MAP = {
     sliceUploadFile: sliceUploadFile,
     abortUploadTask: abortUploadTask,
-    uploadFiles: uploadFiles
+    uploadFiles: uploadFiles,
+    sliceCopyFile: sliceCopyFile
 };
 
 util.each(API_MAP, function (fn, apiName) {
