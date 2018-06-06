@@ -7,7 +7,7 @@
 		exports["COS"] = factory();
 	else
 		root["COS"] = factory();
-})(typeof self !== 'undefined' ? self : this, function() {
+})(this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -173,7 +173,7 @@ var noop = function () {};
 var clearKey = function (obj) {
     var retObj = {};
     for (var key in obj) {
-        if (obj[key] !== undefined && obj[key] !== null) {
+        if (obj.hasOwnProperty(key) && obj[key] !== undefined && obj[key] !== null) {
             retObj[key] = obj[key];
         }
     }
@@ -384,7 +384,7 @@ var apiWrapper = function (apiName, apiFn) {
                 return;
             }
             // 判断 region 格式
-            if (params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb') {
+            if (params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
                 _callback({ error: 'param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224' });
                 return;
             }
@@ -2050,7 +2050,6 @@ function ii(a, b, c, d, x, s, t) {
 }
 
 function md51(s) {
-    txt = '';
     var n = s.length,
         state = [1732584193, -271733879, -1732584194, 271733878],
         i;
@@ -5737,9 +5736,6 @@ function _submitRequest(params, callback) {
     // 清理 undefined 和 null 字段
     opt.headers && (opt.headers = util.clearKey(opt.headers));
     opt = util.clearKey(opt);
-
-    // console.log(opt);
-
 
     // progress
     if (params.onProgress && typeof params.onProgress === 'function') {
@@ -11258,7 +11254,7 @@ function sliceCopyFile(params, callback) {
             var list = [];
             for (var partNumber = 1; partNumber <= ChunkCount; partNumber++) {
                 var start = (partNumber - 1) * ChunkSize;
-                var end = partNumber * ChunkSize < FileSize ? partNumber * ChunkSize : FileSize - 1;
+                var end = partNumber * ChunkSize < FileSize ? partNumber * ChunkSize - 1 : FileSize - 1;
                 var item = {
                     PartNumber: partNumber,
                     start: start,
@@ -11301,7 +11297,6 @@ function sliceCopyFile(params, callback) {
         }
 
         FileSize = params.FileSize = data.headers['content-length'];
-        console.log(data);
 
         if (FileSize === undefined || !FileSize) {
             callback({ error: 'get Content-Length error, please add "Content-Length" to CORS ExposeHeader setting.' });

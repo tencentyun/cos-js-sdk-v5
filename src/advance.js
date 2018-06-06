@@ -1030,12 +1030,12 @@ function sliceCopyFile(params, callback) {
             var list = [];
             for (var partNumber = 1; partNumber <= ChunkCount; partNumber++) {
                 var start = (partNumber - 1) * ChunkSize;
-                var end = partNumber * ChunkSize < FileSize ? partNumber * ChunkSize : FileSize - 1;
+                var end = partNumber * ChunkSize < FileSize ? (partNumber * ChunkSize - 1) : FileSize - 1;
                 var item = {
                     PartNumber: partNumber,
                     start: start,
                     end: end,
-                    CopySourceRange: "bytes="+start+"-"+end,
+                    CopySourceRange: "bytes=" + start + "-" + end,
                 };
                 list.push(item);
             }
