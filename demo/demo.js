@@ -1,5 +1,5 @@
 var config = {
-    Bucket: 'test-1250000000',
+    Bucket: 'apple-1251902136',
     Region: 'ap-guangzhou'
 };
 
@@ -19,8 +19,8 @@ var util = {
 
 var getAuthorization  = function (options,callback) {
     // 方法一、后端通过获取临时密钥给到前端，前端计算签名
-    var url = 'http://127.0.0.1:3000/sts';
-    // var url = '../server/sts.php';
+    // var url = 'http://127.0.0.1:3000/sts';
+    var url = '../server/sts.php';
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
     xhr.onload = function (e) {
@@ -68,7 +68,30 @@ var getAuthorization  = function (options,callback) {
     // xhr.send(JSON.stringify(data));
 
 
-    // // 方法三、前端使用固定密钥计算签名（适用于前端调试）
+    // // 方法三、后端使用固定密钥计算签名，返回给前端
+    // var method = (options.Method || 'get').toLowerCase();
+    // var key = options.Key || '';
+    // var query = options.Query || {};
+    // var headers = options.Headers || {};
+    // var pathname = key.indexOf('/') === 0 ? key : '/' + key;
+    // // var url = 'http://127.0.0.1:3000/auth';
+    // var url = '../server/auth.php';
+    // var xhr = new XMLHttpRequest();
+    // var data = {
+    //     method: method,
+    //     pathname: pathname,
+    //     query: query,
+    //     headers: headers,
+    // };
+    // xhr.open('POST', url, true);
+    // xhr.setRequestHeader('content-type', 'application/json');
+    // xhr.onload = function (e) {
+    //     callback({ Authorization: e.target.responseText, });
+    // };
+    // xhr.send(JSON.stringify(data));
+
+
+    // // 方法四、前端使用固定密钥计算签名（适用于前端调试）
     // var authorization = COS.getAuthorization({
     //     SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
@@ -712,8 +735,8 @@ function uploadFiles() {
 
 function sliceCopyFile() {
     // 创建测试文件
-    var sourceName = '3mb.zip';
-    var Key = '3mb.copy.zip';
+    var sourceName = '1.zip';
+    var Key = '2.zip';
 
     var sourcePath = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/'+ sourceName;
 
