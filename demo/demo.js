@@ -394,7 +394,6 @@ function putBucketVersioning() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
         VersioningConfiguration: {
-            MFADelete: "Enabled",
             Status: "Enabled"
         }
     }, function (err, data) {

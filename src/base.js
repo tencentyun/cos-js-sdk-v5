@@ -680,8 +680,6 @@ function getBucketVersioning(params, callback) {
     }, function (err, data) {
         if (!err) {
             !data.VersioningConfiguration && (data.VersioningConfiguration = {});
-            !data.VersioningConfiguration.MFADelete && (data.VersioningConfiguration.MFADelete = 'Disabled');
-            !data.VersioningConfiguration.Status && (data.VersioningConfiguration.Status = 'Disabled');
         }
         callback(err, data);
     });
