@@ -384,9 +384,8 @@ var apiWrapper = function (apiName, apiFn) {
                 return;
             }
             // 判断 region 格式
-            if (params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
-                _callback({ error: 'param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224' });
-                return;
+            if (!this.options.IgnoreRegionFormat && params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
+                console.warn('param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
             }
             // 判断 region 格式
             if (params.Region && params.Region.indexOf('cos.') > -1) {
@@ -1893,7 +1892,8 @@ var defaultOptions = {
     ServiceDomain: '',
     SliceSize: 1024 * 1024 * 20,
     Protocol: '',
-    ChunkRetryTimes: 3
+    ChunkRetryTimes: 3,
+    IgnoreRegionFormat: false
 };
 
 // 对外暴露的类
@@ -11167,7 +11167,15 @@ function sliceCopyFile(params, callback) {
     var Region = params.Region;
     var Key = params.Key;
     var CopySource = params.CopySource;
-    var CopyFileName = CopySource.slice(CopySource.indexOf('/') + 1, CopySource.length);
+    var m = CopySource.match(/^([^.]+-\d+)\.cos\.([^.]+)\.myqcloud\.com\/(.+)$/);
+    if (!m) {
+        callback({ error: 'CopySource format error' });
+        return;
+    }
+
+    var SourceBucket = m[1];
+    var SourceRegion = m[2];
+    var SourceKey = m[3];
     var SliceSize = Math.min(params.SliceSize, 5 * 1024 * 1024 * 1024);
 
     var ChunkSize = params.ChunkSize || this.options.ChunkSize;
@@ -11281,13 +11289,13 @@ function sliceCopyFile(params, callback) {
 
     // 获取远端复制源文件的大小
     self.headObject({
-        Bucket: Bucket,
-        Region: Region,
-        Key: CopyFileName
+        Bucket: SourceBucket,
+        Region: SourceRegion,
+        Key: SourceKey
     }, function (err, data) {
         if (err) {
             if (err.statusCode && err.statusCode === 404) {
-                return callback({ ErrorStatus: CopyFileName + ' Not Exist' });
+                return callback({ ErrorStatus: SourceKey + ' Not Exist' });
             } else {
                 callback(err);
             }
@@ -11295,9 +11303,9 @@ function sliceCopyFile(params, callback) {
         }
 
         FileSize = params.FileSize = data.headers['content-length'];
-
         if (FileSize === undefined || !FileSize) {
             callback({ error: 'get Content-Length error, please add "Content-Length" to CORS ExposeHeader setting.' });
+            return;
         }
 
         // 开始上传

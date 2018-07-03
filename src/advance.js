@@ -945,7 +945,15 @@ function sliceCopyFile(params, callback) {
     var Region = params.Region;
     var Key = params.Key;
     var CopySource = params.CopySource;
-    var CopyFileName = CopySource.slice(CopySource.indexOf('/') + 1, CopySource.length);
+    var m = CopySource.match(/^([^.]+-\d+)\.cos\.([^.]+)\.myqcloud\.com\/(.+)$/);
+    if (!m) {
+        callback({error: 'CopySource format error'});
+        return;
+    }
+
+    var SourceBucket = m[1];
+    var SourceRegion = m[2];
+    var SourceKey = m[3];
     var SliceSize = Math.min(params.SliceSize, 5 * 1024 * 1024 * 1024);
 
     var ChunkSize = params.ChunkSize || this.options.ChunkSize;
@@ -1059,13 +1067,13 @@ function sliceCopyFile(params, callback) {
 
     // 获取远端复制源文件的大小
     self.headObject({
-        Bucket: Bucket,
-        Region: Region,
-        Key: CopyFileName,
+        Bucket: SourceBucket,
+        Region: SourceRegion,
+        Key: SourceKey,
     },function(err, data) {
         if (err) {
           if (err.statusCode && err.statusCode === 404) {
-            return callback({ ErrorStatus: CopyFileName + ' Not Exist' });
+            return callback({ ErrorStatus: SourceKey + ' Not Exist' });
           } else {
             callback(err);
           }
@@ -1073,9 +1081,9 @@ function sliceCopyFile(params, callback) {
         }
 
         FileSize = params.FileSize = data.headers['content-length'];
-
         if (FileSize === undefined || !FileSize) {
             callback({error: 'get Content-Length error, please add "Content-Length" to CORS ExposeHeader setting.'});
+            return;
         }
 
         // 开始上传

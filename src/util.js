@@ -316,9 +316,8 @@ var apiWrapper = function (apiName, apiFn) {
                 return;
             }
             // 判断 region 格式
-            if (params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
-                _callback({error: 'param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224'});
-                return;
+            if (!this.options.IgnoreRegionFormat && params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
+                console.warn('param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
             }
             // 判断 region 格式
             if (params.Region && params.Region.indexOf('cos.') > -1) {

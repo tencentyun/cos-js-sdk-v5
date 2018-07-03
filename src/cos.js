@@ -20,6 +20,7 @@ var defaultOptions = {
     SliceSize: 1024 * 1024 * 20,
     Protocol: '',
     ChunkRetryTimes: 3,
+    IgnoreRegionFormat: false,
 };
 
 // 对外暴露的类
