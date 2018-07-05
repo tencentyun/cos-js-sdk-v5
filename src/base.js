@@ -960,6 +960,7 @@ function putObject(params, callback) {
                 region: params.Region,
                 object: params.Key,
             });
+            url = url.substr(url.indexOf('://') + 3);
             return callback(null, {
                 Location: url,
                 ETag: data.headers['etag'],

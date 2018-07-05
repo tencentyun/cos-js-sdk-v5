@@ -171,7 +171,7 @@ function setUploadId(uuid, UploadId, isDisabled) {
     initUploadId.call(this);
     for (var i = uploadIdCache.length - 1; i >= 0; i--) {
         if (uploadIdCache[i][0] === uuid && uploadIdCache[i][1] === UploadId) {
-            uploadIdCache.splice(i, 1)
+            uploadIdCache.splice(i, 1);
         }
     }
     uploadIdCache.unshift([uuid, UploadId]);
@@ -608,7 +608,6 @@ function uploadSliceList(params, cb) {
             }
             asyncCallback(err || null, data);
         });
-
     }, function (err) {
         if (!self._isRunningTask(TaskId)) return;
         if (err)  return cb(err);
@@ -621,6 +620,7 @@ function uploadSliceList(params, cb) {
 
 // 上传指定分片
 function uploadSliceItem(params, callback) {
+    var self = this;
     var TaskId = params.TaskId;
     var Bucket = params.Bucket;
     var Region = params.Region;
@@ -631,8 +631,7 @@ function uploadSliceItem(params, callback) {
     var SliceSize = params.SliceSize;
     var ServerSideEncryption = params.ServerSideEncryption;
     var UploadData = params.UploadData;
-    var sliceRetryTimes = this.options.ChunkRetryTimes;
-    var self = this;
+    var ChunkRetryTimes = self.options.ChunkRetryTimes + 1;
 
     var start = SliceSize * (PartNumber - 1);
 
@@ -647,8 +646,7 @@ function uploadSliceItem(params, callback) {
 
     var Body = util.fileSlice(FileBody, start, end);
     var PartItem = UploadData.PartList[PartNumber - 1];
-    var ContentSha1 = PartItem.ETag;
-    Async.retry(sliceRetryTimes, function (tryCallback) {
+    Async.retry(ChunkRetryTimes, function (tryCallback) {
         if (!self._isRunningTask(TaskId)) return;
         self.multipartUpload({
             TaskId: TaskId,
@@ -656,7 +654,6 @@ function uploadSliceItem(params, callback) {
             Region: Region,
             Key: Key,
             ContentLength: ContentLength,
-            ContentSha1: ContentSha1,
             PartNumber: PartNumber,
             UploadId: UploadData.UploadId,
             ServerSideEncryption: ServerSideEncryption,
@@ -686,24 +683,24 @@ function uploadSliceComplete(params, callback) {
     var UploadId = params.UploadId;
     var SliceList = params.SliceList;
     var self = this;
+    var ChunkRetryTimes = this.options.ChunkRetryTimes + 1;
     var Parts = SliceList.map(function (item) {
         return {
             PartNumber: item.PartNumber,
             ETag: item.ETag
         };
     });
-
-    self.multipartComplete({
-        Bucket: Bucket,
-        Region: Region,
-        Key: Key,
-        UploadId: UploadId,
-        Parts: Parts
+    // 完成上传的请求也做重试
+    Async.retry(ChunkRetryTimes, function (tryCallback) {
+        self.multipartComplete({
+            Bucket: Bucket,
+            Region: Region,
+            Key: Key,
+            UploadId: UploadId,
+            Parts: Parts
+        }, tryCallback);
     }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
-        callback(null, data);
+        callback(err, data);
     });
 }
 
@@ -882,56 +879,53 @@ function uploadFiles(params, callback) {
     // 开始处理每个文件
     var taskList = [];
     util.each(params.files, function (fileParams, index) {
-        (function (){
+        var Body = fileParams.Body;
+        var FileSize = Body.size || Body.length || 0;
+        var fileInfo = {Index: index, TaskId: ''};
 
-            var Body = fileParams.Body;
-            var FileSize = Body.size || Body.length || 0;
-            var fileInfo = {Index: index, TaskId: ''};
+        // 更新文件总大小
+        TotalSize += FileSize;
 
-            // 更新文件总大小
-            TotalSize += FileSize;
+        // 整理 option，用于返回给回调
+        util.each(fileParams, function (v, k) {
+            if (typeof v !== 'object' && typeof v !== 'function') {
+                fileInfo[k] = v;
+            }
+        });
 
-            // 整理 option，用于返回给回调
-            util.each(fileParams, function (v, k) {
-                if (typeof v !== 'object' && typeof v !== 'function') {
-                    fileInfo[k] = v;
-                }
-            });
+        // 处理单个文件 TaskReady
+        var _TaskReady = fileParams.TaskReady;
+        var TaskReady = function (tid) {
+            fileInfo.TaskId = tid;
+            _TaskReady && _TaskReady(tid);
+        };
+        fileParams.TaskReady = TaskReady;
 
-            // 处理单个文件 TaskReady
-            var _TaskReady = fileParams.TaskReady;
-            var TaskReady = function (tid) {
-                fileInfo.TaskId = tid;
-                _TaskReady && _TaskReady(tid);
-            };
-            fileParams.TaskReady = TaskReady;
+        // 处理单个文件进度
+        var PreAddSize = 0;
+        var _onProgress = fileParams.onProgress;
+        var onProgress = function (info) {
+            TotalFinish = TotalFinish - PreAddSize + info.loaded;
+            PreAddSize = info.loaded;
+            _onProgress && _onProgress(info);
+            onTotalProgress({loaded: TotalFinish, total: TotalSize});
+        };
+        fileParams.onProgress = onProgress;
 
-            // 处理单个文件进度
-            var PreAddSize = 0;
-            var _onProgress = fileParams.onProgress;
-            var onProgress = function (info) {
-                TotalFinish = TotalFinish - PreAddSize + info.loaded;
-                PreAddSize = info.loaded;
-                _onProgress && _onProgress(info);
-                onTotalProgress({loaded: TotalFinish, total: TotalSize});
-            };
-            fileParams.onProgress = onProgress;
+        // 处理单个文件完成
+        var _onFileFinish = fileParams.onFileFinish;
+        var onFileFinish = function (err, data) {
+            _onFileFinish && _onFileFinish(err, data);
+            onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
+        };
 
-            // 处理单个文件完成
-            var _onFileFinish = fileParams.onFileFinish;
-            var onFileFinish = function (err, data) {
-                _onFileFinish && _onFileFinish(err, data);
-                onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
-            };
-
-            // 添加上传任务
-            var api = FileSize >= SliceSize ? 'sliceUploadFile' : 'putObject';
-            taskList.push({
-                api: api,
-                params: fileParams,
-                callback: onFileFinish,
-            });
-        })();
+        // 添加上传任务
+        var api = FileSize >= SliceSize ? 'sliceUploadFile' : 'putObject';
+        taskList.push({
+            api: api,
+            params: fileParams,
+            callback: onFileFinish,
+        });
     });
     self._addTasks(taskList);
 }
@@ -1106,10 +1100,10 @@ function copySliceItem(params,callback) {
     var PartNumber = params.PartNumber * 1;
     var CopySourceRange = params.CopySourceRange;
 
-    var sliceRetryTimes = this.options.ChunkRetryTimes;
+    var ChunkRetryTimes = this.options.ChunkRetryTimes + 1;
     var self = this;
 
-    Async.retry(sliceRetryTimes, function (tryCallback) {
+    Async.retry(ChunkRetryTimes, function (tryCallback) {
         self.uploadPartCopy({
             TaskId: TaskId,
             Bucket: Bucket,
