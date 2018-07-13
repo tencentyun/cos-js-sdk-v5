@@ -1,5 +1,5 @@
 var config = {
-    Bucket: 'test-1256263624',
+    Bucket: 'test-1251902136',
     Region: 'ap-guangzhou'
 };
 
@@ -30,9 +30,9 @@ var util = {
 var getAuthorization = function (options, callback) {
 
     // 方法一、后端通过获取临时密钥，计算签名给到前端（适用于前端调试）
-    var url = 'http://127.0.0.1:3000/sts?Bucket=' + options.Bucket + '&Region=' + options.Region;
+    // var url = 'http://127.0.0.1:3000/sts?Bucket=' + options.Bucket + '&Region=' + options.Region;
     // var url = '../server/sts.php?Bucket=' + options.Bucket + '&Region=' + options.Region;
-    // var url = '../server/sts.php';
+    var url = '../server/sts.php';
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
     xhr.onload = function (e) {
@@ -1511,7 +1511,7 @@ it('params check', function (assert) {
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: 'gz'
         }, function (err, data) {
-            assert.ok(err.error.indexOf('param Region format error') === 0);
+            assert.ok(err.error === 'error');
             done();
         });
     });

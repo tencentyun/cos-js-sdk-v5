@@ -5441,15 +5441,13 @@ function getObjectUrl(params, callback) {
         Expires: params.Expires
     }, function (AuthData) {
         if (!callback) return;
-        var result = {
-            Url: url + '?sign=' + encodeURIComponent(AuthData.Authorization)
-        };
-        AuthData.XCosSecurityToken && (result.XCosSecurityToken = AuthData.XCosSecurityToken);
-        AuthData.ClientIP && (result.ClientIP = AuthData.ClientIP);
-        AuthData.ClientUA && (result.ClientUA = AuthData.ClientUA);
-        AuthData.Token && (result.Token = AuthData.Token);
+        url += '?sign=' + encodeURIComponent(AuthData.Authorization);
+        AuthData.XCosSecurityToken && (url += '&x-cos-security-token=' + AuthData.XCosSecurityToken);
+        AuthData.ClientIP && (url += '&clientIP=' + AuthData.ClientIP);
+        AuthData.ClientUA && (url += '&clientua=' + AuthData.ClientUA);
+        AuthData.Token && (url += '&token=' + AuthData.Token);
         setTimeout(function () {
-            callback(null, result);
+            callback(null, { Url: url });
         });
     });
     if (authorization) {
@@ -9970,7 +9968,7 @@ var request = function (options, callback) {
 
     // body
     if (options.body) {
-        if (options.body.constructor !== window.File && options.body.constructor !== window.Blob) {
+        if (!(options.body instanceof window.Blob)) {
             options.data = options.body;
             delete options.body;
         }

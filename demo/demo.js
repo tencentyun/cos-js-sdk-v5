@@ -135,7 +135,7 @@ console.error = function (text) {
 };
 
 function getAuth() {
-    var key = '1mb.zip';
+    var key = '1.png';
     getAuthorization({
         Method: 'get',
         Key: key
