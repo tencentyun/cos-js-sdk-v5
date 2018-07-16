@@ -1885,15 +1885,16 @@ var defaultOptions = {
     SecretKey: '',
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
+    ChunkRetryTimes: 3,
     ChunkSize: 1024 * 1024,
+    SliceSize: 1024 * 1024,
     ProgressInterval: 1000,
-    UploadIdCacheLimit: 50,
+    UploadQueueSize: 10000,
     Domain: '',
     ServiceDomain: '',
-    SliceSize: 1024 * 1024 * 20,
     Protocol: '',
-    ChunkRetryTimes: 3,
-    IgnoreRegionFormat: false
+    IgnoreRegionFormat: false,
+    UploadIdCacheLimit: 50
 };
 
 // 对外暴露的类
@@ -1901,7 +1902,8 @@ var COS = function (options) {
     this.options = util.extend(util.clone(defaultOptions), options || {});
     this.options.FileParallelLimit = Math.max(1, this.options.FileParallelLimit);
     this.options.ChunkParallelLimit = Math.max(1, this.options.ChunkParallelLimit);
-    this.options.ChunkRetryTimes = Math.max(1, this.options.ChunkRetryTimes);
+    this.options.ChunkRetryTimes = Math.max(0, this.options.ChunkRetryTimes);
+    this.options.ChunkSize = Math.max(1024 * 1024, this.options.ChunkSize);
     if (this.options.AppId) {
         console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").');
     }
@@ -1913,7 +1915,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.6';
+COS.version = '0.4.9';
 
 module.exports = COS;
 
@@ -3756,6 +3758,9 @@ var initTask = function (cos) {
             emitListUpdate();
         };
         queue.push(task);
+        if (queue.length > cos.options.UploadQueueSize) {
+            queue.splice(0, queue.length - cos.options.UploadQueueSize);
+        }
         tasks[id] = task;
 
         // 异步获取 filesize
@@ -4652,7 +4657,7 @@ function listObjectVersions(params, callback) {
  *     @param  {String}  params.ResponseContentDisposition  设置返回头部中的 Content-Disposition 参数，非必须
  *     @param  {String}  params.ResponseContentEncoding     设置返回头部中的 Content-Encoding 参数，非必须
  * @param  {Function}  callback                             回调函数，必须
- * @param  {Object}  err                                    请求失败的错误，如果请求成功，则为空。
+ * @param  {Object}  err                                    请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
 function getObject(params, callback) {
@@ -4774,7 +4779,7 @@ function putObject(params, callback) {
  *     @param  {String}  params.Region          地域名称，必须
  *     @param  {String}  params.Key             object名称，必须
  * @param  {Function}  callback                 回调函数，必须
- * @param  {Object}  err                        请求失败的错误，如果请求成功，则为空。
+ * @param  {Object}  err                        请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @param  {Object}  data                       删除操作成功之后返回的数据
  */
 function deleteObject(params, callback) {
@@ -5144,7 +5149,7 @@ function multipartInit(params, callback) {
  *     @param  {String} params.ServerSideEncryption         支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
  *     @param  {String} params.ContentSha1                  RFC 3174 中定义的 160-bit 内容 SHA-1 算法校验值，非必须
  * @param  {Function}  callback                             回调函数，必须
- *     @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。
+ *     @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  *     @return  {Object}  data                              返回的数据
  *     @return  {Object}  data.ETag                         返回的文件分块 sha1 值
  */
@@ -5363,7 +5368,7 @@ function multipartListPart(params, callback) {
  *     @param  {String}  params.Key         object名称，必须
  *     @param  {String}  params.UploadId    标示本次分块上传的ID，必须
  * @param  {Function}  callback             回调函数，必须
- *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。
+ *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  *     @return  {Object}    data            返回的数据
  */
 function multipartAbort(params, callback) {
@@ -5417,7 +5422,7 @@ function getAuth(params) {
  *     @param  {String}  params.Method      请求的方法，可选
  *     @param  {String}  params.Expires     签名超时时间，单位秒，可选
  * @param  {Function}  callback             回调函数，必须
- *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。
+ *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  *     @return  {Object}    data            返回的数据
  */
 function getObjectUrl(params, callback) {
@@ -5444,7 +5449,7 @@ function getObjectUrl(params, callback) {
         url += '?sign=' + encodeURIComponent(AuthData.Authorization);
         AuthData.XCosSecurityToken && (url += '&x-cos-security-token=' + AuthData.XCosSecurityToken);
         AuthData.ClientIP && (url += '&clientIP=' + AuthData.ClientIP);
-        AuthData.ClientUA && (url += '&clientua=' + AuthData.ClientUA);
+        AuthData.ClientUA && (url += '&clientUA=' + AuthData.ClientUA);
         AuthData.Token && (url += '&token=' + AuthData.Token);
         setTimeout(function () {
             callback(null, { Url: url });
@@ -10869,10 +10874,10 @@ function uploadSliceItem(params, callback) {
         ContentLength = end - start;
     }
 
-    var Body = util.fileSlice(FileBody, start, end);
     var PartItem = UploadData.PartList[PartNumber - 1];
     Async.retry(ChunkRetryTimes, function (tryCallback) {
         if (!self._isRunningTask(TaskId)) return;
+        var Body = util.fileSlice(FileBody, start, end);
         self.multipartUpload({
             TaskId: TaskId,
             Bucket: Bucket,
@@ -11101,53 +11106,57 @@ function uploadFiles(params, callback) {
     // 开始处理每个文件
     var taskList = [];
     util.each(params.files, function (fileParams, index) {
-        var Body = fileParams.Body;
-        var FileSize = Body.size || Body.length || 0;
-        var fileInfo = { Index: index, TaskId: '' };
+        (function () {
+            // 对齐 nodejs 缩进
 
-        // 更新文件总大小
-        TotalSize += FileSize;
+            var Body = fileParams.Body;
+            var FileSize = Body.size || Body.length || 0;
+            var fileInfo = { Index: index, TaskId: '' };
 
-        // 整理 option，用于返回给回调
-        util.each(fileParams, function (v, k) {
-            if (typeof v !== 'object' && typeof v !== 'function') {
-                fileInfo[k] = v;
-            }
-        });
+            // 更新文件总大小
+            TotalSize += FileSize;
 
-        // 处理单个文件 TaskReady
-        var _TaskReady = fileParams.TaskReady;
-        var TaskReady = function (tid) {
-            fileInfo.TaskId = tid;
-            _TaskReady && _TaskReady(tid);
-        };
-        fileParams.TaskReady = TaskReady;
+            // 整理 option，用于返回给回调
+            util.each(fileParams, function (v, k) {
+                if (typeof v !== 'object' && typeof v !== 'function') {
+                    fileInfo[k] = v;
+                }
+            });
 
-        // 处理单个文件进度
-        var PreAddSize = 0;
-        var _onProgress = fileParams.onProgress;
-        var onProgress = function (info) {
-            TotalFinish = TotalFinish - PreAddSize + info.loaded;
-            PreAddSize = info.loaded;
-            _onProgress && _onProgress(info);
-            onTotalProgress({ loaded: TotalFinish, total: TotalSize });
-        };
-        fileParams.onProgress = onProgress;
+            // 处理单个文件 TaskReady
+            var _TaskReady = fileParams.TaskReady;
+            var TaskReady = function (tid) {
+                fileInfo.TaskId = tid;
+                _TaskReady && _TaskReady(tid);
+            };
+            fileParams.TaskReady = TaskReady;
 
-        // 处理单个文件完成
-        var _onFileFinish = fileParams.onFileFinish;
-        var onFileFinish = function (err, data) {
-            _onFileFinish && _onFileFinish(err, data);
-            onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
-        };
+            // 处理单个文件进度
+            var PreAddSize = 0;
+            var _onProgress = fileParams.onProgress;
+            var onProgress = function (info) {
+                TotalFinish = TotalFinish - PreAddSize + info.loaded;
+                PreAddSize = info.loaded;
+                _onProgress && _onProgress(info);
+                onTotalProgress({ loaded: TotalFinish, total: TotalSize });
+            };
+            fileParams.onProgress = onProgress;
 
-        // 添加上传任务
-        var api = FileSize >= SliceSize ? 'sliceUploadFile' : 'putObject';
-        taskList.push({
-            api: api,
-            params: fileParams,
-            callback: onFileFinish
-        });
+            // 处理单个文件完成
+            var _onFileFinish = fileParams.onFileFinish;
+            var onFileFinish = function (err, data) {
+                _onFileFinish && _onFileFinish(err, data);
+                onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
+            };
+
+            // 添加上传任务
+            var api = FileSize >= SliceSize ? 'sliceUploadFile' : 'putObject';
+            taskList.push({
+                api: api,
+                params: fileParams,
+                callback: onFileFinish
+            });
+        })();
     });
     self._addTasks(taskList);
 }
