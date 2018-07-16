@@ -12,23 +12,25 @@ var defaultOptions = {
     SecretKey: '',
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
+    ChunkRetryTimes: 3,
     ChunkSize: 1024 * 1024,
+    SliceSize: 1024 * 1024,
     ProgressInterval: 1000,
-    UploadIdCacheLimit: 50,
+    UploadQueueSize: 10000,
     Domain: '',
     ServiceDomain: '',
-    SliceSize: 1024 * 1024 * 20,
     Protocol: '',
-    ChunkRetryTimes: 3,
     IgnoreRegionFormat: false,
+    UploadIdCacheLimit: 50,
 };
 
 // 对外暴露的类
 var COS = function (options) {
     this.options = util.extend(util.clone(defaultOptions), options || {});
-    this.options.FileParallelLimit = Math.max(1,this.options.FileParallelLimit);
-    this.options.ChunkParallelLimit = Math.max(1,this.options.ChunkParallelLimit);
-    this.options.ChunkRetryTimes = Math.max(1,this.options.ChunkRetryTimes);
+    this.options.FileParallelLimit = Math.max(1, this.options.FileParallelLimit);
+    this.options.ChunkParallelLimit = Math.max(1, this.options.ChunkParallelLimit);
+    this.options.ChunkRetryTimes = Math.max(0, this.options.ChunkRetryTimes);
+    this.options.ChunkSize = Math.max(1024 * 1024, this.options.ChunkSize);
     if (this.options.AppId) {
         console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").');
     }
@@ -40,6 +42,6 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.6';
+COS.version = '0.4.9';
 
 module.exports = COS;

@@ -1531,22 +1531,28 @@ it('params check', function (assert) {
 
 it('sliceCopyFile() 正常分片复制', function (assert) {
     return new Promise(function (done) {
-        var content = Date.now().toString(36);
         var fileName = '10mb.zip';
         var Key = '10mb.copy.zip';
-        cos.sliceCopyFile({
+        var blob = util.createFile({size: 1024 * 1024 * 10});
+        cos.putObject({
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: config.Region,
-            Key: Key,
-            CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/'+ fileName,
-            SliceSize: 5 * 1024 * 1024,
-            onProgress:function (processData) {
-                lastPercent = processData.percent;
-            }
+            Key: fileName,
+            Body: blob,
         }, function (err, data) {
-            if (err) throw err;
-            assert.ok(data.ETag.length > 0, '成功进行分片复制');
-            done();
+            cos.sliceCopyFile({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: Key,
+                CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/'+ fileName,
+                SliceSize: 5 * 1024 * 1024,
+                onProgress:function (processData) {
+                    lastPercent = processData.percent;
+                }
+            }, function (err, data) {
+                assert.ok(data.ETag.length > 0, '成功进行分片复制');
+                done();
+            });
         });
     });
 });

@@ -644,10 +644,10 @@ function uploadSliceItem(params, callback) {
         ContentLength = end - start;
     }
 
-    var Body = util.fileSlice(FileBody, start, end);
     var PartItem = UploadData.PartList[PartNumber - 1];
     Async.retry(ChunkRetryTimes, function (tryCallback) {
         if (!self._isRunningTask(TaskId)) return;
+        var Body = util.fileSlice(FileBody, start, end);
         self.multipartUpload({
             TaskId: TaskId,
             Bucket: Bucket,
@@ -879,53 +879,56 @@ function uploadFiles(params, callback) {
     // 开始处理每个文件
     var taskList = [];
     util.each(params.files, function (fileParams, index) {
-        var Body = fileParams.Body;
-        var FileSize = Body.size || Body.length || 0;
-        var fileInfo = {Index: index, TaskId: ''};
+        (function () { // 对齐 nodejs 缩进
 
-        // 更新文件总大小
-        TotalSize += FileSize;
+            var Body = fileParams.Body;
+            var FileSize = Body.size || Body.length || 0;
+            var fileInfo = {Index: index, TaskId: ''};
 
-        // 整理 option，用于返回给回调
-        util.each(fileParams, function (v, k) {
-            if (typeof v !== 'object' && typeof v !== 'function') {
-                fileInfo[k] = v;
-            }
-        });
+            // 更新文件总大小
+            TotalSize += FileSize;
 
-        // 处理单个文件 TaskReady
-        var _TaskReady = fileParams.TaskReady;
-        var TaskReady = function (tid) {
-            fileInfo.TaskId = tid;
-            _TaskReady && _TaskReady(tid);
-        };
-        fileParams.TaskReady = TaskReady;
+            // 整理 option，用于返回给回调
+            util.each(fileParams, function (v, k) {
+                if (typeof v !== 'object' && typeof v !== 'function') {
+                    fileInfo[k] = v;
+                }
+            });
 
-        // 处理单个文件进度
-        var PreAddSize = 0;
-        var _onProgress = fileParams.onProgress;
-        var onProgress = function (info) {
-            TotalFinish = TotalFinish - PreAddSize + info.loaded;
-            PreAddSize = info.loaded;
-            _onProgress && _onProgress(info);
-            onTotalProgress({loaded: TotalFinish, total: TotalSize});
-        };
-        fileParams.onProgress = onProgress;
+            // 处理单个文件 TaskReady
+            var _TaskReady = fileParams.TaskReady;
+            var TaskReady = function (tid) {
+                fileInfo.TaskId = tid;
+                _TaskReady && _TaskReady(tid);
+            };
+            fileParams.TaskReady = TaskReady;
 
-        // 处理单个文件完成
-        var _onFileFinish = fileParams.onFileFinish;
-        var onFileFinish = function (err, data) {
-            _onFileFinish && _onFileFinish(err, data);
-            onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
-        };
+            // 处理单个文件进度
+            var PreAddSize = 0;
+            var _onProgress = fileParams.onProgress;
+            var onProgress = function (info) {
+                TotalFinish = TotalFinish - PreAddSize + info.loaded;
+                PreAddSize = info.loaded;
+                _onProgress && _onProgress(info);
+                onTotalProgress({loaded: TotalFinish, total: TotalSize});
+            };
+            fileParams.onProgress = onProgress;
 
-        // 添加上传任务
-        var api = FileSize >= SliceSize ? 'sliceUploadFile' : 'putObject';
-        taskList.push({
-            api: api,
-            params: fileParams,
-            callback: onFileFinish,
-        });
+            // 处理单个文件完成
+            var _onFileFinish = fileParams.onFileFinish;
+            var onFileFinish = function (err, data) {
+                _onFileFinish && _onFileFinish(err, data);
+                onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
+            };
+
+            // 添加上传任务
+            var api = FileSize >= SliceSize ? 'sliceUploadFile' : 'putObject';
+            taskList.push({
+                api: api,
+                params: fileParams,
+                callback: onFileFinish,
+            });
+        })();
     });
     self._addTasks(taskList);
 }

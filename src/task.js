@@ -157,6 +157,9 @@ var initTask = function (cos) {
             emitListUpdate();
         };
         queue.push(task);
+        if (queue.length > cos.options.UploadQueueSize) {
+            queue.splice(0, queue.length - cos.options.UploadQueueSize);
+        }
         tasks[id] = task;
 
         // 异步获取 filesize
