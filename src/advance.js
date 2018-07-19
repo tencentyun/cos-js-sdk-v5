@@ -1077,7 +1077,7 @@ function sliceCopyFile(params, callback) {
           return;
         }
 
-        FileSize = params.FileSize = data.headers['content-length'];
+        FileSize = params.FileSize = data.headers['Content-Length'];
         if (FileSize === undefined || !FileSize) {
             callback({error: 'get Content-Length error, please add "Content-Length" to CORS ExposeHeader setting.'});
             return;
