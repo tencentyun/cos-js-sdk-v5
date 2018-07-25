@@ -952,7 +952,7 @@ function sliceCopyFile(params, callback) {
     var SourceRegion = m[2];
     var SourceKey = decodeURIComponent(m[3]);
     var CopySliceSize = params.SliceSize === undefined ? self.options.CopySliceSize : params.SliceSize;
-    CopySliceSize = Math.max(0, Math.min(params.SliceSize, 5 * 1024 * 1024 * 1024));
+    CopySliceSize = Math.max(0, Math.min(CopySliceSize, 5 * 1024 * 1024 * 1024));
 
     var ChunkSize = params.ChunkSize || this.options.ChunkSize;
 
