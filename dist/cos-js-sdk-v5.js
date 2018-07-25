@@ -1894,7 +1894,8 @@ var defaultOptions = {
     ServiceDomain: '',
     Protocol: '',
     IgnoreRegionFormat: false,
-    UploadIdCacheLimit: 50
+    UploadIdCacheLimit: 50,
+    CopySliceSize: 1024 * 1024 * 1024 * 50
 };
 
 // 对外暴露的类
@@ -1904,6 +1905,7 @@ var COS = function (options) {
     this.options.ChunkParallelLimit = Math.max(1, this.options.ChunkParallelLimit);
     this.options.ChunkRetryTimes = Math.max(0, this.options.ChunkRetryTimes);
     this.options.ChunkSize = Math.max(1024 * 1024, this.options.ChunkSize);
+    this.options.CopySliceSize = Math.max(0, this.options.CopySliceSize);
     if (this.options.AppId) {
         console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").');
     }
@@ -1915,7 +1917,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.9';
+COS.version = '0.4.10';
 
 module.exports = COS;
 
@@ -11178,8 +11180,9 @@ function sliceCopyFile(params, callback) {
 
     var SourceBucket = m[1];
     var SourceRegion = m[2];
-    var SourceKey = m[3];
-    var SliceSize = Math.min(params.SliceSize, 5 * 1024 * 1024 * 1024);
+    var SourceKey = decodeURIComponent(m[3]);
+    var CopySliceSize = params.SliceSize === undefined ? self.options.CopySliceSize : params.SliceSize;
+    CopySliceSize = Math.max(0, Math.min(params.SliceSize, 5 * 1024 * 1024 * 1024));
 
     var ChunkSize = params.ChunkSize || this.options.ChunkSize;
 
@@ -11312,7 +11315,7 @@ function sliceCopyFile(params, callback) {
         }
 
         // 开始上传
-        if (FileSize <= SliceSize) {
+        if (FileSize <= CopySliceSize) {
             self.putObjectCopy(params, callback);
         } else {
             ep.emit('get_file_size_finish');
