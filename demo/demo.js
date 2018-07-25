@@ -141,7 +141,7 @@ function getAuth() {
         Key: key
     }, function (auth) {
         // 注意：这里的 Bucket 格式是 test-1250000000
-        console.log('http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' + key + '?sign=' + encodeURIComponent(auth));
+        console.log('http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' + encodeURIComponent(key) + '?sign=' + encodeURIComponent(auth));
     });
 }
 
@@ -494,7 +494,7 @@ function putObjectCopy() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
         Key: '1mb.copy.zip',
-        CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/1mb.zip', // Bucket 格式：test-1250000000
+        CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + encodeURIComponent('1mb.zip'), // Bucket 格式：test-1250000000
     }, function (err, data) {
         console.log(err || data);
     });
@@ -616,11 +616,11 @@ function abortUploadTask() {
 }
 
 function sliceUploadFile() {
-    var blob = util.createFile({size: 1024 * 1024 * 30});
+    var blob = util.createFile({size: 1024 * 1024 * 3});
     cos.sliceUploadFile({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
-        Key: '30mb.zip', /* 必须 */
+        Key: '3mb.zip', /* 必须 */
         Body: blob,
         TaskReady: function (tid) {
             TaskId = tid;
@@ -734,7 +734,7 @@ function sliceCopyFile() {
     var sourceName = '3mb.zip';
     var Key = '3mb.copy.zip';
 
-    var sourcePath = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/'+ sourceName;
+    var sourcePath = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/'+ encodeURIComponent(sourceName);
 
     cos.sliceCopyFile({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000

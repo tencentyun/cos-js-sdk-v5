@@ -28,7 +28,7 @@
   "devDependencies": {
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
-    "request": "^2.85.0",
+    "request": "^2.87.0",
     "webpack": "^3.8.1"
   }
 }
