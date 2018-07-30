@@ -1917,7 +1917,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.10';
+COS.version = '0.4.11';
 
 module.exports = COS;
 
@@ -5751,6 +5751,7 @@ function _submitRequest(params, callback) {
         };
     }
 
+    cos.emit('before-send', opt);
     var sender = REQUEST(opt, function (err, response, body) {
 
         // 返回内容添加 状态码 和 headers

@@ -3,7 +3,6 @@
 var util = require('./util');
 var event = require('./event');
 var task = require('./task');
-var hook = require('./hook');
 var base = require('./base');
 var advance = require('./advance');
 
@@ -39,13 +38,12 @@ var COS = function (options) {
     }
     event.init(this);
     task.init(this);
-    hook.init(this);
 };
 
 util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.10';
+COS.version = '0.4.11';
 
 module.exports = COS;
