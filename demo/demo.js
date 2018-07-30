@@ -109,7 +109,7 @@ var cos = new COS({
 var TaskId;
 
 var pre = document.querySelector('.result');
-var logger = function (text, color) {
+var showLogText = function (text, color) {
     if (typeof text === 'object') {
         try {
             text = JSON.stringify(text);
@@ -123,15 +123,16 @@ var logger = function (text, color) {
     pre.style.display = 'block';
     pre.scrollTop = pre.scrollHeight;
 };
-console._log = console.log;
-console._error = console.error;
-console.log = function (text) {
-    console._log.apply(console, arguments);
-    logger(text);
-};
-console.error = function (text) {
-    console._error.apply(console, arguments);
-    logger(text, 'red');
+
+var logger = {
+    log: function (text) {
+        console.log(text);
+        showLogText(text);
+    },
+    error: function (text) {
+        console.error(text);
+        showLogText(text, 'red');
+    },
 };
 
 function getAuth() {
@@ -141,7 +142,7 @@ function getAuth() {
         Key: key
     }, function (auth) {
         // 注意：这里的 Bucket 格式是 test-1250000000
-        console.log('http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' + encodeURIComponent(key) + '?sign=' + encodeURIComponent(auth));
+        logger.log('http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' + encodeURIComponent(key) + '?sign=' + encodeURIComponent(auth));
     });
 }
 
@@ -153,9 +154,9 @@ function getObjectUrl() {
         Expires: 60,
         Sign: true,
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
-    console.log(url);
+    logger.log(url);
 }
 
 function getBucket() {
@@ -163,7 +164,7 @@ function getBucket() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -172,7 +173,7 @@ function headBucket() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -216,7 +217,7 @@ function putBucketAcl() {
         // }]
         // }
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -225,7 +226,7 @@ function getBucketAcl() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -243,7 +244,7 @@ function putBucketCors() {
             }]
         }
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -252,7 +253,7 @@ function getBucketCors() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -261,7 +262,7 @@ function deleteBucketCors() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -276,7 +277,7 @@ function putBucketTagging() {
             ]
         }
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -285,7 +286,7 @@ function getBucketTagging() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -294,7 +295,7 @@ function deleteBucketTagging() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -327,7 +328,7 @@ function putBucketPolicy() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -336,7 +337,7 @@ function getBucketPolicy() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -345,7 +346,7 @@ function getBucketLocation() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -367,7 +368,7 @@ function putBucketLifecycle() {
             }]
         }
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -376,7 +377,7 @@ function getBucketLifecycle() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -385,7 +386,7 @@ function deleteBucketLifecycle() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -397,7 +398,7 @@ function putBucketVersioning() {
             Status: "Enabled"
         }
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -406,7 +407,7 @@ function getBucketVersioning() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -416,7 +417,7 @@ function listObjectVersions() {
         Region: config.Region,
         Prefix: "1mb.zip"
     }, function (err, data) {
-        console.log(err || JSON.stringify(data.Versions, null, '    '));
+        logger.log(err || JSON.stringify(data.Versions, null, '    '));
     });
 }
 
@@ -437,7 +438,7 @@ function putBucketReplication() {
             }]
         }
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -446,7 +447,7 @@ function getBucketReplication() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -455,7 +456,7 @@ function deleteBucketReplication() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -464,7 +465,7 @@ function deleteBucket() {
         Bucket: 'testnew-' + config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1),
         Region: 'ap-guangzhou'
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -482,10 +483,10 @@ function putObject() {
             TaskId = tid;
         },
         onProgress: function (progressData) {
-            console.log(JSON.stringify(progressData));
+            logger.log(JSON.stringify(progressData));
         },
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -496,7 +497,7 @@ function putObjectCopy() {
         Key: '1mb.copy.zip',
         CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + encodeURIComponent('1mb.zip'), // Bucket 格式：test-1250000000
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -506,7 +507,7 @@ function getObject() {
         Region: config.Region,
         Key: '1mb.zip',
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -516,7 +517,7 @@ function headObject() {
         Region: config.Region,
         Key: '1mb.zip'
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -544,7 +545,7 @@ function putObjectAcl() {
         //     }]
         // }
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -554,7 +555,7 @@ function getObjectAcl() {
         Region: config.Region,
         Key: '1mb.zip'
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -564,7 +565,7 @@ function deleteObject() {
         Region: config.Region,
         Key: '1mb.zip'
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -577,7 +578,7 @@ function deleteMultipleObject() {
             {Key: '3mb.zip'},
         ]
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -593,7 +594,7 @@ function restoreObject() {
             }
         }
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -611,7 +612,7 @@ function abortUploadTask() {
         // 格式3，删除 Bucket 下所有未完成上传任务
         // Level: 'bucket',
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -628,10 +629,10 @@ function sliceUploadFile() {
         onHashProgress: function (progressData) {
         },
         onProgress: function (progressData) {
-            console.log('onProgress', JSON.stringify(progressData));
+            logger.log('onProgress', JSON.stringify(progressData));
         },
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -651,13 +652,13 @@ function selectFileToUpload() {
                         TaskId = tid;
                     },
                     onHashProgress: function (progressData) {
-                        console.log('onHashProgress', JSON.stringify(progressData));
+                        logger.log('onHashProgress', JSON.stringify(progressData));
                     },
                     onProgress: function (progressData) {
-                        console.log('onProgress', JSON.stringify(progressData));
+                        logger.log('onProgress', JSON.stringify(progressData));
                     },
                 }, function (err, data) {
-                    console.log(err || data);
+                    logger.log(err || data);
                 });
             } else {
                 cos.putObject({
@@ -669,10 +670,10 @@ function selectFileToUpload() {
                         TaskId = tid;
                     },
                     onProgress: function (progressData) {
-                        console.log(JSON.stringify(progressData));
+                        logger.log(JSON.stringify(progressData));
                     },
                 }, function (err, data) {
-                    console.log(err || data);
+                    logger.log(err || data);
                 });
             }
         }
@@ -682,17 +683,17 @@ function selectFileToUpload() {
 
 function cancelTask() {
     cos.cancelTask(TaskId);
-    console.log('canceled');
+    logger.log('canceled');
 }
 
 function pauseTask() {
     cos.pauseTask(TaskId);
-    console.log('paused');
+    logger.log('paused');
 }
 
 function restartTask() {
     cos.restartTask(TaskId);
-    console.log('restart');
+    logger.log('restart');
 }
 
 function uploadFiles() {
@@ -719,13 +720,13 @@ function uploadFiles() {
         onProgress: function (info) {
             var percent = parseInt(info.percent * 10000) / 100;
             var speed = parseInt(info.speed / 1024 / 1024 * 100) / 100;
-            console.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
+            logger.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
         },
         onFileFinish: function (err, data, options) {
-            console.log(options.Key + ' 上传' + (err ? '失败' : '完成'));
+            logger.log(options.Key + ' 上传' + (err ? '失败' : '完成'));
         },
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -745,13 +746,13 @@ function sliceCopyFile() {
         onProgress:function (info) {
             var percent = parseInt(info.percent * 10000) / 100;
             var speed = parseInt(info.speed / 1024 / 1024 * 100) / 100;
-            console.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
+            logger.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
         }
     },function (err,data) {
         if(err){
-            console.log(err);
+            logger.log(err);
         }else{
-            console.log(data);
+            logger.log(data);
         }
     });
 

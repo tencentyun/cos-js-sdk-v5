@@ -1905,6 +1905,24 @@ function submitRequest(params, callback) {
     });
 }
 
+
+// 请求前后增加钩子处理
+_request = function (opt, callback) {
+    var self = this;
+    self._runRegister('before-send', opt, function () {
+        REQUEST(opt, function (err, response, body) {
+            var data = {
+                error: err,
+                response: response,
+                body: body,
+            };
+            self._runRegister('after-send', data, function () {
+                callback(err, response, body);
+            });
+        });
+    });
+};
+
 // 发起请求
 function _submitRequest(params, callback) {
     var self = this;
@@ -1962,7 +1980,7 @@ function _submitRequest(params, callback) {
         };
     }
 
-    var sender = REQUEST(opt, function (err, response, body) {
+    var sender = _request.call(self, opt, function (err, response, body) {
 
         // 返回内容添加 状态码 和 headers
         var hasReturned;
