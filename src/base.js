@@ -1962,7 +1962,7 @@ function _submitRequest(params, callback) {
         };
     }
 
-    cos.emit('before-send', opt);
+    self.emit('before-send', opt);
     var sender = REQUEST(opt, function (err, response, body) {
 
         // 返回内容添加 状态码 和 headers
