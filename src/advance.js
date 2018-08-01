@@ -138,11 +138,19 @@ function sliceUploadFile(params, callback) {
         }
         params.ChunkSize = params.SliceSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
     })();
+    onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
     // 开始上传
     if (FileSize === 0) {
         params.Body = '';
-        self.putObject(params, callback);
+        self.putObject(params, function (err, data) {
+            if (err) {
+                onProgress(null, true);
+                return callback(err);
+            }
+            onProgress({loaded: FileSize, total: FileSize}, true);
+            callback(null, data);
+        });
     } else {
         ep.emit('get_file_size_finish');
     }
@@ -970,13 +978,13 @@ function sliceCopyFile(params, callback) {
             Key: Key,
             UploadId: UploadData.UploadId,
             Parts: UploadData.PartList,
-        },function (err,data) {
+        },function (err, data) {
             if (err) {
                 onProgress(null, true);
                 return callback(err);
             }
             onProgress({loaded: FileSize, total: FileSize}, true);
-            callback(null,data);
+            callback(null, data);
         });
     });
 
@@ -1048,8 +1056,6 @@ function sliceCopyFile(params, callback) {
             params.PartList = list;
         })();
 
-        onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
-
         self.multipartInit({
             Bucket: Bucket,
             Region: Region,
@@ -1084,9 +1090,18 @@ function sliceCopyFile(params, callback) {
             return;
         }
 
+        onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
+
         // 开始上传
         if (FileSize <= CopySliceSize) {
-          self.putObjectCopy(params, callback);
+          self.putObjectCopy(params, function (err, data) {
+              if (err) {
+                  onProgress(null, true);
+                  return callback(err);
+              }
+              onProgress({loaded: FileSize, total: FileSize}, true);
+              callback(err, data);
+          });
         } else {
           ep.emit('get_file_size_finish');
         }

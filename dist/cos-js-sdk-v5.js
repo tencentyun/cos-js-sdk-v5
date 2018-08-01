@@ -1917,7 +1917,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.11';
+COS.version = '0.4.12';
 
 module.exports = COS;
 
@@ -10370,11 +10370,19 @@ function sliceUploadFile(params, callback) {
         }
         params.ChunkSize = params.SliceSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
     })();
+    onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
     // 开始上传
     if (FileSize === 0) {
         params.Body = '';
-        self.putObject(params, callback);
+        self.putObject(params, function (err, data) {
+            if (err) {
+                onProgress(null, true);
+                return callback(err);
+            }
+            onProgress({ loaded: FileSize, total: FileSize }, true);
+            callback(null, data);
+        });
     } else {
         ep.emit('get_file_size_finish');
     }
@@ -11279,8 +11287,6 @@ function sliceCopyFile(params, callback) {
             params.PartList = list;
         })();
 
-        onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
-
         self.multipartInit({
             Bucket: Bucket,
             Region: Region,
@@ -11315,9 +11321,18 @@ function sliceCopyFile(params, callback) {
             return;
         }
 
+        onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
+
         // 开始上传
         if (FileSize <= CopySliceSize) {
-            self.putObjectCopy(params, callback);
+            self.putObjectCopy(params, function (err, data) {
+                if (err) {
+                    onProgress(null, true);
+                    return callback(err);
+                }
+                onProgress({ loaded: FileSize, total: FileSize }, true);
+                callback(err, data);
+            });
         } else {
             ep.emit('get_file_size_finish');
         }

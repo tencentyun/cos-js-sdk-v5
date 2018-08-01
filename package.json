@@ -1,14 +1,13 @@
 {
   "name": "cos-js-sdk-v5",
-  "version": "0.4.11",
+  "version": "0.4.12",
   "description": "cos js sdk v5",
   "main": "index.js",
   "scripts": {
     "dev": "SET NODE_ENV=development&& webpack -w",
     "build": "SET NODE_ENV=production&& webpack",
-    "auth.js": "node server/auth.js",
     "sts.js": "node server/sts.js",
-    "sts-post-object.js": "node server/sts-post-object.js"
+    "sts-auth.js": "node server/sts-auth.js"
   },
   "repository": {
     "type": "git",

@@ -1,5 +1,5 @@
 var config = {
-    Bucket: 'test-1251902136',
+    Bucket: 'test-1250000000',
     Region: 'ap-guangzhou'
 };
 
@@ -388,7 +388,7 @@ it('abortUploadTask(),Level=file', function (assert) {
                     Key: filename,
                 }, function (err, data) {
                     assert.ok(data.successList.length >= 1, '成功舍弃单个文件下的所有分片任务');
-                    assert.ok(data.successList[0].Key === filename, '成功舍弃单个文件的所有分片任务');
+                    assert.ok(data.successList[0] && data.successList[0].Key === filename, '成功舍弃单个文件的所有分片任务');
                     done();
                 });
             }
