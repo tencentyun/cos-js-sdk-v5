@@ -1630,7 +1630,7 @@ function getAuth(params) {
 function getObjectUrl(params, callback) {
     var self = this;
     var url = getUrl({
-        protocol: self.options.Protocol,
+        protocol: params.Protocol || self.options.Protocol,
         domain: self.options.Domain,
         bucket: params.Bucket,
         region: params.Region,
@@ -1793,7 +1793,7 @@ function getAuthorizationAsync(params, callback) {
     };
 
     // 先判断是否有临时密钥
-    if (StsData.ExpiredTime && StsData.ExpiredTime - (Date.now() / 1000 > 60)) { // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
+    if (StsData.ExpiredTime && StsData.ExpiredTime - (Date.now() / 1000) > 10) { // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
         calcAuthByTmpKey();
     } else if (self.options.getAuthorization) { // 外部计算签名或获取临时密钥
         self.options.getAuthorization.call(self, {
