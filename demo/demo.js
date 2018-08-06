@@ -1,5 +1,5 @@
 var config = {
-    Bucket: 'test-1250000000',
+    Bucket: 'test-1251902136',
     Region: 'ap-guangzhou'
 };
 
@@ -18,6 +18,7 @@ var util = {
 };
 
 var cos = new COS({
+    FileParallelLimit: 5,
     getAuthorization: function (options,callback) {
         // 方法一、后端通过获取临时密钥给到前端，前端计算签名
         // var url = 'http://127.0.0.1:3000/sts';
@@ -142,7 +143,7 @@ function getAuth() {
         Key: key
     }, function (auth) {
         // 注意：这里的 Bucket 格式是 test-1250000000
-        logger.log('http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' + encodeURIComponent(key) + '?sign=' + encodeURIComponent(auth));
+        logger.log('http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' + encodeURIComponent(key).replace(/%2F/g, '/') + '?sign=' + encodeURIComponent(auth));
     });
 }
 
@@ -495,7 +496,7 @@ function putObjectCopy() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
         Key: '1mb.copy.zip',
-        CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + encodeURIComponent('1mb.zip'), // Bucket 格式：test-1250000000
+        CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + encodeURIComponent('1mb.zip').replace(/%2F/g, '/'), // Bucket 格式：test-1250000000
     }, function (err, data) {
         logger.log(err || data);
     });
@@ -735,7 +736,7 @@ function sliceCopyFile() {
     var sourceName = '3mb.zip';
     var Key = '3mb.copy.zip';
 
-    var sourcePath = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/'+ encodeURIComponent(sourceName);
+    var sourcePath = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/'+ encodeURIComponent(sourceName).replace(/%2F/g, '/');
 
     cos.sliceCopyFile({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
