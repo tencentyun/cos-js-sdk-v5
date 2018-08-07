@@ -575,8 +575,8 @@ function deleteMultipleObject() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
         Objects: [
-            {Key: '1mb.zip'},
-            {Key: '3mb.zip'},
+            {Key: encodeURIComponent('中文/中文.txt').replace(/%2F/g, '/')},
+            {Key: encodeURIComponent('中文/中文.zip').replace(/%2F/g, '/')},
         ]
     }, function (err, data) {
         logger.log(err || data);
