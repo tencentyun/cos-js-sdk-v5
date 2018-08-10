@@ -937,7 +937,7 @@ function putObject(params, callback) {
     var FileSize = params.ContentLength;
     var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
-    submitRequest.call(this, {
+    submitRequest.call(self, {
         TaskId: params.TaskId,
         method: 'PUT',
         Bucket: params.Bucket,

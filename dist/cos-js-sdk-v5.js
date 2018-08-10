@@ -213,7 +213,7 @@ var readAsBinaryString = function (blob, callback) {
 // 获取文件 md5 值
 var getFileMd5 = function (blob, callback) {
     readAsBinaryString(blob, function (content) {
-        var hash = md5(content);
+        var hash = md5(content, true);
         callback(null, hash);
     });
 };
@@ -1917,7 +1917,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.12';
+COS.version = '0.4.13';
 
 module.exports = COS;
 
@@ -2112,7 +2112,29 @@ function hex(x) {
     return x.join('');
 }
 
-function md5(s) {
+function Utf8Encode(string) {
+    string = string.replace(/\r\n/g, "\n");
+    var utftext = "";
+    for (var n = 0; n < string.length; n++) {
+        var c = string.charCodeAt(n);
+        if (c < 128) {
+            utftext += String.fromCharCode(c);
+        } else if (c > 127 && c < 2048) {
+            utftext += String.fromCharCode(c >> 6 | 192);
+            utftext += String.fromCharCode(c & 63 | 128);
+        } else {
+            utftext += String.fromCharCode(c >> 12 | 224);
+            utftext += String.fromCharCode(c >> 6 & 63 | 128);
+            utftext += String.fromCharCode(c & 63 | 128);
+        }
+    }
+    return utftext;
+}
+
+function md5(s, isBinaryString) {
+    if (!isBinaryString) {
+        s = Utf8Encode(s);
+    }
     return hex(md51(s));
 }
 
@@ -4739,7 +4761,7 @@ function putObject(params, callback) {
     var FileSize = params.ContentLength;
     var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
-    submitRequest.call(this, {
+    submitRequest.call(self, {
         TaskId: params.TaskId,
         method: 'PUT',
         Bucket: params.Bucket,

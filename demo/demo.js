@@ -641,7 +641,7 @@ function selectFileToUpload() {
     var input = document.createElement('input');
     input.type = 'file';
     input.onchange = function (e) {
-        var file = this.files[0]
+        var file = this.files[0];
         if (file) {
             if (file.size > 1024 * 1024) {
                 cos.sliceUploadFile({

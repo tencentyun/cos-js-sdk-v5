@@ -506,7 +506,7 @@ it('putObject()', function (assert) {
             },
         }, function (err, data) {
             if (err) throw err;
-            assert.ok(data.ETag.length > 0, 'putObject 有返回 ETag');
+            assert.ok(data && data.ETag, 'putObject 有返回 ETag');
             getObjectETag(function (ETag) {
                 assert.ok(data.ETag === ETag, 'Blob 创建 object');
                 done();
@@ -530,7 +530,7 @@ it('putObject(),string', function (assert) {
             },
         }, function (err, data) {
             if (err) throw err;
-            assert.ok(data.ETag.length > 0, 'putObject 有返回 ETag');
+            assert.ok(data && data.ETag, 'putObject 有返回 ETag');
             cos.getObject({
                 Bucket: config.Bucket, // Bucket 格式：test-1250000000
                 Region: config.Region,
@@ -558,7 +558,7 @@ it('putObject(),string empty', function (assert) {
             },
         }, function (err, data) {
             if (err) throw err;
-            assert.ok(data.ETag.length > 0, 'putObject 有返回 ETag');
+            assert.ok(data && data.ETag, 'putObject 有返回 ETag');
             cos.getObject({
                 Bucket: config.Bucket, // Bucket 格式：test-1250000000
                 Region: config.Region,
@@ -710,7 +710,7 @@ it('sliceUploadFile()', function (assert) {
                 lastPercent = progressData.percent;
             },
         }, function (err, data) {
-            assert.ok(data.ETag.length > 0 && lastPercent === 1, '上传成功');
+            assert.ok(data && data.ETag && lastPercent === 1, '上传成功');
             done();
         });
     });
@@ -1550,17 +1550,15 @@ it('sliceCopyFile() 正常分片复制', function (assert) {
                     lastPercent = processData.percent;
                 }
             }, function (err, data) {
-                assert.ok(data.ETag.length > 0, '成功进行分片复制');
+                assert.ok(data && data.ETag, '成功进行分片复制');
                 done();
             });
         });
     });
 });
 
-
 it('sliceCopyFile() 单片复制', function (assert) {
     return new Promise(function (done) {
-        var content = Date.now().toString(36);
         var fileName = '10mb.zip';
         var Key = '10mb.copy.zip';
         cos.sliceCopyFile({
@@ -1569,12 +1567,68 @@ it('sliceCopyFile() 单片复制', function (assert) {
             Key: Key,
             CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/'+ fileName,
             SliceSize: 10 * 1024 * 1024,
-            onProgress:function (processData) {
-                lastPercent = processData.percent;
-            }
         }, function (err, data) {
             if (err) throw err;
-            assert.ok(data.ETag.length > 0, '成功进行单片复制');
+            assert.ok(data && data.ETag, '成功进行单片复制');
+            done();
+        });
+    });
+});
+
+(function () {
+    function dataURItoBlob(dataURI) {
+        var byteString = atob(dataURI.split(',')[1]);
+        var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+        var ab = new ArrayBuffer(byteString.length);
+        var ia = new Uint8Array(ab);
+        for (var i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([ab], {type: mimeString});
+    }
+    var fileBlob = dataURItoBlob('data:text/plain;base64,5Lit5paH');
+    // 这里两个用户正式测试的时候需要给 putObject 计算并加上 Content-MD5 字段
+    it('putObject 带 Content-MD5 中文文件内容', function (assert) {
+        return new Promise(function (done) {
+            var Key = '中文.txt';
+            cos.putObject({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: Key,
+                Body: fileBlob,
+            }, function (err, data) {
+                assert.ok(data && data.ETag, '成功进行上传');
+                done();
+            });
+        });
+    });
+    it('putObject 带 Content-MD5 中文字符串', function (assert) {
+        return new Promise(function (done) {
+            var Key = '中文.txt';
+            cos.putObject({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: Key,
+                Body: fileBlob,
+            }, function (err, data) {
+                assert.ok(data && data.ETag, '成功进行上传');
+                done();
+            });
+        });
+    });
+})();
+
+it('deleteMultipleObject Key 带中文字符', function (assert) {
+    return new Promise(function (done) {
+        cos.deleteMultipleObject({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            Objects: [
+                {Key: '中文/中文.txt'},
+                {Key: '中文/中文.zip'},
+            ]
+        }, function (err, data) {
+            assert.ok(!err, '成功进行批量删除');
             done();
         });
     });

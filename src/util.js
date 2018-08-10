@@ -148,7 +148,7 @@ var readAsBinaryString = function (blob, callback) {
 // 获取文件 md5 值
 var getFileMd5 = function (blob, callback) {
     readAsBinaryString(blob, function (content) {
-        var hash = md5(content);
+        var hash = md5(content, true);
         callback(null, hash);
     });
 };
