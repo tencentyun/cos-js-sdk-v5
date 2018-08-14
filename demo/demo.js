@@ -305,26 +305,24 @@ function putBucketPolicy() {
     cos.putBucketPolicy({
         Policy: {
             "version": "2.0",
-            "principal": {"qcs": ["qcs::cam::uin/10001:uin/10001"]}, // 这里的 10001 是 QQ 号
-            "statement": [
-                {
-                    "effect": "allow",
-                    "action": [
-                        "name/cos:GetBucket",
-                        "name/cos:PutObject",
-                        "name/cos:PostObject",
-                        "name/cos:PutObjectCopy",
-                        "name/cos:InitiateMultipartUpload",
-                        "name/cos:UploadPart",
-                        "name/cos:UploadPartCopy",
-                        "name/cos:CompleteMultipartUpload",
-                        "name/cos:AbortMultipartUpload",
-                        "name/cos:AppendObject"
-                    ],
-                    // "resource": ["qcs::cos:ap-guangzhou:uid/1250000000:test-1250000000/*"] // 1250000000 是 appid
-                    "resource": ["qcs::cos:" + config.Region + ":uid/" + AppId + ":" + config.Bucket + "/*"] // 1250000000 是 appid
-                }
-            ]
+            "statement": [{
+                "effect": "allow",
+                "principal": {"qcs": ["qcs::cam::uin/10001:uin/10001"]}, // 这里的 10001 是 QQ 号
+                "action": [
+                    "name/cos:GetBucket",
+                    "name/cos:PutObject",
+                    "name/cos:PostObject",
+                    "name/cos:PutObjectCopy",
+                    "name/cos:InitiateMultipartUpload",
+                    "name/cos:UploadPart",
+                    "name/cos:UploadPartCopy",
+                    "name/cos:CompleteMultipartUpload",
+                    "name/cos:AbortMultipartUpload",
+                    "name/cos:AppendObject"
+                ],
+                // "resource": ["qcs::cos:ap-guangzhou:uid/1250000000:test-1250000000/*"] // 1250000000 是 appid
+                "resource": ["qcs::cos:" + config.Region + ":uid/" + AppId + ":" + config.Bucket + "/*"] // 1250000000 是 appid
+            }]
         },
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
