@@ -63,7 +63,6 @@
         // 上传文件
         var uploadFile = function (file, callback) {
             var Key = 'dir/' + file.name; // 这里指定上传目录和文件名
-
             getAuthorization({Method: 'POST', Key: Key}, function (err, info) {
                 var fd = new FormData();
                 fd.append('key', Key);
@@ -77,7 +76,7 @@
                 xhr.onload = function () {
                     if (Math.floor(xhr.status / 100) === 2) {
                         var ETag = xhr.getResponseHeader('etag');
-                        callback(null, {url: url, ETag: ETag});
+                        callback(null, {url: prefix + encodeURIComponent(Key).replace(/%2F/g, '/'), ETag: ETag});
                     } else {
                         callback('文件 ' + Key + ' 上传失败，状态码：' + xhr.status);
                     }
@@ -86,7 +85,6 @@
                     callback('文件 ' + Key + ' 上传失败，请检查是否没配置 CORS 跨域规则');
                 };
                 xhr.send(fd);
-
             });
         };
 

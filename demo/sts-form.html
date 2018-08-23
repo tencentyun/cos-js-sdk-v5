@@ -39,8 +39,8 @@
         // 计算签名
         var getAuthorization = function (options, callback) {
             var method = (options.Method || 'get').toLowerCase();
-            var url = 'http://127.0.0.1:3000/sts-auth' +
-            // var url = '../server/sts-auth.php' +
+            // var url = 'http://127.0.0.1:3000/sts-auth' +
+            var url = '../server/sts-auth.php' +
                 '?method=' + method +
                 '&pathname=' + encodeURIComponent('/');
             var xhr = new XMLHttpRequest();
@@ -90,7 +90,7 @@
                     arr = items[i].split('=');
                     data[arr[0]] = decodeURIComponent(arr[1] || '');
                 }
-                showMessage(null, {url: prefix + Key, ETag: data.etag});
+                showMessage(null, {url: prefix + encodeURIComponent(Key).replace(/%2F/g, '/'), ETag: data.etag});
             } else {
             }
         };

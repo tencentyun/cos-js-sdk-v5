@@ -18,7 +18,6 @@ var util = {
 };
 
 var cos = new COS({
-    FileParallelLimit: 5,
     getAuthorization: function (options,callback) {
         // 方法一、后端通过获取临时密钥给到前端，前端计算签名
         // var url = 'http://127.0.0.1:3000/sts';
@@ -127,8 +126,8 @@ var showLogText = function (text, color) {
 
 var logger = {
     log: function (text) {
-        console.log(text);
-        showLogText(text);
+        console.log.apply(console, arguments);
+        showLogText([].join.call(arguments, ' '));
     },
     error: function (text) {
         console.error(text);
@@ -626,6 +625,7 @@ function sliceUploadFile() {
             TaskId = tid;
         },
         onHashProgress: function (progressData) {
+            logger.log('onHashProgress', JSON.stringify(progressData));
         },
         onProgress: function (progressData) {
             logger.log('onProgress', JSON.stringify(progressData));
