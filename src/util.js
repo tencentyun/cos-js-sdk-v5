@@ -284,7 +284,6 @@ var apiWrapper = function (apiName, apiFn) {
                 Headers['x-cos-copy-source-If-Unmodified-Since'] = params['CopySourceIfUnmodifiedSince'];
                 Headers['x-cos-copy-source-If-Match'] = params['CopySourceIfMatch'];
                 Headers['x-cos-copy-source-If-None-Match'] = params['CopySourceIfNoneMatch'];
-                Headers['x-cos-server-side-encryption'] = params['ServerSideEncryption'];
                 Headers['x-cos-acl'] = params['ACL'];
                 Headers['x-cos-grant-read'] = params['GrantRead'];
                 Headers['x-cos-grant-write'] = params['GrantWrite'];
@@ -292,6 +291,15 @@ var apiWrapper = function (apiName, apiFn) {
                 Headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
                 Headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
                 Headers['x-cos-storage-class'] = params['StorageClass'];
+                // SSE-C
+                Headers['x-cos-server-side-encryption-customer-algorithm'] = params['SSECustomerAlgorithm'];
+                Headers['x-cos-server-side-encryption-customer-key'] = params['SSECustomerKey'];
+                Headers['x-cos-server-side-encryption-customer-key-MD5'] = params['SSECustomerKeyMD5'];
+                // SSE-COS、SSE-KMS
+                Headers['x-cos-server-side-encryption'] = params['ServerSideEncryption'];
+                Headers['x-cos-server-side-encryption-cos-kms-key-id'] = params['SSEKMSKeyId'];
+                Headers['x-cos-server-side-encryption-context'] = params['SSEContext'];
+
                 params.Headers = clearKey(Headers);
             }
         }
