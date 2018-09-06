@@ -80,6 +80,9 @@
                 xhr.open('PUT', url, true);
                 xhr.setRequestHeader('Authorization', auth);
                 XCosSecurityToken && xhr.setRequestHeader('x-cos-security-token', XCosSecurityToken);
+                xhr.upload.onprogress = function (e) {
+                    console.log('上传进度 ' + (Math.round(e.loaded / e.total * 10000) / 100) + '%');
+                };
                 xhr.onload = function () {
                     if (xhr.status === 200 || xhr.status === 206) {
                         var ETag = xhr.getResponseHeader('etag');

@@ -73,6 +73,9 @@
                 var url = prefix;
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', url, true);
+                xhr.upload.onprogress = function (e) {
+                    console.log('上传进度 ' + (Math.round(e.loaded / e.total * 10000) / 100) + '%');
+                };
                 xhr.onload = function () {
                     if (Math.floor(xhr.status / 100) === 2) {
                         var ETag = xhr.getResponseHeader('etag');
