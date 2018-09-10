@@ -324,7 +324,7 @@ var apiWrapper = function (apiName, apiFn) {
                 return;
             }
             // 判断 region 格式
-            if (!this.options.IgnoreRegionFormat && params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
+            if (!this.options.CompatibilityMode && params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
                 console.warn('param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
             }
             // 判断 region 格式
@@ -441,7 +441,7 @@ var getFileSize = function (api, params, callback) {
         } else {
             if (params.Body !== undefined) {
                 if (typeof params.Body === 'string') {
-                    params.Body = global.Buffer(params.Body);
+                    params.Body = global.Buffer.from(params.Body);
                 }
                 if (params.Body instanceof global.Buffer) {
                     size = params.Body.length;

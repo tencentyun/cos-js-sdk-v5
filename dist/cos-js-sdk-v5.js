@@ -392,7 +392,7 @@ var apiWrapper = function (apiName, apiFn) {
                 return;
             }
             // 判断 region 格式
-            if (!this.options.IgnoreRegionFormat && params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
+            if (!this.options.CompatibilityMode && params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
                 console.warn('param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
             }
             // 判断 region 格式
@@ -508,7 +508,7 @@ var getFileSize = function (api, params, callback) {
         } else {
             if (params.Body !== undefined) {
                 if (typeof params.Body === 'string') {
-                    params.Body = global.Buffer(params.Body);
+                    params.Body = global.Buffer.from(params.Body);
                 }
                 if (params.Body instanceof global.Buffer) {
                     size = params.Body.length;
@@ -1896,14 +1896,16 @@ var defaultOptions = {
     ChunkRetryTimes: 3,
     ChunkSize: 1024 * 1024,
     SliceSize: 1024 * 1024,
+    CopyChunkParallelLimit: 20,
+    CopyChunkSize: 1024 * 1024 * 10,
+    CopySliceSize: 1024 * 1024 * 10,
     ProgressInterval: 1000,
     UploadQueueSize: 10000,
     Domain: '',
     ServiceDomain: '',
     Protocol: '',
-    IgnoreRegionFormat: false,
-    UploadIdCacheLimit: 50,
-    CopySliceSize: 1024 * 1024 * 1024 * 50
+    CompatibilityMode: false,
+    UploadIdCacheLimit: 50
 };
 
 // 对外暴露的类
@@ -1913,6 +1915,8 @@ var COS = function (options) {
     this.options.ChunkParallelLimit = Math.max(1, this.options.ChunkParallelLimit);
     this.options.ChunkRetryTimes = Math.max(0, this.options.ChunkRetryTimes);
     this.options.ChunkSize = Math.max(1024 * 1024, this.options.ChunkSize);
+    this.options.CopyChunkParallelLimit = Math.max(1, this.options.CopyChunkParallelLimit);
+    this.options.CopyChunkSize = Math.max(1024 * 1024, this.options.CopyChunkSize);
     this.options.CopySliceSize = Math.max(0, this.options.CopySliceSize);
     if (this.options.AppId) {
         console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").');
@@ -2528,7 +2532,8 @@ var xmlToJSON = function () {
         }
 
         if (!Object.keys(vResult).length) {
-            vResult = sCollectedTxt.replace(trimMatch, '') || '';
+            // vResult = sCollectedTxt.replace(trimMatch, '') || ''; // by carsonxu 修复 getBucket返回的 Key 是 " /" 这种场景
+            vResult = sCollectedTxt || '';
         }
 
         return vResult;
@@ -3589,14 +3594,14 @@ function esc(str) {
 }
 
 module.exports = function (obj, options) {
-
     if (!options) {
         options = {
             xmlHeader: {
                 standalone: true
             },
             prettyPrint: true,
-            indent: "  "
+            indent: "  ",
+            escape: true
         };
     }
 
@@ -3745,7 +3750,6 @@ var initTask = function (cos) {
 
         // 复制参数对象
         params = util.extend({}, params);
-        ignoreAddEvent && (params.ignoreAddEvent = true);
 
         // 生成 id
         var id = util.uuid();
@@ -3802,7 +3806,7 @@ var initTask = function (cos) {
                 return;
             }
             task.size = size;
-            !params.IgnoreAddEvent && emitListUpdate();
+            !ignoreAddEvent && emitListUpdate();
             startNextTask(cos);
         });
         return id;
@@ -4638,14 +4642,20 @@ function headObject(params, callback) {
 }
 
 function listObjectVersions(params, callback) {
+    var reqParams = {};
+    reqParams['prefix'] = params['Prefix'];
+    reqParams['delimiter'] = params['Delimiter'];
+    reqParams['key-marker'] = params['KeyMarker'];
+    reqParams['version-id-marker'] = params['VersionIdMarker'];
+    reqParams['max-keys'] = params['MaxKeys'];
+    reqParams['encoding-type'] = params['EncodingType'];
+
     submitRequest.call(this, {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        qs: {
-            prefix: params.Prefix
-        },
+        qs: reqParams,
         action: 'versions'
     }, function (err, data) {
         if (err) {
@@ -11211,7 +11221,7 @@ function sliceCopyFile(params, callback) {
     var Region = params.Region;
     var Key = params.Key;
     var CopySource = params.CopySource;
-    var m = CopySource.match(/^([^.]+-\d+)\.cos\.([^.]+)\.myqcloud\.com\/(.+)$/);
+    var m = CopySource.match(/^([^.]+-\d+)\.cos\.([^.]+)\.[^/]+\/(.+)$/);
     if (!m) {
         callback({ error: 'CopySource format error' });
         return;
@@ -11224,8 +11234,7 @@ function sliceCopyFile(params, callback) {
     CopySliceSize = Math.max(0, Math.min(CopySliceSize, 5 * 1024 * 1024 * 1024));
 
     var ChunkSize = params.ChunkSize || this.options.ChunkSize;
-
-    var ChunkParallel = this.options.ChunkParallelLimit;
+    var ChunkParallel = this.options.CopyChunkParallelLimit;
 
     var FinishSize = 0;
     var FileSize;

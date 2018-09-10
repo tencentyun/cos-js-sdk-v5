@@ -950,7 +950,7 @@ function sliceCopyFile(params, callback) {
     var Region = params.Region;
     var Key = params.Key;
     var CopySource = params.CopySource;
-    var m = CopySource.match(/^([^.]+-\d+)\.cos\.([^.]+)\.myqcloud\.com\/(.+)$/);
+    var m = CopySource.match(/^([^.]+-\d+)\.cos\.([^.]+)\.[^/]+\/(.+)$/);
     if (!m) {
         callback({error: 'CopySource format error'});
         return;
@@ -963,8 +963,7 @@ function sliceCopyFile(params, callback) {
     CopySliceSize = Math.max(0, Math.min(CopySliceSize, 5 * 1024 * 1024 * 1024));
 
     var ChunkSize = params.ChunkSize || this.options.ChunkSize;
-
-    var ChunkParallel = this.options.ChunkParallelLimit;
+    var ChunkParallel = this.options.CopyChunkParallelLimit;
 
     var FinishSize = 0;
     var FileSize;

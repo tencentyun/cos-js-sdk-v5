@@ -112,7 +112,6 @@ var initTask = function (cos) {
 
         // 复制参数对象
         params = util.extend({}, params);
-        ignoreAddEvent && (params.ignoreAddEvent = true);
 
         // 生成 id
         var id = util.uuid();
@@ -169,7 +168,7 @@ var initTask = function (cos) {
                 return;
             }
             task.size = size;
-            !params.IgnoreAddEvent && emitListUpdate();
+            !ignoreAddEvent && emitListUpdate();
             startNextTask(cos);
         });
         return id;

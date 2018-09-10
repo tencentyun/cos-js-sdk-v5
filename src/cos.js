@@ -15,14 +15,16 @@ var defaultOptions = {
     ChunkRetryTimes: 3,
     ChunkSize: 1024 * 1024,
     SliceSize: 1024 * 1024,
+    CopyChunkParallelLimit: 20,
+    CopyChunkSize: 1024 * 1024 * 10,
+    CopySliceSize: 1024 * 1024 * 10,
     ProgressInterval: 1000,
     UploadQueueSize: 10000,
     Domain: '',
     ServiceDomain: '',
     Protocol: '',
-    IgnoreRegionFormat: false,
+    CompatibilityMode: false,
     UploadIdCacheLimit: 50,
-    CopySliceSize: 1024 * 1024 * 1024 * 50,
 };
 
 // 对外暴露的类
@@ -32,6 +34,8 @@ var COS = function (options) {
     this.options.ChunkParallelLimit = Math.max(1, this.options.ChunkParallelLimit);
     this.options.ChunkRetryTimes = Math.max(0, this.options.ChunkRetryTimes);
     this.options.ChunkSize = Math.max(1024 * 1024, this.options.ChunkSize);
+    this.options.CopyChunkParallelLimit = Math.max(1, this.options.CopyChunkParallelLimit);
+    this.options.CopyChunkSize = Math.max(1024 * 1024, this.options.CopyChunkSize);
     this.options.CopySliceSize = Math.max(0, this.options.CopySliceSize);
     if (this.options.AppId) {
         console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").');

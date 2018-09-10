@@ -168,11 +168,12 @@ it('getAuth()', function (assert) {
 
 it('auth check', function (assert) {
     return new Promise(function (done) {
-        cos.getBucketCors({
+        cos.getBucket({
             Bucket: config.Bucket,
             Region: config.Region,
+            Prefix: 'aksjhdlash sajlhj!@#$%^&*()_+=-[]{}\';:"/.<>?.,??sadasd#/.,/~`',
             Headers: {
-                'x-cos-test': 'aksjhdlash sajlhj!@#$%^&*()_+=-[]{}\';:\"/.<>?.,??sadasd#/.,/~`',
+                'x-cos-test': 'aksjhdlash sajlhj!@#$%^&*()_+=-[]{}\';:"/.<>?.,??sadasd#/.,/~`',
             },
         }, function (err, data) {
             assert.ok(!err);
@@ -1602,20 +1603,20 @@ it('sliceCopyFile() 单片复制', function (assert) {
             });
         });
     });
-    it('putObject 带 Content-MD5 中文字符串', function (assert) {
-        return new Promise(function (done) {
-            var Key = '中文.txt';
-            cos.putObject({
-                Bucket: config.Bucket, // Bucket 格式：test-1250000000
-                Region: config.Region,
-                Key: Key,
-                Body: fileBlob,
-            }, function (err, data) {
-                assert.ok(data && data.ETag, '成功进行上传');
-                done();
-            });
-        });
-    });
+    // it('putObject 带 Content-MD5 中文字符串', function (assert) {
+    //     return new Promise(function (done) {
+    //         var Key = '中文.txt';
+    //         cos.putObject({
+    //             Bucket: config.Bucket, // Bucket 格式：test-1250000000
+    //             Region: config.Region,
+    //             Key: Key,
+    //             Body: fileBlob,
+    //         }, function (err, data) {
+    //             assert.ok(data && data.ETag, '成功进行上传');
+    //             done();
+    //         });
+    //     });
+    // });
 })();
 
 it('deleteMultipleObject Key 带中文字符', function (assert) {

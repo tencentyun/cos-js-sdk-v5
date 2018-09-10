@@ -805,14 +805,20 @@ function headObject(params, callback) {
 
 
 function listObjectVersions(params, callback) {
+    var reqParams = {};
+    reqParams['prefix'] = params['Prefix'];
+    reqParams['delimiter'] = params['Delimiter'];
+    reqParams['key-marker'] = params['KeyMarker'];
+    reqParams['version-id-marker'] = params['VersionIdMarker'];
+    reqParams['max-keys'] = params['MaxKeys'];
+    reqParams['encoding-type'] = params['EncodingType'];
+
     submitRequest.call(this, {
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
-        qs: {
-            prefix: params.Prefix
-        },
+        qs: reqParams,
         action: 'versions',
     }, function (err, data) {
         if (err) {
