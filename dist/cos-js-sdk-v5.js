@@ -5577,12 +5577,13 @@ function getUrl(params) {
     var protocol = params.protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
     if (!domain) {
         if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
-            domain = '{{Bucket}}-{{AppId}}.{{Region}}.myqcloud.com';
+            domain = '{Bucket}.{Region}.myqcloud.com';
         } else {
-            domain = '{{Bucket}}-{{AppId}}.cos.{{Region}}.myqcloud.com';
+            domain = '{Bucket}.cos.{Region}.myqcloud.com';
         }
     }
     domain = domain.replace(/\{\{AppId\}\}/ig, appId).replace(/\{\{Bucket\}\}/ig, shortBucket).replace(/\{\{Region\}\}/ig, region).replace(/\{\{.*?\}\}/ig, '');
+    domain = domain.replace(/\{AppId\}/ig, appId).replace(/\{BucketName\}/ig, shortBucket).replace(/\{Bucket\}/ig, longBucket).replace(/\{Region\}/ig, region).replace(/\{.*?\}/ig, '');
     if (!/^[a-zA-Z]+:\/\//.test(domain)) {
         domain = protocol + '//' + domain;
     }

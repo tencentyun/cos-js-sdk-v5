@@ -47,7 +47,7 @@
     var cos = new COS({
         CompatibilityMode: true,
         ServiceDomain: 'http://cos.default.xxx.com',
-        Domain: 'http://{{Bucket}}-{{AppId}}.cos.{{Region}}.xxx.com',
+        Domain: 'http://{Bucket}.cos.{Region}.xxx.com',
         getAuthorization: function () {
             var url = '../server/sts.php';
             var xhr = new XMLHttpRequest();

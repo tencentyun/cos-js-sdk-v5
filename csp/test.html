@@ -6,7 +6,7 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>cos-js-sdk-v5-demo</title>
-    <link rel="stylesheet" href="./qunit-2.4.0.css">
+    <link rel="stylesheet" href="../test/qunit-2.4.0.css">
 </head>
 <body>
 
@@ -14,7 +14,7 @@
 <h2 id="qunit-banner"></h2>
 <ol id="qunit-tests"></ol>
 
-<script src="./qunit-2.4.0.js"></script>
+<script src="../test/qunit-2.4.0.js"></script>
 <script src="../dist/cos-js-sdk-v5.js"></script>
 <script>
     var config = {
@@ -54,7 +54,7 @@
         SecretKey: config.SecretKey,
         CompatibilityMode: true,
         ServiceDomain: 'http://cos.default.yun.ccb.com',
-        Domain: 'http://{{Bucket}}-{{AppId}}.cos.{{Region}}.yun.ccb.com',
+        Domain: 'http://{Bucket}.cos.{Region}.yun.ccb.com',
         // 可选参数
         FileParallelLimit: 3,    // 控制文件上传并发数
         ChunkParallelLimit: 3,   // 控制单个文件下分片上传并发数
