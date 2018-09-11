@@ -46,9 +46,11 @@
 
     var cos = new COS({
         CompatibilityMode: true,
-        ServiceDomain: 'http://cos.default.xxx.com',
-        Domain: 'http://{Bucket}.cos.{Region}.xxx.com',
-        getAuthorization: function () {
+        ServiceDomain: 'http://cos.default.example.com',
+        Domain: 'http://cos.{Region}.example.com', // 后缀式
+        ForcePathStyle: true, // 后缀式
+        // Domain: 'http://{Bucket}.cos.{Region}.example.com', // 前缀式
+        getAuthorization: function (options, callback) {
             var url = '../server/sts.php';
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
@@ -431,8 +433,8 @@
 
     function putObject() {
         // 创建测试文件
-        var filename = '1mb.zip';
-        var blob = util.createFile({size: 1024 * 1024});
+        var filename = '1kb.zip';
+        var blob = util.createFile({size: 1024});
         // 调用方法
         cos.putObject({
             Bucket: config.Bucket, // Bucket 格式：test-1250000000

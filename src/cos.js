@@ -25,6 +25,7 @@ var defaultOptions = {
     Protocol: '',
     CompatibilityMode: false,
     UploadIdCacheLimit: 50,
+    ForcePathStyle: false,
 };
 
 // 对外暴露的类

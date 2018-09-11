@@ -1905,7 +1905,8 @@ var defaultOptions = {
     ServiceDomain: '',
     Protocol: '',
     CompatibilityMode: false,
-    UploadIdCacheLimit: 50
+    UploadIdCacheLimit: 50,
+    ForcePathStyle: false
 };
 
 // 对外暴露的类
@@ -4796,6 +4797,7 @@ function putObject(params, callback) {
         onProgress({ loaded: FileSize, total: FileSize }, true);
         if (data && data.headers && data.headers['etag']) {
             var url = getUrl({
+                ForcePathStyle: self.options.ForcePathStyle,
                 protocol: self.options.Protocol,
                 domain: self.options.Domain,
                 bucket: params.Bucket,
@@ -5275,6 +5277,7 @@ function multipartComplete(params, callback) {
             return callback(err);
         }
         var url = getUrl({
+            ForcePathStyle: self.options.ForcePathStyle,
             protocol: self.options.Protocol,
             domain: self.options.Domain,
             bucket: params.Bucket,
@@ -5470,6 +5473,7 @@ function getAuth(params) {
 function getObjectUrl(params, callback) {
     var self = this;
     var url = getUrl({
+        ForcePathStyle: self.options.ForcePathStyle,
         protocol: params.Protocol || self.options.Protocol,
         domain: self.options.Domain,
         bucket: params.Bucket,
@@ -5577,9 +5581,12 @@ function getUrl(params) {
     var protocol = params.protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
     if (!domain) {
         if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
-            domain = '{Bucket}.{Region}.myqcloud.com';
+            domain = '{Region}.myqcloud.com';
         } else {
-            domain = '{Bucket}.cos.{Region}.myqcloud.com';
+            domain = 'cos.{Region}.myqcloud.com';
+        }
+        if (!params.ForcePathStyle) {
+            domain = '{Bucket}.' + domain;
         }
     }
     domain = domain.replace(/\{\{AppId\}\}/ig, appId).replace(/\{\{Bucket\}\}/ig, shortBucket).replace(/\{\{Region\}\}/ig, region).replace(/\{\{.*?\}\}/ig, '');
@@ -5587,13 +5594,19 @@ function getUrl(params) {
     if (!/^[a-zA-Z]+:\/\//.test(domain)) {
         domain = protocol + '//' + domain;
     }
+
+    // 去掉域名最后的斜杆
     if (domain.slice(-1) === '/') {
         domain = domain.slice(0, -1);
     }
     var url = domain;
 
+    if (params.ForcePathStyle) {
+        url += '/' + longBucket;
+    }
+    url += '/';
     if (object) {
-        url += '/' + encodeURIComponent(object).replace(/%2F/g, '/');
+        url += encodeURIComponent(object).replace(/%2F/g, '/');
     }
 
     if (params.isLocation) {
@@ -5610,12 +5623,17 @@ function getAuthorizationAsync(params, callback) {
     self._StsMap = self._StsMap || {};
     var StsData = self._StsMap[Bucket + '.' + Region] || {};
 
+    var PathName = params.Key || '';
+    if (self.options.ForcePathStyle && Bucket) {
+        PathName = Bucket + '/' + PathName;
+    }
+
     var calcAuthByTmpKey = function () {
         var Authorization = util.getAuth({
             SecretId: StsData.TmpSecretId,
             SecretKey: StsData.TmpSecretKey,
             Method: params.Method,
-            Key: params.Key || '',
+            Key: PathName,
             Query: params.Query,
             Headers: params.Headers
         });
@@ -5639,7 +5657,7 @@ function getAuthorizationAsync(params, callback) {
             Bucket: Bucket,
             Region: Region,
             Method: params.Method,
-            Key: params.Key || '',
+            Key: PathName,
             Query: params.Query,
             Headers: params.Headers
         }, function (AuthData) {
@@ -5670,7 +5688,7 @@ function getAuthorizationAsync(params, callback) {
             SecretId: params.SecretId || self.options.SecretId,
             SecretKey: params.SecretKey || self.options.SecretKey,
             Method: params.Method,
-            Key: params.Key || '',
+            Key: PathName,
             Query: params.Query,
             Headers: params.Headers,
             Expires: params.Expires
@@ -5752,6 +5770,7 @@ function _submitRequest(params, callback) {
 
     // url
     url = url || getUrl({
+        ForcePathStyle: self.options.ForcePathStyle,
         protocol: self.options.Protocol,
         domain: self.options.Domain,
         bucket: bucket,
@@ -5759,7 +5778,7 @@ function _submitRequest(params, callback) {
         object: object
     });
     if (params.action) {
-        url = url + (object ? '' : '/') + '?' + params.action;
+        url = url + '?' + params.action;
     }
 
     var opt = {
