@@ -3,13 +3,13 @@
 
 // 配置参数
 $config = array(
-    'Url' => 'https://sts.api.qcloud.com/v2/index.php',
-    'Domain' => 'sts.api.qcloud.com',
+    'Url' => 'http://sts.api2.example.com/v2/index.php',
+    'Domain' => 'sts.api2.example.com',
     'Proxy' => '',
     'SecretId' => 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 固定密钥
     'SecretKey' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 固定密钥
     'Bucket' => 'test-1250000000',
-    'Region' => 'ap-guangzhou',
+    'Region' => 'default',
     'AllowPrefix' => '_ALLOW_DIR_/*', // 必填，这里改成允许的路径前缀，这里可以根据自己网站的用户登录态判断允许上传的目录，例子：* 或者 a/* 或者 a.jpg
 );
 

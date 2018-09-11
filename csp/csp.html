@@ -51,7 +51,7 @@
         ForcePathStyle: true, // 后缀式
         // Domain: 'http://{Bucket}.cos.{Region}.example.com', // 前缀式
         getAuthorization: function (options, callback) {
-            var url = '../server/sts.php';
+            var url = './sts.php';
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.onload = function (e) {

@@ -36,9 +36,23 @@ function json2str($obj) {
 function getSignature($opt, $key, $method) {
     global $config;
     $formatString = $method . $config['Domain'] . '/v2/index.php?' . json2str($opt);
+    $formatString = urldecode($formatString);
     $sign = hash_hmac('sha1', $formatString, $key);
     $sign = base64_encode(hex2bin($sign));
     return $sign;
+}
+
+// 计算临时密钥用的签名
+function resourceUrlEncode($str) {
+    $str = rawurlencode($str);
+    //特殊处理字符 !()~
+    $str = str_replace('%2F', '/', $str);
+    $str = str_replace('%2A', '*', $str);
+    $str = str_replace('%21', '!', $str);
+    $str = str_replace('%28', '(', $str);
+    $str = str_replace('%29', ')', $str);
+    $str = str_replace('%7E', '~', $str);
+    return $str;
 }
 
 // 获取临时密钥
@@ -59,7 +73,7 @@ function getTempKeys() {
             array(
                 'action'=> array(
                     // // 这里可以从临时密钥的权限上控制前端允许的操作
-                    //  'name/cos:*', // 这样写可以包含下面所有权限
+                    // 'name/cos:*', // 这样写可以包含下面所有权限
 
                     // // 列出所有允许的操作
                     // // ACL 读写
@@ -112,20 +126,13 @@ function getTempKeys() {
                 'principal'=> array('qcs'=> array('*')),
                 'resource'=> array(
                     'qcs::cos:' . $config['Region'] . ':uid/' . $AppId . ':prefix//' . $AppId . '/' . $ShortBucketName . '/',
-                    'qcs::cos:' . $config['Region'] . ':uid/' . $AppId . ':prefix//' . $AppId . '/' . $ShortBucketName . '/' . $config['AllowPrefix']
+                    'qcs::cos:' . $config['Region'] . ':uid/' . $AppId . ':prefix//' . $AppId . '/' . $ShortBucketName . '/' . resourceUrlEncode($config['AllowPrefix'])
                 )
             )
         )
     );
 
     $policyStr = str_replace('\\/', '/', json_encode($policy));
-
-    // 有效时间小于 30 秒就重新获取临时密钥，否则使用缓存的临时密钥
-    if (isset($_SESSION['tempKeysCache']) && isset($_SESSION['tempKeysCache']['expiredTime']) && isset($_SESSION['tempKeysCache']['policyStr']) &&
-        $_SESSION['tempKeysCache']['expiredTime'] - time() > 30 && $_SESSION['tempKeysCache']['policyStr'] === $policyStr) {
-        return $_SESSION['tempKeysCache'];
-    }
-
     $Action = 'GetFederationToken';
     $Nonce = rand(10000, 20000);
     $Timestamp = time() - 1;
@@ -138,8 +145,8 @@ function getTempKeys() {
         'SecretId'=> $config['SecretId'],
         'Timestamp'=> $Timestamp,
         'durationSeconds'=> 7200,
-        'name'=> '',
-        'policy'=> $policyStr
+        'name'=> 'cos',
+        'policy'=> urlencode($policyStr)
     );
     $params['Signature'] = urlencode(getSignature($params, $config['SecretKey'], $Method));
 
@@ -148,6 +155,7 @@ function getTempKeys() {
     $config['Proxy'] && curl_setopt($ch, CURLOPT_PROXY, $config['Proxy']);
     curl_setopt($ch, CURLOPT_HEADER, 0);
     curl_setopt($ch,CURLOPT_SSL_VERIFYPEER,0);
+    curl_setopt($ch,CURLOPT_SSL_VERIFYHOST,0);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     $result = curl_exec($ch);
     if(curl_errno($ch)) $result = curl_error($ch);
@@ -155,11 +163,9 @@ function getTempKeys() {
 
     $result = json_decode($result, 1);
     if (isset($result['data'])) $result = $result['data'];
-    $_SESSION['tempKeysCache'] = $result;
-    $_SESSION['tempKeysCache']['policyStr'] = $policyStr;
 
     return $result;
-};
+}
 
 // 计算 COS API 请求用的签名
 function getAuthorization($keys, $method, $pathname)

@@ -40,11 +40,23 @@ var util = {
     // 计算签名
     getSignature: function (opt, key, method) {
         var formatString = method + config.Domain + '/v2/index.php?' + util.json2str(opt);
+        formatString = decodeURIComponent(formatString);
         var hmac = crypto.createHmac('sha1', key);
         var sign = hmac.update(new Buffer(formatString, 'utf8')).digest('base64');
         return sign;
     },
 };
+
+// 计算临时密钥用的签名
+function resourceUrlEncode(str) {
+    str = encodeURIComponent(str);
+    //特殊处理字符 !()~
+    str = str.replace(/%2F/g, '/');
+    str = str.replace(/%2A/g, '*');
+    str = str.replace(/%28/g, '(');
+    str = str.replace(/%29/g, ')');
+    return str;
+}
 
 // 拼接获取临时密钥的参数
 var getTempKeys = function (callback) {
@@ -62,7 +74,7 @@ var getTempKeys = function (callback) {
         'version': '2.0',
         'statement': [{
             'action': [
-                // 这里可以从临时密钥的权限上控制前端允许的操作
+                // // 这里可以从临时密钥的权限上控制前端允许的操作
                 // 'name/cos:*', // 这样写可以包含下面所有权限
 
                 // // 列出所有允许的操作
@@ -116,7 +128,7 @@ var getTempKeys = function (callback) {
             'principal': {'qcs': ['*']},
             'resource': [
                 'qcs::cos:' + config.Region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/',
-                'qcs::cos:' + config.Region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/' + config.AllowPrefix
+                'qcs::cos:' + config.Region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/' + resourceUrlEncode(config.AllowPrefix)
             ]
         }]
     };
@@ -141,8 +153,8 @@ var getTempKeys = function (callback) {
         SecretId: config.SecretId,
         Timestamp: Timestamp,
         durationSeconds: 7200,
-        name: '',
-        policy: policyStr,
+        name: 'cos',
+        policy: encodeURIComponent(policyStr),
     };
     params.Signature = encodeURIComponent(util.getSignature(params, config.SecretKey, Method));
 

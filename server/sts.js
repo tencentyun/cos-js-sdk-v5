@@ -13,7 +13,7 @@ var config = {
     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 固定密钥
     Bucket: 'test-1250000000',
     Region: 'ap-guangzhou',
-    AllowPrefix: '*', // 这里改成允许的路径前缀，这里可以根据自己网站的用户登录态判断允许上传的目录，例子：* 或者 a/* 或者 a.jpg
+    AllowPrefix: '_ALLOW_DIR_/*', // 这里改成允许的路径前缀，这里可以根据自己网站的用户登录态判断允许上传的目录，例子：* 或者 a/* 或者 a.jpg
 };
 
 
@@ -34,18 +34,30 @@ var util = {
     // 计算签名
     getSignature: function (opt, key, method) {
         var formatString = method + config.Domain + '/v2/index.php?' + util.json2str(opt);
+        formatString = decodeURIComponent(formatString);
         var hmac = crypto.createHmac('sha1', key);
         var sign = hmac.update(new Buffer(formatString, 'utf8')).digest('base64');
         return sign;
     },
 };
 
+// 计算临时密钥用的签名
+function resourceUrlEncode(str) {
+    str = encodeURIComponent(str);
+    //特殊处理字符 !()~
+    str = str.replace(/%2F/g, '/');
+    str = str.replace(/%2A/g, '*');
+    str = str.replace(/%28/g, '(');
+    str = str.replace(/%29/g, ')');
+    return str;
+}
+
 // 拼接获取临时密钥的参数
 var getTempKeys = function (callback) {
 
     // 判断是否修改了 AllowPrefix
     if (config.AllowPrefix === '_ALLOW_DIR_/*') {
-        callback({'error': '请修改 AllowPrefix 配置项，指定允许上传的路径前缀'});
+        callback({error: '请修改 AllowPrefix 配置项，指定允许上传的路径前缀'});
         return;
     }
 
@@ -56,8 +68,8 @@ var getTempKeys = function (callback) {
         'version': '2.0',
         'statement': [{
             'action': [
-                // 这里可以从临时密钥的权限上控制前端允许的操作
-                'name/cos:*', // 这样写可以包含下面所有权限
+                // // 这里可以从临时密钥的权限上控制前端允许的操作
+                // 'name/cos:*', // 这样写可以包含下面所有权限
 
                 // // 列出所有允许的操作
                 // // ACL 读写
@@ -90,28 +102,27 @@ var getTempKeys = function (callback) {
                 // 'name/cos:DeleteMultipleObject',
                 // 'name/cos:DeleteObject',
                 // 简单文件操作
-                // 'name/cos:PutObject',
-                // 'name/cos:PostObject',
-                // 'name/cos:AppendObject',
-                // 'name/cos:GetObject',
-                // 'name/cos:HeadObject',
-                // 'name/cos:OptionsObject',
-                // 'name/cos:PutObjectCopy',
-                // 'name/cos:PostObjectRestore',
-                // 'name/cos:sliceCopyFile',
+                'name/cos:PutObject',
+                'name/cos:PostObject',
+                'name/cos:AppendObject',
+                'name/cos:GetObject',
+                'name/cos:HeadObject',
+                'name/cos:OptionsObject',
+                'name/cos:PutObjectCopy',
+                'name/cos:PostObjectRestore',
                 // 分片上传操作
-                // 'name/cos:InitiateMultipartUpload',
-                // 'name/cos:ListMultipartUploads',
-                // 'name/cos:ListParts',
-                // 'name/cos:UploadPart',
-                // 'name/cos:CompleteMultipartUpload',
-                // 'name/cos:AbortMultipartUpload',
+                'name/cos:InitiateMultipartUpload',
+                'name/cos:ListMultipartUploads',
+                'name/cos:ListParts',
+                'name/cos:UploadPart',
+                'name/cos:CompleteMultipartUpload',
+                'name/cos:AbortMultipartUpload',
             ],
             'effect': 'allow',
             'principal': {'qcs': ['*']},
             'resource': [
                 'qcs::cos:' + config.Region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/',
-                'qcs::cos:' + config.Region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/' + config.AllowPrefix
+                'qcs::cos:' + config.Region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/' + resourceUrlEncode(config.AllowPrefix)
             ]
         }]
     };
@@ -130,8 +141,8 @@ var getTempKeys = function (callback) {
         SecretId: config.SecretId,
         Timestamp: Timestamp,
         durationSeconds: 7200,
-        name: '',
-        policy: policyStr,
+        name: 'cos',
+        policy: encodeURIComponent(policyStr),
     };
     params.Signature = encodeURIComponent(util.getSignature(params, config.SecretKey, Method));
 
