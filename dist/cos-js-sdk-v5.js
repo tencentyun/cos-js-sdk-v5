@@ -1934,7 +1934,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.16';
+COS.version = '0.4.17';
 
 module.exports = COS;
 
@@ -4217,6 +4217,36 @@ function putBucketPolicy(params, callback) {
 }
 
 /**
+ * 删除 Bucket 的 跨域设置
+ * @param  {Object}  params                 参数对象，必须
+ *     @param  {String}  params.Bucket      Bucket名称，必须
+ *     @param  {String}  params.Region      地域名称，必须
+ * @param  {Function}  callback             回调函数，必须
+ * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data                  返回的数据
+ */
+function deleteBucketPolicy(params, callback) {
+    submitRequest.call(this, {
+        method: 'DELETE',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'policy'
+    }, function (err, data) {
+        debugger;
+        if (err && err.statusCode === 204) {
+            return callback(null, { statusCode: err.statusCode });
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode || err.statusCode,
+            headers: data.headers
+        });
+    });
+}
+
+/**
  * 获取 Bucket 的 地域信息
  * @param  {Object}  params             参数对象，必须
  *     @param  {String}  params.Bucket  Bucket名称，必须
@@ -5897,6 +5927,7 @@ var API_MAP = {
     deleteBucketTagging: deleteBucketTagging,
     getBucketPolicy: getBucketPolicy,
     putBucketPolicy: putBucketPolicy,
+    deleteBucketPolicy: deleteBucketPolicy,
     getBucketLifecycle: getBucketLifecycle,
     putBucketLifecycle: putBucketLifecycle,
     deleteBucketLifecycle: deleteBucketLifecycle,

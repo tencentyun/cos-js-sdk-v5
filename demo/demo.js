@@ -339,6 +339,15 @@ function getBucketPolicy() {
     });
 }
 
+function deleteBucketPolicy() {
+    cos.deleteBucketPolicy({
+        Bucket: config.Bucket, // Bucket 格式：test-1250000000
+        Region: config.Region
+    }, function (err, data) {
+        logger.log(err || data);
+    });
+}
+
 function getBucketLocation() {
     cos.getBucketLocation({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
@@ -775,6 +784,7 @@ function sliceCopyFile() {
         'deleteBucketTagging',
         'putBucketPolicy',
         'getBucketPolicy',
+        'deleteBucketPolicy',
         'getBucketLocation',
         'getBucketLifecycle',
         'putBucketLifecycle',
