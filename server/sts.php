@@ -14,11 +14,11 @@ $config = array(
 );
 
 // obj 转 query string
-function json2str($obj) {
+function json2str($obj, $notEncode = false) {
     ksort($obj);
     $arr = array();
     foreach ($obj as $key => $val) {
-        array_push($arr, $key . '=' . $val);
+        array_push($arr, $key . '=' . ($notEncode ? $val : rawurlencode($val)));
     }
     return join('&', $arr);
 }
@@ -26,24 +26,10 @@ function json2str($obj) {
 // 计算临时密钥用的签名
 function getSignature($opt, $key, $method) {
     global $config;
-    $formatString = $method . $config['Domain'] . '/v2/index.php?' . json2str($opt);
-    $formatString = urldecode($formatString);
+    $formatString = $method . $config['Domain'] . '/v2/index.php?' . json2str($opt, 1);
     $sign = hash_hmac('sha1', $formatString, $key);
     $sign = base64_encode(hex2bin($sign));
     return $sign;
-}
-
-// 计算临时密钥用的签名
-function resourceUrlEncode($str) {
-    $str = rawurlencode($str);
-    //特殊处理字符 !()~
-    $str = str_replace('%2F', '/', $str);
-    $str = str_replace('%2A', '*', $str);
-    $str = str_replace('%21', '!', $str);
-    $str = str_replace('%28', '(', $str);
-    $str = str_replace('%29', ')', $str);
-    $str = str_replace('%7E', '~', $str);
-    return $str;
 }
 
 // 获取临时密钥
@@ -117,7 +103,7 @@ function getTempKeys() {
                 'principal'=> array('qcs'=> array('*')),
                 'resource'=> array(
                     'qcs::cos:' . $config['Region'] . ':uid/' . $AppId . ':prefix//' . $AppId . '/' . $ShortBucketName . '/',
-                    'qcs::cos:' . $config['Region'] . ':uid/' . $AppId . ':prefix//' . $AppId . '/' . $ShortBucketName . '/' . resourceUrlEncode($config['AllowPrefix'])
+                    'qcs::cos:' . $config['Region'] . ':uid/' . $AppId . ':prefix//' . $AppId . '/' . $ShortBucketName . '/' . $config['AllowPrefix']
                 )
             )
         )
@@ -127,27 +113,29 @@ function getTempKeys() {
     $Action = 'GetFederationToken';
     $Nonce = rand(10000, 20000);
     $Timestamp = time() - 1;
-    $Method = 'GET';
+    $Method = 'POST';
 
     $params = array(
-        'Action'=> $Action,
-        'Nonce'=> $Nonce,
-        'Region'=> '',
+        'Region'=> 'gz',
         'SecretId'=> $config['SecretId'],
         'Timestamp'=> $Timestamp,
+        'Nonce'=> $Nonce,
+        'Action'=> $Action,
         'durationSeconds'=> 7200,
         'name'=> 'cos',
         'policy'=> urlencode($policyStr)
     );
-    $params['Signature'] = urlencode(getSignature($params, $config['SecretKey'], $Method));
+    $params['Signature'] = getSignature($params, $config['SecretKey'], $Method);
 
-    $url = $config['Url'] . '?' . json2str($params);
+    $url = $config['Url'];
     $ch = curl_init($url);
     $config['Proxy'] && curl_setopt($ch, CURLOPT_PROXY, $config['Proxy']);
     curl_setopt($ch, CURLOPT_HEADER, 0);
     curl_setopt($ch,CURLOPT_SSL_VERIFYPEER,0);
     curl_setopt($ch,CURLOPT_SSL_VERIFYHOST,0);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json2str($params));
     $result = curl_exec($ch);
     if(curl_errno($ch)) $result = curl_error($ch);
     curl_close($ch);
@@ -156,7 +144,7 @@ function getTempKeys() {
     if (isset($result['data'])) $result = $result['data'];
 
     return $result;
-};
+}
 
 // 获取临时密钥，计算签名
 $tempKeys = getTempKeys();

@@ -134,7 +134,7 @@ function sliceUploadFile(params, callback) {
         var AutoChunkSize = 1024 * 1024;
         for (var i = 0; i < SIZE.length; i++) {
             AutoChunkSize = SIZE[i] * 1024 * 1024;
-            if (FileSize / AutoChunkSize < 10000) break;
+            if (FileSize / AutoChunkSize <= 1024) break;
         }
         params.ChunkSize = params.SliceSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
     })();
@@ -1034,7 +1034,7 @@ function sliceCopyFile(params, callback) {
             var AutoChunkSize = 1024 * 1024;
             for (var i = 0; i < SIZE.length; i++) {
                 AutoChunkSize = SIZE[i] * 1024 * 1024;
-                if (FileSize / AutoChunkSize < 10000) break;
+                if (FileSize / AutoChunkSize <= 1024) break;
             }
             params.ChunkSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
 

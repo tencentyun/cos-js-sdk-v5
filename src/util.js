@@ -324,17 +324,22 @@ var apiWrapper = function (apiName, apiFn) {
                 return;
             }
             // 判断 region 格式
-            if (!this.options.CompatibilityMode && params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
-                console.warn('param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
-            }
-            // 判断 region 格式
-            if (params.Region && params.Region.indexOf('cos.') > -1) {
-                _callback({error: 'param Region should not be start with "cos."'});
-                return;
+            if (params.Region) {
+                if (params.Region.indexOf('cos.') > -1) {
+                    _callback({error: 'param Region should not be start with "cos."'});
+                    return;
+                } else if (!/^([a-z\d-]+)$/.test(params.Region)) {
+                    _callback({error: 'Region format error.'});
+                    return;
+                }
+                // 判断 region 格式
+                if (!this.options.CompatibilityMode && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
+                    console.warn('param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
+                }
             }
             // 兼容不带 AppId 的 Bucket
             if (params.Bucket) {
-                if (!/^(.+)-(\d+)$/.test(params.Bucket)) {
+                if (!/^([a-z\d-]+)-(\d+)$/.test(params.Bucket)) {
                     if (params.AppId) {
                         params.Bucket = params.Bucket + '-' + params.AppId;
                     } else if (this.options.AppId) {
@@ -447,8 +452,7 @@ var getFileSize = function (api, params, callback) {
                     size = params.Body.length;
                 } else if (typeof params.Body.pipe === 'function') {
                     if (params.ContentLength === undefined) {
-                        callback({error: 'missing param ContentLength'});
-                        return;
+                        size = undefined;
                     } else {
                         size = params.ContentLength;
                     }
@@ -462,7 +466,7 @@ var getFileSize = function (api, params, callback) {
             }
         }
     }
-    params.ContentLength = size = size || 0;
+    params.ContentLength = size;
     callback(null, size);
 };
 

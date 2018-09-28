@@ -69,7 +69,7 @@ var cos = new COS({
         // xhr.send(JSON.stringify(data));
 
 
-        // // 方法三、后端使用固定密钥计算签名，返回给前端
+        // // 方法三、后端使用固定密钥计算签名，返回给前端，auth.php，注意：后端需要通过 method、pathname 控制好权限，比如不允许 put / 等，这里暂不提供
         // var method = (options.Method || 'get').toLowerCase();
         // var key = options.Key || '';
         // var query = options.Query || {};

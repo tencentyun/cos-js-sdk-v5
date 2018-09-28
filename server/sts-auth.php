@@ -23,11 +23,11 @@ if (!isset($_SESSION['tempKeysCache'])) {
 }
 
 // obj 转 query string
-function json2str($obj) {
+function json2str($obj, $notEncode = false) {
     ksort($obj);
     $arr = array();
     foreach ($obj as $key => $val) {
-        array_push($arr, $key . '=' . $val);
+        array_push($arr, $key . '=' . ($notEncode ? $val : rawurlencode($val)));
     }
     return join('&', $arr);
 }
@@ -35,24 +35,10 @@ function json2str($obj) {
 // 计算临时密钥用的签名
 function getSignature($opt, $key, $method) {
     global $config;
-    $formatString = $method . $config['Domain'] . '/v2/index.php?' . json2str($opt);
-    $formatString = urldecode($formatString);
+    $formatString = $method . $config['Domain'] . '/v2/index.php?' . json2str($opt, 1);
     $sign = hash_hmac('sha1', $formatString, $key);
     $sign = base64_encode(hex2bin($sign));
     return $sign;
-}
-
-// 计算临时密钥用的签名
-function resourceUrlEncode($str) {
-    $str = rawurlencode($str);
-    //特殊处理字符 !()~
-    $str = str_replace('%2F', '/', $str);
-    $str = str_replace('%2A', '*', $str);
-    $str = str_replace('%21', '!', $str);
-    $str = str_replace('%28', '(', $str);
-    $str = str_replace('%29', ')', $str);
-    $str = str_replace('%7E', '~', $str);
-    return $str;
 }
 
 // 获取临时密钥
@@ -126,37 +112,46 @@ function getTempKeys() {
                 'principal'=> array('qcs'=> array('*')),
                 'resource'=> array(
                     'qcs::cos:' . $config['Region'] . ':uid/' . $AppId . ':prefix//' . $AppId . '/' . $ShortBucketName . '/',
-                    'qcs::cos:' . $config['Region'] . ':uid/' . $AppId . ':prefix//' . $AppId . '/' . $ShortBucketName . '/' . resourceUrlEncode($config['AllowPrefix'])
+                    'qcs::cos:' . $config['Region'] . ':uid/' . $AppId . ':prefix//' . $AppId . '/' . $ShortBucketName . '/' . $config['AllowPrefix']
                 )
             )
         )
     );
 
     $policyStr = str_replace('\\/', '/', json_encode($policy));
+
+    // 有效时间小于 30 秒就重新获取临时密钥，否则使用缓存的临时密钥
+    if (isset($_SESSION['tempKeysCache']) && isset($_SESSION['tempKeysCache']['expiredTime']) && isset($_SESSION['tempKeysCache']['policyStr']) &&
+        $_SESSION['tempKeysCache']['expiredTime'] - time() > 30 && $_SESSION['tempKeysCache']['policyStr'] === $policyStr) {
+        return $_SESSION['tempKeysCache'];
+    }
+
     $Action = 'GetFederationToken';
     $Nonce = rand(10000, 20000);
     $Timestamp = time() - 1;
-    $Method = 'GET';
+    $Method = 'POST';
 
     $params = array(
-        'Action'=> $Action,
-        'Nonce'=> $Nonce,
-        'Region'=> '',
+        'Region'=> 'gz',
         'SecretId'=> $config['SecretId'],
         'Timestamp'=> $Timestamp,
+        'Nonce'=> $Nonce,
+        'Action'=> $Action,
         'durationSeconds'=> 7200,
         'name'=> 'cos',
         'policy'=> urlencode($policyStr)
     );
-    $params['Signature'] = urlencode(getSignature($params, $config['SecretKey'], $Method));
+    $params['Signature'] = getSignature($params, $config['SecretKey'], $Method);
 
-    $url = $config['Url'] . '?' . json2str($params);
+    $url = $config['Url'];
     $ch = curl_init($url);
     $config['Proxy'] && curl_setopt($ch, CURLOPT_PROXY, $config['Proxy']);
     curl_setopt($ch, CURLOPT_HEADER, 0);
     curl_setopt($ch,CURLOPT_SSL_VERIFYPEER,0);
     curl_setopt($ch,CURLOPT_SSL_VERIFYHOST,0);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json2str($params));
     $result = curl_exec($ch);
     if(curl_errno($ch)) $result = curl_error($ch);
     curl_close($ch);
@@ -164,11 +159,14 @@ function getTempKeys() {
     $result = json_decode($result, 1);
     if (isset($result['data'])) $result = $result['data'];
 
+    $_SESSION['tempKeysCache'] = $result;
+    $_SESSION['tempKeysCache']['policyStr'] = $policyStr;
+
     return $result;
 }
 
 // 计算 COS API 请求用的签名
-function getAuthorization($keys, $method, $pathname)
+function getAuthorization($keys, $method, $pathname, $query = array(), $headers = array())
 {
     // 获取个人 API 密钥 https://console.qcloud.com/capi
     $SecretId = $keys['credentials']['tmpSecretId'];
@@ -222,9 +220,6 @@ function getAuthorization($keys, $method, $pathname)
     // 步骤二：构成 FormatString
     $formatString = implode("\n", array(strtolower($method), $pathname, obj2str($query), obj2str($headers), ''));
 
-    header('x-test-method', $method);
-    header('x-test-pathname', $pathname);
-
     // 步骤三：计算 StringToSign
     $stringToSign = implode("\n", array('sha1', $qSignTime, sha1($formatString), ''));
 
@@ -249,14 +244,28 @@ function getAuthorization($keys, $method, $pathname)
 session_start();
 
 // 获取前端过来的参数
-$method = isset($_GET['method']) ? $_GET['method'] : 'get';
-$pathname = isset($_GET['pathname']) ? $_GET['pathname'] : '/';
+
+
+// 获取前端过来的参数
+$inputBody = file_get_contents("php://input");
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $inputBody){
+    $params = json_decode($inputBody, 1);
+    $pathname = isset($params['pathname']) ? $params['pathname'] : '/';
+    $method = isset($params['method']) ? $params['method'] : 'get';
+    $query = isset($params['query']) ? $params['query'] : array();
+    $headers = isset($params['headers']) ? $params['headers'] : array();
+} else {
+    $pathname = isset($_GET['pathname']) ? $_GET['pathname'] : '/';
+    $method = isset($_GET['method']) ? $_GET['method'] : 'get';
+    $query = isset($_GET['query']) && $_GET['query'] ? json_decode($_GET['query'], 1) : array();
+    $headers = isset($_GET['headers']) && $_GET['headers'] ? json_decode($_GET['headers'], 1) : array();
+}
 
 // 获取临时密钥，计算签名
 $tempKeys = getTempKeys();
 if ($tempKeys && isset($tempKeys['credentials'])) {
     $data = array(
-        'Authorization' => getAuthorization($tempKeys, $method, $pathname),
+        'Authorization' => getAuthorization($tempKeys, $method, $pathname, $query, $headers),
         'XCosSecurityToken' => $tempKeys['credentials']['sessionToken'],
     );
 } else {

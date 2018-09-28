@@ -7,7 +7,7 @@
 		exports["COS"] = factory();
 	else
 		root["COS"] = factory();
-})(this, function() {
+})(typeof self !== 'undefined' ? self : this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -392,17 +392,22 @@ var apiWrapper = function (apiName, apiFn) {
                 return;
             }
             // 判断 region 格式
-            if (!this.options.CompatibilityMode && params.Region && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
-                console.warn('param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
-            }
-            // 判断 region 格式
-            if (params.Region && params.Region.indexOf('cos.') > -1) {
-                _callback({ error: 'param Region should not be start with "cos."' });
-                return;
+            if (params.Region) {
+                if (params.Region.indexOf('cos.') > -1) {
+                    _callback({ error: 'param Region should not be start with "cos."' });
+                    return;
+                } else if (!/^([a-z\d-]+)$/.test(params.Region)) {
+                    _callback({ error: 'Region format error.' });
+                    return;
+                }
+                // 判断 region 格式
+                if (!this.options.CompatibilityMode && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
+                    console.warn('param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
+                }
             }
             // 兼容不带 AppId 的 Bucket
             if (params.Bucket) {
-                if (!/^(.+)-(\d+)$/.test(params.Bucket)) {
+                if (!/^([a-z\d-]+)-(\d+)$/.test(params.Bucket)) {
                     if (params.AppId) {
                         params.Bucket = params.Bucket + '-' + params.AppId;
                     } else if (this.options.AppId) {
@@ -514,8 +519,7 @@ var getFileSize = function (api, params, callback) {
                     size = params.Body.length;
                 } else if (typeof params.Body.pipe === 'function') {
                     if (params.ContentLength === undefined) {
-                        callback({ error: 'missing param ContentLength' });
-                        return;
+                        size = undefined;
                     } else {
                         size = params.ContentLength;
                     }
@@ -529,7 +533,7 @@ var getFileSize = function (api, params, callback) {
             }
         }
     }
-    params.ContentLength = size = size || 0;
+    params.ContentLength = size;
     callback(null, size);
 };
 
@@ -1930,7 +1934,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.14';
+COS.version = '0.4.16';
 
 module.exports = COS;
 
@@ -10426,7 +10430,7 @@ function sliceUploadFile(params, callback) {
         var AutoChunkSize = 1024 * 1024;
         for (var i = 0; i < SIZE.length; i++) {
             AutoChunkSize = SIZE[i] * 1024 * 1024;
-            if (FileSize / AutoChunkSize < 10000) break;
+            if (FileSize / AutoChunkSize <= 1024) break;
         }
         params.ChunkSize = params.SliceSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
     })();
@@ -11325,7 +11329,7 @@ function sliceCopyFile(params, callback) {
             var AutoChunkSize = 1024 * 1024;
             for (var i = 0; i < SIZE.length; i++) {
                 AutoChunkSize = SIZE[i] * 1024 * 1024;
-                if (FileSize / AutoChunkSize < 10000) break;
+                if (FileSize / AutoChunkSize <= 1024) break;
             }
             params.ChunkSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
 

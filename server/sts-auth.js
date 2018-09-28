@@ -1,8 +1,9 @@
 // 临时密钥计算样例
-
-var http = require('http');
 var crypto = require('crypto');
 var request = require('request');
+var express = require('express');
+var COS = require('cos-nodejs-sdk-v5');
+var bodyParser = require('body-parser');
 
 // 配置参数
 var config = {
@@ -29,34 +30,22 @@ var util = {
         return Math.round(Math.random() * (max - min) + min);
     },
     // obj 转 query string
-    json2str: function (obj) {
+    json2str: function (obj, $notEncode) {
         var arr = [];
         Object.keys(obj).sort().forEach(function (item) {
             var val = obj[item] || '';
-            arr.push(item + '=' + val);
+            arr.push(item + '=' + ($notEncode ? encodeURIComponent(val) : val));
         });
         return arr.join('&');
     },
     // 计算签名
     getSignature: function (opt, key, method) {
         var formatString = method + config.Domain + '/v2/index.php?' + util.json2str(opt);
-        formatString = decodeURIComponent(formatString);
         var hmac = crypto.createHmac('sha1', key);
-        var sign = hmac.update(new Buffer(formatString, 'utf8')).digest('base64');
+        var sign = hmac.update(Buffer.from(formatString, 'utf8')).digest('base64');
         return sign;
     },
 };
-
-// 计算临时密钥用的签名
-function resourceUrlEncode(str) {
-    str = encodeURIComponent(str);
-    //特殊处理字符 !()~
-    str = str.replace(/%2F/g, '/');
-    str = str.replace(/%2A/g, '*');
-    str = str.replace(/%28/g, '(');
-    str = str.replace(/%29/g, ')');
-    return str;
-}
 
 // 拼接获取临时密钥的参数
 var getTempKeys = function (callback) {
@@ -128,7 +117,7 @@ var getTempKeys = function (callback) {
             'principal': {'qcs': ['*']},
             'resource': [
                 'qcs::cos:' + config.Region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/',
-                'qcs::cos:' + config.Region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/' + resourceUrlEncode(config.AllowPrefix)
+                'qcs::cos:' + config.Region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/' + config.AllowPrefix,
             ]
         }]
     };
@@ -144,169 +133,86 @@ var getTempKeys = function (callback) {
     var Action = 'GetFederationToken';
     var Nonce = util.getRandom(10000, 20000);
     var Timestamp = parseInt(+new Date() / 1000);
-    var Method = 'GET';
+    var Method = 'POST';
 
     var params = {
-        Action: Action,
-        Nonce: Nonce,
-        Region: '',
+        Region: 'gz',
         SecretId: config.SecretId,
         Timestamp: Timestamp,
+        Nonce: Nonce,
+        Action: Action,
         durationSeconds: 7200,
         name: 'cos',
         policy: encodeURIComponent(policyStr),
     };
-    params.Signature = encodeURIComponent(util.getSignature(params, config.SecretKey, Method));
+    params.Signature = util.getSignature(params, config.SecretKey, Method);
 
     var opt = {
         method: Method,
-        url: config.Url + '?' + util.json2str(params),
+        url: config.Url,
         rejectUnauthorized: false,
+        json: true,
+        form: params,
         headers: {
             Host: config.Domain
         },
         proxy: config.Proxy || '',
     };
     request(opt, function (err, response, body) {
-        body = body && JSON.parse(body);
-        var data = body.data;
-        tempKeysCache = data;
-        tempKeysCache.policyStr = policyStr;
-        callback(err, data);
+        if (body && body.data) body = body.data;
+        tempKeysCache.credentials = body.credentials;
+        tempKeysCache.expiredTime = body.expiredTime;
+        callback(err, body);
     });
 };
 
-function camSafeUrlEncode(str) {
-    return encodeURIComponent(str)
-        .replace(/!/g, '%21')
-        .replace(/'/g, '%27')
-        .replace(/\(/g, '%28')
-        .replace(/\)/g, '%29')
-        .replace(/\*/g, '%2A');
-}
 
-function getAuthorization (keys, method, pathname) {
+var app = express();
+app.use(bodyParser.json());
 
-    var SecretId = keys.credentials.tmpSecretId;
-    var SecretKey = keys.credentials.tmpSecretKey;
-
-    // 整理参数
-    var query = {};
-    var headers = {};
-    method = (method ? method : 'get').toLowerCase();
-    pathname = pathname ? pathname : '/';
-    pathname.indexOf('/') === -1 && (pathname = '/' + pathname);
-
-    // 工具方法
-    var getObjectKeys = function (obj) {
-        var list = [];
-        for (var key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                list.push(key);
-            }
-        }
-        return list.sort();
-    };
-
-    var obj2str = function (obj) {
-        var i, key, val;
-        var list = [];
-        var keyList = getObjectKeys(obj);
-        for (i = 0; i < keyList.length; i++) {
-            key = keyList[i];
-            val = (obj[key] === undefined || obj[key] === null) ? '' : ('' + obj[key]);
-            key = key.toLowerCase();
-            key = camSafeUrlEncode(key);
-            val = camSafeUrlEncode(val) || '';
-            list.push(key + '=' +  val)
-        }
-        return list.join('&');
-    };
-
-    // 签名有效起止时间
-    var now = parseInt(new Date().getTime() / 1000) - 1;
-    var expired = now + 600; // 签名过期时刻，600 秒后
-
-    // 要用到的 Authorization 参数列表
-    var qSignAlgorithm = 'sha1';
-    var qAk = SecretId;
-    var qSignTime = now + ';' + expired;
-    var qKeyTime = now + ';' + expired;
-    var qHeaderList = getObjectKeys(headers).join(';').toLowerCase();
-    var qUrlParamList = getObjectKeys(query).join(';').toLowerCase();
-
-    // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
-    // 步骤一：计算 SignKey
-    var signKey = crypto.createHmac('sha1', SecretKey).update(qKeyTime).digest('hex');
-
-    // 步骤二：构成 FormatString
-    var formatString = [method.toLowerCase(), pathname, obj2str(query), obj2str(headers), ''].join('\n');
-
-    // 步骤三：计算 StringToSign
-    var stringToSign = ['sha1', qSignTime, crypto.createHash('sha1').update(formatString).digest('hex'), ''].join('\n');
-
-    // 步骤四：计算 Signature
-    var qSignature = crypto.createHmac('sha1', signKey).update(stringToSign).digest('hex');
-
-    // 步骤五：构造 Authorization
-    var authorization  = [
-        'q-sign-algorithm=' + qSignAlgorithm,
-        'q-ak=' + qAk,
-        'q-sign-time=' + qSignTime,
-        'q-key-time=' + qKeyTime,
-        'q-header-list=' + qHeaderList,
-        'q-url-param-list=' + qUrlParamList,
-        'q-signature=' + qSignature
-    ].join('&');
-
-    return authorization;
-}
-
-// 获取 query 参数
-function getParam(url, name) {
-    var query, params = {}, index = url.indexOf('?');
-    if (index >= 0) {
-        query = url.substr(index + 1).split('&');
-        query.forEach(function (v) {
-            var arr = v.split('=');
-            params[arr[0]] = arr[1];
-        });
-    }
-    return params[name];
-}
-
-// 启动简单的签名服务
-http.createServer(function(req, res){
-    if (req.url.indexOf('/sts-auth') === 0) {
-        // 获取前端过来的参数
-        var method = getParam(req.url, 'method');
-        var pathname = decodeURIComponent(getParam(req.url, 'pathname'));
-
-        // 获取临时密钥，计算签名
-        getTempKeys(function (err, tempKeys) {
-            var data;
-            if (err) {
-                data = err;
-            } else {
-                data = {
-                    Authorization: getAuthorization(tempKeys, method, pathname),
-                    XCosSecurityToken: tempKeys['credentials'] && tempKeys['credentials']['sessionToken'],
-                };
-            }
-
-            // 返回数据给前端
-            res.writeHead(200, {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': 'http://127.0.0.1',
-                'Access-Control-Allow-Headers': 'origin,accept,content-type',
-            });
-            res.write(JSON.stringify(data) || '');
-            res.end();
-        });
-    } else {
-        res.writeHead(404);
-        res.write('404 Not Found');
+// CORS 配置
+app.all('*', function (req, res, next) {
+    res.header('Content-Type', 'application/json');
+    res.header('Access-Control-Allow-Origin', 'http://127.0.0.1');
+    res.header('Access-Control-Allow-Headers', 'origin,accept,content-type');
+    if (req.method.toUpperCase() === 'OPTIONS') {
         res.end();
+    } else {
+        next();
     }
-}).listen(3000);
+});
+// 计算签名接口
+app.all('/sts-auth', function (req, res, next) {
+    // 获取临时密钥，计算签名
+    getTempKeys(function (err, tempKeys) {
+        var err = null;
+        var data;
+        if (err) {
+            data = err;
+        } else {
+            var pathname = req.body.pathname || req.query.pathname || '';
+            var Key = pathname.substr(0, 1) === '/' ? pathname.substr(1) : pathname;
+            var opt = {
+                SecretId: tempKeys.credentials.tmpSecretId,
+                SecretKey: tempKeys.credentials.tmpSecretKey,
+                Method: req.body.method || req.query.method,
+                Key: Key,
+                Query: req.body.query || req.query.method || {},
+                Headers: req.body.headers || req.query.headers || {},
+            };
+            data = {
+                Authorization: COS.getAuthorization(opt),
+                XCosSecurityToken: tempKeys['credentials'] && tempKeys['credentials']['sessionToken'],
+            };
+        }
+        res.send(err || data);
+    });
+});
+app.all('*', function (req, res, next) {
+    res.writeHead(404);
+    res.send('404 Not Found');
+});
+
+// 启动签名服务
+app.listen(3000);
 console.log('app is listening at http://127.0.0.1:3000');
