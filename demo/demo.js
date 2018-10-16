@@ -135,17 +135,6 @@ var logger = {
     },
 };
 
-function getAuth() {
-    var key = '1.png';
-    cos.options.getAuthorization({
-        Method: 'get',
-        Key: key
-    }, function (auth) {
-        // 注意：这里的 Bucket 格式是 test-1250000000
-        logger.log('http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' + encodeURIComponent(key).replace(/%2F/g, '/') + '?sign=' + encodeURIComponent(auth));
-    });
-}
-
 function getObjectUrl() {
     var url = cos.getObjectUrl({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
@@ -157,6 +146,18 @@ function getObjectUrl() {
         logger.log(err || data);
     });
     logger.log(url);
+}
+
+function getAuth() {
+    var key = '1.png';
+    // 这里不推荐自己拼接，推荐使用 getObjectUrl 获取 url
+    cos.options.getAuthorization({
+        Method: 'get',
+        Key: key
+    }, function (auth) {
+        // 注意：这里的 Bucket 格式是 test-1250000000
+        logger.log('http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' + encodeURIComponent(key).replace(/%2F/g, '/') + '?sign=' + encodeURIComponent(auth));
+    });
 }
 
 function getBucket() {
@@ -769,8 +770,8 @@ function sliceCopyFile() {
 (function () {
     var list = [
         // 'getService', // 不支持
-        'getAuth',
         'getObjectUrl',
+        'getAuth',
         // 'putBucket', // 不支持
         'getBucket',
         'headBucket',
