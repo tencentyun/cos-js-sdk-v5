@@ -137,7 +137,7 @@ var logger = {
 
 function getAuth() {
     var key = '1.png';
-    getAuthorization({
+    cos.options.getAuthorization({
         Method: 'get',
         Key: key
     }, function (auth) {
