@@ -143,7 +143,7 @@ function getObjectUrl() {
         Expires: 60,
         Sign: true,
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log(err || data && data.Url);
     });
     logger.log(url);
 }
