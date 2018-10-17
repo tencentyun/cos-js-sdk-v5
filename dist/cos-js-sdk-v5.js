@@ -1913,8 +1913,8 @@ var defaultOptions = {
     ServiceDomain: '',
     Protocol: '',
     CompatibilityMode: false,
-    UploadIdCacheLimit: 50,
-    ForcePathStyle: false
+    ForcePathStyle: false,
+    UploadIdCacheLimit: 50
 };
 
 // 对外暴露的类
@@ -1938,7 +1938,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.18';
+COS.version = '0.4.19';
 
 module.exports = COS;
 
@@ -3802,14 +3802,18 @@ var initTask = function (cos) {
             onProgress && onProgress(info);
             emitListUpdate();
         };
-        queue.push(task);
-        if (queue.length > cos.options.UploadQueueSize) {
-            queue.splice(0, queue.length - cos.options.UploadQueueSize);
-        }
-        tasks[id] = task;
 
         // 异步获取 filesize
         util.getFileSize(api, params, function (err, size) {
+            // 获取完文件大小再把任务加入队列
+            tasks[id] = task;
+            queue.push(task);
+            if (queue.length > cos.options.UploadQueueSize) {
+                var delta = queue.length - cos.options.UploadQueueSize;
+                queue.splice(0, delta);
+                nextUploadIndex -= delta;
+            }
+            // 开始处理上传
             if (err) {
                 callback(err);
                 return;
@@ -5530,13 +5534,14 @@ function getObjectUrl(params, callback) {
         Expires: params.Expires
     }, function (AuthData) {
         if (!callback) return;
-        url += '?sign=' + encodeURIComponent(AuthData.Authorization);
-        AuthData.XCosSecurityToken && (url += '&x-cos-security-token=' + AuthData.XCosSecurityToken);
-        AuthData.ClientIP && (url += '&clientIP=' + AuthData.ClientIP);
-        AuthData.ClientUA && (url += '&clientUA=' + AuthData.ClientUA);
-        AuthData.Token && (url += '&token=' + AuthData.Token);
+        var signUrl = url;
+        signUrl += '?sign=' + encodeURIComponent(AuthData.Authorization);
+        AuthData.XCosSecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.XCosSecurityToken);
+        AuthData.ClientIP && (signUrl += '&clientIP=' + AuthData.ClientIP);
+        AuthData.ClientUA && (signUrl += '&clientUA=' + AuthData.ClientUA);
+        AuthData.Token && (signUrl += '&token=' + AuthData.Token);
         setTimeout(function () {
-            callback(null, { Url: url });
+            callback(null, { Url: signUrl });
         });
     });
     if (authorization) {

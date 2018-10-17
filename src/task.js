@@ -155,14 +155,18 @@ var initTask = function (cos) {
             onProgress && onProgress(info);
             emitListUpdate();
         };
-        queue.push(task);
-        if (queue.length > cos.options.UploadQueueSize) {
-            queue.splice(0, queue.length - cos.options.UploadQueueSize);
-        }
-        tasks[id] = task;
 
         // 异步获取 filesize
         util.getFileSize(api, params, function (err, size) {
+            // 获取完文件大小再把任务加入队列
+            tasks[id] = task;
+            queue.push(task);
+            if (queue.length > cos.options.UploadQueueSize) {
+                var delta = queue.length - cos.options.UploadQueueSize;
+                queue.splice(0, delta);
+                nextUploadIndex -= delta;
+            }
+            // 开始处理上传
             if (err) {
                 callback(err);
                 return;

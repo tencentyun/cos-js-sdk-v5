@@ -1687,13 +1687,14 @@ function getObjectUrl(params, callback) {
         Expires: params.Expires,
     }, function (AuthData) {
         if (!callback) return;
-        url += '?sign=' + encodeURIComponent(AuthData.Authorization);
-        AuthData.XCosSecurityToken && (url += '&x-cos-security-token=' + AuthData.XCosSecurityToken);
-        AuthData.ClientIP && (url += '&clientIP=' + AuthData.ClientIP);
-        AuthData.ClientUA && (url += '&clientUA=' + AuthData.ClientUA);
-        AuthData.Token && (url += '&token=' + AuthData.Token);
+        var signUrl = url;
+        signUrl += '?sign=' + encodeURIComponent(AuthData.Authorization);
+        AuthData.XCosSecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.XCosSecurityToken);
+        AuthData.ClientIP && (signUrl += '&clientIP=' + AuthData.ClientIP);
+        AuthData.ClientUA && (signUrl += '&clientUA=' + AuthData.ClientUA);
+        AuthData.Token && (signUrl += '&token=' + AuthData.Token);
         setTimeout(function () {
-            callback(null, {Url: url});
+            callback(null, {Url: signUrl});
         });
     });
     if (authorization) {

@@ -24,8 +24,8 @@ var defaultOptions = {
     ServiceDomain: '',
     Protocol: '',
     CompatibilityMode: false,
-    UploadIdCacheLimit: 50,
     ForcePathStyle: false,
+    UploadIdCacheLimit: 50,
 };
 
 // 对外暴露的类
@@ -49,6 +49,6 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.18';
+COS.version = '0.4.19';
 
 module.exports = COS;
