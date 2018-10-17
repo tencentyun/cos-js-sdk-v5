@@ -717,9 +717,9 @@ function getBucketVersioning(params, callback) {
 
 function putBucketReplication(params, callback) {
     var ReplicationConfiguration = util.clone(params.ReplicationConfiguration);
-    ReplicationConfiguration.Rule = ReplicationConfiguration.Rules;
-    delete ReplicationConfiguration.Rules;
     var xml = util.json2xml({ReplicationConfiguration: ReplicationConfiguration});
+    xml = xml.replace(/<(\/?)Rules>/ig, '<$1Rule>');
+    xml = xml.replace(/<(\/?)Tags>/ig, '<$1Tag>');
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';

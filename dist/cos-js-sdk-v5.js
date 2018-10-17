@@ -7,7 +7,7 @@
 		exports["COS"] = factory();
 	else
 		root["COS"] = factory();
-})(typeof self !== 'undefined' ? self : this, function() {
+})(this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -111,7 +111,11 @@ var getAuth = function (opt) {
                 list.push(key);
             }
         }
-        return list.sort();
+        return list.sort(function (a, b) {
+            a = a.toLowerCase();
+            b = b.toLowerCase();
+            return a === b ? 0 : a > b ? 1 : -1;
+        });
     };
 
     var obj2str = function (obj) {
@@ -1934,7 +1938,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.17';
+COS.version = '0.4.18';
 
 module.exports = COS;
 
@@ -4560,9 +4564,9 @@ function getBucketVersioning(params, callback) {
 
 function putBucketReplication(params, callback) {
     var ReplicationConfiguration = util.clone(params.ReplicationConfiguration);
-    ReplicationConfiguration.Rule = ReplicationConfiguration.Rules;
-    delete ReplicationConfiguration.Rules;
     var xml = util.json2xml({ ReplicationConfiguration: ReplicationConfiguration });
+    xml = xml.replace(/<(\/?)Rules>/ig, '<$1Rule>');
+    xml = xml.replace(/<(\/?)Tags>/ig, '<$1Tag>');
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';

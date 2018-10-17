@@ -127,7 +127,10 @@ var showLogText = function (text, color) {
 var logger = {
     log: function (text) {
         console.log.apply(console, arguments);
-        showLogText([].join.call(arguments, ' '));
+        var args = [].map.call(arguments, function (v) {
+            return typeof v === 'object' ? JSON.stringify(v) : v;
+        });
+        showLogText(args.join(' '));
     },
     error: function (text) {
         console.error(text);
@@ -439,9 +442,10 @@ function putBucketReplication() {
             Rules: [{
                 ID: "1",
                 Status: "Enabled",
-                Prefix: "img/",
+                Prefix: "sync/",
                 Destination: {
-                    Bucket: "qcs::cos:ap-guangzhou::test-" + AppId
+                    Bucket: "qcs:id/0:cos:ap-chengdu:appid/" + AppId + ":backup",
+                    StorageClass: "Standard",
                 },
             }]
         }

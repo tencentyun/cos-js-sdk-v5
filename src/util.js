@@ -36,7 +36,11 @@ var getAuth = function (opt) {
                 list.push(key);
             }
         }
-        return list.sort();
+        return list.sort(function (a, b) {
+            a = a.toLowerCase();
+            b = b.toLowerCase();
+            return a === b ? 0 : (a > b ? 1 : -1);
+        });
     };
 
     var obj2str = function (obj) {

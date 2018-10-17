@@ -22,6 +22,11 @@ if (!isset($_SESSION['tempKeysCache'])) {
     );
 }
 
+function _hex2bin($data) {
+    $len = strlen($data);
+    return pack("H" . $len, $data);
+}
+
 // obj 转 query string
 function json2str($obj, $notEncode = false) {
     ksort($obj);
@@ -37,7 +42,7 @@ function getSignature($opt, $key, $method) {
     global $config;
     $formatString = $method . $config['Domain'] . '/v2/index.php?' . json2str($opt, 1);
     $sign = hash_hmac('sha1', $formatString, $key);
-    $sign = base64_encode(hex2bin($sign));
+    $sign = base64_encode(_hex2bin($sign));
     return $sign;
 }
 

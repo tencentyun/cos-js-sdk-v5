@@ -13,6 +13,11 @@ $config = array(
     'AllowPrefix' => '_ALLOW_DIR_/*', // 必填，这里改成允许的路径前缀，这里可以根据自己网站的用户登录态判断允许上传的目录，例子：* 或者 a/* 或者 a.jpg
 );
 
+function _hex2bin($data) {
+    $len = strlen($data);
+    return pack("H" . $len, $data);
+}
+
 // obj 转 query string
 function json2str($obj, $notEncode = false) {
     ksort($obj);
@@ -28,7 +33,7 @@ function getSignature($opt, $key, $method) {
     global $config;
     $formatString = $method . $config['Domain'] . '/v2/index.php?' . json2str($opt, 1);
     $sign = hash_hmac('sha1', $formatString, $key);
-    $sign = base64_encode(hex2bin($sign));
+    $sign = base64_encode(_hex2bin($sign));
     return $sign;
 }
 
@@ -50,7 +55,7 @@ function getTempKeys() {
             array(
                 'action'=> array(
                     // // 这里可以从临时密钥的权限上控制前端允许的操作
-                    // 'name/cos:*', // 这样写可以包含下面所有权限
+                     'name/cos:*', // 这样写可以包含下面所有权限
 
                     // // 列出所有允许的操作
                     // // ACL 读写
