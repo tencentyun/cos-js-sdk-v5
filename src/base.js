@@ -386,7 +386,6 @@ function deleteBucketPolicy(params, callback) {
         headers: params.Headers,
         action: 'policy',
     }, function (err, data) {
-        debugger;
         if (err && err.statusCode === 204) {
             return callback(null, {statusCode: err.statusCode});
         } else if (err) {

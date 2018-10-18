@@ -1938,7 +1938,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.19';
+COS.version = '0.4.20';
 
 module.exports = COS;
 
@@ -4241,7 +4241,6 @@ function deleteBucketPolicy(params, callback) {
         headers: params.Headers,
         action: 'policy'
     }, function (err, data) {
-        debugger;
         if (err && err.statusCode === 204) {
             return callback(null, { statusCode: err.statusCode });
         } else if (err) {
