@@ -166,7 +166,9 @@ function getAuth() {
 function getBucket() {
     cos.getBucket({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
-        Region: config.Region
+        Region: config.Region,
+        // Prefix: ''
+        // Delimiter: '/'
     }, function (err, data) {
         logger.log(err || data);
     });
@@ -195,7 +197,7 @@ function putBucketAcl() {
         ACL: 'private',
         // AccessControlPolicy: {
         // "Owner": { // AccessControlPolicy 里必须有 owner
-        //     "ID": 'qcs::cam::uin/459000000:uin/459000000' // 459000000 是 Bucket 所属用户的 QQ 号
+        //     "ID": 'qcs::cam::uin/10001:uin/10001' // 10001 是 Bucket 所属用户的 QQ 号
         // },
         // "Grants": [{
         //     "Grantee": {
@@ -312,20 +314,16 @@ function putBucketPolicy() {
                 "effect": "allow",
                 "principal": {"qcs": ["qcs::cam::uin/10001:uin/10001"]}, // 这里的 10001 是 QQ 号
                 "action": [
-                    "name/cos:GetBucket",
                     "name/cos:PutObject",
-                    "name/cos:PostObject",
-                    "name/cos:PutObjectCopy",
                     "name/cos:InitiateMultipartUpload",
+                    "name/cos:ListMultipartUploads",
+                    "name/cos:ListParts",
                     "name/cos:UploadPart",
-                    "name/cos:UploadPartCopy",
-                    "name/cos:CompleteMultipartUpload",
-                    "name/cos:AbortMultipartUpload",
-                    "name/cos:AppendObject"
+                    "name/cos:CompleteMultipartUpload"
                 ],
                 // "resource": ["qcs::cos:ap-guangzhou:uid/1250000000:test-1250000000/*"] // 1250000000 是 appid
                 "resource": ["qcs::cos:" + config.Region + ":uid/" + AppId + ":" + config.Bucket + "/*"] // 1250000000 是 appid
-            }]
+            }],
         },
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
@@ -366,17 +364,39 @@ function putBucketLifecycle() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
         LifecycleConfiguration: {
-            "Rules": [{
-                'ID': 1,
-                'Filter': {
-                    'Prefix': 'test123',
-                },
-                'Status': 'Enabled',
-                'Transition': {
-                    'Date': '2016-10-31T00:00:00+08:00',
-                    'StorageClass': 'STANDARD_IA'
+            Rules: [{
+                "ID": "1",
+                "Status": "Enabled",
+                "Filter": {},
+                "Transition": {
+                    "Days": "30",
+                    "StorageClass": "STANDARD_IA"
                 }
-            }]
+            }, {
+                "ID": "2",
+                "Status": "Enabled",
+                "Filter": {
+                    "Prefix": "dir/"
+                },
+                "Transition": {
+                    "Days": "90",
+                    "StorageClass": "ARCHIVE"
+                }
+            }, {
+                "ID": "3",
+                "Status": "Enabled",
+                "Filter": {},
+                "Expiration": {
+                    "Days": "180"
+                }
+            }, {
+                "ID": "4",
+                "Status": "Enabled",
+                "Filter": {},
+                "AbortIncompleteMultipartUpload": {
+                    "DaysAfterInitiation": "30"
+                }
+            }],
         }
     }, function (err, data) {
         logger.log(err || data);
@@ -426,9 +446,10 @@ function listObjectVersions() {
     cos.listObjectVersions({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
-        Prefix: "1mb.zip"
+        // Prefix: "",
+        // Delimiter: '/'
     }, function (err, data) {
-        logger.log(err || JSON.stringify(data.Versions, null, '    '));
+        logger.log(err || JSON.stringify(data, null, '    '));
     });
 }
 
@@ -438,15 +459,15 @@ function putBucketReplication() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
         ReplicationConfiguration: {
-            Role: "qcs::cam::uin/459000000:uin/459000000",
+            Role: "qcs::cam::uin/10001:uin/10001",
             Rules: [{
                 ID: "1",
                 Status: "Enabled",
                 Prefix: "sync/",
                 Destination: {
                     Bucket: "qcs:id/0:cos:ap-chengdu:appid/" + AppId + ":backup",
-                    StorageClass: "Standard",
-                },
+                    // StorageClass: "Standard",
+                }
             }]
         }
     }, function (err, data) {
@@ -547,7 +568,7 @@ function putObjectAcl() {
         ACL: 'default', // 继承上一级目录权限
         // AccessControlPolicy: {
         //     "Owner": { // AccessControlPolicy 里必须有 owner
-        //         "ID": 'qcs::cam::uin/459000000:uin/459000000' // 459000000 是 Bucket 所属用户的 QQ 号
+        //         "ID": 'qcs::cam::uin/10001:uin/10001' // 10001 是 Bucket 所属用户的 QQ 号
         //     },
         //     "Grants": [{
         //         "Grantee": {
@@ -586,8 +607,7 @@ function deleteMultipleObject() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
         Objects: [
-            {Key: '中文/中文.txt'},
-            {Key: '中文/中文.zip'},
+            {Key: '1mb.zip',VersionId: 'MTg0NDY3NDI1MzM4NzM0ODA2MTI'},
         ]
     }, function (err, data) {
         logger.log(err || data);
@@ -794,9 +814,9 @@ function sliceCopyFile() {
         'getBucketLifecycle',
         'putBucketLifecycle',
         'deleteBucketLifecycle',
-        'deleteBucketLifecycle',
         'putBucketVersioning',
         'getBucketVersioning',
+        'listObjectVersions',
         'putBucketReplication',
         'getBucketReplication',
         'deleteBucketReplication',

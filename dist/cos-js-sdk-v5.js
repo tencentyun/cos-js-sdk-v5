@@ -1938,7 +1938,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.20';
+COS.version = '0.4.21';
 
 module.exports = COS;
 
@@ -4618,6 +4618,10 @@ function getBucketReplication(params, callback) {
         }
         if (!err) {
             !data.ReplicationConfiguration && (data.ReplicationConfiguration = {});
+        }
+        if (data.ReplicationConfiguration.Rule) {
+            data.ReplicationConfiguration.Rules = data.ReplicationConfiguration.Rule;
+            delete data.ReplicationConfiguration.Rule;
         }
         callback(err, data);
     });
