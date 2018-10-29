@@ -1648,7 +1648,6 @@ cos.deleteMultipleObject({
 | Quiet | 布尔值，这个值决定了是否启动 Quiet 模式。值为 true 启动 Quiet 模式，值为 false 则启动 Verbose 模式，默认值为 false | Boolean | 否 |
 | Objects | 要删除的文件列表 | ObjectArray | 是 |
 | - Key | 对象键（Object 的名称），对象在存储桶中的唯一标识，[对象键说明](https://cloud.tencent.com/document/product/436/13324) | String | 是 |
-| - VersionId | 要删除的 Object 或 DeleteMarker 版本 ID | String |
 
 #### 回调函数说明
 
@@ -1666,9 +1665,6 @@ function(err, data) { ... }
 | - headers | 请求返回的头部信息 | Object |
 | - Deleted | 说明本次删除的成功 Object 信息 | ObjectArray |
 | - - Key | 对象键（Object 的名称），对象在存储桶中的唯一标识，[对象键说明](https://cloud.tencent.com/document/product/436/13324) | String |
-| - - VersionId | 如果参数传入了 VersionId，返回也会带上 VersionId，表示刚操作的 Object 或 DeleteMarker 版本 | String |
-| - - DeleteMarker | 如果开启了多版本，并且参数没有 VersionId，本次删除不会真正抹去文件内容，只新增一个 DeleteMarker 代表可见的文件已删除，枚举值：true、false | String |
-| - - DeleteMarkerVersionId | 当返回的 DeleteMarker 为 true 时，返回刚新增的 DeleteMarker 的 VersionId | String |
 | - Error | 说明本次删除的失败 Object 信息 | ObjectArray |
 | - - Key | 对象键（Object 的名称），对象在存储桶中的唯一标识，[对象键说明](https://cloud.tencent.com/document/product/436/13324) | String |
 | - - Code | 删除失败的错误码 | String |
@@ -1699,7 +1695,7 @@ cos.putObjectCopy({
 | Bucket | Bucket 的名称。命名规则为{name}-{appid} ，此处填写的存储桶名称必须为此格式 | String | 是 |
 | Region | Bucket 所在区域。枚举值请见：[Bucket 地域信息](https://cloud.tencent.com/document/product/436/6224) | String | 是 |
 | Key | 对象键（Object 的名称），对象在存储桶中的唯一标识，[对象键说明](https://cloud.tencent.com/document/product/436/13324) | String | 是 |
-| CopySource | 源文件 URL 路径，可以通过 versionid 子资源指定历史版本 | String | 是 |
+| CopySource | 源文件 URL 路径 | String | 是 |
 | ACL | 定义 Object 的 ACL 属性。有效值：private、public-read、public-read-write；默认值：private | String | 否 |
 | GrantRead | 赋予被授权者读的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
 | GrantWrite | 赋予被授权者写的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
@@ -2236,7 +2232,7 @@ cos.sliceCopyFile({
 | Bucket | Bucket 的名称。命名规则为{name}-{appid} ，此处填写的存储桶名称必须为此格式 | String | 是 |
 | Region | Bucket 所在区域。枚举值请见：[Bucket 地域信息](https://cloud.tencent.com/document/product/436/6224) | String | 是 |
 | Key | 对象键（Object 的名称），对象在存储桶中的唯一标识，[对象键说明](https://cloud.tencent.com/document/product/436/13324) | String | 是 |
-| CopySource | 源文件 URL 路径，可以通过 versionid 子资源指定历史版本 | String | 是 |
+| CopySource | 源文件 URL 路径 | String | 是 |
 | ChunkSize | 分片复制时，每片的大小字节数，默认值 1048576 (1MB) | Number | 否 |
 | SliceSize | 使用分片复制的文件大小，默认值 5G | Number | 否 |
 | onProgress | 上传文件的进度回调函数，回调参数为进度对象 progressData | Function | 否 |
