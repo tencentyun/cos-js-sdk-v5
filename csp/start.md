@@ -4,7 +4,7 @@
 
 对象存储服务的 XML JS SDK 资源 github 地址：[tencentyun/cos-js-sdk-v5](https://github.com/tencentyun/cos-js-sdk-v5)。
 
-演示示例 Demo 下载地址：[XML JS SDK CSP Demo](https://github.com/tencentyun/cos-js-sdk-v5/tree/master/csp/csp.html)。
+演示示例 Demo 代码地址：[XML JS SDK CSP Demo](https://github.com/tencentyun/cos-js-sdk-v5/tree/master/csp/csp.html)。
 
 ### 开发准备
 
@@ -41,13 +41,14 @@ var cos = new COS({
     ServiceDomain: 'http://cos.default.xxx.com', // 这里替换成 getService 域名
     Domain: 'http://{Bucket}.cos.{Region}.xxx.com', 这里替换成 API 域名格式模板
     getAuthorization: function (options, callback) {
-        $.get('./auth.php', {
-            method: options.Method,
-            pathname: options.Key,
-        }, function (auth) {
-            callback(auth);
-        });
-    }
+        var url = './auth.php?method=' + options.Method + '&pathname=' + encodeURIComponent(options.Key);
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.onload = function (e) {
+            callback(e.target.responseText);
+        };
+        xhr.send();
+    },
 });
 
 // 监听选文件
