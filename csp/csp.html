@@ -230,88 +230,6 @@
         });
     }
 
-    function putBucketTagging() {
-        cos.putBucketTagging({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
-            Region: config.Region,
-            Tagging: {
-                "Tags": [
-                    {"Key": "k1", "Value": "v1"},
-                    {"Key": "k2", "Value": "v2"}
-                ]
-            }
-        }, function (err, data) {
-            logger.log(err || data);
-        });
-    }
-
-    function getBucketTagging() {
-        cos.getBucketTagging({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
-            Region: config.Region
-        }, function (err, data) {
-            logger.log(err || data);
-        });
-    }
-
-    function deleteBucketTagging() {
-        cos.deleteBucketTagging({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
-            Region: config.Region
-        }, function (err, data) {
-            logger.log(err || data);
-        });
-    }
-
-    function putBucketPolicy() {
-        var AppId = config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1);
-        cos.putBucketPolicy({
-            Policy: {
-                "version": "2.0",
-                "statement": [{
-                    "effect": "allow",
-                    "principal": {"qcs": ["qcs::cam::uin/10001:uin/10001"]}, // 这里的 10001 是 QQ 号
-                    "action": [
-                        "name/cos:GetBucket",
-                        "name/cos:PutObject",
-                        "name/cos:PostObject",
-                        "name/cos:PutObjectCopy",
-                        "name/cos:InitiateMultipartUpload",
-                        "name/cos:UploadPart",
-                        "name/cos:UploadPartCopy",
-                        "name/cos:CompleteMultipartUpload",
-                        "name/cos:AbortMultipartUpload",
-                        "name/cos:AppendObject"
-                    ],
-                    // "resource": ["qcs::cos:ap-guangzhou:uid/1250000000:test-1250000000/*"] // 1250000000 是 appid
-                    "resource": ["qcs::cos:" + config.Region + ":uid/" + AppId + ":" + config.Bucket + "/*"] // 1250000000 是 appid
-                }]
-            },
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
-            Region: config.Region
-        }, function (err, data) {
-            logger.log(err || data);
-        });
-    }
-
-    function getBucketPolicy() {
-        cos.getBucketPolicy({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
-            Region: config.Region
-        }, function (err, data) {
-            logger.log(err || data);
-        });
-    }
-
-    function getBucketLocation() {
-        cos.getBucketLocation({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
-            Region: config.Region
-        }, function (err, data) {
-            logger.log(err || data);
-        });
-    }
-
     function putBucketLifecycle() {
         cos.putBucketLifecycle({
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
@@ -349,37 +267,6 @@
             Region: config.Region
         }, function (err, data) {
             logger.log(err || data);
-        });
-    }
-
-    function putBucketVersioning() {
-        cos.putBucketVersioning({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
-            Region: config.Region,
-            VersioningConfiguration: {
-                Status: "Enabled"
-            }
-        }, function (err, data) {
-            logger.log(err || data);
-        });
-    }
-
-    function getBucketVersioning() {
-        cos.getBucketVersioning({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
-            Region: config.Region
-        }, function (err, data) {
-            logger.log(err || data);
-        });
-    }
-
-    function listObjectVersions() {
-        cos.listObjectVersions({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
-            Region: config.Region,
-            Prefix: "1mb.zip"
-        }, function (err, data) {
-            logger.log(err || JSON.stringify(data.Versions, null, '    '));
         });
     }
 
@@ -807,18 +694,10 @@
             'putBucketCors',
             'getBucketCors',
             // 'deleteBucketCors', // 不提供
-            'putBucketTagging',
-            'getBucketTagging',
-            'deleteBucketTagging',
-            'putBucketPolicy',
-            'getBucketPolicy',
-            'getBucketLocation',
             'getBucketLifecycle',
             'putBucketLifecycle',
             'deleteBucketLifecycle',
             'deleteBucketLifecycle',
-            'putBucketVersioning',
-            'getBucketVersioning',
             'putBucketReplication',
             'getBucketReplication',
             'deleteBucketReplication',
