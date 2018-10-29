@@ -1,3 +1,5 @@
+# COS JavaScript SDK CSP 接口说明
+
 > 本文针对 JavaScript SDK 的接口做详细的介绍说明
 
 JavaScript SDK github 地址：[tencentyun/cos-js-sdk-v5](https://github.com/tencentyun/cos-js-sdk-v5)
@@ -547,7 +549,7 @@ cos.putBucketAcl({
 cos.putBucketAcl({
     Bucket: 'test-1250000000', /* 必须 */
     Region: 'ap-guangzhou',    /* 必须 */
-    GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"' // 1001 是 uin
+    GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"' // 1001 是 uin(帐号ID)
 }, function(err, data) {
     console.log(err || data);
 });
@@ -558,7 +560,7 @@ cos.putBucketAcl({
 cos.putBucketAcl({
     Bucket: 'test-1250000000', /* 必须 */
     Region: 'ap-guangzhou',    /* 必须 */
-    GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"' // 1001 是 uin
+    GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"' // 1001 是 uin(帐号ID)
 }, function(err, data) {
     console.log(err || data);
 });
@@ -599,11 +601,11 @@ cos.putBucketAcl({
 | GrantFullControl | 赋予被授权者读写权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
 | AccessControlPolicy | 说明跨域资源共享配置的所有信息列表 | Object | 否 |
 | - Owner | 代表存储桶所有者的对象 | Object | 否 |
-| - - ID | 代表用户 ID 的字符串，格式如 qcs::cam::uin/1001:uin/1001，1001 是 uin | Object | 否 |
+| - - ID | 代表用户 ID 的字符串，格式如 qcs::cam::uin/1001:uin/1001，1001 是 uin(帐号ID) | Object | 否 |
 | - Grants | 说明跨域资源共享配置的所有信息列表 | Object | 否 |
 | - - Permission | 说明跨域资源共享配置的所有信息列表，可选项 READ、WRITE、READ_ACP、WRITE_ACP、FULL_CONTROL | String | 否 |
 | - - Grantee | 说明跨域资源共享配置的所有信息列表 | ObjectArray | 否 |
-| - - - ID | 代表用户 ID 的字符串，格式如 qcs::cam::uin/1001:uin/1001，1001 是 uin | String | 否 |
+| - - - ID | 代表用户 ID 的字符串，格式如 qcs::cam::uin/1001:uin/1001，1001 是 uin(帐号ID) | String | 否 |
 | - - - DisplayName | 代表用户名称的字符串，一般填写成和 ID 一致的字符串 | String | 否 |
 
 #### 回调函数说明
@@ -781,6 +783,47 @@ function(err, data) { ... }
 | data | 请求成功时返回的对象，如果请求发生错误，则为空 | Object |
 | - statusCode | 请求返回的 HTTP 状态码，如 200、403、404 等 | Number |
 | - headers | 请求返回的头部信息 | Object |
+
+
+### Get Bucket Location
+
+[Get Bucket Location 接口说明](https://cloud.tencent.com/document/product/436/8275) 
+
+Get Bucket Location 接口用于获取 Bucket 所在的地域信息，该 GET 操作使用 location 子资源返回 Bucket 所在的区域，只有 Bucket 持有者才有该 API 接口的操作权限。
+
+#### 使用示例
+
+```js
+cos.getBucketLocation({
+    Bucket: 'test-1250000000', /* 必须 */
+    Region: 'ap-guangzhou',    /* 必须 */
+}, function(err, data) {
+    console.log(err || data);
+});
+```
+
+#### 参数说明
+
+| 参数名 | 参数描述 | 类型 | 必填 |
+|--------|----------|------|------|
+| Bucket | Bucket 的名称。命名规则为{name}-{appid} ，此处填写的存储桶名称必须为此格式 | String | 是 |
+| Region | Bucket 所在区域。枚举值请见：[Bucket 地域信息](https://cloud.tencent.com/document/product/436/6224) | String | 是 |
+
+#### 回调函数说明
+
+```js
+function(err, data) { ... }
+```
+
+| 参数名 | 参数描述 | 类型 |
+|--------|----------|------|
+| err | 请求发生错误时返回的对象，包括网络错误和业务错误。如果请求成功，则为空，[错误码文档](https://cloud.tencent.com/document/product/436/7730) | Object |
+| - statusCode | 请求返回的 HTTP 状态码，如 200、403、404 等 | Number |
+| - headers | 请求返回的头部信息 | Object |
+| data | 请求成功时返回的对象，如果请求发生错误，则为空 | Object |
+| - statusCode | 请求返回的 HTTP 状态码，如 200、403、404 等 | Number |
+| - headers | 请求返回的头部信息 | Object |
+| - LocationConstraint |Bucket 所在区域。枚举值请见：[Bucket 地域信息](https://cloud.tencent.com/document/product/436/6224) | String |
 
 
 ### Get Bucket Lifecycle
@@ -1554,7 +1597,7 @@ cos.putObjectAcl({
     Bucket: 'test-1250000000', /* 必须 */
     Region: 'ap-guangzhou',    /* 必须 */
     Key: '1.jpg',              /* 必须 */
-    GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"' // 1001 是 uin
+    GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"' // 1001 是 uin(帐号ID)
 }, function(err, data) {
     console.log(err || data);
 });
@@ -2200,62 +2243,3 @@ cos.restartTask(taskId);
 | 参数名 | 参数描述 | 类型 | 必填 |
 |--------|----------|------|------|
 | taskId | 文件上传任务的编号，在调用 sliceUploadFile 方法时，其 TaskReady 回调会返回该上传任务的 taskId | String | 是 |
-
-
-### Slice Copy File
-
-Slice Copy File 可用于实现通过分块复制将一个文件从源路径复制到目标路径。在拷贝的过程中，文件元属性和 ACL 可以被修改。用户可以通过该接口实现文件移动，文件重命名，修改文件属性和创建副本。
-
-#### 操作方法原型
-
-调用 Slice Copy File 操作：
-
-```js
-cos.sliceCopyFile({
-    Bucket: 'test-1250000000',                               /* 必须 */
-    Region: 'ap-guangzhou',                                  /* 必须 */
-    Key: '1.zip',                                            /* 必须 */
-    CopySource: 'test1.cos.ap-guangzhou.myqcloud.com/2.zip', /* 必须 */
-    onProgress:function (progressData) {                     /* 非必须 */
-        console.log(JSON.stringify(progressData));
-    }
-},function (err,data) {
-    console.log(err || data);
-});
-
-```
-
-#### 操作参数说明
-
-| 参数名 | 参数描述 | 类型 | 必填 |
-|--------|---------|--------|--------|
-| Bucket | Bucket 的名称。命名规则为{name}-{appid} ，此处填写的存储桶名称必须为此格式 | String | 是 |
-| Region | Bucket 所在区域。枚举值请见：[Bucket 地域信息](https://cloud.tencent.com/document/product/436/6224) | String | 是 |
-| Key | 对象键（Object 的名称），对象在存储桶中的唯一标识，[对象键说明](https://cloud.tencent.com/document/product/436/13324) | String | 是 |
-| CopySource | 源文件 URL 路径 | String | 是 |
-| ChunkSize | 分片复制时，每片的大小字节数，默认值 1048576 (1MB) | Number | 否 |
-| SliceSize | 使用分片复制的文件大小，默认值 5G | Number | 否 |
-| onProgress | 上传文件的进度回调函数，回调参数为进度对象 progressData | Function | 否 |
-| - progressData.loaded | 已经上传的文件部分大小，以字节（bytes）为单位 | Number | 否 |
-| - progressData.total | 整个文件的大小，以字节（bytes）为单位 | Number | 否 |
-| - progressData.speed | 文件的上传速度，以字节/秒（bytes/s）为单位 | Number | 否 |
-| - progressData.percent | 文件的上传百分比，以小数形式呈现，例如：下载 50% 即为 0.5 | Number | 否 |
-
-#### 回调函数说明
-
-```js
-function(err, data) { ... }
-```
-
-| 参数名 | 参数描述 | 类型 |
-|--------|---------|--------|
-| err | 请求发生错误时返回的对象，包括网络错误和业务错误。如果请求成功，则为空，错误码文档 | Object |
-| - statusCode | 请求返回的 HTTP 状态码，如 200、403、404 等 | Number |
-| - headers | 请求返回的头部信息 | Object |
-| data | 请求成功时返回的对象，如果请求发生错误，则为空 | Object |
-| - statusCode | 请求返回的 HTTP 状态码，如 200、403、404 等 | Number |
-| - headers | 请求返回的头部信息 | Object |
-| - Location | 创建的 Object 的外网访问域名 | String |
-| - Bucket | 分块上传的目标 Bucket | String |
-| - Key | 对象键（Object 的名称），对象在存储桶中的唯一标识，[对象键说明](https://cloud.tencent.com/document/product/436/13324) | String |
-| - ETag | 合并后文件的 MD5 算法校验值，如 "22ca88419e2ed4721c23807c678adbe4c08a7880"，注意前后携带双引号 | String |

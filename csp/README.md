@@ -1,4 +1,4 @@
-# COS JavaScript SDK 私有化使用文档
+# COS JavaScript SDK CSP 使用文档
 
 [快速入门](./start.md)
 

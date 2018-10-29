@@ -1,4 +1,4 @@
-# CSP 使用 COS JavaScript SDK
+# COS JavaScript SDK CSP 快速入门
 
 ### SDK 获取
 
@@ -76,8 +76,3 @@ document.getElementById('file-selector').onchange = function () {
 ```shell
 npm i cos-js-sdk-v5 --save
 ```
-
-## 其他文档和例子
-
-1. 更多例子请参阅 [XML JavaScript SDK Demo](https://github.com/tencentyun/cos-js-sdk-v5/blob/master/demo)。
-2. 完整接口文档请参阅 [XML JavaScript SDK 接口文档](https://cloud.tencent.com/document/product/436/12260)。

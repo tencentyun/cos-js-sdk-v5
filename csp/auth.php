@@ -55,8 +55,8 @@ function getAuthorization($method, $pathname, $query, $headers)
 {
 
     // 获取个人 API 密钥 https://console.qcloud.com/capi
-    $SecretId = 'xxx';
-    $SecretKey = 'xxx';
+    $SecretId = 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+    $SecretKey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 
     // 整理参数
     !$query && ($query = array());
@@ -133,11 +133,19 @@ function getAuthorization($method, $pathname, $query, $headers)
 
 
 // 获取前端过来的参数
-$params = json_decode(file_get_contents("php://input"), 1);
-$pathname = isset($params['pathname']) ? $params['pathname'] : '/';
-$method = isset($params['method']) ? $params['method'] : 'get';
-$query = isset($params['query']) ? $params['query'] : array();
-$headers = isset($params['headers']) ? $params['headers'] : array();
+$inputBody = file_get_contents("php://input");
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $inputBody){
+    $params = json_decode($inputBody, 1);
+    $pathname = isset($params['pathname']) ? $params['pathname'] : '/';
+    $method = isset($params['method']) ? $params['method'] : 'get';
+    $query = isset($params['query']) ? $params['query'] : array();
+    $headers = isset($params['headers']) ? $params['headers'] : array();
+} else {
+    $pathname = isset($_GET['pathname']) ? $_GET['pathname'] : '/';
+    $method = isset($_GET['method']) ? $_GET['method'] : 'get';
+    $query = isset($_GET['query']) && $_GET['query'] ? json_decode($_GET['query'], 1) : array();
+    $headers = isset($_GET['headers']) && $_GET['headers'] ? json_decode($_GET['headers'], 1) : array();
+}
 
 // 返回数据给前端
 header('Content-Type: text/plain');

@@ -51,20 +51,11 @@
         ForcePathStyle: true, // 后缀式
         // Domain: 'http://{Bucket}.cos.{Region}.example.com', // 前缀式
         getAuthorization: function (options, callback) {
-            var url = './sts.php';
+            var url = './auth.php?method=' + options.Method + '&pathname=' + encodeURIComponent(options.Key);
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.onload = function (e) {
-                try {
-                    var data = JSON.parse(e.target.responseText);
-                } catch (e) {
-                }
-                callback({
-                    TmpSecretId: data.credentials && data.credentials.tmpSecretId,
-                    TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
-                    XCosSecurityToken: data.credentials && data.credentials.sessionToken,
-                    ExpiredTime: data.expiredTime,
-                });
+                callback(e.target.responseText);
             };
             xhr.send();
         },
@@ -155,27 +146,27 @@
             ACL: 'private',
             // AccessControlPolicy: {
             // "Owner": { // AccessControlPolicy 里必须有 owner
-            //     "ID": 'qcs::cam::uin/459000000:uin/459000000' // 459000000 是 Bucket 所属用户的 QQ 号
+            //     "ID": 'qcs::cam::uin/459000000:uin/459000000' // 459000000 是 Bucket 所属用户的 uin(帐号ID)
             // },
             // "Grants": [{
             //     "Grantee": {
-            //         "ID": "qcs::cam::uin/1001:uin/1001", // 10002 是 QQ 号
-            //         "DisplayName": "qcs::cam::uin/1001:uin/1001" // 10002 是 QQ 号
+            //         "ID": "qcs::cam::uin/1001:uin/1001", // 10002 是 uin(帐号ID)
+            //         "DisplayName": "qcs::cam::uin/1001:uin/1001" // 10002 是 uin(帐号ID)
             //     },
             //     "Permission": "READ"
             // }, {
             //     "Grantee": {
-            //         "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 QQ 号
+            //         "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 uin(帐号ID)
             //     },
             //     "Permission": "WRITE"
             // }, {
             //     "Grantee": {
-            //         "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 QQ 号
+            //         "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 uin(帐号ID)
             //     },
             //     "Permission": "READ_ACP"
             // }, {
             //     "Grantee": {
-            //         "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 QQ 号
+            //         "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 uin(帐号ID)
             //     },
             //     "Permission": "WRITE_ACP"
             // }]
@@ -223,6 +214,15 @@
 
     function deleteBucketCors() {
         cos.deleteBucketCors({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region
+        }, function (err, data) {
+            logger.log(err || data);
+        });
+    }
+
+    function getBucketLocation() {
+        cos.getBucketLocation({
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: config.Region
         }, function (err, data) {
@@ -384,11 +384,11 @@
             ACL: 'default', // 继承上一级目录权限
             // AccessControlPolicy: {
             //     "Owner": { // AccessControlPolicy 里必须有 owner
-            //         "ID": 'qcs::cam::uin/459000000:uin/459000000' // 459000000 是 Bucket 所属用户的 QQ 号
+            //         "ID": 'qcs::cam::uin/459000000:uin/459000000' // 459000000 是 Bucket 所属用户的 uin(帐号ID)
             //     },
             //     "Grants": [{
             //         "Grantee": {
-            //             "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 QQ 号
+            //             "ID": "qcs::cam::uin/10002:uin/10002", // 10002 是 uin(帐号ID)
             //         },
             //         "Permission": "READ"
             //     }]
@@ -426,22 +426,6 @@
                 {Key: '中文/中文.txt'},
                 {Key: '中文/中文.zip'},
             ]
-        }, function (err, data) {
-            logger.log(err || data);
-        });
-    }
-
-    function restoreObject() {
-        cos.restoreObject({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
-            Region: config.Region,
-            Key: '1.txt',
-            RestoreRequest: {
-                Days: 1,
-                CASJobParameters: {
-                    Tier: 'Expedited'
-                }
-            }
         }, function (err, data) {
             logger.log(err || data);
         });
@@ -608,34 +592,6 @@
 
     }
 
-    function sliceCopyFile() {
-        // 创建测试文件
-        var sourceName = '3mb.zip';
-        var Key = '3mb.copy.zip';
-
-        var sourcePath = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/'+ encodeURIComponent(sourceName).replace(/%2F/g, '/');
-
-        cos.sliceCopyFile({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
-            Region: config.Region,
-            Key: Key,
-            CopySource: sourcePath,
-            SliceSize: 2 * 1024 * 1024, // 大于2M的文件用分片复制，小于则用单片复制
-            onProgress:function (info) {
-                var percent = parseInt(info.percent * 10000) / 100;
-                var speed = parseInt(info.speed / 1024 / 1024 * 100) / 100;
-                logger.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
-            }
-        },function (err,data) {
-            if(err){
-                logger.log(err);
-            }else{
-                logger.log(data);
-            }
-        });
-
-    }
-
     var time0 = Date.now();
     var preMsg = '页面加载完成';
     var showTime = function (msg) {
@@ -694,9 +650,9 @@
             'putBucketCors',
             'getBucketCors',
             // 'deleteBucketCors', // 不提供
+            'getBucketLocation',
             'getBucketLifecycle',
             'putBucketLifecycle',
-            'deleteBucketLifecycle',
             'deleteBucketLifecycle',
             'putBucketReplication',
             'getBucketReplication',
@@ -710,7 +666,6 @@
             'getObjectAcl',
             'deleteObject',
             'deleteMultipleObject',
-            'restoreObject',
             'abortUploadTask',
             'sliceUploadFile',
             'selectFileToUpload',
@@ -718,7 +673,6 @@
             'pauseTask',
             'restartTask',
             'uploadFiles',
-            'sliceCopyFile',
             'selectUploadFiles',
             'startSelectUploadFiles',
         ];
