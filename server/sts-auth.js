@@ -209,8 +209,7 @@ app.all('/sts-auth', function (req, res, next) {
     });
 });
 app.all('*', function (req, res, next) {
-    res.writeHead(404);
-    res.send('404 Not Found');
+    res.status(404).send('404 Not Found');
 });
 
 // 启动签名服务
