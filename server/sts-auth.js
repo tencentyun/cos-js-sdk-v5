@@ -162,6 +162,7 @@ var getTempKeys = function (callback) {
         if (body && body.data) body = body.data;
         tempKeysCache.credentials = body.credentials;
         tempKeysCache.expiredTime = body.expiredTime;
+        tempKeysCache.policyStr = policyStr;
         callback(err, body);
     });
 };
