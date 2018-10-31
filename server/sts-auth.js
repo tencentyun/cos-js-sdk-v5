@@ -143,7 +143,7 @@ var getTempKeys = function (callback) {
         Action: Action,
         durationSeconds: 7200,
         name: 'cos',
-        policy: encodeURIComponent(policyStr),
+        policy: encodeURIComponent(policyStr).replace(/\*/g,'%2A'),
     };
     params.Signature = util.getSignature(params, config.SecretKey, Method);
 
@@ -162,6 +162,7 @@ var getTempKeys = function (callback) {
         if (body && body.data) body = body.data;
         tempKeysCache.credentials = body.credentials;
         tempKeysCache.expiredTime = body.expiredTime;
+        tempKeysCache.policyStr = policyStr;
         callback(err, body);
     });
 };
@@ -197,7 +198,7 @@ app.all('/sts-auth', function (req, res, next) {
                 SecretKey: tempKeys.credentials.tmpSecretKey,
                 Method: req.body.method || req.query.method,
                 Key: Key,
-                Query: req.body.query || req.query.method || {},
+                Query: req.body.query || req.query.query || {},
                 Headers: req.body.headers || req.query.headers || {},
             };
             data = {
@@ -209,8 +210,7 @@ app.all('/sts-auth', function (req, res, next) {
     });
 });
 app.all('*', function (req, res, next) {
-    res.writeHead(404);
-    res.send('404 Not Found');
+    res.status(404).send('404 Not Found');
 });
 
 // 启动签名服务
