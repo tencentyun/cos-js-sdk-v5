@@ -143,7 +143,7 @@ var getTempKeys = function (callback) {
         Action: Action,
         durationSeconds: 7200,
         name: 'cos',
-        policy: encodeURIComponent(policyStr),
+        policy: encodeURIComponent(policyStr).replace(/\*/g,'%2A'),
     };
     params.Signature = util.getSignature(params, config.SecretKey, Method);
 
@@ -198,7 +198,7 @@ app.all('/sts-auth', function (req, res, next) {
                 SecretKey: tempKeys.credentials.tmpSecretKey,
                 Method: req.body.method || req.query.method,
                 Key: Key,
-                Query: req.body.query || req.query.method || {},
+                Query: req.body.query || req.query.query || {},
                 Headers: req.body.headers || req.query.headers || {},
             };
             data = {
