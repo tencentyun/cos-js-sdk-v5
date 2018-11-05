@@ -151,4 +151,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $inputBody){
 header('Content-Type: text/plain');
 header('Allow-Control-Allow-Origin: http://127.0.0.1'); // 这里修改允许跨域访问的网站
 header('Allow-Control-Allow-Headers: origin,accept,content-type');
-echo getAuthorization($method, $pathname, $query, $headers);
+$sign = getAuthorization($method, $pathname, $query, $headers);
+
+echo '{"sign":"' . $sign .'"}';

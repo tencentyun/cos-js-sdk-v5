@@ -47,15 +47,24 @@
     var cos = new COS({
         CompatibilityMode: true,
         ServiceDomain: 'http://cos.default.example.com',
+
+        // 后缀式
         Domain: 'http://cos.{Region}.example.com', // 后缀式
         ForcePathStyle: true, // 后缀式
+
+        // 前缀式
         // Domain: 'http://{Bucket}.cos.{Region}.example.com', // 前缀式
+
         getAuthorization: function (options, callback) {
-            var url = './auth.php?method=' + options.Method + '&pathname=' + encodeURIComponent(options.Key);
+            var url = './auth-json.php?method=' + options.Method + '&pathname=' + encodeURIComponent(options.Key);
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.onload = function (e) {
-                callback(e.target.responseText);
+                var sign;
+                try {
+                    sign = JSON.parse(e.target.responseText).sign;
+                } catch (e) {}
+                callback(sign);
             };
             xhr.send();
         },
@@ -92,7 +101,7 @@
 
     function getAuth() {
         var key = '1.png';
-        getAuthorization({
+        cos.options.getAuthorization({
             Method: 'get',
             Key: key
         }, function (auth) {
@@ -263,45 +272,6 @@
 
     function deleteBucketLifecycle() {
         cos.deleteBucketLifecycle({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
-            Region: config.Region
-        }, function (err, data) {
-            logger.log(err || data);
-        });
-    }
-
-    function putBucketReplication() {
-        var AppId = config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1);
-        cos.putBucketReplication({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
-            Region: config.Region,
-            ReplicationConfiguration: {
-                Role: "qcs::cam::uin/459000000:uin/459000000",
-                Rules: [{
-                    ID: "1",
-                    Status: "Enabled",
-                    Prefix: "img/",
-                    Destination: {
-                        Bucket: "qcs::cos:ap-guangzhou::test-" + AppId
-                    },
-                }]
-            }
-        }, function (err, data) {
-            logger.log(err || data);
-        });
-    }
-
-    function getBucketReplication() {
-        cos.getBucketReplication({
-            Bucket: config.Bucket, // Bucket 格式：test-1250000000
-            Region: config.Region
-        }, function (err, data) {
-            logger.log(err || data);
-        });
-    }
-
-    function deleteBucketReplication() {
-        cos.deleteBucketReplication({
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: config.Region
         }, function (err, data) {
@@ -654,9 +624,6 @@
             'getBucketLifecycle',
             'putBucketLifecycle',
             'deleteBucketLifecycle',
-            'putBucketReplication',
-            'getBucketReplication',
-            'deleteBucketReplication',
             'deleteBucket',
             'putObject',
             'putObjectCopy',

@@ -898,47 +898,7 @@ Put Bucket Lifecycle 接口可以设置存储桶的生命周期规则。
 
 #### 使用示例
 
-示例一：上传 30 天后，沉降至低频存储
-```js
-cos.putBucketLifecycle({
-    Bucket: 'test-1250000000', /* 必须 */
-    Region: 'ap-guangzhou',    /* 必须 */
-    Rules: [{
-        "ID": "1",
-        "Status": "Enabled",
-        "Filter": {},
-        "Transition": {
-            "Days": "30",
-            "StorageClass": "STANDARD_IA"
-        }
-    }],
-}, function(err, data) {
-    console.log(err || data);
-});
-```
-
-示例二：指定目录前缀 dir/，上传 90 天后，沉降至归档存储
-```js
-cos.putBucketLifecycle({
-    Bucket: 'test-1250000000', /* 必须 */
-    Region: 'ap-guangzhou',    /* 必须 */
-    Rules: [{
-        "ID": "2",
-        "Filter": {
-            "Prefix": "dir/",
-        },
-        "Status": "Enabled",
-        "Transition": {
-            "Days": "90",
-            "StorageClass": "ARCHIVE"
-        }
-    }],
-}, function(err, data) {
-    console.log(err || data);
-});
-```
-
-示例三：上传 180 天后，删除文件
+示例一：上传 180 天后，删除文件
 ```js
 cos.putBucketLifecycle({
     Bucket: 'test-1250000000', /* 必须 */
@@ -956,7 +916,7 @@ cos.putBucketLifecycle({
 });
 ```
 
-示例四：上传 30 天后，删除碎片
+示例二：上传 30 天后，删除碎片（未完成的UploadId）
 ```js
 cos.putBucketLifecycle({
     Bucket: 'test-1250000000', /* 必须 */
@@ -988,6 +948,8 @@ cos.putBucketLifecycle({
 | - - - Prefix | 规则要匹配上的 Object 前缀 | String | 否 |
 | - - Expiration | 表示对 Object 删除 | Object | 否 |
 | - - - Days | 规则生效天数，按文件上传时间开始算，必须为正整数 | Object | 是 |
+| - - AbortIncompleteMultipartUpload | 表示删除碎片 | Object | 否 |
+| - - - Days | 规则生效天数，按文件上传时间开始算，必须为正整数 | Object | 是 |
 
 #### 回调函数说明
 
@@ -1015,167 +977,6 @@ Delete Bucket Lifecycle 接口可以删除存储桶的生命周期规则。
 
 ```js
 cos.deleteBucketLifecycle({
-    Bucket: 'test-1250000000', /* 必须 */
-    Region: 'ap-guangzhou',    /* 必须 */
-}, function(err, data) {
-    console.log(err || data);
-});
-```
-
-#### 参数说明
-
-| 参数名 | 参数描述 | 类型 | 必填 |
-|--------|----------|------|------|
-| Bucket | Bucket 的名称。命名规则为{name}-{appid} ，此处填写的存储桶名称必须为此格式 | String | 是 |
-| Region | Bucket 所在区域。枚举值请见：[Bucket 地域信息](https://cloud.tencent.com/document/product/436/6224) | String | 是 |
-
-#### 回调函数说明
-
-```js
-function(err, data) { ... }
-```
-
-| 参数名 | 参数描述 | 类型 |
-|--------|----------|------|
-| err | 请求发生错误时返回的对象，包括网络错误和业务错误。如果请求成功，则为空，[错误码文档](https://cloud.tencent.com/document/product/436/7730) | Object |
-| - statusCode | 请求返回的 HTTP 状态码，如 200、403、404 等 | Number |
-| - headers | 请求返回的头部信息 | Object |
-| data | 请求成功时返回的对象，如果请求发生错误，则为空 | Object |
-| - statusCode | 请求返回的 HTTP 状态码，如 200、403、404 等 | Number |
-| - headers | 请求返回的头部信息 | Object |
-
-
-### Get Bucket Replication
-
-Get Bucket Replication 接口实现获取存储桶的跨区域复制规则
-
-#### 使用示例
-
-```js
-cos.getBucketReplication({
-    Bucket: 'test-1250000000', /* 必须 */
-    Region: 'ap-guangzhou',    /* 必须 */
-}, function(err, data) {
-    console.log(err || data);
-});
-```
-
-#### 返回示例
-
-```json
-{
-    "ReplicationConfiguration": {
-        "Role": "qcs::cam::uin/459000000:uin/459000000",
-        "Rules": {
-            "ID": "1",
-            "Status": "Enabled",
-            "Prefix": "sync/",
-            "Destination": {
-                "Bucket": "qcs:id/0:cos:ap-chengdu:appid/1250000000:backup",
-                "StorageClass": "Standard"
-            }
-        }
-    },
-    "statusCode": 200,
-    "headers": {}
-}
-```
-
-#### 参数说明
-
-| 参数名 | 参数描述 | 类型 | 必填 |
-|--------|----------|------|------|
-| Bucket | Bucket 的名称。命名规则为{name}-{appid} ，此处填写的存储桶名称必须为此格式 | String | 是 |
-| Region | Bucket 所在区域。枚举值请见：[Bucket 地域信息](https://cloud.tencent.com/document/product/436/6224) | String | 是 |
-
-#### 回调函数说明
-
-```js
-function(err, data) { ... }
-```
-
-| 参数名 | 参数描述 | 类型 |
-|--------|----------|------|
-| err | 请求发生错误时返回的对象，包括网络错误和业务错误。如果请求成功，则为空，[错误码文档](https://cloud.tencent.com/document/product/436/7730) | Object |
-| data | 请求成功时返回的对象，如果请求发生错误，则为空 | Object |
-| - ReplicationConfiguration | 跨区域复制规则 | Object |
-| - - Role | 复制过程以什么角色的身份，格式：qcs::cam::uin/10001:uin/10002，其中 10001 是主帐号，10002 是子帐号 | Object |
-| - - Rules | 复制具体规则列表 | ObjectArray |
-| - - - ID | 任务标识 ID | String |
-| - - - Status | 规则状态，枚举值：Enabled、Disabled | String |
-| - - - Prefix | 要复制的 Object 前缀 | String |
-| - - - Destination | 要复制的 Object 前缀 | Object |
-| - - - - Bucket | 要复制到的存储桶，格式：qcs:id/0:cos:&lt;Region>:appid/&lt;AppId>:&lt;ShortBucketName>，例如：qcs:id/0:cos:ap-guangzhou:appid/1250000000:backup | Object |
-| - - - - StorageClass | 复制后的存储类型，枚举值：STANDARD、STANDARD_IA，默认值：STANDARD | Object |
-
-
-### Put Bucket Replication
-
-Put Bucket Replication 接口实现设置存储桶的跨区域复制规则。
-
-#### 使用示例
-
-```js
-cos.putBucketReplication({
-    Bucket: 'test-1250000000',  /* 必须 */
-    Region: 'ap-guangzhou',     /* 必须 */
-    ReplicationConfiguration: { /* 必须 */
-        Role: "qcs::cam::uin/459000000:uin/459000000",
-        Rules: [{
-            ID: "1",
-            Status: "Enabled",
-            Prefix: "sync/",
-            Destination: {
-                Bucket: "qcs:id/0:cos:ap-chengdu:appid/1250000000:backup",
-                StorageClass: "Standard",
-            }
-        }]
-    }
-}, function (err, data) {
-    console.log(err || data);
-});
-```
-
-#### 参数说明
-
-| 参数名 | 参数描述 | 类型 | 必填 |
-|--------|----------|------|------|
-| Bucket | Bucket 的名称。命名规则为{name}-{appid} ，此处填写的存储桶名称必须为此格式 | String | 是 |
-| Region | Bucket 所在区域。枚举值请见：[Bucket 地域信息](https://cloud.tencent.com/document/product/436/6224) | String | 是 |
-| ReplicationConfiguration | 定义跨区域复制规则 | Object | 是 |
-| - Role | 复制过程以什么角色的身份，格式：qcs::cam::uin/10001:uin/10002，其中 10001 是主帐号，10002 是子帐号 | Object | 否 |
-| - Rules | 复制具体规则列表 | ObjectArray | 是 |
-| - - ID | 任务标识 ID | String | 否 |
-| - - Status | 规则状态，枚举值：Enabled、Disabled | String | 是 |
-| - - Prefix | 要复制的 Object 前缀 | String | 否 |
-| - - Destination | 要复制的 Object 前缀 | Object | 是 |
-| - - - Bucket | 要复制到的存储桶，格式：qcs:id/0:cos:&lt;Region>:appid/&lt;AppId>:&lt;ShortBucketName>，例如：qcs:id/0:cos:ap-guangzhou:appid/1250000000:backup | Object | 是 |
-| - - - StorageClass | 复制后的存储类型，枚举值：STANDARD、STANDARD_IA，默认值：STANDARD | Object | 否 |
-
-#### 回调函数说明
-
-```js
-function(err, data) { ... }
-```
-
-| 参数名 | 参数描述 | 类型 |
-|--------|----------|------|
-| err | 请求发生错误时返回的对象，包括网络错误和业务错误。如果请求成功，则为空，[错误码文档](https://cloud.tencent.com/document/product/436/7730) | Object |
-| - statusCode | 请求返回的 HTTP 状态码，如 200、403、404 等 | Number |
-| - headers | 请求返回的头部信息 | Object |
-| data | 请求成功时返回的对象，如果请求发生错误，则为空 | Object |
-| - statusCode | 请求返回的 HTTP 状态码，如 200、403、404 等 | Number |
-| - headers | 请求返回的头部信息 | Object |
-
-
-### Delete Bucket Replication
-
-Delete Bucket Replication 接口可以删除存储桶的跨区域复制规则。
-
-#### 使用示例
-
-```js
-cos.deleteBucketReplication({
     Bucket: 'test-1250000000', /* 必须 */
     Region: 'ap-guangzhou',    /* 必须 */
 }, function(err, data) {
