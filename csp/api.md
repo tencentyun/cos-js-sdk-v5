@@ -517,12 +517,12 @@ function(err, data) { ... }
 | - GrantFullControl | 赋予被授权者读写权限 | String |
 | - Owner | Bucket 持有者信息 | Object |
 | - - DisplayName | Bucket 持有者的名称 | String |
-| - - ID | Bucket 持有者 ID，<br>格式：qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin> <br>如果是根帐号，&lt;OwnerUin> 和 &lt;SubUin> 是同一个值 | String |
+| - - ID | Bucket 持有者 ID，<br>格式：qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin> <br>如果是根帐号，&lt;RootUin> 和 &lt;SubUin> 是同一个值 | String |
 | - Grants | 被授权者信息与权限信息列表 | ObjectArray |
 | - - Permission | 指明授予被授权者的权限信息，枚举值：READ、WRITE、READ_ACP、WRITE_ACP、FULL_CONTROL | String |
 | - - Grantee | 说明被授权者的信息。type 类型可以为 RootAccount， Subaccount；<br>当 type 类型为 RootAccount 时，ID 中指定的是根帐号；<br>当 type 类型为 Subaccount 时，ID 中指定的是子帐号 | Object |
 | - - - DisplayName | 用户的名称 | String |
-| - - - ID | 用户的 ID，<br>如果是根帐号，格式为：qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin> <br>或 qcs::cam::anyone:anyone （指代所有用户）<br>如果是子帐号，格式为： qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin> | String |
+| - - - ID | 用户的 ID，<br>如果是根帐号，格式为：qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin> <br>或 qcs::cam::anyone:anyone （指代所有用户）<br>如果是子帐号，格式为： qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin> | String |
 
 
 ### Put Bucket ACL
@@ -594,11 +594,11 @@ cos.putBucketAcl({
 | Bucket | Bucket 的名称。命名规则为{name}-{appid} ，此处填写的存储桶名称必须为此格式 | String | 是 |
 | Region | Bucket 所在区域。枚举值请见：[Bucket 地域信息](https://cloud.tencent.com/document/product/436/6224) | String | 是 |
 | ACL | 定义 Object 的 ACL 属性。有效值：private、public-read、public-read-write；默认值：private | String | 否 |
-| GrantRead | 赋予被授权者读的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
-| GrantWrite | 赋予被授权者写的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
-| GrantReadAcp | 赋予被授权者读取Acl的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
-| GrantWriteAcp | 赋予被授权者写Acl的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
-| GrantFullControl | 赋予被授权者读写权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantRead | 赋予被授权者读的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantWrite | 赋予被授权者写的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantReadAcp | 赋予被授权者读取Acl的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantWriteAcp | 赋予被授权者写Acl的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantFullControl | 赋予被授权者读写权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
 | AccessControlPolicy | 说明跨域资源共享配置的所有信息列表 | Object | 否 |
 | - Owner | 代表存储桶所有者的对象 | Object | 否 |
 | - - ID | 代表用户 ID 的字符串，格式如 qcs::cam::uin/1001:uin/1001，1001 是 uin(帐号ID) | Object | 否 |
@@ -1020,9 +1020,9 @@ cos.putObject({
 | Expect | 当使用 Expect: 100-continue 时，在收到服务端确认后，才会发送请求内容 | String | 否 |
 | Expires |RFC 2616 中定义的过期时间，将作为 Object 元数据保存 | String | 否 |
 | ACL | 定义 Object 的 ACL 属性。有效值：private、public-read、public-read-write；默认值：private | String | 否 |
-| GrantRead | 赋予被授权者读的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
-| GrantWrite | 赋予被授权者写的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
-| GrantFullControl | 赋予被授权者读写权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantRead | 赋予被授权者读的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantWrite | 赋予被授权者写的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantFullControl | 赋予被授权者读写权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
 | StorageClass | 设置 Object 的存储级别，枚举值：STANDARD、STANDARD_IA，默认值：STANDARD | String | 否 |
 | x-cos-meta- * | 允许用户自定义的头部信息，将作为 Object 元数据返回。大小限制 2K | String | 否 |
 | Body | 上传文件的内容，可以为`字符串`，`File 对象`或者 `Blob 对象` | String\File\Blob | 是 |
@@ -1184,13 +1184,13 @@ function(err, data) { ... }
 | - headers | 请求返回的头部信息 | Object |
 | - ACL | Object 的 ACL 属性。枚举值：private、public-read、public-read-write、default | Object |
 | - Owner | 标识资源的所有者 | Object |
-| - - ID | Object 持有者 ID，格式：qcs::cam::uin/&lt;OwnerUin>:uin/lt;SubUin> <br>如果是根帐号，&lt;OwnerUin> 和&lt;SubUin> 是同一个值 | String |
+| - - ID | Object 持有者 ID，格式：qcs::cam::uin/&lt;RootUin>:uin/lt;SubUin> <br>如果是根帐号，&lt;RootUin> 和&lt;SubUin> 是同一个值 | String |
 | - - DisplayName | Object 持有者的名称 | String |
 | - Grants | 被授权者信息与权限信息列表 | ObjectArray |
 | - - Permission | 指明授予被授权者的权限信息，枚举值：READ、WRITE、READ_ACP、WRITE_ACP、FULL_CONTROL | String |
 | - - Grantee | 说明被授权者的信息。type 类型可以为 RootAccount、Subaccount；当 type 类型为 RootAccount 时，ID 中指定的是根帐号;当 type 类型为 Subaccount 时，ID 中指定的是子帐号 | Object |
 | - - - DisplayName | 用户的名称 | String |
-| - - - ID | 用户的 ID，如果是根帐号，格式为：qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin> <br>或 qcs::cam::anyone:anyone （指代所有用户）如果是子帐号，<br>格式为： qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin> | String |
+| - - - ID | 用户的 ID，如果是根帐号，格式为：qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin> <br>或 qcs::cam::anyone:anyone （指代所有用户）如果是子帐号，<br>格式为： qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin> | String |
 
 
 ### Put Object ACL
@@ -1253,18 +1253,18 @@ cos.putObjectAcl({
 | Region | Bucket 所在区域。枚举值请见：[Bucket 地域信息](https://cloud.tencent.com/document/product/436/6224) | String | 是 |
 | Key | 对象键（Object 的名称），对象在存储桶中的唯一标识，[对象键说明](https://cloud.tencent.com/document/product/436/13324) | String | 是 |
 | ACL | 定义 Object 的 ACL 属性。有效值：private、public-read、public-read-write、default；默认值：private；传 default 时清除文件权限，权限恢复为继承权限 | String | 否 |
-| GrantRead | 赋予被授权者读的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
-| GrantWrite | 赋予被授权者写的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
-| GrantFullControl | 赋予被授权者读写权限。<br>格式：id=" ",id=" "；当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantRead | 赋予被授权者读的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantWrite | 赋予被授权者写的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantFullControl | 赋予被授权者读写权限。<br>格式：id=" ",id=" "；当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
 | AccessControlPolicy | Object 的 ACL JSON 定义格式 | Object |
 | - Owner | 标识资源的所有者 | Object |
-| - - ID | Object 持有者 ID，格式：qcs::cam::uin/&lt;OwnerUin>:uin/lt;SubUin> <br>如果是根帐号，&lt;OwnerUin> 和&lt;SubUin> 是同一个值 | String |
+| - - ID | Object 持有者 ID，格式：qcs::cam::uin/&lt;RootUin>:uin/lt;SubUin> <br>如果是根帐号，&lt;RootUin> 和&lt;SubUin> 是同一个值 | String |
 | - - DisplayName | Object 持有者的名称 | String |
 | - Grants | 被授权者信息与权限信息列表 | ObjectArray |
 | - - Permission | 指明授予被授权者的权限信息，枚举值：READ、WRITE、READ_ACP、WRITE_ACP、FULL_CONTROL | String |
 | - - Grantee | 说明被授权者的信息。type 类型可以为 RootAccount、Subaccount；当 type 类型为 RootAccount 时，ID 中指定的是根帐号;当 type 类型为 Subaccount 时，ID 中指定的是子帐号 | Object |
 | - - - DisplayName | 用户的名称 | String |
-| - - - ID | 用户的 ID，如果是根帐号，格式为：qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin> <br>或 qcs::cam::anyone:anyone （指代所有用户）如果是子帐号，<br>格式为： qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin> | String |
+| - - - ID | 用户的 ID，如果是根帐号，格式为：qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin> <br>或 qcs::cam::anyone:anyone （指代所有用户）如果是子帐号，<br>格式为： qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin> | String |
 
 #### 回调函数说明
 
@@ -1360,9 +1360,9 @@ cos.putObjectCopy({
 | Key | 对象键（Object 的名称），对象在存储桶中的唯一标识，[对象键说明](https://cloud.tencent.com/document/product/436/13324) | String | 是 |
 | CopySource | 源文件 URL 路径 | String | 是 |
 | ACL | 定义 Object 的 ACL 属性。有效值：private、public-read、public-read-write；默认值：private | String | 否 |
-| GrantRead | 赋予被授权者读的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
-| GrantWrite | 赋予被授权者写的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
-| GrantFullControl | 赋予被授权者读写权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantRead | 赋予被授权者读的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantWrite | 赋予被授权者写的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantFullControl | 赋予被授权者读写权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
 | MetadataDirective | 是否拷贝元数据，枚举值：Copy, Replaced，默认值 Copy。假如标记为 Copy，忽略 Header 中的用户元数据信息直接复制；假如标记为 Replaced，按 Header 信息修改元数据。**当目标路径和原路径一致，即用户试图修改元数据时，必须为 Replaced** | String | 否 |
 | CopySourceIfModifiedSince | 当 Object 在指定时间后被修改，则执行操作，否则返回 412。**可与 CopySourceIfNoneMatch 一起使用，与其他条件联合使用返回冲突** | String | 否 |
 | CopySourceIfUnmodifiedSince | 当 Object 在指定时间后未被修改，则执行操作，否则返回 412。**可与 CopySourceIfMatch 一起使用，与其他条件联合使用返回冲突** | String | 否 |
@@ -1429,9 +1429,9 @@ cos.multipartInit({
 | ContentType | RFC 2616 中定义的内容类型（MIME），将作为 Object 元数据保存 | String | 否 |
 | Expires | RFC 2616 中定义的过期时间，将作为 Object 元数据保存 | String | 否 |
 | ACL | 定义 Object 的 ACL 属性。有效值：private、public-read、public-read-write；默认值：private | String | 否 |
-| GrantRead | 赋予被授权者读的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
-| GrantWrite | 赋予被授权者写的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
-| GrantFullControl | 赋予被授权者读写权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;OwnerUin>:uin/&lt;OwnerUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantRead | 赋予被授权者读的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantWrite | 赋予被授权者写的权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
+| GrantFullControl | 赋予被授权者读写权限。格式：id=" ",id=" "；<br>当需要给子账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin>"，<br>当需要给根账户授权时，id="qcs::cam::uin/&lt;RootUin>:uin/&lt;RootUin>"，<br>例如：'id="qcs::cam::uin/123:uin/123", id="qcs::cam::uin/123:uin/456"' | String | 否 |
 | StorageClass | 设置Object的存储级别，枚举值：STANDARD、STANDARD_IA，默认值：STANDARD | String | 否 |
 | x-cos-meta- * | 允许用户自定义的头部信息，将作为 Object 元数据返回。大小限制2K | String | 否 |
 
@@ -1605,7 +1605,7 @@ function(err, data) { ... }
 | - UploadId | 标识本次分块上传的 ID | String |
 | - Initiator | 用来表示本次上传发起者的信息 | Object |
 | - - DisplayName | 上传发起者的名称 | String |
-| - - ID | 上传发起者 ID，格式：qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin> <br>如果是根帐号，&lt;OwnerUin> 和 &lt;SubUin> 是同一个值 | String |
+| - - ID | 上传发起者 ID，格式：qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin> <br>如果是根帐号，&lt;RootUin> 和 &lt;SubUin> 是同一个值 | String |
 | - Owner | 用来表示这些分块所有者的信息 | Object |
 | - - DisplayName | Bucket 持有者的名称 | String |
 | - - ID | Bucket 持有者 ID，一般为用户的 UIN | String |
@@ -1728,10 +1728,10 @@ function(err, data) { ... }
 | - StorageClass | 用来表示分块的存储级别，枚举值：STANDARD、STANDARD_IA | String |
 | - Initiator | 用来表示本次上传发起者的信息 | Object |
 | - - DisplayName | 上传发起者的名称 | String |
-| - - ID | 上传发起者 ID，格式：qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin> 如果是根帐号，&lt;OwnerUin> 和 &lt;SubUin> 是同一个值 | String |
+| - - ID | 上传发起者 ID，格式：qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin> 如果是根帐号，&lt;RootUin> 和 &lt;SubUin> 是同一个值 | String |
 | - Owner | 用来表示这些分块所有者的信息 | Object |
 | - - DisplayName | Bucket 持有者的名称 | String |
-| - - ID | Bucket 持有者 ID，格式：qcs::cam::uin/&lt;OwnerUin>:uin/&lt;SubUin> 如果是根帐号，&lt;OwnerUin> 和 &lt;SubUin> 是同一个值 | String |
+| - - ID | Bucket 持有者 ID，格式：qcs::cam::uin/&lt;RootUin>:uin/&lt;SubUin> 如果是根帐号，&lt;RootUin> 和 &lt;SubUin> 是同一个值 | String |
 | - Initiated | 分块上传的起始时间 | String |
 
 
