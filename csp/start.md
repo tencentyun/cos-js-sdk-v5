@@ -12,7 +12,7 @@
 2. 到COS 对象存储控制台创建存储桶，得到 Bucket（存储桶名称） 和 Region（地域名称）
 3. 到控制台密钥管理获取您的项目 SecretId 和 SecretKey。
 4. 配置 CORS 规则，配置例子如下图：
-![cors](//mc.qcloudimg.com/static/img/2e7791e9274ce3ebf8b25bbeafcd7b45/image.png)
+![cors](../demo/cors.png)
 
 > 关于文章中出现的 SecretId、SecretKey、Bucket 等名称的含义和获取方式请参考：[COS 术语信息](https://cloud.tencent.com/document/product/436/7751)
 
