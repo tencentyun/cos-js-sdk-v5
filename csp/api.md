@@ -28,9 +28,9 @@ JavaScript SDK github 地址：[tencentyun/cos-js-sdk-v5](https://github.com/ten
 var cos = new COS({
     // 必选参数
     getAuthorization: function (options, callback) {
-        $.get('http://example.com/server/auth.php', {
+        $.get('http://example.com/server/auth-json.php', {
             method: options.Method,
-            pathname: '/' + options.Key,
+            path: '/' + options.Key,
         }, function (Authorization) {
             callback(Authorization);
         });
