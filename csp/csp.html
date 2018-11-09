@@ -56,7 +56,7 @@
         // Domain: 'http://{Bucket}.cos.{Region}.example.com', // 前缀式
 
         getAuthorization: function (options, callback) {
-            var url = './auth-json.php?method=' + options.Method + '&pathname=' + encodeURIComponent(options.Key);
+            var url = './auth-json.php?method=' + options.Method + '&path=' + encodeURIComponent(options.Key);
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.onload = function (e) {
