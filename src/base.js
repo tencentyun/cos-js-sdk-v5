@@ -1682,7 +1682,7 @@ function getObjectUrl(params, callback) {
         callback(null, {Url: url});
         return url;
     }
-    var authorization = getAuthorizationAsync.call(this, {
+    var AuthData = getAuthorizationAsync.call(this, {
         Bucket: params.Bucket || '',
         Region: params.Region || '',
         Method: params.Method || 'get',
@@ -1691,7 +1691,7 @@ function getObjectUrl(params, callback) {
     }, function (AuthData) {
         if (!callback) return;
         var signUrl = url;
-        signUrl += '?sign=' + encodeURIComponent(AuthData.Authorization);
+        signUrl += '?' + AuthData.Authorization;
         AuthData.XCosSecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.XCosSecurityToken);
         AuthData.ClientIP && (signUrl += '&clientIP=' + AuthData.ClientIP);
         AuthData.ClientUA && (signUrl += '&clientUA=' + AuthData.ClientUA);
@@ -1700,8 +1700,9 @@ function getObjectUrl(params, callback) {
             callback(null, {Url: signUrl});
         });
     });
-    if (authorization) {
-        return url + '?sign=' + encodeURIComponent(authorization);
+    if (AuthData) {
+        return url + '?' + AuthData.Authorization +
+            (AuthData.XCosSecurityToken ? '&x-cos-security-token=' + AuthData.XCosSecurityToken : '');
     } else {
         return url;
     }
@@ -1890,17 +1891,23 @@ function getAuthorizationAsync(params, callback) {
             calcAuthByTmpKey();
         });
     } else { // 内部计算获取签名
-        var Authorization = util.getAuth({
-            SecretId: params.SecretId || self.options.SecretId,
-            SecretKey: params.SecretKey || self.options.SecretKey,
-            Method: params.Method,
-            Key: PathName,
-            Query: params.Query,
-            Headers: params.Headers,
-            Expires: params.Expires,
-        });
-        callback && callback({Authorization: Authorization});
-        return Authorization;
+        return (function () {
+            var Authorization = util.getAuth({
+                SecretId: params.SecretId || self.options.SecretId,
+                SecretKey: params.SecretKey || self.options.SecretKey,
+                Method: params.Method,
+                Key: PathName,
+                Query: params.Query,
+                Headers: params.Headers,
+                Expires: params.Expires,
+            });
+            var AuthData = {
+                Authorization: Authorization,
+                XCosSecurityToken: self.options.XCosSecurityToken,
+            };
+            callback && callback(AuthData);
+            return AuthData;
+        })();
     }
     return '';
 }
