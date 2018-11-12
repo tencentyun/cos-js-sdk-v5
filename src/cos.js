@@ -20,13 +20,14 @@ var defaultOptions = {
     CopySliceSize: 1024 * 1024 * 10,
     ProgressInterval: 1000,
     UploadQueueSize: 10000,
+    UploadIdCacheLimit: 50,
+    UploadCheckContentMd5: false,
     Domain: '',
     ServiceDomain: '',
     Protocol: '',
     CompatibilityMode: false,
     ForcePathStyle: false,
     XCosSecurityToken: '',
-    UploadIdCacheLimit: 50,
 };
 
 // 对外暴露的类

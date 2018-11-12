@@ -976,39 +976,42 @@ function putObject(params, callback) {
     var FileSize = params.ContentLength;
     var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
-    submitRequest.call(self, {
-        TaskId: params.TaskId,
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        headers: params.Headers,
-        body: params.Body,
-        onProgress: onProgress,
-    }, function (err, data) {
-        if (err) {
-            onProgress(null, true);
-            return callback(err);
-        }
-        onProgress({loaded: FileSize, total: FileSize}, true);
-        if (data && data.headers && data.headers['etag']) {
-            var url = getUrl({
-                ForcePathStyle: self.options.ForcePathStyle,
-                protocol: self.options.Protocol,
-                domain: self.options.Domain,
-                bucket: params.Bucket,
-                region: params.Region,
-                object: params.Key,
-            });
-            url = url.substr(url.indexOf('://') + 3);
-            return callback(null, {
-                Location: url,
-                ETag: data.headers['etag'],
-                statusCode: data.statusCode,
-                headers: data.headers,
-            });
-        }
-        callback(null, data);
+    util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
+        md5 && (params.Headers['Content-MD5'] = util.binaryBase64(md5));
+        submitRequest.call(self, {
+            TaskId: params.TaskId,
+            method: 'PUT',
+            Bucket: params.Bucket,
+            Region: params.Region,
+            Key: params.Key,
+            headers: params.Headers,
+            body: params.Body,
+            onProgress: onProgress,
+        }, function (err, data) {
+            if (err) {
+                onProgress(null, true);
+                return callback(err);
+            }
+            onProgress({loaded: FileSize, total: FileSize}, true);
+            if (data && data.headers && data.headers['etag']) {
+                var url = getUrl({
+                    ForcePathStyle: self.options.ForcePathStyle,
+                    protocol: self.options.Protocol,
+                    domain: self.options.Domain,
+                    bucket: params.Bucket,
+                    region: params.Region,
+                    object: params.Key,
+                });
+                url = url.substr(url.indexOf('://') + 3);
+                return callback(null, {
+                    Location: url,
+                    ETag: data.headers['etag'],
+                    statusCode: data.statusCode,
+                    headers: data.headers,
+                });
+            }
+            callback(null, data);
+        });
     });
 }
 
@@ -1398,28 +1401,31 @@ function multipartUpload(params, callback) {
 
     var self = this;
     util.getFileSize('multipartUpload', params, function () {
-        submitRequest.call(self, {
-            TaskId: params.TaskId,
-            method: 'PUT',
-            Bucket: params.Bucket,
-            Region: params.Region,
-            Key: params.Key,
-            qs: {
-                partNumber: params['PartNumber'],
-                uploadId: params['UploadId'],
-            },
-            headers: params.Headers,
-            onProgress: params.onProgress,
-            body: params.Body || null
-        }, function (err, data) {
-            if (err) {
-                return callback(err);
-            }
-            data['headers'] = data['headers'] || {};
-            callback(null, {
-                ETag: data['headers']['etag'] || '',
-                statusCode: data.statusCode,
-                headers: data.headers,
+        util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
+            md5 && (params.Headers['Content-MD5'] = util.binaryBase64(md5));
+            submitRequest.call(self, {
+                TaskId: params.TaskId,
+                method: 'PUT',
+                Bucket: params.Bucket,
+                Region: params.Region,
+                Key: params.Key,
+                qs: {
+                    partNumber: params['PartNumber'],
+                    uploadId: params['UploadId'],
+                },
+                headers: params.Headers,
+                onProgress: params.onProgress,
+                body: params.Body || null
+            }, function (err, data) {
+                if (err) {
+                    return callback(err);
+                }
+                data['headers'] = data['headers'] || {};
+                callback(null, {
+                    ETag: data['headers']['etag'] || '',
+                    statusCode: data.statusCode,
+                    headers: data.headers,
+                });
             });
         });
     });

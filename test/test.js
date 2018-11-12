@@ -100,6 +100,7 @@ var cos = new COS({
     ChunkSize: 1024 * 1024,  // 控制分片大小，单位 B
     ProgressInterval: 1,  // 控制 onProgress 回调的间隔
     ChunkRetryTimes: 3,   // 控制文件切片后单片上传失败后重试次数
+    UploadCheckContentMd5: true,   // 上传过程计算 Content-MD5
 });
 
 var AppId = config.AppId;
@@ -1589,7 +1590,7 @@ it('sliceCopyFile() 单片复制', function (assert) {
     }
     var fileBlob = dataURItoBlob('data:text/plain;base64,5Lit5paH');
     // 这里两个用户正式测试的时候需要给 putObject 计算并加上 Content-MD5 字段
-    it('putObject 带 Content-MD5 中文文件内容', function (assert) {
+    it('putObject 中文文件内容 带 Content-MD5', function (assert) {
         return new Promise(function (done) {
             var Key = '中文.txt';
             cos.putObject({
@@ -1603,20 +1604,20 @@ it('sliceCopyFile() 单片复制', function (assert) {
             });
         });
     });
-    // it('putObject 带 Content-MD5 中文字符串', function (assert) {
-    //     return new Promise(function (done) {
-    //         var Key = '中文.txt';
-    //         cos.putObject({
-    //             Bucket: config.Bucket, // Bucket 格式：test-1250000000
-    //             Region: config.Region,
-    //             Key: Key,
-    //             Body: fileBlob,
-    //         }, function (err, data) {
-    //             assert.ok(data && data.ETag, '成功进行上传');
-    //             done();
-    //         });
-    //     });
-    // });
+    it('putObject 中文字符串 带 Content-MD5', function (assert) {
+        return new Promise(function (done) {
+            var Key = '中文.txt';
+            cos.putObject({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: Key,
+                Body: '中文',
+            }, function (err, data) {
+                assert.ok(data && data.ETag, '成功进行上传');
+                done();
+            });
+        });
+    });
 })();
 
 it('deleteMultipleObject Key 带中文字符', function (assert) {

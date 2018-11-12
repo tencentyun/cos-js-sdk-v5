@@ -7,7 +7,7 @@
 		exports["COS"] = factory();
 	else
 		root["COS"] = factory();
-})(this, function() {
+})(typeof self !== 'undefined' ? self : this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -580,6 +580,22 @@ util.getFileUUID = function (file, ChunkSize) {
         return util.md5([file.name, file.size, file.lastModifiedDate, ChunkSize].join('::'));
     } else {
         return null;
+    }
+};
+util.getBodyMd5 = function (UploadCheckContentMd5, Body, callback) {
+    callback = callback || noop;
+    if (UploadCheckContentMd5) {
+        if (typeof Body === 'string') {
+            callback(util.md5(Body, true));
+        } else if (Body instanceof global.Blob) {
+            util.getFileMd5(Body, function (err, md5) {
+                callback(md5);
+            });
+        } else {
+            callback();
+        }
+    } else {
+        callback();
     }
 };
 
@@ -1909,12 +1925,14 @@ var defaultOptions = {
     CopySliceSize: 1024 * 1024 * 10,
     ProgressInterval: 1000,
     UploadQueueSize: 10000,
+    UploadIdCacheLimit: 50,
+    UploadCheckContentMd5: false,
     Domain: '',
     ServiceDomain: '',
     Protocol: '',
     CompatibilityMode: false,
     ForcePathStyle: false,
-    UploadIdCacheLimit: 50
+    XCosSecurityToken: ''
 };
 
 // 对外暴露的类
@@ -1938,7 +1956,7 @@ util.extend(COS.prototype, base);
 util.extend(COS.prototype, advance);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.21';
+COS.version = '0.4.22';
 
 module.exports = COS;
 
@@ -4825,39 +4843,42 @@ function putObject(params, callback) {
     var FileSize = params.ContentLength;
     var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
-    submitRequest.call(self, {
-        TaskId: params.TaskId,
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        headers: params.Headers,
-        body: params.Body,
-        onProgress: onProgress
-    }, function (err, data) {
-        if (err) {
-            onProgress(null, true);
-            return callback(err);
-        }
-        onProgress({ loaded: FileSize, total: FileSize }, true);
-        if (data && data.headers && data.headers['etag']) {
-            var url = getUrl({
-                ForcePathStyle: self.options.ForcePathStyle,
-                protocol: self.options.Protocol,
-                domain: self.options.Domain,
-                bucket: params.Bucket,
-                region: params.Region,
-                object: params.Key
-            });
-            url = url.substr(url.indexOf('://') + 3);
-            return callback(null, {
-                Location: url,
-                ETag: data.headers['etag'],
-                statusCode: data.statusCode,
-                headers: data.headers
-            });
-        }
-        callback(null, data);
+    util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
+        md5 && (params.Headers['Content-MD5'] = util.binaryBase64(md5));
+        submitRequest.call(self, {
+            TaskId: params.TaskId,
+            method: 'PUT',
+            Bucket: params.Bucket,
+            Region: params.Region,
+            Key: params.Key,
+            headers: params.Headers,
+            body: params.Body,
+            onProgress: onProgress
+        }, function (err, data) {
+            if (err) {
+                onProgress(null, true);
+                return callback(err);
+            }
+            onProgress({ loaded: FileSize, total: FileSize }, true);
+            if (data && data.headers && data.headers['etag']) {
+                var url = getUrl({
+                    ForcePathStyle: self.options.ForcePathStyle,
+                    protocol: self.options.Protocol,
+                    domain: self.options.Domain,
+                    bucket: params.Bucket,
+                    region: params.Region,
+                    object: params.Key
+                });
+                url = url.substr(url.indexOf('://') + 3);
+                return callback(null, {
+                    Location: url,
+                    ETag: data.headers['etag'],
+                    statusCode: data.statusCode,
+                    headers: data.headers
+                });
+            }
+            callback(null, data);
+        });
     });
 }
 
@@ -5246,28 +5267,31 @@ function multipartUpload(params, callback) {
 
     var self = this;
     util.getFileSize('multipartUpload', params, function () {
-        submitRequest.call(self, {
-            TaskId: params.TaskId,
-            method: 'PUT',
-            Bucket: params.Bucket,
-            Region: params.Region,
-            Key: params.Key,
-            qs: {
-                partNumber: params['PartNumber'],
-                uploadId: params['UploadId']
-            },
-            headers: params.Headers,
-            onProgress: params.onProgress,
-            body: params.Body || null
-        }, function (err, data) {
-            if (err) {
-                return callback(err);
-            }
-            data['headers'] = data['headers'] || {};
-            callback(null, {
-                ETag: data['headers']['etag'] || '',
-                statusCode: data.statusCode,
-                headers: data.headers
+        util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
+            md5 && (params.Headers['Content-MD5'] = util.binaryBase64(md5));
+            submitRequest.call(self, {
+                TaskId: params.TaskId,
+                method: 'PUT',
+                Bucket: params.Bucket,
+                Region: params.Region,
+                Key: params.Key,
+                qs: {
+                    partNumber: params['PartNumber'],
+                    uploadId: params['UploadId']
+                },
+                headers: params.Headers,
+                onProgress: params.onProgress,
+                body: params.Body || null
+            }, function (err, data) {
+                if (err) {
+                    return callback(err);
+                }
+                data['headers'] = data['headers'] || {};
+                callback(null, {
+                    ETag: data['headers']['etag'] || '',
+                    statusCode: data.statusCode,
+                    headers: data.headers
+                });
             });
         });
     });
@@ -5529,7 +5553,7 @@ function getObjectUrl(params, callback) {
         callback(null, { Url: url });
         return url;
     }
-    var authorization = getAuthorizationAsync.call(this, {
+    var AuthData = getAuthorizationAsync.call(this, {
         Bucket: params.Bucket || '',
         Region: params.Region || '',
         Method: params.Method || 'get',
@@ -5538,7 +5562,7 @@ function getObjectUrl(params, callback) {
     }, function (AuthData) {
         if (!callback) return;
         var signUrl = url;
-        signUrl += '?sign=' + encodeURIComponent(AuthData.Authorization);
+        signUrl += '?' + AuthData.Authorization;
         AuthData.XCosSecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.XCosSecurityToken);
         AuthData.ClientIP && (signUrl += '&clientIP=' + AuthData.ClientIP);
         AuthData.ClientUA && (signUrl += '&clientUA=' + AuthData.ClientUA);
@@ -5547,8 +5571,8 @@ function getObjectUrl(params, callback) {
             callback(null, { Url: signUrl });
         });
     });
-    if (authorization) {
-        return url + '?sign=' + encodeURIComponent(authorization);
+    if (AuthData) {
+        return url + '?' + AuthData.Authorization + (AuthData.XCosSecurityToken ? '&x-cos-security-token=' + AuthData.XCosSecurityToken : '');
     } else {
         return url;
     }
@@ -5730,17 +5754,23 @@ function getAuthorizationAsync(params, callback) {
         });
     } else {
         // 内部计算获取签名
-        var Authorization = util.getAuth({
-            SecretId: params.SecretId || self.options.SecretId,
-            SecretKey: params.SecretKey || self.options.SecretKey,
-            Method: params.Method,
-            Key: PathName,
-            Query: params.Query,
-            Headers: params.Headers,
-            Expires: params.Expires
-        });
-        callback && callback({ Authorization: Authorization });
-        return Authorization;
+        return function () {
+            var Authorization = util.getAuth({
+                SecretId: params.SecretId || self.options.SecretId,
+                SecretKey: params.SecretKey || self.options.SecretKey,
+                Method: params.Method,
+                Key: PathName,
+                Query: params.Query,
+                Headers: params.Headers,
+                Expires: params.Expires
+            });
+            var AuthData = {
+                Authorization: Authorization,
+                XCosSecurityToken: self.options.XCosSecurityToken
+            };
+            callback && callback(AuthData);
+            return AuthData;
+        }();
     }
     return '';
 }

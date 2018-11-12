@@ -515,5 +515,21 @@ util.getFileUUID = function (file, ChunkSize) {
         return null;
     }
 };
+util.getBodyMd5 = function (UploadCheckContentMd5, Body, callback) {
+    callback = callback || noop;
+    if (UploadCheckContentMd5) {
+        if (typeof Body === 'string') {
+            callback(util.md5(Body, true));
+        } else if (Body instanceof global.Blob) {
+            util.getFileMd5(Body, function (err, md5) {
+                callback(md5);
+            });
+        } else {
+            callback();
+        }
+    } else {
+        callback();
+    }
+};
 
 module.exports = util;
