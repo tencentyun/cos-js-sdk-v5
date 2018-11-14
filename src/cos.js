@@ -20,14 +20,15 @@ var defaultOptions = {
     CopySliceSize: 1024 * 1024 * 10,
     ProgressInterval: 1000,
     UploadQueueSize: 10000,
-    UploadIdCacheLimit: 50,
-    UploadCheckContentMd5: false,
     Domain: '',
     ServiceDomain: '',
     Protocol: '',
     CompatibilityMode: false,
     ForcePathStyle: false,
     XCosSecurityToken: '',
+    UseRawKey: false,
+    UploadCheckContentMd5: false,
+    UploadIdCacheLimit: 50,
 };
 
 // 对外暴露的类
@@ -47,10 +48,10 @@ var COS = function (options) {
     task.init(this);
 };
 
-util.extend(COS.prototype, base);
-util.extend(COS.prototype, advance);
+base.init(COS, task);
+advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.22';
+COS.version = '0.4.23';
 
 module.exports = COS;

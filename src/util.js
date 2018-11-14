@@ -21,10 +21,17 @@ var getAuth = function (opt) {
     var SecretId = opt.SecretId;
     var SecretKey = opt.SecretKey;
     var method = (opt.method || opt.Method || 'get').toLowerCase();
-    var pathname = opt.pathname || opt.Key || '/';
     var queryParams = clone(opt.Query || opt.params || {});
     var headers = clone(opt.Headers || opt.headers || {});
-    pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
+
+    var Key = opt.Key || '';
+    var pathname;
+    if (opt.UseRawKey) {
+        pathname = opt.pathname || '/' + Key;
+    } else {
+        pathname = opt.pathname || Key;
+        pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
+    }
 
     if (!SecretId) return console.error('missing param SecretId');
     if (!SecretKey) return console.error('missing param SecretKey');
@@ -242,6 +249,68 @@ var hasMissingParams = function (apiName, params) {
     return false;
 };
 
+var formatParams = function (apiName, params) {
+
+    // 复制参数对象
+    params = extend({}, params);
+
+    // 统一处理 Headers
+    if (apiName !== 'getAuth' && apiName !== 'getV4Auth' && apiName !== 'getObjectUrl') {
+        var Headers = params.Headers || {};
+        if (params && typeof params === 'object') {
+            (function () {
+                for (var key in params) {
+                    if (params.hasOwnProperty(key) && key.indexOf('x-cos-') > -1) {
+                        Headers[key] = params[key];
+                    }
+                }
+            })();
+
+            // params headers
+            Headers['x-cos-mfa'] = params['MFA'];
+            Headers['Content-MD5'] = params['ContentMD5'];
+            Headers['Content-Length'] = params['ContentLength'];
+            Headers['Content-Type'] = params['ContentType'];
+            Headers['Expect'] = params['Expect'];
+            Headers['Expires'] = params['Expires'];
+            Headers['Cache-Control'] = params['CacheControl'];
+            Headers['Content-Disposition'] = params['ContentDisposition'];
+            Headers['Content-Encoding'] = params['ContentEncoding'];
+            Headers['Range'] = params['Range'];
+            Headers['If-Modified-Since'] = params['IfModifiedSince'];
+            Headers['If-Unmodified-Since'] = params['IfUnmodifiedSince'];
+            Headers['If-Match'] = params['IfMatch'];
+            Headers['If-None-Match'] = params['IfNoneMatch'];
+            Headers['x-cos-copy-source'] = params['CopySource'];
+            Headers['x-cos-copy-source-Range'] = params['CopySourceRange'];
+            Headers['x-cos-metadata-directive'] = params['MetadataDirective'];
+            Headers['x-cos-copy-source-If-Modified-Since'] = params['CopySourceIfModifiedSince'];
+            Headers['x-cos-copy-source-If-Unmodified-Since'] = params['CopySourceIfUnmodifiedSince'];
+            Headers['x-cos-copy-source-If-Match'] = params['CopySourceIfMatch'];
+            Headers['x-cos-copy-source-If-None-Match'] = params['CopySourceIfNoneMatch'];
+            Headers['x-cos-acl'] = params['ACL'];
+            Headers['x-cos-grant-read'] = params['GrantRead'];
+            Headers['x-cos-grant-write'] = params['GrantWrite'];
+            Headers['x-cos-grant-full-control'] = params['GrantFullControl'];
+            Headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
+            Headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
+            Headers['x-cos-storage-class'] = params['StorageClass'];
+            // SSE-C
+            Headers['x-cos-server-side-encryption-customer-algorithm'] = params['SSECustomerAlgorithm'];
+            Headers['x-cos-server-side-encryption-customer-key'] = params['SSECustomerKey'];
+            Headers['x-cos-server-side-encryption-customer-key-MD5'] = params['SSECustomerKeyMD5'];
+            // SSE-COS、SSE-KMS
+            Headers['x-cos-server-side-encryption'] = params['ServerSideEncryption'];
+            Headers['x-cos-server-side-encryption-cos-kms-key-id'] = params['SSEKMSKeyId'];
+            Headers['x-cos-server-side-encryption-context'] = params['SSEContext'];
+
+            params.Headers = clearKey(Headers);
+        }
+    }
+
+    return params;
+};
+
 var apiWrapper = function (apiName, apiFn) {
     return function (params, callback) {
 
@@ -251,62 +320,8 @@ var apiWrapper = function (apiName, apiFn) {
             params = {};
         }
 
-        // 复制参数对象
-        params = extend({}, params);
-
-        // 统一处理 Headers
-        if (apiName !== 'getAuth' && apiName !== 'getObjectUrl') {
-            var Headers = params.Headers || {};
-            if (params && typeof params === 'object') {
-                (function () {
-                    for (var key in params) {
-                        if (params.hasOwnProperty(key) && key.indexOf('x-cos-') > -1) {
-                            Headers[key] = params[key];
-                        }
-                    }
-                })();
-
-                // params headers
-                Headers['x-cos-mfa'] = params['MFA'];
-                Headers['Content-MD5'] = params['ContentMD5'];
-                Headers['Content-Length'] = params['ContentLength'];
-                Headers['Content-Type'] = params['ContentType'];
-                Headers['Expect'] = params['Expect'];
-                Headers['Expires'] = params['Expires'];
-                Headers['Cache-Control'] = params['CacheControl'];
-                Headers['Content-Disposition'] = params['ContentDisposition'];
-                Headers['Content-Encoding'] = params['ContentEncoding'];
-                Headers['Range'] = params['Range'];
-                Headers['If-Modified-Since'] = params['IfModifiedSince'];
-                Headers['If-Unmodified-Since'] = params['IfUnmodifiedSince'];
-                Headers['If-Match'] = params['IfMatch'];
-                Headers['If-None-Match'] = params['IfNoneMatch'];
-                Headers['x-cos-copy-source'] = params['CopySource'];
-                Headers['x-cos-copy-source-Range'] = params['CopySourceRange'];
-                Headers['x-cos-metadata-directive'] = params['MetadataDirective'];
-                Headers['x-cos-copy-source-If-Modified-Since'] = params['CopySourceIfModifiedSince'];
-                Headers['x-cos-copy-source-If-Unmodified-Since'] = params['CopySourceIfUnmodifiedSince'];
-                Headers['x-cos-copy-source-If-Match'] = params['CopySourceIfMatch'];
-                Headers['x-cos-copy-source-If-None-Match'] = params['CopySourceIfNoneMatch'];
-                Headers['x-cos-acl'] = params['ACL'];
-                Headers['x-cos-grant-read'] = params['GrantRead'];
-                Headers['x-cos-grant-write'] = params['GrantWrite'];
-                Headers['x-cos-grant-full-control'] = params['GrantFullControl'];
-                Headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
-                Headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
-                Headers['x-cos-storage-class'] = params['StorageClass'];
-                // SSE-C
-                Headers['x-cos-server-side-encryption-customer-algorithm'] = params['SSECustomerAlgorithm'];
-                Headers['x-cos-server-side-encryption-customer-key'] = params['SSECustomerKey'];
-                Headers['x-cos-server-side-encryption-customer-key-MD5'] = params['SSECustomerKeyMD5'];
-                // SSE-COS、SSE-KMS
-                Headers['x-cos-server-side-encryption'] = params['ServerSideEncryption'];
-                Headers['x-cos-server-side-encryption-cos-kms-key-id'] = params['SSEKMSKeyId'];
-                Headers['x-cos-server-side-encryption-context'] = params['SSEContext'];
-
-                params.Headers = clearKey(Headers);
-            }
-        }
+        // 整理参数格式
+        params = formatParams(apiName, params);
 
         // 代理回调函数
         var formatResult = function (result) {
@@ -358,8 +373,8 @@ var apiWrapper = function (apiName, apiFn) {
                     delete params.AppId;
                 }
             }
-            // 兼容带有斜杠开头的 Key
-            if (params.Key && params.Key.substr(0, 1) === '/') {
+            // 如果 Key 是 / 开头，强制去掉第一个 /
+            if (!this.options.UseRawKey && params.Key && params.Key.substr(0, 1) === '/') {
                 params.Key = params.Key.substr(1);
             }
         }
@@ -476,6 +491,7 @@ var getFileSize = function (api, params, callback) {
 
 var util = {
     noop: noop,
+    formatParams: formatParams,
     apiWrapper: apiWrapper,
     getAuth: getAuth,
     xml2json: xml2json,
@@ -494,7 +510,7 @@ var util = {
     uuid: uuid,
     throttleOnProgress: throttleOnProgress,
     getFileSize: getFileSize,
-    isBrowser: !!global.document,
+    isBrowser: true,
 };
 
 util.localStorage = global.localStorage;

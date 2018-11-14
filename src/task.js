@@ -1,24 +1,23 @@
 var util = require('./util');
 
+var originApiMap = {};
+var transferToTaskMethod = function (apiMap, apiName) {
+    originApiMap[apiName] = apiMap[apiName];
+    apiMap[apiName] = function (params, callback) {
+        if (params._OnlyUploadNotAddTask) {
+            originApiMap[apiName].call(this, params, callback);
+        } else {
+            this._addTask(apiName, params, callback);
+        }
+    };
+};
+
 var initTask = function (cos) {
 
     var queue = [];
     var tasks = {};
     var uploadingFileCount = 0;
     var nextUploadIndex = 0;
-
-    var originApiMap = {};
-
-    // 把上传方法替换成添加任务的方法
-    util.each([
-        'putObject',
-        'sliceUploadFile',
-    ], function (api) {
-        originApiMap[api] = cos[api];
-        cos[api] = function (params, callback) {
-            cos._addTask(api, params, callback);
-        };
-    });
 
     // 接口返回简略的任务信息
     var formatTask = function (task) {
@@ -53,7 +52,8 @@ var initTask = function (cos) {
                 uploadingFileCount++;
                 task.state = 'checking';
                 !task.params.UploadData && (task.params.UploadData = {});
-                originApiMap[task.api].call(cos, task.params, function (err, data) {
+                var apiParams = util.formatParams(task.api, task.params);
+                originApiMap[task.api].call(cos, apiParams, function (err, data) {
                     if (!cos._isRunningTask(task.id)) return;
                     if (task.state === 'checking' || task.state === 'uploading') {
                         task.state = err ? 'error' : 'success';
@@ -111,7 +111,7 @@ var initTask = function (cos) {
     cos._addTask = function (api, params, callback, ignoreAddEvent) {
 
         // 复制参数对象
-        params = util.extend({}, params);
+        params = util.formatParams(api, params);
 
         // 生成 id
         var id = util.uuid();
@@ -158,6 +158,11 @@ var initTask = function (cos) {
 
         // 异步获取 filesize
         util.getFileSize(api, params, function (err, size) {
+            // 开始处理上传
+            if (err) { // 如果获取大小出错，不加入队列
+                callback(err);
+                return;
+            }
             // 获取完文件大小再把任务加入队列
             tasks[id] = task;
             queue.push(task);
@@ -165,11 +170,6 @@ var initTask = function (cos) {
                 var delta = queue.length - cos.options.UploadQueueSize;
                 queue.splice(0, delta);
                 nextUploadIndex -= delta;
-            }
-            // 开始处理上传
-            if (err) {
-                callback(err);
-                return;
             }
             task.size = size;
             !ignoreAddEvent && emitListUpdate();
@@ -202,4 +202,5 @@ var initTask = function (cos) {
 
 };
 
+module.exports.transferToTaskMethod = transferToTaskMethod;
 module.exports.init = initTask;

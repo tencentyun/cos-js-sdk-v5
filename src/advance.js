@@ -138,17 +138,16 @@ function sliceUploadFile(params, callback) {
         }
         params.ChunkSize = params.SliceSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
     })();
-    onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
     // 开始上传
     if (FileSize === 0) {
         params.Body = '';
+        params.ContentLength = 0;
+        params._OnlyUploadNotAddTask = true;
         self.putObject(params, function (err, data) {
             if (err) {
-                onProgress(null, true);
                 return callback(err);
             }
-            onProgress({loaded: FileSize, total: FileSize}, true);
             callback(null, data);
         });
     } else {
@@ -1009,7 +1008,7 @@ function sliceCopyFile(params, callback) {
                 }
             },function (err,data) {
                 if (err) {
-                    return callback(err);
+                    return asyncCallback(err);
                 }
                 onProgress({loaded: FinishSize, total: FileSize});
 
@@ -1023,7 +1022,7 @@ function sliceCopyFile(params, callback) {
                 return callback(err);
             }
 
-            ep.emit('copy_slice_complete',UploadData);
+            ep.emit('copy_slice_complete', UploadData);
         });
     });
 
@@ -1075,12 +1074,12 @@ function sliceCopyFile(params, callback) {
         Key: SourceKey,
     },function(err, data) {
         if (err) {
-          if (err.statusCode && err.statusCode === 404) {
-            return callback({ ErrorStatus: SourceKey + ' Not Exist' });
-          } else {
-            callback(err);
-          }
-          return;
+            if (err.statusCode && err.statusCode === 404) {
+                callback({ErrorStatus: SourceKey + ' Not Exist'});
+            } else {
+                callback(err);
+            }
+            return;
         }
 
         FileSize = params.FileSize = data.headers['content-length'];
@@ -1093,22 +1092,22 @@ function sliceCopyFile(params, callback) {
 
         // 开始上传
         if (FileSize <= CopySliceSize) {
-          self.putObjectCopy(params, function (err, data) {
-              if (err) {
-                  onProgress(null, true);
-                  return callback(err);
-              }
-              onProgress({loaded: FileSize, total: FileSize}, true);
-              callback(err, data);
-          });
+            self.putObjectCopy(params, function (err, data) {
+                if (err) {
+                    onProgress(null, true);
+                    return callback(err);
+                }
+                onProgress({loaded: FileSize, total: FileSize}, true);
+                callback(err, data);
+            });
         } else {
-          ep.emit('get_file_size_finish');
+            ep.emit('get_file_size_finish');
         }
     });
 }
 
 // 复制指定分片
-function copySliceItem(params,callback) {
+function copySliceItem(params, callback) {
     var TaskId = params.TaskId;
     var Bucket = params.Bucket;
     var Region = params.Region;
@@ -1148,6 +1147,9 @@ var API_MAP = {
     sliceCopyFile: sliceCopyFile,
 };
 
-util.each(API_MAP, function (fn, apiName) {
-    exports[apiName] = util.apiWrapper(apiName, fn);
-});
+module.exports.init = function (COS, task) {
+    task.transferToTaskMethod(API_MAP, 'sliceUploadFile');
+    util.each(API_MAP, function (fn, apiName) {
+        COS.prototype[apiName] = util.apiWrapper(apiName, fn);
+    });
+};

@@ -7,7 +7,7 @@
 		exports["COS"] = factory();
 	else
 		root["COS"] = factory();
-})(typeof self !== 'undefined' ? self : this, function() {
+})(this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -96,10 +96,17 @@ var getAuth = function (opt) {
     var SecretId = opt.SecretId;
     var SecretKey = opt.SecretKey;
     var method = (opt.method || opt.Method || 'get').toLowerCase();
-    var pathname = opt.pathname || opt.Key || '/';
     var queryParams = clone(opt.Query || opt.params || {});
     var headers = clone(opt.Headers || opt.headers || {});
-    pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
+
+    var Key = opt.Key || '';
+    var pathname;
+    if (opt.UseRawKey) {
+        pathname = opt.pathname || '/' + Key;
+    } else {
+        pathname = opt.pathname || Key;
+        pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
+    }
 
     if (!SecretId) return console.error('missing param SecretId');
     if (!SecretKey) return console.error('missing param SecretKey');
@@ -310,6 +317,68 @@ var hasMissingParams = function (apiName, params) {
     return false;
 };
 
+var formatParams = function (apiName, params) {
+
+    // 复制参数对象
+    params = extend({}, params);
+
+    // 统一处理 Headers
+    if (apiName !== 'getAuth' && apiName !== 'getV4Auth' && apiName !== 'getObjectUrl') {
+        var Headers = params.Headers || {};
+        if (params && typeof params === 'object') {
+            (function () {
+                for (var key in params) {
+                    if (params.hasOwnProperty(key) && key.indexOf('x-cos-') > -1) {
+                        Headers[key] = params[key];
+                    }
+                }
+            })();
+
+            // params headers
+            Headers['x-cos-mfa'] = params['MFA'];
+            Headers['Content-MD5'] = params['ContentMD5'];
+            Headers['Content-Length'] = params['ContentLength'];
+            Headers['Content-Type'] = params['ContentType'];
+            Headers['Expect'] = params['Expect'];
+            Headers['Expires'] = params['Expires'];
+            Headers['Cache-Control'] = params['CacheControl'];
+            Headers['Content-Disposition'] = params['ContentDisposition'];
+            Headers['Content-Encoding'] = params['ContentEncoding'];
+            Headers['Range'] = params['Range'];
+            Headers['If-Modified-Since'] = params['IfModifiedSince'];
+            Headers['If-Unmodified-Since'] = params['IfUnmodifiedSince'];
+            Headers['If-Match'] = params['IfMatch'];
+            Headers['If-None-Match'] = params['IfNoneMatch'];
+            Headers['x-cos-copy-source'] = params['CopySource'];
+            Headers['x-cos-copy-source-Range'] = params['CopySourceRange'];
+            Headers['x-cos-metadata-directive'] = params['MetadataDirective'];
+            Headers['x-cos-copy-source-If-Modified-Since'] = params['CopySourceIfModifiedSince'];
+            Headers['x-cos-copy-source-If-Unmodified-Since'] = params['CopySourceIfUnmodifiedSince'];
+            Headers['x-cos-copy-source-If-Match'] = params['CopySourceIfMatch'];
+            Headers['x-cos-copy-source-If-None-Match'] = params['CopySourceIfNoneMatch'];
+            Headers['x-cos-acl'] = params['ACL'];
+            Headers['x-cos-grant-read'] = params['GrantRead'];
+            Headers['x-cos-grant-write'] = params['GrantWrite'];
+            Headers['x-cos-grant-full-control'] = params['GrantFullControl'];
+            Headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
+            Headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
+            Headers['x-cos-storage-class'] = params['StorageClass'];
+            // SSE-C
+            Headers['x-cos-server-side-encryption-customer-algorithm'] = params['SSECustomerAlgorithm'];
+            Headers['x-cos-server-side-encryption-customer-key'] = params['SSECustomerKey'];
+            Headers['x-cos-server-side-encryption-customer-key-MD5'] = params['SSECustomerKeyMD5'];
+            // SSE-COS、SSE-KMS
+            Headers['x-cos-server-side-encryption'] = params['ServerSideEncryption'];
+            Headers['x-cos-server-side-encryption-cos-kms-key-id'] = params['SSEKMSKeyId'];
+            Headers['x-cos-server-side-encryption-context'] = params['SSEContext'];
+
+            params.Headers = clearKey(Headers);
+        }
+    }
+
+    return params;
+};
+
 var apiWrapper = function (apiName, apiFn) {
     return function (params, callback) {
 
@@ -319,62 +388,8 @@ var apiWrapper = function (apiName, apiFn) {
             params = {};
         }
 
-        // 复制参数对象
-        params = extend({}, params);
-
-        // 统一处理 Headers
-        if (apiName !== 'getAuth' && apiName !== 'getObjectUrl') {
-            var Headers = params.Headers || {};
-            if (params && typeof params === 'object') {
-                (function () {
-                    for (var key in params) {
-                        if (params.hasOwnProperty(key) && key.indexOf('x-cos-') > -1) {
-                            Headers[key] = params[key];
-                        }
-                    }
-                })();
-
-                // params headers
-                Headers['x-cos-mfa'] = params['MFA'];
-                Headers['Content-MD5'] = params['ContentMD5'];
-                Headers['Content-Length'] = params['ContentLength'];
-                Headers['Content-Type'] = params['ContentType'];
-                Headers['Expect'] = params['Expect'];
-                Headers['Expires'] = params['Expires'];
-                Headers['Cache-Control'] = params['CacheControl'];
-                Headers['Content-Disposition'] = params['ContentDisposition'];
-                Headers['Content-Encoding'] = params['ContentEncoding'];
-                Headers['Range'] = params['Range'];
-                Headers['If-Modified-Since'] = params['IfModifiedSince'];
-                Headers['If-Unmodified-Since'] = params['IfUnmodifiedSince'];
-                Headers['If-Match'] = params['IfMatch'];
-                Headers['If-None-Match'] = params['IfNoneMatch'];
-                Headers['x-cos-copy-source'] = params['CopySource'];
-                Headers['x-cos-copy-source-Range'] = params['CopySourceRange'];
-                Headers['x-cos-metadata-directive'] = params['MetadataDirective'];
-                Headers['x-cos-copy-source-If-Modified-Since'] = params['CopySourceIfModifiedSince'];
-                Headers['x-cos-copy-source-If-Unmodified-Since'] = params['CopySourceIfUnmodifiedSince'];
-                Headers['x-cos-copy-source-If-Match'] = params['CopySourceIfMatch'];
-                Headers['x-cos-copy-source-If-None-Match'] = params['CopySourceIfNoneMatch'];
-                Headers['x-cos-acl'] = params['ACL'];
-                Headers['x-cos-grant-read'] = params['GrantRead'];
-                Headers['x-cos-grant-write'] = params['GrantWrite'];
-                Headers['x-cos-grant-full-control'] = params['GrantFullControl'];
-                Headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
-                Headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
-                Headers['x-cos-storage-class'] = params['StorageClass'];
-                // SSE-C
-                Headers['x-cos-server-side-encryption-customer-algorithm'] = params['SSECustomerAlgorithm'];
-                Headers['x-cos-server-side-encryption-customer-key'] = params['SSECustomerKey'];
-                Headers['x-cos-server-side-encryption-customer-key-MD5'] = params['SSECustomerKeyMD5'];
-                // SSE-COS、SSE-KMS
-                Headers['x-cos-server-side-encryption'] = params['ServerSideEncryption'];
-                Headers['x-cos-server-side-encryption-cos-kms-key-id'] = params['SSEKMSKeyId'];
-                Headers['x-cos-server-side-encryption-context'] = params['SSEContext'];
-
-                params.Headers = clearKey(Headers);
-            }
-        }
+        // 整理参数格式
+        params = formatParams(apiName, params);
 
         // 代理回调函数
         var formatResult = function (result) {
@@ -426,8 +441,8 @@ var apiWrapper = function (apiName, apiFn) {
                     delete params.AppId;
                 }
             }
-            // 兼容带有斜杠开头的 Key
-            if (params.Key && params.Key.substr(0, 1) === '/') {
+            // 如果 Key 是 / 开头，强制去掉第一个 /
+            if (!this.options.UseRawKey && params.Key && params.Key.substr(0, 1) === '/') {
                 params.Key = params.Key.substr(1);
             }
         }
@@ -543,6 +558,7 @@ var getFileSize = function (api, params, callback) {
 
 var util = {
     noop: noop,
+    formatParams: formatParams,
     apiWrapper: apiWrapper,
     getAuth: getAuth,
     xml2json: xml2json,
@@ -561,7 +577,7 @@ var util = {
     uuid: uuid,
     throttleOnProgress: throttleOnProgress,
     getFileSize: getFileSize,
-    isBrowser: !!global.document
+    isBrowser: true
 };
 
 util.localStorage = global.localStorage;
@@ -1925,14 +1941,15 @@ var defaultOptions = {
     CopySliceSize: 1024 * 1024 * 10,
     ProgressInterval: 1000,
     UploadQueueSize: 10000,
-    UploadIdCacheLimit: 50,
-    UploadCheckContentMd5: false,
     Domain: '',
     ServiceDomain: '',
     Protocol: '',
     CompatibilityMode: false,
     ForcePathStyle: false,
-    XCosSecurityToken: ''
+    XCosSecurityToken: '',
+    UseRawKey: false,
+    UploadCheckContentMd5: false,
+    UploadIdCacheLimit: 50
 };
 
 // 对外暴露的类
@@ -1952,11 +1969,11 @@ var COS = function (options) {
     task.init(this);
 };
 
-util.extend(COS.prototype, base);
-util.extend(COS.prototype, advance);
+base.init(COS, task);
+advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.22';
+COS.version = '0.4.23';
 
 module.exports = COS;
 
@@ -3671,22 +3688,24 @@ module.exports = function (obj, options) {
 
 var util = __webpack_require__(0);
 
+var originApiMap = {};
+var transferToTaskMethod = function (apiMap, apiName) {
+    originApiMap[apiName] = apiMap[apiName];
+    apiMap[apiName] = function (params, callback) {
+        if (params._OnlyUploadNotAddTask) {
+            originApiMap[apiName].call(this, params, callback);
+        } else {
+            this._addTask(apiName, params, callback);
+        }
+    };
+};
+
 var initTask = function (cos) {
 
     var queue = [];
     var tasks = {};
     var uploadingFileCount = 0;
     var nextUploadIndex = 0;
-
-    var originApiMap = {};
-
-    // 把上传方法替换成添加任务的方法
-    util.each(['putObject', 'sliceUploadFile'], function (api) {
-        originApiMap[api] = cos[api];
-        cos[api] = function (params, callback) {
-            cos._addTask(api, params, callback);
-        };
-    });
 
     // 接口返回简略的任务信息
     var formatTask = function (task) {
@@ -3720,7 +3739,8 @@ var initTask = function (cos) {
                 uploadingFileCount++;
                 task.state = 'checking';
                 !task.params.UploadData && (task.params.UploadData = {});
-                originApiMap[task.api].call(cos, task.params, function (err, data) {
+                var apiParams = util.formatParams(task.api, task.params);
+                originApiMap[task.api].call(cos, apiParams, function (err, data) {
                     if (!cos._isRunningTask(task.id)) return;
                     if (task.state === 'checking' || task.state === 'uploading') {
                         task.state = err ? 'error' : 'success';
@@ -3776,7 +3796,7 @@ var initTask = function (cos) {
     cos._addTask = function (api, params, callback, ignoreAddEvent) {
 
         // 复制参数对象
-        params = util.extend({}, params);
+        params = util.formatParams(api, params);
 
         // 生成 id
         var id = util.uuid();
@@ -3823,6 +3843,12 @@ var initTask = function (cos) {
 
         // 异步获取 filesize
         util.getFileSize(api, params, function (err, size) {
+            // 开始处理上传
+            if (err) {
+                // 如果获取大小出错，不加入队列
+                callback(err);
+                return;
+            }
             // 获取完文件大小再把任务加入队列
             tasks[id] = task;
             queue.push(task);
@@ -3830,11 +3856,6 @@ var initTask = function (cos) {
                 var delta = queue.length - cos.options.UploadQueueSize;
                 queue.splice(0, delta);
                 nextUploadIndex -= delta;
-            }
-            // 开始处理上传
-            if (err) {
-                callback(err);
-                return;
             }
             task.size = size;
             !ignoreAddEvent && emitListUpdate();
@@ -3866,6 +3887,7 @@ var initTask = function (cos) {
     };
 };
 
+module.exports.transferToTaskMethod = transferToTaskMethod;
 module.exports.init = initTask;
 
 /***/ }),
@@ -4776,8 +4798,6 @@ function getObject(params, callback) {
     reqParams['response-content-disposition'] = params['ResponseContentDisposition'];
     reqParams['response-content-encoding'] = params['ResponseContentEncoding'];
 
-    var BodyType;
-
     // 如果用户自己传入了 output
     submitRequest.call(this, {
         method: 'GET',
@@ -4838,13 +4858,15 @@ function getObject(params, callback) {
  *     @return  {String}  data.ETag                                 为对应上传文件的 ETag 值
  */
 function putObject(params, callback) {
-
     var self = this;
     var FileSize = params.ContentLength;
     var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
     util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
         md5 && (params.Headers['Content-MD5'] = util.binaryBase64(md5));
+        if (params.ContentLength !== undefined) {
+            params.Headers['Content-Length'] = params.ContentLength;
+        }
         submitRequest.call(self, {
             TaskId: params.TaskId,
             method: 'PUT',
@@ -5516,6 +5538,7 @@ function multipartAbort(params, callback) {
  * @return  {String}  data              返回签名字符串
  */
 function getAuth(params) {
+    var self = this;
     return util.getAuth({
         SecretId: params.SecretId || this.options.SecretId || '',
         SecretKey: params.SecretKey || this.options.SecretKey || '',
@@ -5523,7 +5546,8 @@ function getAuth(params) {
         Key: params.Key,
         Query: params.Query,
         Headers: params.Headers,
-        Expires: params.Expires
+        Expires: params.Expires,
+        UseRawKey: self.options.UseRawKey
     });
 }
 
@@ -5705,7 +5729,8 @@ function getAuthorizationAsync(params, callback) {
             Method: params.Method,
             Key: PathName,
             Query: params.Query,
-            Headers: params.Headers
+            Headers: params.Headers,
+            UseRawKey: self.options.UseRawKey
         });
         var AuthData = {
             Authorization: Authorization,
@@ -5762,7 +5787,8 @@ function getAuthorizationAsync(params, callback) {
                 Key: PathName,
                 Query: params.Query,
                 Headers: params.Headers,
-                Expires: params.Expires
+                Expires: params.Expires,
+                UseRawKey: self.options.UseRawKey
             });
             var AuthData = {
                 Authorization: Authorization,
@@ -6006,9 +6032,12 @@ var API_MAP = {
     getAuth: getAuth
 };
 
-util.each(API_MAP, function (fn, apiName) {
-    exports[apiName] = util.apiWrapper(apiName, fn);
-});
+module.exports.init = function (COS, task) {
+    task.transferToTaskMethod(API_MAP, 'putObject');
+    util.each(API_MAP, function (fn, apiName) {
+        COS.prototype[apiName] = util.apiWrapper(apiName, fn);
+    });
+};
 
 /***/ }),
 /* 14 */
@@ -10507,17 +10536,16 @@ function sliceUploadFile(params, callback) {
         }
         params.ChunkSize = params.SliceSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
     })();
-    onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
     // 开始上传
     if (FileSize === 0) {
         params.Body = '';
+        params.ContentLength = 0;
+        params._OnlyUploadNotAddTask = true;
         self.putObject(params, function (err, data) {
             if (err) {
-                onProgress(null, true);
                 return callback(err);
             }
-            onProgress({ loaded: FileSize, total: FileSize }, true);
             callback(null, data);
         });
     } else {
@@ -11377,7 +11405,7 @@ function sliceCopyFile(params, callback) {
                 }
             }, function (err, data) {
                 if (err) {
-                    return callback(err);
+                    return asyncCallback(err);
                 }
                 onProgress({ loaded: FinishSize, total: FileSize });
 
@@ -11444,7 +11472,7 @@ function sliceCopyFile(params, callback) {
     }, function (err, data) {
         if (err) {
             if (err.statusCode && err.statusCode === 404) {
-                return callback({ ErrorStatus: SourceKey + ' Not Exist' });
+                callback({ ErrorStatus: SourceKey + ' Not Exist' });
             } else {
                 callback(err);
             }
@@ -11515,9 +11543,12 @@ var API_MAP = {
     sliceCopyFile: sliceCopyFile
 };
 
-util.each(API_MAP, function (fn, apiName) {
-    exports[apiName] = util.apiWrapper(apiName, fn);
-});
+module.exports.init = function (COS, task) {
+    task.transferToTaskMethod(API_MAP, 'sliceUploadFile');
+    util.each(API_MAP, function (fn, apiName) {
+        COS.prototype[apiName] = util.apiWrapper(apiName, fn);
+    });
+};
 
 /***/ }),
 /* 19 */

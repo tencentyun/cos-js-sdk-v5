@@ -908,8 +908,6 @@ function getObject(params, callback) {
     reqParams['response-content-disposition'] = params['ResponseContentDisposition'];
     reqParams['response-content-encoding'] = params['ResponseContentEncoding'];
 
-    var BodyType;
-
     // 如果用户自己传入了 output
     submitRequest.call(this, {
         method: 'GET',
@@ -971,13 +969,15 @@ function getObject(params, callback) {
  *     @return  {String}  data.ETag                                 为对应上传文件的 ETag 值
  */
 function putObject(params, callback) {
-
     var self = this;
     var FileSize = params.ContentLength;
     var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
     util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
         md5 && (params.Headers['Content-MD5'] = util.binaryBase64(md5));
+        if (params.ContentLength !== undefined) {
+            params.Headers['Content-Length'] = params.ContentLength;
+        }
         submitRequest.call(self, {
             TaskId: params.TaskId,
             method: 'PUT',
@@ -1651,6 +1651,7 @@ function multipartAbort(params, callback) {
  * @return  {String}  data              返回签名字符串
  */
 function getAuth(params) {
+    var self = this;
     return util.getAuth({
         SecretId: params.SecretId || this.options.SecretId || '',
         SecretKey: params.SecretKey || this.options.SecretKey || '',
@@ -1659,6 +1660,7 @@ function getAuth(params) {
         Query: params.Query,
         Headers: params.Headers,
         Expires: params.Expires,
+        UseRawKey: self.options.UseRawKey,
     });
 }
 
@@ -1850,6 +1852,7 @@ function getAuthorizationAsync(params, callback) {
             Key: PathName,
             Query: params.Query,
             Headers: params.Headers,
+            UseRawKey: self.options.UseRawKey,
         });
         var AuthData = {
             Authorization: Authorization,
@@ -1906,6 +1909,7 @@ function getAuthorizationAsync(params, callback) {
                 Query: params.Query,
                 Headers: params.Headers,
                 Expires: params.Expires,
+                UseRawKey: self.options.UseRawKey,
             });
             var AuthData = {
                 Authorization: Authorization,
@@ -2159,6 +2163,9 @@ var API_MAP = {
     getAuth: getAuth,
 };
 
-util.each(API_MAP, function (fn, apiName) {
-    exports[apiName] = util.apiWrapper(apiName, fn);
-});
+module.exports.init = function (COS, task) {
+    task.transferToTaskMethod(API_MAP, 'putObject');
+    util.each(API_MAP, function (fn, apiName) {
+        COS.prototype[apiName] = util.apiWrapper(apiName, fn);
+    });
+};
