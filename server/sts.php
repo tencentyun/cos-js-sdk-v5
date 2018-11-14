@@ -55,7 +55,7 @@ function getTempKeys() {
             array(
                 'action'=> array(
                     // // 这里可以从临时密钥的权限上控制前端允许的操作
-                     'name/cos:*', // 这样写可以包含下面所有权限
+                    // 'name/cos:*', // 这样写可以包含下面所有权限
 
                     // // 列出所有允许的操作
                     // // ACL 读写
