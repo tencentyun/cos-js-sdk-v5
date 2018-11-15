@@ -14,7 +14,6 @@ var defaultOptions = {
     ChunkParallelLimit: 3,
     ChunkRetryTimes: 3,
     ChunkSize: 1024 * 1024,
-    ChunkMaxCount: 10000,
     SliceSize: 1024 * 1024,
     CopyChunkParallelLimit: 20,
     CopyChunkSize: 1024 * 1024 * 10,
