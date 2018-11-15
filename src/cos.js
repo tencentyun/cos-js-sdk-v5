@@ -14,10 +14,12 @@ var defaultOptions = {
     ChunkParallelLimit: 3,
     ChunkRetryTimes: 3,
     ChunkSize: 1024 * 1024,
+    ChunkMaxCount: 10000,
     SliceSize: 1024 * 1024,
     CopyChunkParallelLimit: 20,
     CopyChunkSize: 1024 * 1024 * 10,
     CopySliceSize: 1024 * 1024 * 10,
+    MaxPartNumber: 10000,
     ProgressInterval: 1000,
     UploadQueueSize: 10000,
     Domain: '',
@@ -41,6 +43,7 @@ var COS = function (options) {
     this.options.CopyChunkParallelLimit = Math.max(1, this.options.CopyChunkParallelLimit);
     this.options.CopyChunkSize = Math.max(1024 * 1024, this.options.CopyChunkSize);
     this.options.CopySliceSize = Math.max(0, this.options.CopySliceSize);
+    this.options.MaxPartNumber = Math.max(1024, Math.min(10000, this.options.MaxPartNumber));
     if (this.options.AppId) {
         console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").');
     }
@@ -52,6 +55,6 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.23';
+COS.version = '0.4.24';
 
 module.exports = COS;
