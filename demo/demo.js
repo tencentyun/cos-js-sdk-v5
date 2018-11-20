@@ -1,5 +1,5 @@
 var config = {
-    Bucket: 'test-1250000000',
+    Bucket: 'test-1251902136',
     Region: 'ap-guangzhou'
 };
 
@@ -17,24 +17,94 @@ var util = {
     }
 };
 
+var cos = new COS({
+    getAuthorization: function (options,callback) {
+        // 方法一、后端通过获取临时密钥给到前端，前端计算签名
+        // var url = 'http://127.0.0.1:3000/sts';
+        var url = '../server/sts.php';
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.onload = function (e) {
+            try {
+                var data = JSON.parse(e.target.responseText);
+            } catch (e) {
+            }
+            callback({
+                TmpSecretId: data.credentials && data.credentials.tmpSecretId,
+                TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
+                XCosSecurityToken: data.credentials && data.credentials.sessionToken,
+                ExpiredTime: data.expiredTime,
+            });
+        };
+        xhr.send();
 
-var cos = new COS();
 
-(function () {
-    var url = '../server/sts.php';
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
-    xhr.onload = function (e) {
-        try {
-            var data = JSON.parse(e.target.responseText);
-        } catch (e) {
-        }
-        cos.options.SecretId = data.credentials && data.credentials.tmpSecretId;
-        cos.options.SecretKey = data.credentials && data.credentials.tmpSecretKey;
-        cos.options.XCosSecurityToken = data.credentials && data.credentials.sessionToken;
-    };
-    xhr.send();
-})();
+        // // 方法二、后端通过获取临时密钥，并计算好签名给到前端
+        // var method = (options.Method || 'get').toLowerCase();
+        // var key = options.Key || '';
+        // var query = options.Query || {};
+        // var headers = options.Headers || {};
+        // var pathname = key.indexOf('/') === 0 ? key : '/' + key;
+        // // var url = 'http://127.0.0.1:3000/sts-auth';
+        // var url = '../server/sts-auth.php';
+        // var xhr = new XMLHttpRequest();
+        // var data = {
+        //     method: method,
+        //     pathname: pathname,
+        //     query: query,
+        //     headers: headers,
+        // };
+        // xhr.open('POST', url, true);
+        // xhr.setRequestHeader('content-type', 'application/json');
+        // xhr.onload = function (e) {
+        //     try {
+        //         var AuthData = JSON.parse(e.target.responseText);
+        //     } catch (e) {
+        //     }
+        //     callback({
+        //         Authorization: AuthData.Authorization,
+        //         XCosSecurityToken: AuthData.XCosSecurityToken,
+        //     });
+        // };
+        // xhr.send(JSON.stringify(data));
+
+
+        // // 方法三、后端使用固定密钥计算签名，返回给前端，auth.php，注意：后端需要通过 method、pathname 控制好权限，比如不允许 put / 等，这里暂不提供
+        // var method = (options.Method || 'get').toLowerCase();
+        // var key = options.Key || '';
+        // var query = options.Query || {};
+        // var headers = options.Headers || {};
+        // var pathname = key.indexOf('/') === 0 ? key : '/' + key;
+        // // var url = 'http://127.0.0.1:3000/auth';
+        // var url = '../server/auth.php';
+        // var xhr = new XMLHttpRequest();
+        // var data = {
+        //     method: method,
+        //     pathname: pathname,
+        //     query: query,
+        //     headers: headers,
+        // };
+        // xhr.open('POST', url, true);
+        // xhr.setRequestHeader('content-type', 'application/json');
+        // xhr.onload = function (e) {
+        //     callback({ Authorization: e.target.responseText, });
+        // };
+        // xhr.send(JSON.stringify(data));
+
+
+        // // 方法四、前端使用固定密钥计算签名（适用于前端调试）
+        // var authorization = COS.getAuthorization({
+        //     SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        //     Method: options.Method,
+        //     Key: options.Key,
+        //     Query: options.Query,
+        //     Headers: options.Headers,
+        //     Expires: 60,
+        // });
+        // callback(authorization);
+    }
+});
 
 var TaskId;
 
