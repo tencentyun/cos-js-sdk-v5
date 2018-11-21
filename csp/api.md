@@ -106,7 +106,7 @@ getAuthorization 计算完成后，callback 回传一个签名字符串或一个
 COS XML API 的请求里，私有资源操作都需要鉴权凭证 Authorization，用于判断当前请求是否合法。
 
 鉴权凭证使用方式有两种：
-1. 放在 header 参数里使用，自断名: authorization
+1. 放在 header 参数里使用，字段名：authorization
 2. 放在 url 参数里使用，字段名：sign
 
 COS.getAuthorization 方法用于计算鉴权凭证（Authorization），用以验证请求合法性的签名信息。
@@ -177,13 +177,11 @@ var authorization = cos.getAuth({
 返回值是计算得到的鉴权凭证字符串 authorization
 
 
-
-
 ### Get Object Url
 
 #### 使用示例
 
-// 获取不带签名 Object Url
+// 示例一：获取不带签名 Object Url
 ```js
 var url = cos.getObjectUrl({
     Key: '1.jpg',
@@ -191,13 +189,45 @@ var url = cos.getObjectUrl({
 });
 ```
 
-// 获取带签名的 Object Url
+// 示例二：获取带签名 Object Url
+```js
+var url = cos.getObjectUrl({
+    Key: '1.jpg'
+});
+```
+
+// 示例三：如果签名过程是异步获取，需要通过 callback 获取带签名 Url
 ```js
 cos.getObjectUrl({
+    Key: '1.jpg',
+    Sign: false
+}, function (err, data) {
+    console.log(err || data.Url);
+});
+```
+
+// 示例四：获取预签名 Put Object 上传 Url
+```js
+cos.getObjectUrl({
+    Method: 'PUT',
     Key: '1.jpg',
     Sign: true
 }, function (err, data) {
     console.log(err || data.Url);
+});
+```
+
+// 示例五：获取文件 Url 并下载文件
+```js
+cos.getObjectUrl({
+    Method: 'PUT',
+    Key: '1.jpg',
+    Sign: true
+}, function (err, data) {
+    if (!err) {
+        var downloadUrl = data.Url + (data.Url.indexOf('?') > -1 ? '&' : '?') + 'response-content-disposition=attachment'; // 补充强制下载的参数
+        window.open(downloadUrl); // 这里是新窗口打开 url，如果需要在当前窗口打开，可以使用隐藏的 iframe 下载，或使用 a 标签 download 属性协助下载
+    }
 });
 ```
 
@@ -230,6 +260,47 @@ function(err, data) { ... }
 | err | 请求发生错误时返回的对象，包括网络错误和业务错误。如果请求成功，则为空，[错误码文档](https://cloud.tencent.com/document/product/436/7730) | Object |
 | data | 请求成功时返回的对象，如果请求发生错误，则为空 | Object |
 | - Url | 计算得到的 Url | String |
+
+
+### 浏览器下载文件
+
+浏览器下载文件需要先通过 cos.getObjectUrl 获取 url，在自行调用下载，以下提供几个下载例子
+
+浏览器下载过程实际上是浏览器直接发起的 Get Object 请求，具体参数可以参考 cos.getObject 方法。
+
+#### 使用示例
+
+// 示例一：获取文件 Url 并下载文件
+```js
+cos.getObjectUrl({
+    Method: 'PUT',
+    Key: '1.jpg',
+    Sign: true
+}, function (err, data) {
+    if (!err) {
+        var downloadUrl = data.Url + (data.Url.indexOf('?') > -1 ? '&' : '?') + 'response-content-disposition=attachment'; // 补充强制下载的参数
+        window.open(downloadUrl); // 这里是新窗口打开 url，如果需要在当前窗口打开，可以使用隐藏的 iframe 下载，或使用 a 标签 download 属性协助下载
+    }
+});
+```
+
+// 示例二：通过隐藏 iframe 下载
+```html
+<iframe id="downloadTarget" style="width:0;height:0;" frameborder="0"></iframe>
+<a id="downloadLink" href="javascript:void(0)">下载</a>
+<script>
+document.getElementById('downloadLink').onclick = function () {
+    document.getElementById('downloadTarget').src = downloadUrl; // 示例一里获取的下载 url
+};
+</script>
+```
+
+// 示例三：通过隐藏 a 标签的 download 属性，download 属性不兼容低版本浏览器
+```html
+<iframe id="downloadTarget" style="width:0;height:0;" frameborder="0"></iframe>
+<!-- 把示例一里的 downloadUrl 放在以下 a 标签的 href 参数里 -->
+<a id="downloadLink" href="{downloadUrl}" download="1.jpg">下载</a>
+```
 
 
 
