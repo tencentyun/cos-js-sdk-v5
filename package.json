@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "SET NODE_ENV=development&& webpack -w",
     "build": "SET NODE_ENV=production&& webpack",
-    "sts.js": "node server/sts.js",
-    "sts-auth.js": "node server/sts-auth.js"
+    "sts.js": "node server/sts.js"
   },
   "repository": {
     "type": "git",
