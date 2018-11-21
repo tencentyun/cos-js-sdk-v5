@@ -60,7 +60,7 @@ var getAuth = function (opt) {
             key = key.toLowerCase();
             key = camSafeUrlEncode(key);
             val = camSafeUrlEncode(val) || '';
-            list.push(key + '=' +  val)
+            list.push(key + '=' + val)
         }
         return list.join('&');
     };
@@ -163,20 +163,24 @@ var getFileMd5 = function (blob, callback) {
         callback(null, hash);
     });
 };
+
 function clone(obj) {
     return map(obj, function (v) {
         return typeof v === 'object' ? clone(v) : v;
     });
 }
+
 function extend(target, source) {
     each(source, function (val, key) {
         target[key] = source[key];
     });
     return target;
 }
+
 function isArray(arr) {
     return arr instanceof Array;
 }
+
 function isInArray(arr, item) {
     var flag = false;
     for (var i = 0; i < arr.length; i++) {
@@ -187,6 +191,7 @@ function isInArray(arr, item) {
     }
     return flag;
 }
+
 function each(obj, fn) {
     for (var i in obj) {
         if (obj.hasOwnProperty(i)) {
@@ -194,6 +199,7 @@ function each(obj, fn) {
         }
     }
 }
+
 function map(obj, fn) {
     var o = isArray(obj) ? [] : {};
     for (var i in obj) {
@@ -203,6 +209,7 @@ function map(obj, fn) {
     }
     return o;
 }
+
 function filter(obj, fn) {
     var iaArr = isArray(obj);
     var o = iaArr ? [] : {};
@@ -219,6 +226,7 @@ function filter(obj, fn) {
     }
     return o;
 }
+
 var binaryBase64 = function (str) {
     var i, len, char, res = '';
     for (i = 0, len = str.length / 2; i < len; i++) {
@@ -392,6 +400,7 @@ var throttleOnProgress = function (total, onProgress) {
     var time0 = Date.now();
     var time1;
     var timer;
+
     function update() {
         timer = 0;
         if (onProgress && (typeof onProgress === 'function')) {
@@ -411,6 +420,7 @@ var throttleOnProgress = function (total, onProgress) {
             }
         }
     }
+
     return function (info, immediately) {
         if (info) {
             size1 = info.loaded;
@@ -428,62 +438,14 @@ var throttleOnProgress = function (total, onProgress) {
 
 var getFileSize = function (api, params, callback) {
     var size;
-    if (util.isBrowser) {
-        if (typeof params.Body === 'string') {
-            params.Body = new global.Blob([params.Body]);
-        }
-        if (params.Body instanceof global.File || params.Body instanceof global.Blob) {
-            size = params.Body.size;
-        } else {
-            callback({error: 'params body format error, Only allow File|Blob|String.'});
-            return;
-        }
+    if (typeof params.Body === 'string') {
+        params.Body = new Blob([params.Body]);
+    }
+    if (params.Body instanceof window.File || params.Body instanceof window.Blob) {
+        size = params.Body.size;
     } else {
-        if (api === 'sliceUploadFile') {
-            if (params.FilePath) {
-                fs.stat(params.FilePath, function (err, fileStats) {
-                    if (err) {
-                        if (params.ContentLength !== undefined) {
-                            size = params.ContentLength;
-                        } else {
-                            callback(err);
-                            return;
-                        }
-                    } else {
-                        params.FileStat = fileStats;
-                        params.FileStat.FilePath = params.FilePath;
-                        size = fileStats.size;
-                    }
-                    params.ContentLength = size = size || 0;
-                    callback(null, size);
-                });
-                return;
-            } else {
-                callback({error: 'missing param FilePath'});
-                return;
-            }
-        } else {
-            if (params.Body !== undefined) {
-                if (typeof params.Body === 'string') {
-                    params.Body = global.Buffer.from(params.Body);
-                }
-                if (params.Body instanceof global.Buffer) {
-                    size = params.Body.length;
-                } else if (typeof params.Body.pipe === 'function') {
-                    if (params.ContentLength === undefined) {
-                        size = undefined;
-                    } else {
-                        size = params.ContentLength;
-                    }
-                } else {
-                    callback({error: 'params Body format error, Only allow Buffer|Stream|String.'});
-                    return;
-                }
-            } else {
-                callback({error: 'missing param Body'});
-                return;
-            }
-        }
+        callback({error: 'params body format error, Only allow File|Blob|String.'});
+        return;
     }
     params.ContentLength = size;
     callback(null, size);
