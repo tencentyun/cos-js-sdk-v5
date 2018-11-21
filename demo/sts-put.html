@@ -23,6 +23,7 @@
 
 <div id="msg"></div>
 
+<script src="cos-auth.js"></script>
 <script>
     (function () {
         // 请求用到的参数
@@ -33,27 +34,27 @@
 
         // 计算签名
         var getAuthorization = function (options, callback) {
-            var method = (options.Method || 'get').toLowerCase();
-            var key = options.Key || '';
-            var pathname = key.indexOf('/') === 0 ? key : '/' + key;
             // var url = 'http://127.0.0.1:3000/sts-auth' +
-            var url = '../server/sts-auth.php' +
-                '?method=' + method +
-                '&pathname=' + encodeURIComponent(pathname);
+            var url = '../server/sts.php';
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.onload = function (e) {
-                var AuthData;
+                var credentials;
                 try {
-                    AuthData = JSON.parse(xhr.responseText)
+                    credentials = (new Function('return ' + xhr.responseText))().credentials;
                 } catch (e) {}
-                if (AuthData && AuthData.Authorization) {
+                if (credentials) {
                     callback(null, {
-                        Authorization: AuthData.Authorization,
-                        XCosSecurityToken: AuthData.XCosSecurityToken,
+                        XCosSecurityToken: credentials.sessionToken,
+                        Authorization: CosAuth({
+                            SecretId: credentials.tmpSecretId,
+                            SecretKey: credentials.tmpSecretKey,
+                            Method: options.Method,
+                            Pathname: options.Pathname,
+                        })
                     });
                 } else {
-                    console.error(AuthData);
+                    console.error(xhr.responseText);
                     callback('获取签名出错');
                 }
             };
@@ -66,7 +67,7 @@
         // 上传文件
         var uploadFile = function (file, callback) {
             var Key = 'dir/' + file.name; // 这里指定上传目录和文件名
-            getAuthorization({Method: 'PUT', Key: Key}, function (err, info) {
+            getAuthorization({Method: 'PUT', Pathname: '/' + Key}, function (err, info) {
 
                 if (err) {
                     alert(err);

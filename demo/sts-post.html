@@ -22,7 +22,7 @@
 
 <div id="msg"></div>
 
-<script src="../dist/cos-js-sdk-v5.min.js"></script>
+<script src="cos-auth.js"></script>
 <script>
     (function () {
         // 请求用到的参数
@@ -33,29 +33,35 @@
 
         // 计算签名
         var getAuthorization = function (options, callback) {
-            // var url = 'http://127.0.0.1:3000/sts-auth' +
-            var url = '../server/sts-auth.php' +
-                '?method=post' +
-                '&pathname=' + encodeURIComponent('/');
+            // var url = 'http://127.0.0.1:3000/sts' +
+            var url = '../server/sts.php';
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
-            xhr.onload = function (e) {
-                var AuthData;
-                try {
-                    AuthData = JSON.parse(xhr.responseText)
-                } catch (e) {}
-                if (AuthData && AuthData.Authorization) {
-                    callback(null, {
-                        Authorization: AuthData.Authorization,
-                        XCosSecurityToken: AuthData.XCosSecurityToken,
-                    });
-                } else {
-                    console.error(AuthData);
-                    callback('获取签名出错');
+            xhr.onreadystatechange = function (e) {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        var credentials;
+                        try {
+                            credentials = (new Function('return ' + xhr.responseText))().credentials;
+                        } catch (e) {}
+                        if (credentials) {
+                            callback(null, {
+                                XCosSecurityToken: credentials.sessionToken,
+                                Authorization: CosAuth({
+                                    SecretId: credentials.tmpSecretId,
+                                    SecretKey: credentials.tmpSecretKey,
+                                    Method: options.Method,
+                                    Pathname: options.Pathname,
+                                })
+                            });
+                        } else {
+                            console.error(xhr.responseText);
+                            callback('获取签名出错');
+                        }
+                    } else {
+                        callback('获取签名出错');
+                    }
                 }
-            };
-            xhr.onerror = function (e) {
-                callback('获取签名出错');
             };
             xhr.send();
         };
@@ -63,7 +69,7 @@
         // 上传文件
         var uploadFile = function (file, callback) {
             var Key = 'dir/' + file.name; // 这里指定上传目录和文件名
-            getAuthorization({Method: 'POST', Key: Key}, function (err, info) {
+            getAuthorization({Method: 'POST', Pathname: '/'}, function (err, info) {
                 var fd = new FormData();
                 fd.append('key', Key);
                 fd.append('Signature', info.Authorization);
