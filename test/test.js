@@ -1,5 +1,5 @@
 var config = {
-    Bucket: 'test-1250000000',
+    Bucket: 'test-1251902136',
     Region: 'ap-guangzhou'
 };
 
@@ -28,6 +28,7 @@ var util = {
 };
 
 var getAuthorization = function (options, callback) {
+
     var url = '../server/sts.php';
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
@@ -44,6 +45,16 @@ var getAuthorization = function (options, callback) {
         });
     };
     xhr.send();
+
+    // var auth = CosAuth({
+    //     Version: '4.0',
+    //     SecretId: 'xxx',
+    //     SecretKey: 'xxx',
+    //     Bucket: config.Bucket,
+    //     Expires: 900,
+    //     Pathname: '/' + (options.Headers && options.Headers['x-cos-copy-source'] ? '' : options.Key),
+    // });
+    // callback({Authorization: auth});
 };
 var dataURItoUploadBody = function (dataURI) {
     var byteString = atob(dataURI.split(',')[1]);
@@ -722,7 +733,7 @@ group('putObjectCopy() 1', function () {
                         Region: config.Region,
                         Key: '1.copy.txt',
                     }, function (err, data) {
-                        assert.ok(data.headers.etag === ETag, '成功复制文件');
+                        assert.ok(data.headers && data.headers.etag === ETag, '成功复制文件');
                         done();
                     });
                 });
