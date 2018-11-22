@@ -19,6 +19,9 @@
     (function(){var g=CryptoJS,l=g.enc.Utf8;g.algo.HMAC=g.lib.Base.extend({init:function(e,d){e=this._hasher=new e.init;"string"==typeof d&&(d=l.parse(d));var g=e.blockSize,k=4*g;d.sigBytes>k&&(d=e.finalize(d));d.clamp();for(var p=this._oKey=d.clone(),b=this._iKey=d.clone(),n=p.words,j=b.words,h=0;h<g;h++)n[h]^=1549556828,j[h]^=909522486;p.sigBytes=b.sigBytes=k;this.reset()},reset:function(){var e=this._hasher;e.reset();e.update(this._iKey)},update:function(e){this._hasher.update(e);return this},finalize:function(e){var d=
             this._hasher;e=d.finalize(e);d.reset();return d.finalize(this._oKey.clone().concat(e))}})})();
 
+    // CryptoJS Base
+    (function () {var C = CryptoJS;var C_lib = C.lib;var WordArray = C_lib.WordArray;var C_enc = C.enc;C_enc.Base64 = {stringify: function (wordArray) {var words = wordArray.words;var sigBytes = wordArray.sigBytes;var map = this._map;wordArray.clamp();var base64Chars = [];for (var i = 0; i < sigBytes; i += 3) {var byte1 = (words[i >>> 2]       >>> (24 - (i % 4) * 8))       & 0xff;var byte2 = (words[(i + 1) >>> 2] >>> (24 - ((i + 1) % 4) * 8)) & 0xff;var byte3 = (words[(i + 2) >>> 2] >>> (24 - ((i + 2) % 4) * 8)) & 0xff;var triplet = (byte1 << 16) | (byte2 << 8) | byte3;for (var j = 0; (j < 4) && (i + j * 0.75 < sigBytes); j++) {base64Chars.push(map.charAt((triplet >>> (6 * (3 - j))) & 0x3f));}}var paddingChar = map.charAt(64);if (paddingChar) {while (base64Chars.length % 4) {base64Chars.push(paddingChar);}}return base64Chars.join('');}, parse: function (base64Str) {var base64StrLength = base64Str.length;var map = this._map;var paddingChar = map.charAt(64);if (paddingChar) {var paddingIndex = base64Str.indexOf(paddingChar);if (paddingIndex != -1) {base64StrLength = paddingIndex;}}var words = [];var nBytes = 0;for (var i = 0; i < base64StrLength; i++) {if (i % 4) {var bits1 = map.indexOf(base64Str.charAt(i - 1)) << ((i % 4) * 2);var bits2 = map.indexOf(base64Str.charAt(i)) >>> (6 - (i % 4) * 2);words[nBytes >>> 2] |= (bits1 | bits2) << (24 - (nBytes % 4) * 8);nBytes++;}}return WordArray.create(words, nBytes);}, _map: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='};}());
+
     // 和 cam 保持一致的 url encode
     function camSafeUrlEncode(str) {
         return encodeURIComponent(str)
@@ -29,8 +32,42 @@
             .replace(/\*/g, '%2A');
     }
 
-    //测试用的key后面可以去掉
+    // v4 签名
+    var CosAuthV4 = function (opt) {
+        var pathname = opt.Pathname || '/';
+        var expires = opt.Expires;
+
+        var ShortBucketName = '';
+        var AppId = '';
+        var match = opt.Bucket.match(/^(.+)-(\d+)$/);
+        if (match) {
+            ShortBucketName = match[1];
+            AppId = match[2];
+        }
+
+        var random = parseInt(Math.random() * Math.pow(2, 32));
+        var now = parseInt(Date.now() / 1000);
+        var e = now + (expires === undefined ? 900 : (expires * 1 || 0)); // 默认签名过期时间为当前时间 + 900s
+        var path = '/' + AppId + '/' + ShortBucketName + encodeURIComponent(pathname).replace(/%2F/g, '/'); //多次签名这里填空
+        var plainText = 'a=' + AppId + '&b=' + ShortBucketName + '&k=' + opt.SecretId + '&e=' + e + '&t=' + now + '&r=' + random + '&f=' + path;
+        var sha1Res = CryptoJS.HmacSHA1(plainText, opt.SecretKey);
+        var strWordArray = CryptoJS.enc.Utf8.parse(plainText);
+        var resWordArray = sha1Res.concat(strWordArray);
+        var sign = resWordArray.toString(CryptoJS.enc.Base64);
+
+        return sign;
+    }
+
+    // v5 签名
     var CosAuth = function (opt) {
+
+        if (!SecretId) return console.error('missing param SecretId');
+        if (!SecretKey) return console.error('missing param SecretKey');
+
+        if (opt.Version === '4.0') {
+            return CosAuthV4(opt);
+        }
+
         opt = opt || {};
 
         var SecretId = opt.SecretId;
@@ -39,10 +76,7 @@
         var query = opt.Query || {};
         var headers = opt.Headers || {};
         var pathname = opt.Pathname || '/';
-        var Expires = opt.Expires;
-
-        if (!SecretId) return console.error('missing param SecretId');
-        if (!SecretKey) return console.error('missing param SecretKey');
+        var expires = opt.Expires;
 
         var getObjectKeys = function (obj) {
             var list = [];
@@ -75,12 +109,7 @@
 
         // 签名有效起止时间
         var now = parseInt(new Date().getTime() / 1000) - 1;
-        var exp = now;
-        if (Expires === undefined) {
-            exp += 900; // 默认签名过期时间为当前时间 + 900s
-        } else {
-            exp += (Expires * 1) || 0;
-        }
+        var exp = now + (expires === undefined ? 900 : (expires * 1 || 0)); // 默认签名过期时间为当前时间 + 900s
 
         // 要用到的 Authorization 参数列表
         var qSignAlgorithm = 'sha1';

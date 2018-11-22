@@ -523,7 +523,7 @@ function deleteBucket() {
 
 function putObject() {
     // 创建测试文件
-    var filename = '(!\'*) "#$%&+,-./0123456789:;<=>@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';
+    var filename = '1mb.zip';
     var blob = util.createFile({size: 1024 * 1024 * 1});
     // 调用方法
     cos.putObject({
