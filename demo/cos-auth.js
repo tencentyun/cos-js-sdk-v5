@@ -119,7 +119,7 @@
     };
 
     if(typeof module === 'object'){
-        module.exports = CryptoJS;
+        module.exports = CosAuth;
     }else{
         window.CosAuth = CosAuth;
     }
