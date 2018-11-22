@@ -508,7 +508,7 @@ var getFileSize = function (api, params, callback) {
     if (typeof params.Body === 'string') {
         params.Body = new Blob([params.Body]);
     }
-    if (params.Body instanceof window.File || params.Body instanceof window.Blob) {
+    if (params.Body && (params.Body instanceof Blob || params.Body.constructor.name === 'File' || params.Body.constructor.name === 'Blob')) {
         size = params.Body.size;
     } else {
         callback({ error: 'params body format error, Only allow File|Blob|String.' });
@@ -1893,6 +1893,7 @@ var defaultOptions = {
     AppId: '', // AppId 已废弃，请拼接到 Bucket 后传入，例如：test-1250000000
     SecretId: '',
     SecretKey: '',
+    XCosSecurityToken: '',
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
     ChunkRetryTimes: 3,
@@ -1909,7 +1910,6 @@ var defaultOptions = {
     Protocol: '',
     CompatibilityMode: false,
     ForcePathStyle: false,
-    XCosSecurityToken: '',
     UseRawKey: false,
     UploadCheckContentMd5: false,
     UploadIdCacheLimit: 50
@@ -1937,7 +1937,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.25';
+COS.version = '0.4.26';
 
 module.exports = COS;
 
@@ -5550,7 +5550,7 @@ function getObjectUrl(params, callback) {
     }, function (AuthData) {
         if (!callback) return;
         var signUrl = url;
-        signUrl += '?' + AuthData.Authorization;
+        signUrl += '?' + (AuthData.Authorization.indexOf('q-signature') > -1 ? AuthData.Authorization : 'sign=' + encodeURIComponent(AuthData.Authorization));
         AuthData.XCosSecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.XCosSecurityToken);
         AuthData.ClientIP && (signUrl += '&clientIP=' + AuthData.ClientIP);
         AuthData.ClientUA && (signUrl += '&clientUA=' + AuthData.ClientUA);
@@ -10106,7 +10106,7 @@ var request = function (options, callback) {
 
     // body
     if (options.body) {
-        if (!(options.body instanceof window.Blob)) {
+        if (!(options.body instanceof Blob || options.body.constructor.name === 'File' || options.body.constructor.name === 'Blob')) {
             options.data = options.body;
             delete options.body;
         }

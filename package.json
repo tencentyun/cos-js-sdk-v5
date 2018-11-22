@@ -1,12 +1,13 @@
 {
   "name": "cos-js-sdk-v5",
-  "version": "0.4.25",
+  "version": "0.4.26",
   "description": "cos js sdk v5",
   "main": "index.js",
   "scripts": {
     "dev": "SET NODE_ENV=development&& webpack -w",
     "build": "SET NODE_ENV=production&& webpack",
-    "sts.js": "node server/sts.js"
+    "sts.js": "node server/sts.js",
+    "cos-auth.min.js": "uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m"
   },
   "repository": {
     "type": "git",

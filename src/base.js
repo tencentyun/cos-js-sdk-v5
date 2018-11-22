@@ -1699,7 +1699,8 @@ function getObjectUrl(params, callback) {
     }, function (AuthData) {
         if (!callback) return;
         var signUrl = url;
-        signUrl += '?' + AuthData.Authorization;
+        signUrl += '?' + (AuthData.Authorization.indexOf('q-signature') > -1 ?
+            AuthData.Authorization : 'sign=' + encodeURIComponent(AuthData.Authorization));
         AuthData.XCosSecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.XCosSecurityToken);
         AuthData.ClientIP && (signUrl += '&clientIP=' + AuthData.ClientIP);
         AuthData.ClientUA && (signUrl += '&clientUA=' + AuthData.ClientUA);
