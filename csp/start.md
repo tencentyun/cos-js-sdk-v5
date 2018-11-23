@@ -42,7 +42,7 @@ var cos = new COS({
     ServiceDomain: 'http://cos.default.xxx.com', // 这里替换成 getService 域名
     Domain: 'http://{Bucket}.cos.{Region}.xxx.com', 这里替换成 API 域名格式模板
     getAuthorization: function (options, callback) {
-        var url = './auth.php?method=' + options.Method + '&pathname=' + encodeURIComponent(options.Key);
+        var url = './auth-json.php?method=' + options.Method + '&path=' + encodeURIComponent('/' + options.Key);
         var xhr = new XMLHttpRequest();
         xhr.open('GET', url, true);
         xhr.onload = function (e) {

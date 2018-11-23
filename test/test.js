@@ -634,7 +634,7 @@ group('putObject()', function () {
                 Region: config.Region,
                 Key: filename,
             }, function (err, data) {
-                assert.ok(data.Body === content && (data.headers && data.headers.etag) === ETag);
+                assert.ok(data.Body && data.Body === content && (data.headers && data.headers.etag) === ETag);
                 done();
             });
         });
