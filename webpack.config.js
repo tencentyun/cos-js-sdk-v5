@@ -38,9 +38,12 @@ if (process.env.NODE_ENV === 'production') {
         }),
         new webpack.optimize.UglifyJsPlugin({
             sourceMap: true,
+            output: {
+                ascii_only: true,
+            },
             compress: {
-                warnings: false
-            }
+                warnings: false,
+            },
         }),
         new webpack.LoaderOptionsPlugin({
             minimize: true

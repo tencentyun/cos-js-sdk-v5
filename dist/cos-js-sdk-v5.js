@@ -508,7 +508,7 @@ var getFileSize = function (api, params, callback) {
     if (typeof params.Body === 'string') {
         params.Body = new Blob([params.Body]);
     }
-    if (params.Body && (params.Body instanceof Blob || params.Body.constructor.name === 'File' || params.Body.constructor.name === 'Blob')) {
+    if (params.Body && (params.Body instanceof Blob || params.Body.toString() === '[object File]' || params.Body.toString() === '[object Blob]')) {
         size = params.Body.size;
     } else {
         callback({ error: 'params body format error, Only allow File|Blob|String.' });
@@ -1937,7 +1937,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.26';
+COS.version = '0.4.27';
 
 module.exports = COS;
 
@@ -10106,7 +10106,7 @@ var request = function (options, callback) {
 
     // body
     if (options.body) {
-        if (!(options.body instanceof Blob || options.body.constructor.name === 'File' || options.body.constructor.name === 'Blob')) {
+        if (!(options.body instanceof Blob || options.body.toString() === '[object File]' || options.body.toString() === '[object Blob]')) {
             options.data = options.body;
             delete options.body;
         }

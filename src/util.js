@@ -441,7 +441,7 @@ var getFileSize = function (api, params, callback) {
     if (typeof params.Body === 'string') {
         params.Body = new Blob([params.Body]);
     }
-    if ((params.Body && (params.Body instanceof Blob || params.Body.constructor.name === 'File' || params.Body.constructor.name === 'Blob'))) {
+    if ((params.Body && (params.Body instanceof Blob || params.Body.toString() === '[object File]' || params.Body.toString() === '[object Blob]'))) {
         size = params.Body.size;
     } else {
         callback({error: 'params body format error, Only allow File|Blob|String.'});
