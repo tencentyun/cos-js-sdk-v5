@@ -61,8 +61,8 @@
     // v5 签名
     var CosAuth = function (opt) {
 
-        if (!SecretId) return console.error('missing param SecretId');
-        if (!SecretKey) return console.error('missing param SecretKey');
+        if (!opt.SecretId) return console.error('missing param SecretId');
+        if (!opt.SecretKey) return console.error('missing param SecretKey');
 
         if (opt.Version === '4.0') {
             return CosAuthV4(opt);
