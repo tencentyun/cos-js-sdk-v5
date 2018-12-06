@@ -28,6 +28,7 @@ var defaultOptions = {
     CompatibilityMode: false,
     ForcePathStyle: false,
     UseRawKey: false,
+    Timeout: 0, // 单位毫秒，0 代表不设置超时时间
     UploadCheckContentMd5: false,
     UploadIdCacheLimit: 50,
 };
@@ -43,6 +44,7 @@ var COS = function (options) {
     this.options.CopyChunkSize = Math.max(1024 * 1024, this.options.CopyChunkSize);
     this.options.CopySliceSize = Math.max(0, this.options.CopySliceSize);
     this.options.MaxPartNumber = Math.max(1024, Math.min(10000, this.options.MaxPartNumber));
+    this.options.Timeout = Math.max(0, this.options.Timeout);
     if (this.options.AppId) {
         console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").');
     }
@@ -54,6 +56,6 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.4.27';
+COS.version = '0.5.0';
 
 module.exports = COS;

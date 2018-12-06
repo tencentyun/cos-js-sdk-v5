@@ -20,6 +20,7 @@ var util = {
 var cos = new COS({
     getAuthorization: function (options,callback) {
 
+
         // 方法一、后端通过获取临时密钥给到前端，前端计算签名
         // var url = 'http://127.0.0.1:3000/sts';
         var url = '../server/sts.php';
@@ -28,19 +29,42 @@ var cos = new COS({
         xhr.onload = function (e) {
             try {
                 var data = JSON.parse(e.target.responseText);
+                var credentials = data.credentials;
             } catch (e) {
             }
             callback({
-                TmpSecretId: data.credentials && data.credentials.tmpSecretId,
-                TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
-                XCosSecurityToken: data.credentials && data.credentials.sessionToken,
+                TmpSecretId: credentials.tmpSecretId,
+                TmpSecretKey: credentials.tmpSecretKey,
+                XCosSecurityToken: credentials.sessionToken,
                 ExpiredTime: data.expiredTime,
             });
         };
         xhr.send();
 
 
-        // // 方法二、后端使用固定密钥计算签名，返回给前端，auth.php，注意：后端需要通过 method、pathname 控制好权限，比如不允许 put / 等，这里暂不提供
+        // // 方法二、【细粒度控制权限】后端通过获取临时密钥给到前端，前端只有相同请求才重用临时密钥，后端可以通过 Scope 细粒度控制权限
+        // var url = 'http://127.0.0.1:3000/sts-scope';
+        // var xhr = new XMLHttpRequest();
+        // xhr.open('POST', url, true);
+        // xhr.setRequestHeader('Content-Type', 'application/json');
+        // xhr.onload = function (e) {
+        //     try {
+        //         var data = JSON.parse(e.target.responseText);
+        //         var credentials = data.credentials;
+        //     } catch (e) {
+        //     }
+        //     callback({
+        //         TmpSecretId: credentials.tmpSecretId,
+        //         TmpSecretKey: credentials.tmpSecretKey,
+        //         XCosSecurityToken: credentials.sessionToken,
+        //         ExpiredTime: data.expiredTime,
+        //         ScopeLimit: true, // 设为 true 可限制密钥只在相同请求可重用，默认不限制一直可重用，细粒度控制权限需要设为 true
+        //     });
+        // };
+        // xhr.send(JSON.stringify(options.Scope));
+
+
+        // // 方法三、后端使用固定密钥计算签名，返回给前端，auth.php，注意：后端需要通过 method、pathname 控制好权限，比如不允许 put / 等，这里暂不提供
         // var method = (options.Method || 'get').toLowerCase();
         // var key = options.Key || '';
         // var query = options.Query || {};
@@ -58,12 +82,15 @@ var cos = new COS({
         // xhr.open('POST', url, true);
         // xhr.setRequestHeader('content-type', 'application/json');
         // xhr.onload = function (e) {
-        //     callback({ Authorization: e.target.responseText, });
+        //     callback({
+        //         Authorization: e.target.responseText,
+        //         // XCosSecurityToken: sessionToken, // 如果使用临时密钥，需要传 sessionToken
+        //     });
         // };
         // xhr.send(JSON.stringify(data));
 
 
-        // // 方法三、前端使用固定密钥计算签名（适用于前端调试）
+        // // 方法四、前端使用固定密钥计算签名（适用于前端调试）
         // var authorization = COS.getAuthorization({
         //     SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
         //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
@@ -73,7 +100,11 @@ var cos = new COS({
         //     Headers: options.Headers,
         //     Expires: 60,
         // });
-        // callback(authorization);
+        // callback({
+        //     Authorization: e.target.responseText,
+        //     // XCosSecurityToken: credentials.sessionToken, // 如果使用临时密钥，需要传 XCosSecurityToken
+        // });
+
     }
 });
 

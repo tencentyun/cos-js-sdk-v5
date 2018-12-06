@@ -1,12 +1,12 @@
 {
   "name": "cos-js-sdk-v5",
-  "version": "0.4.27",
+  "version": "0.5.0",
   "description": "cos js sdk v5",
   "main": "index.js",
   "scripts": {
     "dev": "SET NODE_ENV=development&& webpack -w",
     "build": "SET NODE_ENV=production&& webpack",
-    "sts.js": "node server/sts.js",
+    "sts.js": "nodemon server/sts.js",
     "cos-auth.min.js": "uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m"
   },
   "repository": {
@@ -21,12 +21,14 @@
   },
   "homepage": "https://github.com/tencentyun/cos-js-sdk-v5#readme",
   "dependencies": {
-    "querystring": "^0.2.0",
     "xmldom": "^0.1.27"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
+    "qcloud-cos-sts": "^2.0.4",
     "request": "^2.87.0",
     "webpack": "^3.8.1"
   }

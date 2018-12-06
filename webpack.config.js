@@ -1,5 +1,21 @@
+var fs = require('fs');
 var path = require('path');
 var webpack = require('webpack');
+var pkg = require('./package');
+
+// replaceVersion
+var replaceVersion = function () {
+    var filePath = path.resolve(__dirname, 'src/cos.js');
+    var content = fs.readFileSync(filePath).toString();
+    if (content) {
+        var newContent = content.replace(/(COS\.version) *= *['"]\d+\.\d+\.\d+['"];/, "$1 = '" + pkg.version + "';");
+        if (newContent !== content) {
+            fs.writeFileSync(filePath, newContent);
+            console.log('cos.js version updated.');
+        }
+    }
+};
+replaceVersion();
 
 module.exports = {
     entry: path.resolve(__dirname, './index.js'),

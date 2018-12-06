@@ -17,6 +17,7 @@ var util = require('./util');
  */
 function headBucket(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:HeadBucket',
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
@@ -43,13 +44,15 @@ function headBucket(params, callback) {
  */
 function getBucket(params, callback) {
     var reqParams = {};
-    reqParams['prefix'] = params['Prefix'];
+    reqParams['prefix'] = params['Prefix'] || '';
     reqParams['delimiter'] = params['Delimiter'];
     reqParams['marker'] = params['Marker'];
     reqParams['max-keys'] = params['MaxKeys'];
     reqParams['encoding-type'] = params['EncodingType'];
 
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucket',
+        ResourceKey: reqParams['prefix'],
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -90,6 +93,7 @@ function getBucket(params, callback) {
  */
 function deleteBucket(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucket',
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
@@ -119,6 +123,7 @@ function deleteBucket(params, callback) {
  */
 function getBucketAcl(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketACL',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -184,6 +189,7 @@ function putBucketAcl(params, callback) {
     });
 
     submitRequest.call(this, {
+        Action: 'name/cos:PutBucketACL',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -213,6 +219,7 @@ function putBucketAcl(params, callback) {
  */
 function getBucketCors(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketCORS',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -285,6 +292,7 @@ function putBucketCors(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
+        Action: 'name/cos:PutBucketCORS',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -313,6 +321,7 @@ function putBucketCors(params, callback) {
  */
 function deleteBucketCors(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucketCORS',
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -349,6 +358,7 @@ function putBucketPolicy(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(PolicyStr));
 
     submitRequest.call(this, {
+        Action: 'name/cos:PutBucketPolicy',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -380,6 +390,7 @@ function putBucketPolicy(params, callback) {
  */
 function deleteBucketPolicy(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucketPolicy',
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -409,6 +420,7 @@ function deleteBucketPolicy(params, callback) {
  */
 function getBucketLocation(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketLocation',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -433,6 +445,7 @@ function getBucketLocation(params, callback) {
  */
 function getBucketPolicy(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketPolicy',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -476,6 +489,7 @@ function getBucketPolicy(params, callback) {
  */
 function getBucketTagging(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketTagging',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -531,6 +545,7 @@ function putBucketTagging(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
+        Action: 'name/cos:PutBucketTagging',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -562,6 +577,7 @@ function putBucketTagging(params, callback) {
  */
 function deleteBucketTagging(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucketTagging',
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -592,6 +608,7 @@ function putBucketLifecycle(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
+        Action: 'name/cos:PutBucketLifecycle',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -613,6 +630,7 @@ function putBucketLifecycle(params, callback) {
 
 function getBucketLifecycle(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketLifecycle',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -648,6 +666,7 @@ function getBucketLifecycle(params, callback) {
 
 function deleteBucketLifecycle(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucketLifecycle',
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -680,6 +699,7 @@ function putBucketVersioning(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
+        Action: 'name/cos:PutBucketVersioning',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -701,6 +721,7 @@ function putBucketVersioning(params, callback) {
 
 function getBucketVersioning(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketVersioning',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -725,6 +746,7 @@ function putBucketReplication(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
+        Action: 'name/cos:PutBucketReplication',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -746,6 +768,7 @@ function putBucketReplication(params, callback) {
 
 function getBucketReplication(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketReplication',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -778,6 +801,7 @@ function getBucketReplication(params, callback) {
 
 function deleteBucketReplication(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucketReplication',
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -812,6 +836,7 @@ function deleteBucketReplication(params, callback) {
  */
 function headObject(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:HeadObject',
         method: 'HEAD',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -839,7 +864,7 @@ function headObject(params, callback) {
 
 function listObjectVersions(params, callback) {
     var reqParams = {};
-    reqParams['prefix'] = params['Prefix'];
+    reqParams['prefix'] = params['Prefix'] || '';
     reqParams['delimiter'] = params['Delimiter'];
     reqParams['key-marker'] = params['KeyMarker'];
     reqParams['version-id-marker'] = params['VersionIdMarker'];
@@ -847,6 +872,8 @@ function listObjectVersions(params, callback) {
     reqParams['encoding-type'] = params['EncodingType'];
 
     submitRequest.call(this, {
+        Action: 'name/cos:GetBucketObjectVersions',
+        ResourceKey: reqParams['prefix'],
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -910,6 +937,7 @@ function getObject(params, callback) {
 
     // 如果用户自己传入了 output
     submitRequest.call(this, {
+        Action: 'name/cos:GetObject',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -979,6 +1007,7 @@ function putObject(params, callback) {
             params.Headers['Content-Length'] = params.ContentLength;
         }
         submitRequest.call(self, {
+            Action: 'name/cos:PutObject',
             TaskId: params.TaskId,
             method: 'PUT',
             Bucket: params.Bucket,
@@ -1027,6 +1056,7 @@ function putObject(params, callback) {
  */
 function deleteObject(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:DeleteObject',
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1065,6 +1095,7 @@ function deleteObject(params, callback) {
 function getObjectAcl(params, callback) {
 
     submitRequest.call(this, {
+        Action: 'name/cos:GetObjectACL',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1128,6 +1159,7 @@ function putObjectAcl(params, callback) {
     });
 
     submitRequest.call(this, {
+        Action: 'name/cos:PutObjectACL',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1164,6 +1196,7 @@ function optionsObject(params, callback) {
     headers['Access-Control-Request-Headers'] = params['AccessControlRequestHeaders'];
 
     submitRequest.call(this, {
+        Action: 'name/cos:OptionsObject',
         method: 'OPTIONS',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1221,7 +1254,29 @@ function optionsObject(params, callback) {
  *     @param  {String}  x-cos-meta-*                   允许用户自定义的头部信息，将作为 Object 元数据返回。大小限制2K。
  */
 function putObjectCopy(params, callback) {
+    var CopySource = params.CopySource || '';
+    var m = CopySource.match(/^([^.]+-\d+)\.cos\.([^.]+)\.[^/]+\/(.+)$/);
+    if (!m) {
+        callback({error: 'CopySource format error'});
+        return;
+    }
+
+    var SourceBucket = m[1];
+    var SourceRegion = m[2];
+    var SourceKey = decodeURIComponent(m[3]);
+
     submitRequest.call(this, {
+        Scope: [{
+            action: 'name/cos:GetObject',
+            bucket: SourceBucket,
+            region: SourceRegion,
+            prefix: SourceKey,
+        }, {
+            action: 'name/cos:PutObject',
+            bucket: params.Bucket,
+            region: params.Region,
+            prefix: params.Key,
+        }],
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1242,7 +1297,30 @@ function putObjectCopy(params, callback) {
 }
 
 function uploadPartCopy(params, callback) {
+
+    var CopySource = params.CopySource || '';
+    var m = CopySource.match(/^([^.]+-\d+)\.cos\.([^.]+)\.[^/]+\/(.+)$/);
+    if (!m) {
+        callback({error: 'CopySource format error'});
+        return;
+    }
+
+    var SourceBucket = m[1];
+    var SourceRegion = m[2];
+    var SourceKey = decodeURIComponent(m[3]);
+
     submitRequest.call(this, {
+        Scope: [{
+            action: 'name/cos:GetObject',
+            bucket: SourceBucket,
+            region: SourceRegion,
+            prefix: SourceKey,
+        }, {
+            action: 'name/cos:PutObject',
+            bucket: params.Bucket,
+            region: params.Region,
+            prefix: params.Key,
+        }],
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1267,8 +1345,9 @@ function uploadPartCopy(params, callback) {
 }
 
 function deleteMultipleObject(params, callback) {
-    var Objects = params.Objects || {};
+    var Objects = params.Objects || [];
     var Quiet = params.Quiet;
+    Objects = util.isArray(Objects) ? Objects : [Objects];
 
     var xml = util.json2xml({Delete: {Object: Objects, Quiet: Quiet || false}});
 
@@ -1276,7 +1355,17 @@ function deleteMultipleObject(params, callback) {
     headers['Content-Type'] = 'application/xml';
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
+    var Scope = util.map(Objects, function (v) {
+        return {
+            action: 'name/cos:DeleteObject',
+            bucket: params.Bucket,
+            region: params.Region,
+            prefix: v.Key,
+        };
+    });
+
     submitRequest.call(this, {
+        Scope: Scope,
         method: 'POST',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1319,6 +1408,7 @@ function restoreObject(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
+        Action: 'name/cos:RestoreObject',
         method: 'POST',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1360,6 +1450,7 @@ function restoreObject(params, callback) {
  */
 function multipartInit(params, callback) {
     submitRequest.call(this, {
+        Action: 'name/cos:InitiateMultipartUpload',
         method: 'POST',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1404,6 +1495,7 @@ function multipartUpload(params, callback) {
         util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
             md5 && (params.Headers['Content-MD5'] = util.binaryBase64(md5));
             submitRequest.call(self, {
+                Action: 'name/cos:UploadPart',
                 TaskId: params.TaskId,
                 method: 'PUT',
                 Bucket: params.Bucket,
@@ -1467,6 +1559,7 @@ function multipartComplete(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
+        Action: 'name/cos:CompleteMultipartUpload',
         method: 'POST',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1520,7 +1613,7 @@ function multipartList(params, callback) {
 
     reqParams['delimiter'] = params['Delimiter'];
     reqParams['encoding-type'] = params['EncodingType'];
-    reqParams['prefix'] = params['Prefix'];
+    reqParams['prefix'] = params['Prefix'] || '';
 
     reqParams['max-uploads'] = params['MaxUploads'];
 
@@ -1530,6 +1623,8 @@ function multipartList(params, callback) {
     reqParams = util.clearKey(reqParams);
 
     submitRequest.call(this, {
+        Action: 'name/cos:ListMultipartUploads',
+        ResourceKey: reqParams['prefix'],
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1585,6 +1680,7 @@ function multipartListPart(params, callback) {
     reqParams['part-number-marker'] = params['PartNumberMarker'];
 
     submitRequest.call(this, {
+        Action: 'name/cos:ListParts',
         method: 'GET',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1625,6 +1721,7 @@ function multipartAbort(params, callback) {
 
     reqParams['uploadId'] = params['UploadId'];
     submitRequest.call(this, {
+        Action: 'name/cos:AbortMultipartUpload',
         method: 'DELETE',
         Bucket: params.Bucket,
         Region: params.Region,
@@ -1691,13 +1788,18 @@ function getObjectUrl(params, callback) {
         return url;
     }
     var AuthData = getAuthorizationAsync.call(this, {
+        Action: ((params.Method || '').toUpperCase() === 'PUT' ? 'name/cos:PutObject' : 'name/cos:GetObject'),
         Bucket: params.Bucket || '',
         Region: params.Region || '',
         Method: params.Method || 'get',
         Key: params.Key,
         Expires: params.Expires,
-    }, function (AuthData) {
+    }, function (err, AuthData) {
         if (!callback) return;
+        if (err) {
+            callback(err);
+            return;
+        }
         var signUrl = url;
         signUrl += '?' + (AuthData.Authorization.indexOf('q-signature') > -1 ?
             AuthData.Authorization : 'sign=' + encodeURIComponent(AuthData.Authorization));
@@ -1834,16 +1936,82 @@ function getUrl(params) {
 
 // 异步获取签名
 function getAuthorizationAsync(params, callback) {
+
+    var cb = function (AuthData) {
+
+        // 检查签名格式
+        var formatAllow = false;
+        var auth = AuthData.Authorization;
+        if (auth) {
+            if (auth.indexOf(' ') > -1) {
+                formatAllow = false;
+            } else if (auth.indexOf('q-sign-algorithm=') > -1 &&
+                auth.indexOf('q-ak=') > -1 &&
+                auth.indexOf('q-sign-time=') > -1 &&
+                auth.indexOf('q-key-time=') > -1 &&
+                auth.indexOf('q-url-param-list=') > -1) {
+                formatAllow = true;
+            } else {
+                try {
+                    auth = atob(auth);
+                    if (auth.indexOf('a=') > -1 &&
+                        auth.indexOf('k=') > -1 &&
+                        auth.indexOf('t=') > -1 &&
+                        auth.indexOf('r=') > -1 &&
+                        auth.indexOf('b=') > -1) {
+                        formatAllow = true;
+                    }
+                } catch (e) {}
+            }
+        }
+        if (formatAllow) {
+            callback && callback(null, AuthData);
+        } else {
+            callback && callback('authorization error');
+        }
+    };
+
     var self = this;
     var Bucket = params.Bucket || '';
     var Region = params.Region || '';
-    self._StsMap = self._StsMap || {};
-    var StsData = self._StsMap[Bucket + '.' + Region] || {};
 
+    // PathName
     var PathName = params.Key || '';
     if (self.options.ForcePathStyle && Bucket) {
         PathName = Bucket + '/' + PathName;
     }
+
+    // Action、ResourceKey
+    var StsData = {};
+    var Scope = params.Scope;
+    if (!Scope) {
+        var Action = params.Action || '';
+        var ResourceKey = params.ResourceKey || params.Key || '';
+        Scope = params.Scope || [{
+            action: Action,
+            bucket: Bucket,
+            region: Region,
+            prefix: ResourceKey,
+        }];
+    }
+    var ScopeKey  = util.md5(JSON.stringify(Scope));
+
+    // STS
+    self._StsCache = self._StsCache ||[];
+    (function () {
+        var i, AuthData;
+        for (i = self._StsCache.length - 1; i >= 0; i--) {
+            AuthData = self._StsCache[i];
+            if (AuthData.ExpiredTime < Math.round(Date.now() / 1000) + 10) {
+                self._StsCache.splice(i, 1);
+                continue;
+            }
+            if (!AuthData.ScopeLimit || AuthData.ScopeLimit && AuthData.ScopeKey === ScopeKey) {
+                StsData = AuthData;
+                break;
+            }
+        }
+    })();
 
     var calcAuthByTmpKey = function () {
         var Authorization = util.getAuth({
@@ -1862,7 +2030,7 @@ function getAuthorizationAsync(params, callback) {
             ClientIP: StsData.ClientIP || '',
             ClientUA: StsData.ClientUA || '',
         };
-        callback && callback(AuthData);
+        cb(AuthData);
     };
 
     // 先判断是否有临时密钥
@@ -1876,6 +2044,7 @@ function getAuthorizationAsync(params, callback) {
             Key: PathName,
             Query: params.Query,
             Headers: params.Headers,
+            Scope: Scope,
         }, function (AuthData) {
             if (typeof AuthData === 'string') {
                 AuthData = {Authorization: AuthData};
@@ -1884,10 +2053,13 @@ function getAuthorizationAsync(params, callback) {
                 AuthData.TmpSecretKey &&
                 AuthData.XCosSecurityToken &&
                 AuthData.ExpiredTime) {
-                StsData = self._StsMap[Bucket + '.' + Region] = AuthData;
+                StsData = AuthData || {};
+                StsData.Scope = Scope;
+                StsData.ScopeKey = ScopeKey;
+                self._StsCache.push(StsData);
                 calcAuthByTmpKey();
             } else {
-                callback && callback(AuthData);
+                cb(AuthData);
             }
         });
     } else if (self.options.getSTS) { // 外部获取临时密钥
@@ -1895,9 +2067,12 @@ function getAuthorizationAsync(params, callback) {
             Bucket: Bucket,
             Region: Region,
         }, function (data) {
-            StsData = self._StsMap[Bucket + '.' + Region] = data || {};
+            StsData = data || {};
+            StsData.Scope = Scope;
+            StsData.ScopeKey = ScopeKey;
             StsData.TmpSecretId = StsData.SecretId;
             StsData.TmpSecretKey = StsData.SecretKey;
+            self._StsCache.push(StsData);
             calcAuthByTmpKey();
         });
     } else { // 内部计算获取签名
@@ -1916,7 +2091,7 @@ function getAuthorizationAsync(params, callback) {
                 Authorization: Authorization,
                 XCosSecurityToken: self.options.XCosSecurityToken,
             };
-            callback && callback(AuthData);
+            cb(AuthData);
             return AuthData;
         })();
     }
@@ -1948,38 +2123,10 @@ function submitRequest(params, callback) {
         Key: params.Key,
         Query: Query,
         Headers: params.headers,
-    }, function (AuthData) {
-
-        // 检查签名格式
-        var auth = AuthData.Authorization;
-        var formatAllow = false;
-        if (auth) {
-            if (auth.indexOf(' ') > -1) {
-                formatAllow = false;
-            } else if (auth.indexOf('q-sign-algorithm=') > -1 &&
-                auth.indexOf('q-ak=') > -1 &&
-                auth.indexOf('q-sign-time=') > -1 &&
-                auth.indexOf('q-key-time=') > -1 &&
-                auth.indexOf('q-url-param-list=') > -1) {
-                formatAllow = true;
-            } else {
-                try {
-                    auth = atob(auth);
-                    if (auth.indexOf('a=') > -1 &&
-                        auth.indexOf('k=') > -1 &&
-                        auth.indexOf('t=') > -1 &&
-                        auth.indexOf('r=') > -1 &&
-                        auth.indexOf('b=') > -1) {
-                        formatAllow = true;
-                    }
-                } catch (e) {}
-            }
-        }
-        if (!formatAllow) {
-            callback('authorization error');
-            return;
-        }
-
+        Action: params.Action,
+        ResourceKey: params.ResourceKey,
+        Scope: params.Scope,
+    }, function (err, AuthData) {
         params.AuthData = AuthData;
         _submitRequest.call(self, params, callback);
     });
@@ -2041,6 +2188,9 @@ function _submitRequest(params, callback) {
             var loaded = e ? e.loaded : 0;
             params.onProgress({loaded: loaded, total: contentLength});
         };
+    }
+    if (this.options.Timeout) {
+        opt.timeout = this.options.Timeout;
     }
 
     self.emit('before-send', opt);

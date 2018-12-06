@@ -29,22 +29,46 @@ var util = {
 
 var getAuthorization = function (options, callback) {
 
-    var url = '../server/sts.php';
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
-    xhr.onload = function (e) {
-        try {
-            var data = JSON.parse(e.target.responseText);
-        } catch (e) {
-        }
-        callback({
-            TmpSecretId: data.credentials && data.credentials.tmpSecretId,
-            TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
-            XCosSecurityToken: data.credentials && data.credentials.sessionToken,
-            ExpiredTime: data.expiredTime,
-        });
-    };
-    xhr.send();
+
+    // // 方法一、后端通过获取临时密钥给到前端，前端计算签名
+    // var url = '../server/sts.php';
+    // var xhr = new XMLHttpRequest();
+    // xhr.open('GET', url, true);
+    // xhr.onload = function (e) {
+    //     try {
+    //         var data = JSON.parse(e.target.responseText);
+    //     } catch (e) {
+    //     }
+    //     callback({
+    //         TmpSecretId: data.credentials && data.credentials.tmpSecretId,
+    //         TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
+    //         XCosSecurityToken: data.credentials && data.credentials.sessionToken,
+    //         ExpiredTime: data.expiredTime,
+    //     });
+    // };
+    // xhr.send();
+
+
+    // // 方法二、后端通过获取临时密钥给到前端，前端计算签名
+    // var url = 'http://127.0.0.1:3000/sts';
+    // var xhr = new XMLHttpRequest();
+    // xhr.open('POST', url, true);
+    // xhr.setRequestHeader('Content-Type', 'application/json');
+    // xhr.onload = function (e) {
+    //     var data = {};
+    //     try {
+    //         data = JSON.parse(e.target.responseText);
+    //     } catch (e) {
+    //     }
+    //     callback({
+    //         TmpSecretId: data.credentials && data.credentials.tmpSecretId,
+    //         TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
+    //         XCosSecurityToken: data.credentials && data.credentials.sessionToken,
+    //         ExpiredTime: data.expiredTime,
+    //         ScopeLimit: true,
+    //     });
+    // };
+    // xhr.send(JSON.stringify(options.Scope));
 
     // var auth = CosAuth({
     //     Version: '4.0',
@@ -260,6 +284,7 @@ group('getObjectUrl()', function () {
             }, function (err, data) {
                 request({
                     url: data.Url,
+                    proxy: proxy,
                 }, function (err, response, body) {
                     assert.ok(!err, '文件获取出错');
                     assert.ok(response.statusCode === 200, '获取文件 200');
