@@ -27,26 +27,35 @@ var util = {
     }
 };
 
+function camSafeUrlEncode(str) {
+    return encodeURIComponent(str)
+        .replace(/!/g, '%21')
+        .replace(/'/g, '%27')
+        .replace(/\(/g, '%28')
+        .replace(/\)/g, '%29')
+        .replace(/\*/g, '%2A');
+}
+
 var getAuthorization = function (options, callback) {
 
 
-    // // 方法一、后端通过获取临时密钥给到前端，前端计算签名
-    // var url = '../server/sts.php';
-    // var xhr = new XMLHttpRequest();
-    // xhr.open('GET', url, true);
-    // xhr.onload = function (e) {
-    //     try {
-    //         var data = JSON.parse(e.target.responseText);
-    //     } catch (e) {
-    //     }
-    //     callback({
-    //         TmpSecretId: data.credentials && data.credentials.tmpSecretId,
-    //         TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
-    //         XCosSecurityToken: data.credentials && data.credentials.sessionToken,
-    //         ExpiredTime: data.expiredTime,
-    //     });
-    // };
-    // xhr.send();
+    // 方法一、后端通过获取临时密钥给到前端，前端计算签名
+    var url = '../server/sts.php';
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.onload = function (e) {
+        try {
+            var data = JSON.parse(e.target.responseText);
+        } catch (e) {
+        }
+        callback({
+            TmpSecretId: data.credentials && data.credentials.tmpSecretId,
+            TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
+            XCosSecurityToken: data.credentials && data.credentials.sessionToken,
+            ExpiredTime: data.expiredTime,
+        });
+    };
+    xhr.send();
 
 
     // // 方法二、后端通过获取临时密钥给到前端，前端计算签名
@@ -235,37 +244,52 @@ group('mock readAsBinaryString', function () {
     });
 });
 
-// group('getAuth()', function () {
-//     test('getAuth()', function (done, assert) {
-//         var content = Date.now().toString();
-//         var key = '1.txt';
-//         cos.putObject({
-//             Bucket: config.Bucket,
-//             Region: config.Region,
-//             Key: key,
-//             Body: content,
-//         }, function (err, data) {
-//             var AuthData = cos.getAuth({
-//                 Method: 'get',
-//                 Key: key
-//             });
-//             if (typeof AuthData === 'string') {
-//                 AuthData = {Authorization: AuthData};
-//             }
-//             var link = 'http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' +
-//                 encodeURIComponent(key).replace(/%2F/g, '/') + '?' + AuthData.Authorization +
-//                 (AuthData.XCosSecurityToken ? '&x-cos-security-token=' + AuthData.XCosSecurityToken : '');
-//             request({
-//                 url: link,
-//                 proxy: proxy,
-//             }, function (err, response, body) {
-//                 assert.ok(response.statusCode === 200);
-//                 assert.ok(body === content);
-//                 done();
-//             });
-//         });
-//     });
-// });
+group('getAuth()', function () {
+    test('getAuth()', function (done, assert) {
+        var content = Date.now().toString();
+        var key = '1.txt';
+        cos.putObject({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: key,
+            Body: content,
+        }, function (err, data) {
+            cos.options.getAuthorization({
+                Method: 'get',
+                Key: key,
+                Scope: [{
+                    action: 'GetObject',
+                    bucket: config.Bucket,
+                    region: config.Region,
+                    prefix: key,
+                }],
+            }, function (AuthData) {
+                if (typeof AuthData === 'string') {
+                    AuthData = {Authorization: AuthData};
+                }
+                if (!AuthData.Authorization) {
+                    AuthData.Authorization = COS.getAuthorization({
+                        SecretId: AuthData.TmpSecretId,
+                        SecretKey: AuthData.TmpSecretKey,
+                        Method: 'get',
+                        Key: key,
+                    });
+                }
+                var link = 'http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' +
+                    camSafeUrlEncode(key).replace(/%2F/g, '/') + '?' + AuthData.Authorization +
+                    (AuthData.XCosSecurityToken ? '&x-cos-security-token=' + AuthData.XCosSecurityToken : '');
+                request({
+                    url: link,
+                    proxy: proxy,
+                }, function (err, response, body) {
+                    assert.ok(response.statusCode === 200);
+                    assert.ok(body === content);
+                    done();
+                });
+            });
+        });
+    });
+});
 
 group('getObjectUrl()', function () {
     test('getObjectUrl()', function (done, assert) {

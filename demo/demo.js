@@ -17,6 +17,15 @@ var util = {
     }
 };
 
+function camSafeUrlEncode(str) {
+    return encodeURIComponent(str)
+        .replace(/!/g, '%21')
+        .replace(/'/g, '%27')
+        .replace(/\(/g, '%28')
+        .replace(/\)/g, '%29')
+        .replace(/\*/g, '%2A');
+}
+
 var cos = new COS({
     getAuthorization: function (options,callback) {
 
@@ -164,7 +173,7 @@ function getAuth() {
             AuthData = {Authorization: AuthData.Authorization};
         }
         var url = 'http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' +
-            encodeURIComponent(key).replace(/%2F/g, '/') +
+            camSafeUrlEncode(key).replace(/%2F/g, '/') +
             '?' + AuthData +
             (AuthData.XCosSecurityToken ? '&' + AuthData.XCosSecurityToken : '');
         logger.log(url);
@@ -578,7 +587,7 @@ function putObjectCopy() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
         Key: '1mb.copy.zip',
-        CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + encodeURIComponent('1mb.zip').replace(/%2F/g, '/'), // Bucket 格式：test-1250000000
+        CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + camSafeUrlEncode('1mb.zip').replace(/%2F/g, '/'), // Bucket 格式：test-1250000000
     }, function (err, data) {
         logger.log(err || data);
     });
@@ -819,7 +828,7 @@ function sliceCopyFile() {
     var sourceName = '3mb.zip';
     var Key = '3mb.copy.zip';
 
-    var sourcePath = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/'+ encodeURIComponent(sourceName).replace(/%2F/g, '/');
+    var sourcePath = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/'+ camSafeUrlEncode(sourceName).replace(/%2F/g, '/');
 
     cos.sliceCopyFile({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000

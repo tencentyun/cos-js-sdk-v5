@@ -470,6 +470,7 @@ var util = {
     filter: filter,
     clone: clone,
     uuid: uuid,
+    camSafeUrlEncode: camSafeUrlEncode,
     throttleOnProgress: throttleOnProgress,
     getFileSize: getFileSize,
     isBrowser: true,

@@ -1925,7 +1925,7 @@ function getUrl(params) {
     }
     url += '/';
     if (object) {
-        url += encodeURIComponent(object).replace(/%2F/g, '/');
+        url += util.camSafeUrlEncode(object).replace(/%2F/g, '/');
     }
 
     if (params.isLocation) {
