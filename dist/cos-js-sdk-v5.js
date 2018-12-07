@@ -537,6 +537,7 @@ var util = {
     filter: filter,
     clone: clone,
     uuid: uuid,
+    camSafeUrlEncode: camSafeUrlEncode,
     throttleOnProgress: throttleOnProgress,
     getFileSize: getFileSize,
     isBrowser: true
@@ -1939,7 +1940,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.0';
+COS.version = '0.5.1';
 
 module.exports = COS;
 
@@ -5768,7 +5769,7 @@ function getUrl(params) {
     }
     url += '/';
     if (object) {
-        url += encodeURIComponent(object).replace(/%2F/g, '/');
+        url += util.camSafeUrlEncode(object).replace(/%2F/g, '/');
     }
 
     if (params.isLocation) {
