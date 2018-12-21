@@ -222,6 +222,7 @@ group('mock readAsBinaryString', function () {
             onProgress: function (info) {
                 if (!paused && info.percent > 0.6) {
                     cos.cancelTask(TaskId);
+                    var hasProgress = false;
                     cos.sliceUploadFile({
                         Bucket: config.Bucket,
                         Region: config.Region,
@@ -235,6 +236,11 @@ group('mock readAsBinaryString', function () {
                             cos.cancelTask(TaskId);
                             FileReader.prototype.readAsBinaryString = FileReader.prototype._readAsBinaryString;
                             delete FileReader.prototype._readAsBinaryString;
+                            done();
+                        }
+                    }, function (err) {
+                        if (hasProgress) {
+                            assert.ok(false, '分片续传');
                             done();
                         }
                     });
@@ -273,6 +279,7 @@ group('getAuth()', function () {
                         SecretKey: AuthData.TmpSecretKey,
                         Method: 'get',
                         Key: key,
+                        SystemClockOffset: cos.options.SystemClockOffset,
                     });
                 }
                 var link = 'http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' +
@@ -1304,20 +1311,20 @@ group('BucketCors', function () {
         "AllowedOrigins": ["*"],
         "AllowedMethods": ["GET", "POST", "PUT", "DELETE", "HEAD"],
         "AllowedHeaders": ["*", 'test-' + Date.now().toString(36)],
-        "ExposeHeaders": ["ETag", "Content-Length", "x-cos-acl", "x-cos-version-id", "x-cos-request-id", "x-cos-delete-marker", "x-cos-server-side-encryption"],
+        "ExposeHeaders": ["ETag", "Date", "Content-Length", "x-cos-acl", "x-cos-version-id", "x-cos-request-id", "x-cos-delete-marker", "x-cos-server-side-encryption"],
         "MaxAgeSeconds": "5"
     }];
     var CORSRulesMulti = [{
         "AllowedOrigins": ["*"],
         "AllowedMethods": ["GET", "POST", "PUT", "DELETE", "HEAD"],
         "AllowedHeaders": ["*"],
-        "ExposeHeaders": ["ETag", "Content-Length", "x-cos-acl", "x-cos-version-id", "x-cos-request-id", "x-cos-delete-marker", "x-cos-server-side-encryption"],
+        "ExposeHeaders": ["ETag", "Date", "Content-Length", "x-cos-acl", "x-cos-version-id", "x-cos-request-id", "x-cos-delete-marker", "x-cos-server-side-encryption"],
         "MaxAgeSeconds": "5"
     }, {
         "AllowedOrigins": ["http://qq.com", "http://qcloud.com"],
         "AllowedMethods": ["GET", "POST", "PUT", "DELETE", "HEAD"],
         "AllowedHeaders": ["*"],
-        "ExposeHeaders": ["ETag", "Content-Length", "x-cos-acl", "x-cos-version-id", "x-cos-request-id", "x-cos-delete-marker", "x-cos-server-side-encryption"],
+        "ExposeHeaders": ["ETag", "Date", "Content-Length", "x-cos-acl", "x-cos-version-id", "x-cos-request-id", "x-cos-delete-marker", "x-cos-server-side-encryption"],
         "MaxAgeSeconds": "5"
     }];
     test('putBucketCors(),getBucketCors()', function (done, assert) {

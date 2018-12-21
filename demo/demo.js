@@ -73,7 +73,7 @@ var cos = new COS({
         // xhr.send(JSON.stringify(options.Scope));
 
 
-        // // 方法三、后端使用固定密钥计算签名，返回给前端，auth.php，注意：后端需要通过 method、pathname 控制好权限，比如不允许 put / 等，这里暂不提供
+        // // 方法三、后端使用固定密钥计算签名，返回给前端，auth.php，注意：这种有安全风险，后端需要通过 method、pathname 控制好权限，比如不允许 put / 等，这里暂不提供
         // var method = (options.Method || 'get').toLowerCase();
         // var key = options.Key || '';
         // var query = options.Query || {};
@@ -262,7 +262,7 @@ function putBucketCors() {
                 "AllowedOrigin": ["*"],
                 "AllowedMethod": ["GET", "POST", "PUT", "DELETE", "HEAD"],
                 "AllowedHeader": ["*"],
-                "ExposeHeader": ["ETag", "Content-Length", "x-cos-acl", "x-cos-version-id", "x-cos-delete-marker", "x-cos-server-side-encryption"],
+                "ExposeHeader": ["ETag", "Date", "Content-Length", "x-cos-acl", "x-cos-version-id", "x-cos-delete-marker", "x-cos-server-side-encryption"],
                 "MaxAgeSeconds": "5"
             }]
         }
