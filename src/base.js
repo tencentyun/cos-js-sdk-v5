@@ -2106,7 +2106,7 @@ function getAuthorizationAsync(params, callback) {
 function allowRetry(err) {
     var allowRetry = false;
     var isTimeError = false;
-    var serverDate = (err.headers && (err.headers.date || err.headers.Date)) || Error.ServerTime || '';
+    var serverDate = (err.headers && (err.headers.date || err.headers.Date)) || '';
     try {
         var errorCode = err.error.Code;
         var errorMessage = err.error.Message;
