@@ -65,7 +65,7 @@ app.all('/sts', function (req, res, next) {
             ],
         }],
     };
-    console.log(JSON.stringify(policy, null, ' '));
+    var startTime = Math.round(Date.now() / 1000);
     STS.getCredential({
         secretId: config.secretId,
         secretKey: config.secretKey,
@@ -74,7 +74,7 @@ app.all('/sts', function (req, res, next) {
         policy: policy,
     }, function (err, tempKeys) {
         var result = JSON.stringify(err || tempKeys) || '';
-        result.code = 0;
+        result.startTime = startTime;
         res.send(result);
     });
 });
@@ -104,6 +104,7 @@ app.all('/sts', function (req, res, next) {
 //
 //     // 获取临时密钥
 //     var policy = STS.getPolicy(scope);
+//     var startTime = Math.round(Date.now() / 1000);
 //     STS.getCredential({
 //         secretId: config.secretId,
 //         secretKey: config.secretKey,
@@ -112,6 +113,7 @@ app.all('/sts', function (req, res, next) {
 //         policy: policy,
 //     }, function (err, tempKeys) {
 //         var result = JSON.stringify(err || tempKeys) || '';
+//         result.startTime = startTime;
 //         res.send(result);
 //     });
 // });

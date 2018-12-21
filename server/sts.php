@@ -151,7 +151,7 @@ function getTempKeys() {
     $policyStr = str_replace('\\/', '/', json_encode($policy));
     $Action = 'GetFederationToken';
     $Nonce = rand(10000, 20000);
-    $Timestamp = time() - 1;
+    $Timestamp = time();
     $Method = 'POST';
 
     $params = array(
@@ -180,7 +180,10 @@ function getTempKeys() {
     curl_close($ch);
 
     $result = json_decode($result, 1);
-    if (isset($result['data'])) $result = $result['data'];
+    if (isset($result['data'])) {
+        $result = $result['data'];
+        $result['startTime'] = $Timestamp;
+    }
 
     return $result;
 }

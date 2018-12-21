@@ -29,6 +29,8 @@ var defaultOptions = {
     ForcePathStyle: false,
     UseRawKey: false,
     Timeout: 0, // 单位毫秒，0 代表不设置超时时间
+    CorrectClockSkew: true,
+    SystemClockOffset: 0, // 单位毫秒，ms
     UploadCheckContentMd5: false,
     UploadIdCacheLimit: 50,
 };
@@ -56,6 +58,6 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.1';
+COS.version = '0.5.2';
 
 module.exports = COS;

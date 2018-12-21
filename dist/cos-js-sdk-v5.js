@@ -141,7 +141,7 @@ var getAuth = function (opt) {
     };
 
     // 签名有效起止时间
-    var now = parseInt(new Date().getTime() / 1000) - 1;
+    var now = Math.round(getSkewTime(opt.SystemClockOffset) / 1000) - 1;
     var exp = now;
 
     var Expires = opt.Expires || opt.expires;
@@ -429,7 +429,7 @@ var apiWrapper = function (apiName, apiFn) {
                 }
                 // 判断 region 格式
                 if (!this.options.CompatibilityMode && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
-                    console.warn('param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
+                    console.warn('warning: param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
                 }
             }
             // 兼容不带 AppId 的 Bucket
@@ -518,11 +518,14 @@ var getFileSize = function (api, params, callback) {
     callback(null, size);
 };
 
+var getSkewTime = function (offset) {
+    return Date.now() + (offset || 0);
+};
+
 var util = {
     noop: noop,
     formatParams: formatParams,
     apiWrapper: apiWrapper,
-    getAuth: getAuth,
     xml2json: xml2json,
     json2xml: json2xml,
     md5: md5,
@@ -540,6 +543,8 @@ var util = {
     camSafeUrlEncode: camSafeUrlEncode,
     throttleOnProgress: throttleOnProgress,
     getFileSize: getFileSize,
+    getSkewTime: getSkewTime,
+    getAuth: getAuth,
     isBrowser: true
 };
 
@@ -1913,6 +1918,8 @@ var defaultOptions = {
     ForcePathStyle: false,
     UseRawKey: false,
     Timeout: 0, // 单位毫秒，0 代表不设置超时时间
+    CorrectClockSkew: true,
+    SystemClockOffset: 0, // 单位毫秒，ms
     UploadCheckContentMd5: false,
     UploadIdCacheLimit: 50
 };
@@ -1940,7 +1947,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.1';
+COS.version = '0.5.2';
 
 module.exports = COS;
 
@@ -3659,7 +3666,7 @@ var originApiMap = {};
 var transferToTaskMethod = function (apiMap, apiName) {
     originApiMap[apiName] = apiMap[apiName];
     apiMap[apiName] = function (params, callback) {
-        if (params._OnlyUploadNotAddTask) {
+        if (params.SkipTask) {
             originApiMap[apiName].call(this, params, callback);
         } else {
             this._addTask(apiName, params, callback);
@@ -3699,6 +3706,21 @@ var initTask = function (cos) {
         cos.emit('list-update', { list: util.map(queue, formatTask) });
     };
 
+    var clearQueue = function () {
+        if (queue.length > cos.options.UploadQueueSize) {
+            var i;
+            for (i = 0; i < queue.length && queue.length > cos.options.UploadQueueSize && // 大于队列才处理
+            i < nextUploadIndex; // 小于当前操作的 index 才处理
+            i++) {
+                if (!queue[i] || queue[i].state !== 'waiting') {
+                    console.log('splice:', queue.length, i, queue[i] && queue[i].state);
+                    queue.splice(i, 1);
+                    nextUploadIndex--;
+                }
+            }
+        }
+    };
+
     var startNextTask = function () {
         if (nextUploadIndex < queue.length && uploadingFileCount < cos.options.FileParallelLimit) {
             var task = queue[nextUploadIndex];
@@ -3717,10 +3739,13 @@ var initTask = function (cos) {
                         startNextTask(cos);
                         task.callback && task.callback(err, data);
                         if (task.state === 'success') {
+                            delete task.params.UploadData;
+                            delete task.params.Body;
                             delete task.params;
                             delete task.callback;
                         }
                     }
+                    clearQueue();
                 });
                 emitListUpdate();
             }
@@ -3747,6 +3772,8 @@ var initTask = function (cos) {
                 startNextTask(cos);
             }
             if (switchToState === 'canceled') {
+                delete task.params.UploadData;
+                delete task.params.Body;
                 delete task.params;
                 delete task.callback;
             }
@@ -3819,14 +3846,10 @@ var initTask = function (cos) {
             // 获取完文件大小再把任务加入队列
             tasks[id] = task;
             queue.push(task);
-            if (queue.length > cos.options.UploadQueueSize) {
-                var delta = queue.length - cos.options.UploadQueueSize;
-                queue.splice(0, delta);
-                nextUploadIndex -= delta;
-            }
             task.size = size;
             !ignoreAddEvent && emitListUpdate();
             startNextTask(cos);
+            clearQueue();
         });
         return id;
     };
@@ -5111,15 +5134,15 @@ function optionsObject(params, callback) {
  */
 function putObjectCopy(params, callback) {
     var CopySource = params.CopySource || '';
-    var m = CopySource.match(/^([^.]+-\d+)\.cos\.([^.]+)\.[^/]+\/(.+)$/);
+    var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
     if (!m) {
         callback({ error: 'CopySource format error' });
         return;
     }
 
     var SourceBucket = m[1];
-    var SourceRegion = m[2];
-    var SourceKey = decodeURIComponent(m[3]);
+    var SourceRegion = m[3];
+    var SourceKey = decodeURIComponent(m[4]);
 
     submitRequest.call(this, {
         Scope: [{
@@ -5155,15 +5178,15 @@ function putObjectCopy(params, callback) {
 function uploadPartCopy(params, callback) {
 
     var CopySource = params.CopySource || '';
-    var m = CopySource.match(/^([^.]+-\d+)\.cos\.([^.]+)\.[^/]+\/(.+)$/);
+    var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
     if (!m) {
         callback({ error: 'CopySource format error' });
         return;
     }
 
     var SourceBucket = m[1];
-    var SourceRegion = m[2];
-    var SourceKey = decodeURIComponent(m[3]);
+    var SourceRegion = m[3];
+    var SourceKey = decodeURIComponent(m[4]);
 
     submitRequest.call(this, {
         Scope: [{
@@ -5611,7 +5634,8 @@ function getAuth(params) {
         Query: params.Query,
         Headers: params.Headers,
         Expires: params.Expires,
-        UseRawKey: self.options.UseRawKey
+        UseRawKey: self.options.UseRawKey,
+        SystemClockOffset: self.options.SystemClockOffset
     });
 }
 
@@ -5838,7 +5862,8 @@ function getAuthorizationAsync(params, callback) {
         var i, AuthData;
         for (i = self._StsCache.length - 1; i >= 0; i--) {
             AuthData = self._StsCache[i];
-            if (AuthData.ExpiredTime < Math.round(Date.now() / 1000) + 10) {
+            var compareTime = Math.round(util.getSkewTime(self.options.SystemClockOffset) / 1000) + 30;
+            if (AuthData.StartTime && compareTime < AuthData.StartTime || compareTime >= AuthData.ExpiredTime) {
                 self._StsCache.splice(i, 1);
                 continue;
             }
@@ -5857,7 +5882,8 @@ function getAuthorizationAsync(params, callback) {
             Key: PathName,
             Query: params.Query,
             Headers: params.Headers,
-            UseRawKey: self.options.UseRawKey
+            UseRawKey: self.options.UseRawKey,
+            SystemClockOffset: self.options.SystemClockOffset
         });
         var AuthData = {
             Authorization: Authorization,
@@ -5870,7 +5896,7 @@ function getAuthorizationAsync(params, callback) {
     };
 
     // 先判断是否有临时密钥
-    if (StsData.ExpiredTime && StsData.ExpiredTime - Date.now() / 1000 > 60) {
+    if (StsData.ExpiredTime && StsData.ExpiredTime - util.getSkewTime(self.options.SystemClockOffset) / 1000 > 60) {
         // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
         calcAuthByTmpKey();
     } else if (self.options.getAuthorization) {
@@ -5922,7 +5948,8 @@ function getAuthorizationAsync(params, callback) {
                 Query: params.Query,
                 Headers: params.Headers,
                 Expires: params.Expires,
-                UseRawKey: self.options.UseRawKey
+                UseRawKey: self.options.UseRawKey,
+                SystemClockOffset: self.options.SystemClockOffset
             });
             var AuthData = {
                 Authorization: Authorization,
@@ -5933,6 +5960,33 @@ function getAuthorizationAsync(params, callback) {
         }();
     }
     return '';
+}
+
+// 调整时间偏差
+function allowRetry(err) {
+    var allowRetry = false;
+    var isTimeError = false;
+    var serverDate = err.headers && (err.headers.date || err.headers.Date) || Error.ServerTime || '';
+    try {
+        var errorCode = err.error.Code;
+        var errorMessage = err.error.Message;
+        if (errorCode === 'RequestTimeTooSkewed' || errorCode === 'AccessDenied' && errorMessage === 'Request has expired') {
+            isTimeError = true;
+        }
+    } catch (e) {}
+    if (err) {
+        if (isTimeError && serverDate) {
+            var serverTime = Date.parse(serverDate);
+            if (this.options.CorrectClockSkew && Math.abs(util.getSkewTime(this.options.SystemClockOffset) - serverTime) >= 30000) {
+                console.error('error: Local time is too skewed.');
+                this.options.SystemClockOffset = serverTime - Date.now();
+                allowRetry = true;
+            }
+        } else if (Math.round(err.statusCode / 100) === 5) {
+            allowRetry = true;
+        }
+    }
+    return allowRetry;
 }
 
 // 获取签名并发起请求
@@ -5953,20 +6007,38 @@ function submitRequest(params, callback) {
 
     var Query = util.clone(params.qs);
     params.action && (Query[params.action] = '');
-    getAuthorizationAsync.call(self, {
-        Bucket: params.Bucket || '',
-        Region: params.Region || '',
-        Method: params.method,
-        Key: params.Key,
-        Query: Query,
-        Headers: params.headers,
-        Action: params.Action,
-        ResourceKey: params.ResourceKey,
-        Scope: params.Scope
-    }, function (err, AuthData) {
-        params.AuthData = AuthData;
-        _submitRequest.call(self, params, callback);
-    });
+
+    var next = function (tryIndex) {
+        var oldClockOffset = self.options.SystemClockOffset;
+        getAuthorizationAsync.call(self, {
+            Bucket: params.Bucket || '',
+            Region: params.Region || '',
+            Method: params.method,
+            Key: params.Key,
+            Query: Query,
+            Headers: params.headers,
+            Action: params.Action,
+            ResourceKey: params.ResourceKey,
+            Scope: params.Scope
+        }, function (err, AuthData) {
+            params.AuthData = AuthData;
+            _submitRequest.call(self, params, function (err, data) {
+                if (err && tryIndex < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
+                    if (params.headers) {
+                        delete params.headers.Authorization;
+                        delete params.headers['token'];
+                        delete params.headers['clientIP'];
+                        delete params.headers['clientUA'];
+                        delete params.headers['x-cos-security-token'];
+                    }
+                    next(tryIndex + 1);
+                } else {
+                    callback(err, data);
+                }
+            });
+        });
+    };
+    next(0);
 }
 
 // 发起请求
@@ -6032,6 +6104,7 @@ function _submitRequest(params, callback) {
 
     self.emit('before-send', opt);
     var sender = REQUEST(opt, function (err, response, body) {
+        if (err === 'abort') return;
 
         // 返回内容添加 状态码 和 headers
         var hasReturned;
@@ -6050,6 +6123,7 @@ function _submitRequest(params, callback) {
                 data = util.extend(data || {}, attrs);
                 callback(null, data);
             }
+            sender = null;
         };
 
         // 请求错误，发生网络错误
@@ -10658,7 +10732,7 @@ function sliceUploadFile(params, callback) {
     if (FileSize === 0) {
         params.Body = '';
         params.ContentLength = 0;
-        params._OnlyUploadNotAddTask = true;
+        params.SkipTask = true;
         self.putObject(params, function (err, data) {
             if (err) {
                 return callback(err);
@@ -11167,34 +11241,36 @@ function uploadSliceItem(params, callback) {
         ContentLength = end - start;
     }
 
-    var PartItem = UploadData.PartList[PartNumber - 1];
-    Async.retry(ChunkRetryTimes, function (tryCallback) {
-        if (!self._isRunningTask(TaskId)) return;
-        var Body = util.fileSlice(FileBody, start, end);
-        self.multipartUpload({
-            TaskId: TaskId,
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key,
-            ContentLength: ContentLength,
-            PartNumber: PartNumber,
-            UploadId: UploadData.UploadId,
-            ServerSideEncryption: ServerSideEncryption,
-            Body: Body,
-            onProgress: params.onProgress
+    (function () {
+        var PartItem = UploadData.PartList[PartNumber - 1];
+        Async.retry(ChunkRetryTimes, function (tryCallback) {
+            if (!self._isRunningTask(TaskId)) return;
+            var Body = util.fileSlice(FileBody, start, end);
+            self.multipartUpload({
+                TaskId: TaskId,
+                Bucket: Bucket,
+                Region: Region,
+                Key: Key,
+                ContentLength: ContentLength,
+                PartNumber: PartNumber,
+                UploadId: UploadData.UploadId,
+                ServerSideEncryption: ServerSideEncryption,
+                Body: Body,
+                onProgress: params.onProgress
+            }, function (err, data) {
+                if (!self._isRunningTask(TaskId)) return;
+                if (err) {
+                    return tryCallback(err);
+                } else {
+                    PartItem.Uploaded = true;
+                    return tryCallback(null, data);
+                }
+            });
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
-            if (err) {
-                return tryCallback(err);
-            } else {
-                PartItem.Uploaded = true;
-                return tryCallback(null, data);
-            }
+            return callback(err, data);
         });
-    }, function (err, data) {
-        if (!self._isRunningTask(TaskId)) return;
-        return callback(err, data);
-    });
+    })();
 }
 
 // 完成分块上传

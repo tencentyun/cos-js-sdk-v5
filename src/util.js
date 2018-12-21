@@ -66,7 +66,7 @@ var getAuth = function (opt) {
     };
 
     // 签名有效起止时间
-    var now = parseInt(new Date().getTime() / 1000) - 1;
+    var now = Math.round(getSkewTime(opt.SystemClockOffset) / 1000) - 1;
     var exp = now;
 
     var Expires = opt.Expires || opt.expires;
@@ -361,7 +361,7 @@ var apiWrapper = function (apiName, apiFn) {
                 }
                 // 判断 region 格式
                 if (!this.options.CompatibilityMode && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
-                    console.warn('param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
+                    console.warn('warning: param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
                 }
             }
             // 兼容不带 AppId 的 Bucket
@@ -451,11 +451,14 @@ var getFileSize = function (api, params, callback) {
     callback(null, size);
 };
 
+var getSkewTime = function (offset) {
+    return Date.now() + (offset || 0);
+};
+
 var util = {
     noop: noop,
     formatParams: formatParams,
     apiWrapper: apiWrapper,
-    getAuth: getAuth,
     xml2json: xml2json,
     json2xml: json2xml,
     md5: md5,
@@ -473,6 +476,8 @@ var util = {
     camSafeUrlEncode: camSafeUrlEncode,
     throttleOnProgress: throttleOnProgress,
     getFileSize: getFileSize,
+    getSkewTime: getSkewTime,
+    getAuth: getAuth,
     isBrowser: true,
 };
 

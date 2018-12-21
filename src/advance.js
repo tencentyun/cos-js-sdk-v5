@@ -143,7 +143,7 @@ function sliceUploadFile(params, callback) {
     if (FileSize === 0) {
         params.Body = '';
         params.ContentLength = 0;
-        params._OnlyUploadNotAddTask = true;
+        params.SkipTask = true;
         self.putObject(params, function (err, data) {
             if (err) {
                 return callback(err);
@@ -651,34 +651,36 @@ function uploadSliceItem(params, callback) {
         ContentLength = end - start;
     }
 
-    var PartItem = UploadData.PartList[PartNumber - 1];
-    Async.retry(ChunkRetryTimes, function (tryCallback) {
-        if (!self._isRunningTask(TaskId)) return;
-        var Body = util.fileSlice(FileBody, start, end);
-        self.multipartUpload({
-            TaskId: TaskId,
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key,
-            ContentLength: ContentLength,
-            PartNumber: PartNumber,
-            UploadId: UploadData.UploadId,
-            ServerSideEncryption: ServerSideEncryption,
-            Body: Body,
-            onProgress: params.onProgress
+    (function () {
+        var PartItem = UploadData.PartList[PartNumber - 1];
+        Async.retry(ChunkRetryTimes, function (tryCallback) {
+            if (!self._isRunningTask(TaskId)) return;
+            var Body = util.fileSlice(FileBody, start, end);
+            self.multipartUpload({
+                TaskId: TaskId,
+                Bucket: Bucket,
+                Region: Region,
+                Key: Key,
+                ContentLength: ContentLength,
+                PartNumber: PartNumber,
+                UploadId: UploadData.UploadId,
+                ServerSideEncryption: ServerSideEncryption,
+                Body: Body,
+                onProgress: params.onProgress
+            }, function (err, data) {
+                if (!self._isRunningTask(TaskId)) return;
+                if (err) {
+                    return tryCallback(err);
+                } else {
+                    PartItem.Uploaded = true;
+                    return tryCallback(null, data);
+                }
+            });
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
-            if (err) {
-                return tryCallback(err);
-            } else {
-                PartItem.Uploaded = true;
-                return tryCallback(null, data);
-            }
+            return callback(err, data);
         });
-    }, function (err, data) {
-        if (!self._isRunningTask(TaskId)) return;
-        return callback(err, data);
-    });
+    })()
 }
 
 
