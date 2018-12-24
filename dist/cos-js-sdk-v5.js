@@ -1947,7 +1947,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.2';
+COS.version = '0.5.3';
 
 module.exports = COS;
 
@@ -3713,7 +3713,6 @@ var initTask = function (cos) {
             i < nextUploadIndex; // 小于当前操作的 index 才处理
             i++) {
                 if (!queue[i] || queue[i].state !== 'waiting') {
-                    console.log('splice:', queue.length, i, queue[i] && queue[i].state);
                     queue.splice(i, 1);
                     nextUploadIndex--;
                 }
@@ -3778,6 +3777,7 @@ var initTask = function (cos) {
                 delete task.callback;
             }
         }
+        clearQueue();
     };
 
     cos._addTasks = function (taskList) {
