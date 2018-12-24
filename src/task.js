@@ -4,7 +4,7 @@ var originApiMap = {};
 var transferToTaskMethod = function (apiMap, apiName) {
     originApiMap[apiName] = apiMap[apiName];
     apiMap[apiName] = function (params, callback) {
-        if (params.SkipTask) {
+        if (params.SkipTask || !this.options.UploadQueueSize) {
             originApiMap[apiName].call(this, params, callback);
         } else {
             this._addTask(apiName, params, callback);
