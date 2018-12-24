@@ -4,7 +4,7 @@ var originApiMap = {};
 var transferToTaskMethod = function (apiMap, apiName) {
     originApiMap[apiName] = apiMap[apiName];
     apiMap[apiName] = function (params, callback) {
-        if (params.SkipTask || !this.options.UploadQueueSize) {
+        if (params.SkipTask) {
             originApiMap[apiName].call(this, params, callback);
         } else {
             this._addTask(apiName, params, callback);
@@ -53,7 +53,6 @@ var initTask = function (cos) {
                  i < nextUploadIndex; // 小于当前操作的 index 才处理
                  i++) {
                 if (!queue[i] || queue[i].state !== 'waiting') {
-                    console.log('splice:', queue.length, i, queue[i] && queue[i].state);
                     queue.splice(i, 1);
                     nextUploadIndex--;
                 }
@@ -121,6 +120,7 @@ var initTask = function (cos) {
                 delete task.callback;
             }
         }
+        clearQueue();
     };
 
     cos._addTasks = function (taskList) {
