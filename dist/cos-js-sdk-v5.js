@@ -570,7 +570,7 @@ var fileSliceNeedCopy = function () {
     };
     return check(navigator.userAgent);
 }();
-util.fileSlice = function (file, start, end, callback) {
+util.fileSlice = function (file, start, end, isUseToUpload, callback) {
     var blob;
     if (file.slice) {
         blob = file.slice(start, end);
@@ -579,9 +579,10 @@ util.fileSlice = function (file, start, end, callback) {
     } else if (file.webkitSlice) {
         blob = file.webkitSlice(start, end);
     }
-    if (fileSliceNeedCopy) {
+    if (isUseToUpload && fileSliceNeedCopy) {
         var reader = new FileReader();
         reader.onload = function (e) {
+            blob = null;
             callback(new Blob([reader.result]));
         };
         reader.readAsArrayBuffer(blob);
@@ -1978,7 +1979,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.4';
+COS.version = '0.5.5';
 
 module.exports = COS;
 
@@ -10878,7 +10879,7 @@ function getUploadIdAndPartList(params, callback) {
                 Size: ChunkSize
             });
         } else {
-            util.fileSlice(params.Body, start, end, function (chunkItem) {
+            util.fileSlice(params.Body, start, end, false, function (chunkItem) {
                 util.getFileMd5(chunkItem, function (err, md5) {
                     if (err) return callback(err);
                     var ETag = '"' + md5 + '"';
@@ -11282,7 +11283,7 @@ function uploadSliceItem(params, callback) {
     var PartItem = UploadData.PartList[PartNumber - 1];
     Async.retry(ChunkRetryTimes, function (tryCallback) {
         if (!self._isRunningTask(TaskId)) return;
-        util.fileSlice(FileBody, start, end, function (Body) {
+        util.fileSlice(FileBody, start, end, true, function (Body) {
             self.multipartUpload({
                 TaskId: TaskId,
                 Bucket: Bucket,

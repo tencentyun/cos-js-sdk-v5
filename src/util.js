@@ -505,7 +505,7 @@ var fileSliceNeedCopy = (function () {
     };
     return check(navigator.userAgent);
 })();
-util.fileSlice = function (file, start, end, callback) {
+util.fileSlice = function (file, start, end, isUseToUpload, callback) {
     var blob;
     if (file.slice) {
         blob = file.slice(start, end);
@@ -514,9 +514,10 @@ util.fileSlice = function (file, start, end, callback) {
     } else if (file.webkitSlice) {
         blob = file.webkitSlice(start, end);
     }
-    if (fileSliceNeedCopy) {
+    if (isUseToUpload && fileSliceNeedCopy) {
         var reader = new FileReader();
         reader.onload = function (e) {
+            blob = null;
             callback(new Blob([reader.result]));
         };
         reader.readAsArrayBuffer(blob);
