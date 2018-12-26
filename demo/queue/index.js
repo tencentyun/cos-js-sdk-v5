@@ -18,7 +18,7 @@ var cos = new COS({
                 TmpSecretId: data.credentials && data.credentials.tmpSecretId,
                 TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
                 XCosSecurityToken: data.credentials && data.credentials.sessionToken,
-                ExpiredTime: data.expiredTime,
+                ExpiredTime: data.expiredTime
             });
         };
         xhr.send();
@@ -32,12 +32,13 @@ new Vue({
             FileParallelLimit: 5,
             ChunkParallelLimit: 16,
             ChunkMbSize: 2,
-            list: [],
+            list: []
         };
     },
     created: function () {
-        cos.on('list-update', data => {
-            this.list = data.list;
+        var self = this;
+        cos.on('list-update', function (data) {
+            self.list = data.list;
         });
     },
     methods: {

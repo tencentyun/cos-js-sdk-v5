@@ -7,9 +7,9 @@ var util = {
     createFile: function (options) {
         var buffer = new ArrayBuffer(options.size || 0);
         var arr = new Uint8Array(buffer);
-        arr.forEach(function (char, i) {
+        for (var i = 0; i < arr.length; i++) {
             arr[i] = 0;
-        });
+        }
         var opt = {};
         options.type && (opt.type = options.type);
         var blob = new Blob([buffer], options);
@@ -19,9 +19,9 @@ var util = {
         var size = str.length;
         var buffer = new ArrayBuffer(size || 0);
         var arr = new Uint8Array(buffer);
-        arr.forEach(function (char, i) {
+        for (var i = 0; i < arr.length; i++) {
             arr[i] = str[i];
-        });
+        }
         var blob = new Blob([buffer]);
         return blob;
     }

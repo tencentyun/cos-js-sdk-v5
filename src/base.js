@@ -1977,10 +1977,11 @@ function getAuthorizationAsync(params, callback) {
     var Region = params.Region || '';
 
     // PathName
-    var PathName = params.Key || '';
+    var KeyName = params.Key || '';
     if (self.options.ForcePathStyle && Bucket) {
-        PathName = Bucket + '/' + PathName;
+        KeyName = Bucket + '/' + KeyName;
     }
+    var Pathname = '/' + KeyName;
 
     // Action、ResourceKey
     var StsData = {};
@@ -2020,7 +2021,7 @@ function getAuthorizationAsync(params, callback) {
             SecretId: StsData.TmpSecretId,
             SecretKey: StsData.TmpSecretKey,
             Method: params.Method,
-            Key: PathName,
+            Pathname: Pathname,
             Query: params.Query,
             Headers: params.Headers,
             UseRawKey: self.options.UseRawKey,
@@ -2044,7 +2045,8 @@ function getAuthorizationAsync(params, callback) {
             Bucket: Bucket,
             Region: Region,
             Method: params.Method,
-            Key: PathName,
+            Key: KeyName,
+            Pathname: Pathname,
             Query: params.Query,
             Headers: params.Headers,
             Scope: Scope,
@@ -2084,7 +2086,7 @@ function getAuthorizationAsync(params, callback) {
                 SecretId: params.SecretId || self.options.SecretId,
                 SecretKey: params.SecretKey || self.options.SecretKey,
                 Method: params.Method,
-                Key: PathName,
+                Pathname: Pathname,
                 Query: params.Query,
                 Headers: params.Headers,
                 Expires: params.Expires,

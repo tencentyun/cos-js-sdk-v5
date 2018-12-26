@@ -10,7 +10,7 @@ var defaultOptions = {
     AppId: '', // AppId 已废弃，请拼接到 Bucket 后传入，例如：test-1250000000
     SecretId: '',
     SecretKey: '',
-    XCosSecurityToken: '',
+    XCosSecurityToken: '', // 使用临时密钥需要注意自行刷新 Token
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
     ChunkRetryTimes: 3,
@@ -58,6 +58,6 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.3';
+COS.version = '0.5.4';
 
 module.exports = COS;

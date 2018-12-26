@@ -254,19 +254,20 @@ function getUploadIdAndPartList(params, callback) {
                 Size: ChunkSize
             });
         } else {
-            var chunkItem = util.fileSlice(params.Body, start, end);
-            util.getFileMd5(chunkItem, function (err, md5) {
-                if (err) return callback(err);
-                var ETag = '"' + md5 + '"';
-                ETagMap[PartNumber] = ETag;
-                FinishSliceCount += 1;
-                FinishSize += ChunkSize;
-                callback(err, {
-                    PartNumber: PartNumber,
-                    ETag: ETag,
-                    Size: ChunkSize
+            util.fileSlice(params.Body, start, end, function (chunkItem) {
+                util.getFileMd5(chunkItem, function (err, md5) {
+                    if (err) return callback(err);
+                    var ETag = '"' + md5 + '"';
+                    ETagMap[PartNumber] = ETag;
+                    FinishSliceCount += 1;
+                    FinishSize += ChunkSize;
+                    callback(err, {
+                        PartNumber: PartNumber,
+                        ETag: ETag,
+                        Size: ChunkSize
+                    });
+                    onHashProgress({loaded: FinishSize, total: FileSize});
                 });
-                onHashProgress({loaded: FinishSize, total: FileSize});
             });
         }
     };
@@ -651,36 +652,35 @@ function uploadSliceItem(params, callback) {
         ContentLength = end - start;
     }
 
-    (function () {
         var PartItem = UploadData.PartList[PartNumber - 1];
         Async.retry(ChunkRetryTimes, function (tryCallback) {
             if (!self._isRunningTask(TaskId)) return;
-            var Body = util.fileSlice(FileBody, start, end);
-            self.multipartUpload({
-                TaskId: TaskId,
-                Bucket: Bucket,
-                Region: Region,
-                Key: Key,
-                ContentLength: ContentLength,
-                PartNumber: PartNumber,
-                UploadId: UploadData.UploadId,
-                ServerSideEncryption: ServerSideEncryption,
-                Body: Body,
-                onProgress: params.onProgress
-            }, function (err, data) {
-                if (!self._isRunningTask(TaskId)) return;
-                if (err) {
-                    return tryCallback(err);
-                } else {
-                    PartItem.Uploaded = true;
-                    return tryCallback(null, data);
-                }
+            util.fileSlice(FileBody, start, end, function (Body) {
+                self.multipartUpload({
+                    TaskId: TaskId,
+                    Bucket: Bucket,
+                    Region: Region,
+                    Key: Key,
+                    ContentLength: ContentLength,
+                    PartNumber: PartNumber,
+                    UploadId: UploadData.UploadId,
+                    ServerSideEncryption: ServerSideEncryption,
+                    Body: Body,
+                    onProgress: params.onProgress,
+                }, function (err, data) {
+                    if (!self._isRunningTask(TaskId)) return;
+                    if (err) {
+                        return tryCallback(err);
+                    } else {
+                        PartItem.Uploaded = true;
+                        return tryCallback(null, data);
+                    }
+                });
             });
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             return callback(err, data);
         });
-    })()
 }
 
 
@@ -951,19 +951,19 @@ function sliceCopyFile(params, callback) {
     var Region = params.Region;
     var Key = params.Key;
     var CopySource = params.CopySource;
-    var m = CopySource.match(/^([^.]+-\d+)\.cos\.([^.]+)\.[^/]+\/(.+)$/);
+    var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
     if (!m) {
         callback({error: 'CopySource format error'});
         return;
     }
 
     var SourceBucket = m[1];
-    var SourceRegion = m[2];
-    var SourceKey = decodeURIComponent(m[3]);
+    var SourceRegion = m[3];
+    var SourceKey = decodeURIComponent(m[4]);
     var CopySliceSize = params.SliceSize === undefined ? self.options.CopySliceSize : params.SliceSize;
     CopySliceSize = Math.max(0, Math.min(CopySliceSize, 5 * 1024 * 1024 * 1024));
 
-    var ChunkSize = params.ChunkSize || this.options.ChunkSize;
+    var ChunkSize = params.ChunkSize || this.options.CopyChunkSize;
     var ChunkParallel = this.options.CopyChunkParallelLimit;
 
     var FinishSize = 0;

@@ -27,9 +27,9 @@ var getAuth = function (opt) {
     var Key = opt.Key || '';
     var pathname;
     if (opt.UseRawKey) {
-        pathname = opt.pathname || '/' + Key;
+        pathname = opt.Pathname || opt.pathname || '/' + Key;
     } else {
-        pathname = opt.pathname || Key;
+        pathname = opt.Pathname || opt.pathname || Key;
         pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
     }
 
@@ -482,13 +482,46 @@ var util = {
 };
 
 util.localStorage = global.localStorage;
-util.fileSlice = function (file, start, end) {
+
+var fileSliceNeedCopy = (function () {
+    var compareVersion = function(a, b) {
+        a = a.split('.');
+        b = b.split('.');
+        for (var i = 0; i < b.length; i++) {
+            if (a[i] !== b[i]) {
+                return parseInt(a[i]) > parseInt(b[i]) ? 1 : -1;
+            }
+        }
+        return 0;
+    };
+    var check = function (ua) {
+        var ChromeVersion = (ua.match(/Chrome\/([.\d]+)/) || [])[1];
+        var QBCoreVersion = (ua.match(/QBCore\/([.\d]+)/) || [])[1];
+        var QQBrowserVersion = (ua.match(/QQBrowser\/([.\d]+)/) || [])[1];
+        var need = ChromeVersion && compareVersion(ChromeVersion, '53.0.2785.116') < 0
+            && QBCoreVersion && compareVersion(QBCoreVersion, '3.53.991.400') < 0
+            && QQBrowserVersion && compareVersion(QQBrowserVersion, '9.0.2524.400') <= 0 || false;
+        return need;
+    };
+    return check(navigator.userAgent);
+})();
+util.fileSlice = function (file, start, end, callback) {
+    var blob;
     if (file.slice) {
-        return file.slice(start, end);
+        blob = file.slice(start, end);
     } else if (file.mozSlice) {
-        return file.mozSlice(start, end);
+        blob = file.mozSlice(start, end);
     } else if (file.webkitSlice) {
-        return file.webkitSlice(start, end);
+        blob = file.webkitSlice(start, end);
+    }
+    if (fileSliceNeedCopy) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            callback(new Blob([reader.result]));
+        };
+        reader.readAsArrayBuffer(blob);
+    } else {
+        callback(blob);
     }
 };
 util.getFileUUID = function (file, ChunkSize) {

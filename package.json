@@ -1,12 +1,12 @@
 {
   "name": "cos-js-sdk-v5",
-  "version": "0.5.3",
-  "description": "cos js sdk v5",
+  "version": "0.5.4",
+  "description": "JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/document/product/436)",
   "main": "index.js",
   "scripts": {
     "dev": "SET NODE_ENV=development&& webpack -w",
     "build": "SET NODE_ENV=production&& webpack",
-    "sts.js": "nodemon server/sts.js",
+    "sts.js": "node server/sts.js",
     "cos-auth.min.js": "uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m"
   },
   "repository": {
