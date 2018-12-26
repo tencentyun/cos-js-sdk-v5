@@ -37,6 +37,16 @@
         var form = document.getElementById('form');
         form.action = prefix;
 
+        // 对更多字符编码的 url encode 格式
+        var camSafeUrlEncode = function (str) {
+            return encodeURIComponent(str)
+                .replace(/!/g, '%21')
+                .replace(/'/g, '%27')
+                .replace(/\(/g, '%28')
+                .replace(/\)/g, '%29')
+                .replace(/\*/g, '%2A');
+        };
+
         // 计算签名
         var getAuthorization = function (options, callback) {
             // var url = 'http://127.0.0.1:3000/sts' +
@@ -93,7 +103,7 @@
                     arr = items[i].split('=');
                     data[arr[0]] = decodeURIComponent(arr[1] || '');
                 }
-                showMessage(null, {url: prefix + encodeURIComponent(Key).replace(/%2F/g, '/'), ETag: data.etag});
+                showMessage(null, {url: prefix + camSafeUrlEncode(Key).replace(/%2F/g, '/'), ETag: data.etag});
             } else {
             }
         };
