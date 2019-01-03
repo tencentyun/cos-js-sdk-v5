@@ -14,7 +14,10 @@ var config = {
     allowPrefix: '_ALLOW_DIR_/*',
     // 简单上传和分片，需要以下的权限，其他权限列表请看 https://cloud.tencent.com/document/product/436/14048
     allowActions: [
+        // 所有 action 请看文档 https://cloud.tencent.com/document/product/436/31923
+        // 简单上传
         'name/cos:PutObject',
+        // 分片上传
         'name/cos:InitiateMultipartUpload',
         'name/cos:ListMultipartUploads',
         'name/cos:ListParts',
