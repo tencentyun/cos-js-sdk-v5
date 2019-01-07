@@ -1979,7 +1979,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.5';
+COS.version = '0.5.6';
 
 module.exports = COS;
 
@@ -5363,6 +5363,12 @@ function restoreObject(params, callback) {
  * @return  {Object}  data                                      返回的数据
  */
 function multipartInit(params, callback) {
+
+    var xml = util.json2xml({});
+    var headers = params.Headers;
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
     submitRequest.call(this, {
         Action: 'name/cos:InitiateMultipartUpload',
         method: 'POST',
@@ -5370,7 +5376,8 @@ function multipartInit(params, callback) {
         Region: params.Region,
         Key: params.Key,
         action: 'uploads',
-        headers: params.Headers
+        headers: params.Headers,
+        body: xml
     }, function (err, data) {
         if (err) {
             return callback(err);

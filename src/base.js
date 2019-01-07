@@ -1449,6 +1449,12 @@ function restoreObject(params, callback) {
  * @return  {Object}  data                                      返回的数据
  */
 function multipartInit(params, callback) {
+
+    var xml = util.json2xml({});
+    var headers = params.Headers;
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
     submitRequest.call(this, {
         Action: 'name/cos:InitiateMultipartUpload',
         method: 'POST',
@@ -1457,6 +1463,7 @@ function multipartInit(params, callback) {
         Key: params.Key,
         action: 'uploads',
         headers: params.Headers,
+        body: xml,
     }, function (err, data) {
         if (err) {
             return callback(err);
