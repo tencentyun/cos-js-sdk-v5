@@ -1867,3 +1867,76 @@ group('deleteMultipleObject Key 带中文字符', function () {
         });
     });
 });
+
+group('upload Content-Type', function () {
+    test('putObject Content-Type null', function (done, assert) {
+        cos.putObject({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '1.zip',
+            Body: '12345',
+        }, function (err, data) {
+            cos.headObject({
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: '1.zip',
+            }, function (err, data) {
+                assert.ok(data.headers['content-type'] === 'application/zip', 'Content-Type 正确');
+                done();
+            });
+        });
+    });
+    test('putObject Content-Type text/plain', function (done, assert) {
+        cos.putObject({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '1.txt',
+            ContentType: 'text/html',
+            Body: '12345',
+        }, function (err, data) {
+            cos.headObject({
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: '1.txt',
+            }, function (err, data) {
+                assert.ok(data.headers['content-type'] === 'text/html', 'Content-Type 正确');
+                done();
+            });
+        });
+    });
+    test('sliceUploadFile Content-Type null', function (done, assert) {
+        cos.sliceUploadFile({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '1.zip',
+            Body: '12345',
+        }, function (err, data) {
+            cos.headObject({
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: '1.zip',
+            }, function (err, data) {
+                assert.ok(data.headers['content-type'] === 'application/zip', 'Content-Type 正确');
+                done();
+            });
+        });
+    });
+    test('sliceUploadFile Content-Type text/plain', function (done, assert) {
+        cos.sliceUploadFile({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '1.txt',
+            ContentType: 'text/html',
+            Body: '12345',
+        }, function (err, data) {
+            cos.headObject({
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: '1.txt',
+            }, function (err, data) {
+                assert.ok(data.headers['content-type'] === 'text/html', 'Content-Type 正确');
+                done();
+            });
+        });
+    });
+});

@@ -1452,7 +1452,7 @@ function multipartInit(params, callback) {
 
     var xml = util.json2xml({});
     var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
+    headers['Content-Type'] = headers['Content-Type'] || '';
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {

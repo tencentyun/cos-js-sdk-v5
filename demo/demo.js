@@ -108,7 +108,7 @@ var getAuthorization = function (options, callback) {
     //     Expires: 900,
     // });
     // callback({
-    //     Authorization: e.target.responseText,
+    //     Authorization: authorization,
     //     // XCosSecurityToken: credentials.sessionToken, // 如果使用临时密钥，需要传 XCosSecurityToken
     // });
 

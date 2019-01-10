@@ -123,7 +123,6 @@ app.all('/sts', function (req, res, next) {
 
 
 app.all('*', function (req, res, next) {
-    res.writeHead(404);
     res.send({code: -1, message: '404 Not Found'});
 });
 

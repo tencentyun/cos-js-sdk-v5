@@ -1979,7 +1979,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.6';
+COS.version = '0.5.7';
 
 module.exports = COS;
 
@@ -5366,7 +5366,7 @@ function multipartInit(params, callback) {
 
     var xml = util.json2xml({});
     var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
+    headers['Content-Type'] = headers['Content-Type'] || '';
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
