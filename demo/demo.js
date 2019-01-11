@@ -52,7 +52,7 @@ var getAuthorization = function (options, callback) {
     xhr.send();
 
 
-    // // 格式二、（推荐）【细粒度控制权限】后端通过获取临时密钥给到前端，前端只有相同请求才重用临时密钥，后端可以通过 Scope 细粒度控制权限
+    // // 格式二、（推荐）【细粒度控制权限】后端通过获取临时密钥给到前端，前端只有相同请求才重复使用临时密钥，后端可以通过 Scope 细粒度控制权限
     // // 服务端例子：https://github.com/tencentyun/qcloud-cos-sts-sdk/edit/master/scope.md
     // var url = 'http://127.0.0.1:3000/sts-scope';
     // var xhr = new XMLHttpRequest();
@@ -69,7 +69,7 @@ var getAuthorization = function (options, callback) {
     //         TmpSecretKey: credentials.tmpSecretKey,
     //         XCosSecurityToken: credentials.sessionToken,
     //         ExpiredTime: data.expiredTime,
-    //         ScopeLimit: true, // 设为 true 可限制密钥只在相同请求可重用，默认不限制一直可重用，细粒度控制权限需要设为 true
+    //         ScopeLimit: true, // 细粒度控制权限需要设为 true，会限制密钥只在相同请求时重复使用
     //     });
     // };
     // xhr.send(JSON.stringify(options.Scope));
