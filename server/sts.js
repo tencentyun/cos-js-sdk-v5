@@ -77,7 +77,6 @@ app.all('/sts', function (req, res, next) {
         policy: policy,
     }, function (err, tempKeys) {
         var result = JSON.stringify(err || tempKeys) || '';
-        result.startTime = startTime;
         res.send(result);
     });
 });
@@ -116,7 +115,6 @@ app.all('/sts', function (req, res, next) {
 //         policy: policy,
 //     }, function (err, tempKeys) {
 //         var result = JSON.stringify(err || tempKeys) || '';
-//         result.startTime = startTime;
 //         res.send(result);
 //     });
 // });
