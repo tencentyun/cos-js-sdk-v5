@@ -581,7 +581,6 @@ function putObject() {
         Region: config.Region,
         Key: filename, /* 必须 */
         Body: blob,
-        // 'Cache-Control': '',
         TaskReady: function (tid) {
             TaskId = tid;
         },

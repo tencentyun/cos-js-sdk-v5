@@ -347,9 +347,15 @@ function getUploadIdAndPartList(params, callback) {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
-            Headers: params.Headers,
+            Headers: util.clone(params.Headers),
             StorageClass: StorageClass,
+            Body: params.Body,
         }, params);
+        // 获取 File 或 Blob 的 type 属性，如果有，作为文件 Content-Type
+        var ContentType = params.Headers['Content-Type'] || (params.Body && params.Body.type);
+        if (ContentType) {
+            _params.Headers['Content-Type'] = ContentType;
+        }
         self.multipartInit(_params, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (err) return ep.emit('error', err);
@@ -995,15 +1001,15 @@ function sliceCopyFile(params, callback) {
             var currentSize = SliceItem.end - SliceItem.start;
             var preAddSize = 0;
 
-            copySliceItem.call(self,{
+            copySliceItem.call(self, {
                 Bucket: Bucket,
                 Region: Region,
                 Key: Key,
                 CopySource: CopySource,
-                UploadId:UploadData.UploadId,
-                PartNumber:PartNumber,
-                CopySourceRange:CopySourceRange,
-                onProgress:function (data) {
+                UploadId: UploadData.UploadId,
+                PartNumber: PartNumber,
+                CopySourceRange: CopySourceRange,
+                onProgress: function (data) {
                     FinishSize += data.loaded - preAddSize;
                     preAddSize = data.loaded;
                     onProgress({loaded: FinishSize, total: FileSize});
@@ -1028,7 +1034,7 @@ function sliceCopyFile(params, callback) {
         });
     });
 
-    ep.on('get_file_size_finish',function () {
+    ep.on('get_file_size_finish', function (SourceHeaders) {
         // 控制分片大小
         (function () {
             var SIZE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1024 * 2, 1024 * 4, 1024 * 5];
@@ -1056,10 +1062,19 @@ function sliceCopyFile(params, callback) {
             params.PartList = list;
         })();
 
+        var TargetHeader;
+        if (params.Headers['x-cos-metadata-directive'] === 'Replaced') {
+            TargetHeader = params.Headers;
+        } else {
+            TargetHeader = SourceHeaders;
+        }
+        TargetHeader['x-cos-storage-class'] = params.Headers['x-cos-storage-class'] || SourceHeaders['x-cos-storage-class'];
+        TargetHeader = util.clearKey(TargetHeader);
         self.multipartInit({
             Bucket: Bucket,
             Region: Region,
             Key: Key,
+            Headers: TargetHeader,
         },function (err,data) {
             if (err) {
                 return callback(err);
@@ -1094,6 +1109,9 @@ function sliceCopyFile(params, callback) {
 
         // 开始上传
         if (FileSize <= CopySliceSize) {
+            if (!params.Headers['x-cos-metadata-directive']) {
+                params.Headers['x-cos-metadata-directive'] = 'Copy';
+            }
             self.putObjectCopy(params, function (err, data) {
                 if (err) {
                     onProgress(null, true);
@@ -1103,7 +1121,22 @@ function sliceCopyFile(params, callback) {
                 callback(err, data);
             });
         } else {
-            ep.emit('get_file_size_finish');
+            var resHeaders = data.headers;
+            var SourceHeaders = {
+                'Cache-Control': resHeaders['cache-control'],
+                'Content-Disposition': resHeaders['content-disposition'],
+                'Content-Encoding': resHeaders['content-encoding'],
+                'Content-Type': resHeaders['content-type'],
+                'Expires': resHeaders['expires'],
+                'x-cos-storage-class': resHeaders['x-cos-storage-class'],
+            };
+            util.each(resHeaders, function (v, k) {
+                var metaPrefix = 'x-cos-meta-';
+                if (k.indexOf(metaPrefix) === 0 && k.length > metaPrefix.length) {
+                    SourceHeaders[k] = v;
+                }
+            });
+            ep.emit('get_file_size_finish', SourceHeaders);
         }
     });
 }

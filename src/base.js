@@ -1001,6 +1001,14 @@ function putObject(params, callback) {
     var FileSize = params.ContentLength;
     var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
+    // 特殊处理 Cache-Control
+    var headers = params.Headers;
+    !headers['Cache-Control'] && (headers['Cache-Control'] = '');
+
+    // 获取 File 或 Blob 的 type 属性，如果有，作为文件 Content-Type
+    var ContentType = headers['Content-Type'] || (params.Body && params.Body.type);
+    !headers['Content-Type'] && ContentType && (headers['Content-Type'] = ContentType);
+
     util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
         md5 && (params.Headers['Content-MD5'] = util.binaryBase64(md5));
         if (params.ContentLength !== undefined) {
@@ -1450,10 +1458,21 @@ function restoreObject(params, callback) {
  */
 function multipartInit(params, callback) {
 
-    var xml = util.json2xml({});
+    var xml;
     var headers = params.Headers;
-    headers['Content-Type'] = headers['Content-Type'] || '';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    var userAgent = navigator.userAgent || '';
+    var m = userAgent.match(/ TBS\/(\d{6}) /);
+    if (location.protocol === 'http:' && m && m[1].length <= 6 && m[1] < '044429') {
+        xml = util.json2xml({});
+        headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+        // 如果没有 Content-Type 指定一个
+        if (!headers['Content-Type']) {
+            headers['Content-Type'] = (params.Body && params.Body.type) || 'application/octet-stream';
+        }
+    }
+
+    // 特殊处理 Cache-Control
+    !headers['Cache-Control'] && (headers['Cache-Control'] = '');
 
     submitRequest.call(this, {
         Action: 'name/cos:InitiateMultipartUpload',
@@ -1945,6 +1964,13 @@ function getUrl(params) {
 // 异步获取签名
 function getAuthorizationAsync(params, callback) {
 
+    var headers = util.clone(params.Headers);
+    delete headers['Content-Type'];
+    delete headers['Cache-Control'];
+    util.each(headers, function (v, k) {
+        v === '' && delete headers[k];
+    });
+
     var cb = function (AuthData) {
 
         // 检查签名格式
@@ -2030,7 +2056,7 @@ function getAuthorizationAsync(params, callback) {
             Method: params.Method,
             Pathname: Pathname,
             Query: params.Query,
-            Headers: params.Headers,
+            Headers: headers,
             UseRawKey: self.options.UseRawKey,
             SystemClockOffset: self.options.SystemClockOffset,
         });
@@ -2055,7 +2081,7 @@ function getAuthorizationAsync(params, callback) {
             Key: KeyName,
             Pathname: Pathname,
             Query: params.Query,
-            Headers: params.Headers,
+            Headers: headers,
             Scope: Scope,
         }, function (AuthData) {
             if (typeof AuthData === 'string') {
@@ -2095,7 +2121,7 @@ function getAuthorizationAsync(params, callback) {
                 Method: params.Method,
                 Pathname: Pathname,
                 Query: params.Query,
-                Headers: params.Headers,
+                Headers: headers,
                 Expires: params.Expires,
                 UseRawKey: self.options.UseRawKey,
                 SystemClockOffset: self.options.SystemClockOffset,

@@ -342,43 +342,50 @@ var formatParams = function (apiName, params) {
                 }
             })();
 
-            // params headers
-            Headers['x-cos-mfa'] = params['MFA'];
-            Headers['Content-MD5'] = params['ContentMD5'];
-            Headers['Content-Length'] = params['ContentLength'];
-            Headers['Content-Type'] = params['ContentType'];
-            Headers['Expect'] = params['Expect'];
-            Headers['Expires'] = params['Expires'];
-            Headers['Cache-Control'] = params['CacheControl'];
-            Headers['Content-Disposition'] = params['ContentDisposition'];
-            Headers['Content-Encoding'] = params['ContentEncoding'];
-            Headers['Range'] = params['Range'];
-            Headers['If-Modified-Since'] = params['IfModifiedSince'];
-            Headers['If-Unmodified-Since'] = params['IfUnmodifiedSince'];
-            Headers['If-Match'] = params['IfMatch'];
-            Headers['If-None-Match'] = params['IfNoneMatch'];
-            Headers['x-cos-copy-source'] = params['CopySource'];
-            Headers['x-cos-copy-source-Range'] = params['CopySourceRange'];
-            Headers['x-cos-metadata-directive'] = params['MetadataDirective'];
-            Headers['x-cos-copy-source-If-Modified-Since'] = params['CopySourceIfModifiedSince'];
-            Headers['x-cos-copy-source-If-Unmodified-Since'] = params['CopySourceIfUnmodifiedSince'];
-            Headers['x-cos-copy-source-If-Match'] = params['CopySourceIfMatch'];
-            Headers['x-cos-copy-source-If-None-Match'] = params['CopySourceIfNoneMatch'];
-            Headers['x-cos-acl'] = params['ACL'];
-            Headers['x-cos-grant-read'] = params['GrantRead'];
-            Headers['x-cos-grant-write'] = params['GrantWrite'];
-            Headers['x-cos-grant-full-control'] = params['GrantFullControl'];
-            Headers['x-cos-grant-read-acp'] = params['GrantReadAcp'];
-            Headers['x-cos-grant-write-acp'] = params['GrantWriteAcp'];
-            Headers['x-cos-storage-class'] = params['StorageClass'];
-            // SSE-C
-            Headers['x-cos-server-side-encryption-customer-algorithm'] = params['SSECustomerAlgorithm'];
-            Headers['x-cos-server-side-encryption-customer-key'] = params['SSECustomerKey'];
-            Headers['x-cos-server-side-encryption-customer-key-MD5'] = params['SSECustomerKeyMD5'];
-            // SSE-COS、SSE-KMS
-            Headers['x-cos-server-side-encryption'] = params['ServerSideEncryption'];
-            Headers['x-cos-server-side-encryption-cos-kms-key-id'] = params['SSEKMSKeyId'];
-            Headers['x-cos-server-side-encryption-context'] = params['SSEContext'];
+            var headerMap = {
+                // params headers
+                'x-cos-mfa': 'MFA',
+                'Content-MD5': 'ContentMD5',
+                'Content-Length': 'ContentLength',
+                'Content-Type': 'ContentType',
+                'Expect': 'Expect',
+                'Expires': 'Expires',
+                'Cache-Control': 'CacheControl',
+                'Content-Disposition': 'ContentDisposition',
+                'Content-Encoding': 'ContentEncoding',
+                'Range': 'Range',
+                'If-Modified-Since': 'IfModifiedSince',
+                'If-Unmodified-Since': 'IfUnmodifiedSince',
+                'If-Match': 'IfMatch',
+                'If-None-Match': 'IfNoneMatch',
+                'x-cos-copy-source': 'CopySource',
+                'x-cos-copy-source-Range': 'CopySourceRange',
+                'x-cos-metadata-directive': 'MetadataDirective',
+                'x-cos-copy-source-If-Modified-Since': 'CopySourceIfModifiedSince',
+                'x-cos-copy-source-If-Unmodified-Since': 'CopySourceIfUnmodifiedSince',
+                'x-cos-copy-source-If-Match': 'CopySourceIfMatch',
+                'x-cos-copy-source-If-None-Match': 'CopySourceIfNoneMatch',
+                'x-cos-acl': 'ACL',
+                'x-cos-grant-read': 'GrantRead',
+                'x-cos-grant-write': 'GrantWrite',
+                'x-cos-grant-full-control': 'GrantFullControl',
+                'x-cos-grant-read-acp': 'GrantReadAcp',
+                'x-cos-grant-write-acp': 'GrantWriteAcp',
+                'x-cos-storage-class': 'StorageClass',
+                // SSE-C
+                'x-cos-server-side-encryption-customer-algorithm': 'SSECustomerAlgorithm',
+                'x-cos-server-side-encryption-customer-key': 'SSECustomerKey',
+                'x-cos-server-side-encryption-customer-key-MD5': 'SSECustomerKeyMD5',
+                // SSE-COS、SSE-KMS
+                'x-cos-server-side-encryption': 'ServerSideEncryption',
+                'x-cos-server-side-encryption-cos-kms-key-id': 'SSEKMSKeyId',
+                'x-cos-server-side-encryption-context': 'SSEContext'
+            };
+            util.each(headerMap, function (paramKey, headerKey) {
+                if (params[paramKey] !== undefined) {
+                    Headers[headerKey] = params[paramKey];
+                }
+            });
 
             params.Headers = clearKey(Headers);
         }
@@ -506,7 +513,7 @@ var throttleOnProgress = function (total, onProgress) {
 var getFileSize = function (api, params, callback) {
     var size;
     if (typeof params.Body === 'string') {
-        params.Body = new Blob([params.Body]);
+        params.Body = new Blob([params.Body], { type: 'text/plain' });
     }
     if (params.Body && (params.Body instanceof Blob || params.Body.toString() === '[object File]' || params.Body.toString() === '[object Blob]')) {
         size = params.Body.size;
@@ -1979,7 +1986,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.7';
+COS.version = '0.5.8';
 
 module.exports = COS;
 
@@ -4916,6 +4923,14 @@ function putObject(params, callback) {
     var FileSize = params.ContentLength;
     var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
+    // 特殊处理 Cache-Control
+    var headers = params.Headers;
+    !headers['Cache-Control'] && (headers['Cache-Control'] = '');
+
+    // 获取 File 或 Blob 的 type 属性，如果有，作为文件 Content-Type
+    var ContentType = headers['Content-Type'] || params.Body && params.Body.type;
+    !headers['Content-Type'] && ContentType && (headers['Content-Type'] = ContentType);
+
     util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
         md5 && (params.Headers['Content-MD5'] = util.binaryBase64(md5));
         if (params.ContentLength !== undefined) {
@@ -5364,10 +5379,21 @@ function restoreObject(params, callback) {
  */
 function multipartInit(params, callback) {
 
-    var xml = util.json2xml({});
+    var xml;
     var headers = params.Headers;
-    headers['Content-Type'] = headers['Content-Type'] || '';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    var userAgent = navigator.userAgent || '';
+    var m = userAgent.match(/ TBS\/(\d{6}) /);
+    if (location.protocol === 'http:' && m && m[1].length <= 6 && m[1] < '044429') {
+        xml = util.json2xml({});
+        headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+        // 如果没有 Content-Type 指定一个
+        if (!headers['Content-Type']) {
+            headers['Content-Type'] = params.Body && params.Body.type || 'application/octet-stream';
+        }
+    }
+
+    // 特殊处理 Cache-Control
+    !headers['Cache-Control'] && (headers['Cache-Control'] = '');
 
     submitRequest.call(this, {
         Action: 'name/cos:InitiateMultipartUpload',
@@ -5848,6 +5874,13 @@ function getUrl(params) {
 // 异步获取签名
 function getAuthorizationAsync(params, callback) {
 
+    var headers = util.clone(params.Headers);
+    delete headers['Content-Type'];
+    delete headers['Cache-Control'];
+    util.each(headers, function (v, k) {
+        v === '' && delete headers[k];
+    });
+
     var cb = function (AuthData) {
 
         // 检查签名格式
@@ -5925,7 +5958,7 @@ function getAuthorizationAsync(params, callback) {
             Method: params.Method,
             Pathname: Pathname,
             Query: params.Query,
-            Headers: params.Headers,
+            Headers: headers,
             UseRawKey: self.options.UseRawKey,
             SystemClockOffset: self.options.SystemClockOffset
         });
@@ -5952,7 +5985,7 @@ function getAuthorizationAsync(params, callback) {
             Key: KeyName,
             Pathname: Pathname,
             Query: params.Query,
-            Headers: params.Headers,
+            Headers: headers,
             Scope: Scope
         }, function (AuthData) {
             if (typeof AuthData === 'string') {
@@ -5991,7 +6024,7 @@ function getAuthorizationAsync(params, callback) {
                 Method: params.Method,
                 Pathname: Pathname,
                 Query: params.Query,
-                Headers: params.Headers,
+                Headers: headers,
                 Expires: params.Expires,
                 UseRawKey: self.options.UseRawKey,
                 SystemClockOffset: self.options.SystemClockOffset
@@ -10979,9 +11012,15 @@ function getUploadIdAndPartList(params, callback) {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
-            Headers: params.Headers,
-            StorageClass: StorageClass
+            Headers: util.clone(params.Headers),
+            StorageClass: StorageClass,
+            Body: params.Body
         }, params);
+        // 获取 File 或 Blob 的 type 属性，如果有，作为文件 Content-Type
+        var ContentType = params.Headers['Content-Type'] || params.Body && params.Body.type;
+        if (ContentType) {
+            _params.Headers['Content-Type'] = ContentType;
+        }
         self.multipartInit(_params, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (err) return ep.emit('error', err);
@@ -11661,7 +11700,7 @@ function sliceCopyFile(params, callback) {
         });
     });
 
-    ep.on('get_file_size_finish', function () {
+    ep.on('get_file_size_finish', function (SourceHeaders) {
         // 控制分片大小
         (function () {
             var SIZE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1024 * 2, 1024 * 4, 1024 * 5];
@@ -11689,10 +11728,19 @@ function sliceCopyFile(params, callback) {
             params.PartList = list;
         })();
 
+        var TargetHeader;
+        if (params.Headers['x-cos-metadata-directive'] === 'Replaced') {
+            TargetHeader = params.Headers;
+        } else {
+            TargetHeader = SourceHeaders;
+        }
+        TargetHeader['x-cos-storage-class'] = params.Headers['x-cos-storage-class'] || SourceHeaders['x-cos-storage-class'];
+        TargetHeader = util.clearKey(TargetHeader);
         self.multipartInit({
             Bucket: Bucket,
             Region: Region,
-            Key: Key
+            Key: Key,
+            Headers: TargetHeader
         }, function (err, data) {
             if (err) {
                 return callback(err);
@@ -11727,6 +11775,9 @@ function sliceCopyFile(params, callback) {
 
         // 开始上传
         if (FileSize <= CopySliceSize) {
+            if (!params.Headers['x-cos-metadata-directive']) {
+                params.Headers['x-cos-metadata-directive'] = 'Copy';
+            }
             self.putObjectCopy(params, function (err, data) {
                 if (err) {
                     onProgress(null, true);
@@ -11736,7 +11787,22 @@ function sliceCopyFile(params, callback) {
                 callback(err, data);
             });
         } else {
-            ep.emit('get_file_size_finish');
+            var resHeaders = data.headers;
+            var SourceHeaders = {
+                'Cache-Control': resHeaders['cache-control'],
+                'Content-Disposition': resHeaders['content-disposition'],
+                'Content-Encoding': resHeaders['content-encoding'],
+                'Content-Type': resHeaders['content-type'],
+                'Expires': resHeaders['expires'],
+                'x-cos-storage-class': resHeaders['x-cos-storage-class']
+            };
+            util.each(resHeaders, function (v, k) {
+                var metaPrefix = 'x-cos-meta-';
+                if (k.indexOf(metaPrefix) === 0 && k.length > metaPrefix.length) {
+                    SourceHeaders[k] = v;
+                }
+            });
+            ep.emit('get_file_size_finish', SourceHeaders);
         }
     });
 }
