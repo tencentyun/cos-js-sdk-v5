@@ -13,7 +13,7 @@ $config = array(
     'durationSeconds' => 1800, // 密钥有效期
     'allowPrefix' => '*', // 必填，这里改成允许的路径前缀，这里可以根据自己网站的用户登录态判断允许上传的目录，例子：* 或者 a/* 或者 a.jpg
     // 密钥的权限列表
-    'allowActions' => array (
+    'allowActions' => array(
         // 所有 action 请看文档 https://cloud.tencent.com/document/product/436/31923
         // 简单上传
         'name/cos:PutObject',

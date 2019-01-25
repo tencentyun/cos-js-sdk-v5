@@ -1295,20 +1295,21 @@ group('ObjectAcl', function () {
             });
         });
     });
-    test('putObjectAcl() header ACL:public-read-write', function (done, assert) {
-        cos.putObjectAcl({
-            Bucket: config.Bucket,
-            Region: config.Region,
-            ACL: 'public-read-write',
-            Key: '1.txt',
-        }, function (err, data) {
-            assert.ok(!err, 'putObjectAcl 成功');
-            cos.getObjectAcl({Bucket: config.Bucket, Region: config.Region, Key: '1.txt'}, function (err, data) {
-                assert.ok(data.ACL = 'public-read-write');
-                done();
-            });
-        });
-    });
+    // Object 不再支持修改写权限
+    // test('putObjectAcl() header ACL:public-read-write', function (done, assert) {
+    //     cos.putObjectAcl({
+    //         Bucket: config.Bucket,
+    //         Region: config.Region,
+    //         ACL: 'public-read-write',
+    //         Key: '1.txt',
+    //     }, function (err, data) {
+    //         assert.ok(!err, 'putObjectAcl 成功');
+    //         cos.getObjectAcl({Bucket: config.Bucket, Region: config.Region, Key: '1.txt'}, function (err, data) {
+    //             assert.ok(data.ACL = 'public-read-write');
+    //             done();
+    //         });
+    //     });
+    // });
     test('putObjectAcl() header GrantRead:1001,1002', function (done, assert) {
         var GrantRead = 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"';
         cos.putObjectAcl({
@@ -1324,21 +1325,22 @@ group('ObjectAcl', function () {
             });
         });
     });
-    test('putObjectAcl() header GrantWrite:1001,1002', function (done, assert) {
-        var GrantWrite = 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"';
-        cos.putObjectAcl({
-            Bucket: config.Bucket,
-            Region: config.Region,
-            GrantWrite: GrantWrite,
-            Key: '1.txt',
-        }, function (err, data) {
-            assert.ok(!err, 'putObjectAcl 成功');
-            cos.getObjectAcl({Bucket: config.Bucket, Region: config.Region, Key: '1.txt'}, function (err, data) {
-                assert.ok(data.GrantWrite = GrantWrite);
-                done();
-            });
-        });
-    });
+    // Object 不再支持修改写权限
+    // test('putObjectAcl() header GrantWrite:1001,1002', function (done, assert) {
+    //     var GrantWrite = 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"';
+    //     cos.putObjectAcl({
+    //         Bucket: config.Bucket,
+    //         Region: config.Region,
+    //         GrantWrite: GrantWrite,
+    //         Key: '1.txt',
+    //     }, function (err, data) {
+    //         assert.ok(!err, 'putObjectAcl 成功');
+    //         cos.getObjectAcl({Bucket: config.Bucket, Region: config.Region, Key: '1.txt'}, function (err, data) {
+    //             assert.ok(data.GrantWrite = GrantWrite);
+    //             done();
+    //         });
+    //     });
+    // });
     test('putObjectAcl() header GrantFullControl:1001,1002', function (done, assert) {
         var GrantFullControl = 'id="qcs::cam::uin/1001:uin/1001", id="qcs::cam::uin/1002:uin/1002"';
         cos.putObjectAcl({

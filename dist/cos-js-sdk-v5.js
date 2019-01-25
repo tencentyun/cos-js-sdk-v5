@@ -1986,7 +1986,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.8';
+COS.version = '0.5.9';
 
 module.exports = COS;
 
@@ -6212,7 +6212,7 @@ function _submitRequest(params, callback) {
 
         var jsonRes;
         try {
-            jsonRes = util.xml2json(body) || {};
+            jsonRes = body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body) || {};
         } catch (e) {
             jsonRes = body || {};
         }

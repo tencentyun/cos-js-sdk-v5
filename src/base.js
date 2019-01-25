@@ -2312,7 +2312,7 @@ function _submitRequest(params, callback) {
 
         var jsonRes;
         try {
-            jsonRes = util.xml2json(body) || {};
+            jsonRes = body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body) || {};
         } catch (e) {
             jsonRes = body || {};
         }

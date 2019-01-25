@@ -27,7 +27,8 @@ var replaceDevCode = function (list) {
         newContent = newContent.replace(/AKID\w+/, 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
         newContent = newContent.replace(/'secretKey' => '[^']+',/, "'secretKey' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',");
         newContent = newContent.replace(/secretKey: '[^']+',/, "secretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',");
-        newContent = newContent.replace("array ('name/cos:*')", `array (
+        newContent = newContent.replace(/'allowActions' *=> *array\([^)]+\)/, `'allowActions' => array(
+        // 所有 action 请看文档 https://cloud.tencent.com/document/product/436/31923
         // 简单上传
         'name/cos:PutObject',
         // 分片上传
