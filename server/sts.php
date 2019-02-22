@@ -42,18 +42,15 @@ function json2str($obj, $notEncode = false) {
 }
 
 // 计算临时密钥用的签名
-function getSignature($opt, $key, $method) {
-    global $config;
-    $formatString = $method . $config['domain'] . '/v2/index.php?' . json2str($opt, 1);
+function getSignature($opt, $key, $method, $domain) {
+    $formatString = $method . $domain . '/v2/index.php?' . json2str($opt, 1);
     $sign = hash_hmac('sha1', $formatString, $key);
     $sign = base64_encode(_hex2bin($sign));
     return $sign;
 }
 
 // 获取临时密钥
-function getTempKeys() {
-
-    global $config;
+function getTempKeys($config) {
     $ShortBucketName = substr($config['bucket'],0, strripos($config['bucket'], '-'));
     $AppId = substr($config['bucket'], 1 + strripos($config['bucket'], '-'));
     $policy = array(
@@ -86,7 +83,7 @@ function getTempKeys() {
         'name'=> 'cos',
         'policy'=> urlencode($policyStr)
     );
-    $params['Signature'] = getSignature($params, $config['secretKey'], $Method);
+    $params['Signature'] = getSignature($params, $config['secretKey'], $Method, $config['domain']);
 
     $url = $config['url'];
     $ch = curl_init($url);
@@ -111,7 +108,7 @@ function getTempKeys() {
 }
 
 // 获取临时密钥，计算签名
-$tempKeys = getTempKeys();
+$tempKeys = getTempKeys($config);
 
 // 返回数据给前端
 header('Content-Type: application/json');
