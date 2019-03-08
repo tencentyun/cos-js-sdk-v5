@@ -488,8 +488,6 @@ var util = {
     isBrowser: true,
 };
 
-util.localStorage = global.localStorage;
-
 var fileSliceNeedCopy = (function () {
     var compareVersion = function(a, b) {
         a = a.split('.');
@@ -545,7 +543,7 @@ util.getBodyMd5 = function (UploadCheckContentMd5, Body, callback) {
     if (UploadCheckContentMd5) {
         if (typeof Body === 'string') {
             callback(util.md5(Body, true));
-        } else if (Body instanceof global.Blob) {
+        } else if (Blob && Body instanceof Blob) {
             util.getFileMd5(Body, function (err, md5) {
                 callback(md5);
             });

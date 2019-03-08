@@ -221,6 +221,9 @@ var initTask = function (cos) {
             startNextTask();
         }
     };
+    cos.isUploadRunning = function () {
+        return uploadingFileCount || nextUploadIndex < queue.length;
+    };
 
 };
 

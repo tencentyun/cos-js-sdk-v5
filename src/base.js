@@ -1262,6 +1262,11 @@ function optionsObject(params, callback) {
  *     @param  {String}  x-cos-meta-*                   允许用户自定义的头部信息，将作为 Object 元数据返回。大小限制2K。
  */
 function putObjectCopy(params, callback) {
+
+    // 特殊处理 Cache-Control
+    var headers = params.Headers;
+    !headers['Cache-Control'] && (headers['Cache-Control'] = '');
+
     var CopySource = params.CopySource || '';
     var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
     if (!m) {

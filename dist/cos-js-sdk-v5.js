@@ -78,12 +78,12 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-/* WEBPACK VAR INJECTION */(function(global) {
 
-var md5 = __webpack_require__(6);
-var CryptoJS = __webpack_require__(7);
-var xml2json = __webpack_require__(8);
-var json2xml = __webpack_require__(11);
+
+var md5 = __webpack_require__(5);
+var CryptoJS = __webpack_require__(6);
+var xml2json = __webpack_require__(7);
+var json2xml = __webpack_require__(10);
 
 function camSafeUrlEncode(str) {
     return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/\*/g, '%2A');
@@ -555,8 +555,6 @@ var util = {
     isBrowser: true
 };
 
-util.localStorage = global.localStorage;
-
 var fileSliceNeedCopy = function () {
     var compareVersion = function (a, b) {
         a = a.split('.');
@@ -610,7 +608,7 @@ util.getBodyMd5 = function (UploadCheckContentMd5, Body, callback) {
     if (UploadCheckContentMd5) {
         if (typeof Body === 'string') {
             callback(util.md5(Body, true));
-        } else if (Body instanceof global.Blob) {
+        } else if (Blob && Body instanceof Blob) {
             util.getFileMd5(Body, function (err, md5) {
                 callback(md5);
             });
@@ -623,7 +621,6 @@ util.getBodyMd5 = function (UploadCheckContentMd5, Body, callback) {
 };
 
 module.exports = util;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ }),
 /* 1 */
@@ -1930,9 +1927,9 @@ module.exports = COS;
 
 var util = __webpack_require__(0);
 var event = __webpack_require__(2);
-var task = __webpack_require__(12);
-var base = __webpack_require__(13);
-var advance = __webpack_require__(18);
+var task = __webpack_require__(11);
+var base = __webpack_require__(12);
+var advance = __webpack_require__(17);
 
 var defaultOptions = {
     AppId: '', // AppId 已废弃，请拼接到 Bucket 后传入，例如：test-1250000000
@@ -1986,39 +1983,12 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.9';
+COS.version = '0.5.10';
 
 module.exports = COS;
 
 /***/ }),
 /* 5 */
-/***/ (function(module, exports) {
-
-var g;
-
-// This works in non-strict mode
-g = (function() {
-	return this;
-})();
-
-try {
-	// This works if eval is allowed (see CSP)
-	g = g || Function("return this")() || (1,eval)("this");
-} catch(e) {
-	// This works if the window reference is available
-	if(typeof window === "object")
-		g = window;
-}
-
-// g can still be undefined, but nothing to do about it...
-// We return undefined, instead of nothing here, so it's
-// easier to handle this case. if(!global) { ...}
-
-module.exports = g;
-
-
-/***/ }),
-/* 6 */
 /***/ (function(module, exports) {
 
 function md5cycle(x, k) {
@@ -2227,7 +2197,7 @@ if (md5('hello') != '5d41402abc4b2a76b9719d911017c592') {
 module.exports = md5;
 
 /***/ }),
-/* 7 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /*
@@ -2471,7 +2441,7 @@ if (true) {
 }
 
 /***/ }),
-/* 8 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* Copyright 2015 William Summers, MetaTribal LLC
@@ -2493,7 +2463,7 @@ if (true) {
  * @author William Summers
  * https://github.com/metatribal/xmlToJSON
  */
-var DOMParser = __webpack_require__(9).DOMParser;
+var DOMParser = __webpack_require__(8).DOMParser;
 
 var xmlToJSON = function () {
 
@@ -2641,7 +2611,7 @@ var xml2json = function (xmlString) {
 module.exports = xml2json;
 
 /***/ }),
-/* 9 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 function DOMParser(options){
@@ -2890,7 +2860,7 @@ function appendElement (hander,node) {
 }//appendChild and setAttributeNS are preformance key
 
 //if(typeof require == 'function'){
-	var XMLReader = __webpack_require__(10).XMLReader;
+	var XMLReader = __webpack_require__(9).XMLReader;
 	var DOMImplementation = exports.DOMImplementation = __webpack_require__(1).DOMImplementation;
 	exports.XMLSerializer = __webpack_require__(1).XMLSerializer ;
 	exports.DOMParser = DOMParser;
@@ -2898,7 +2868,7 @@ function appendElement (hander,node) {
 
 
 /***/ }),
-/* 10 */
+/* 9 */
 /***/ (function(module, exports) {
 
 //[4]   	NameStartChar	   ::=   	":" | [A-Z] | "_" | [a-z] | [#xC0-#xD6] | [#xD8-#xF6] | [#xF8-#x2FF] | [#x370-#x37D] | [#x37F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
@@ -3537,7 +3507,7 @@ exports.XMLReader = XMLReader;
 
 
 /***/ }),
-/* 11 */
+/* 10 */
 /***/ (function(module, exports) {
 
 //copyright Ryan Day 2010 <http://ryanday.org>, Joscha Feth 2013 <http://www.feth.com> [MIT Licensed]
@@ -3696,7 +3666,7 @@ module.exports = function (obj, options) {
 };
 
 /***/ }),
-/* 12 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var util = __webpack_require__(0);
@@ -3918,16 +3888,19 @@ var initTask = function (cos) {
             startNextTask();
         }
     };
+    cos.isUploadRunning = function () {
+        return uploadingFileCount || nextUploadIndex < queue.length;
+    };
 };
 
 module.exports.transferToTaskMethod = transferToTaskMethod;
 module.exports.init = initTask;
 
 /***/ }),
-/* 13 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var REQUEST = __webpack_require__(14);
+var REQUEST = __webpack_require__(13);
 var util = __webpack_require__(0);
 
 // Bucket 相关
@@ -5184,6 +5157,11 @@ function optionsObject(params, callback) {
  *     @param  {String}  x-cos-meta-*                   允许用户自定义的头部信息，将作为 Object 元数据返回。大小限制2K。
  */
 function putObjectCopy(params, callback) {
+
+    // 特殊处理 Cache-Control
+    var headers = params.Headers;
+    !headers['Cache-Control'] && (headers['Cache-Control'] = '');
+
     var CopySource = params.CopySource || '';
     var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
     if (!m) {
@@ -6309,10 +6287,10 @@ module.exports.init = function (COS, task) {
 };
 
 /***/ }),
-/* 14 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var queryString = __webpack_require__(15);
+var queryString = __webpack_require__(14);
 
 var $ = function () {
     var deletedIds = [];
@@ -10468,18 +10446,18 @@ var request = function (options, callback) {
 module.exports = request;
 
 /***/ }),
-/* 15 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-exports.decode = exports.parse = __webpack_require__(16);
-exports.encode = exports.stringify = __webpack_require__(17);
+exports.decode = exports.parse = __webpack_require__(15);
+exports.encode = exports.stringify = __webpack_require__(16);
 
 
 /***/ }),
-/* 16 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10570,7 +10548,7 @@ var isArray = Array.isArray || function (xs) {
 
 
 /***/ }),
-/* 17 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10662,10 +10640,10 @@ var objectKeys = Object.keys || function (obj) {
 
 
 /***/ }),
-/* 18 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Async = __webpack_require__(19);
+var Async = __webpack_require__(18);
 var EventProxy = __webpack_require__(2).EventProxy;
 var util = __webpack_require__(0);
 
@@ -10831,7 +10809,7 @@ function initUploadId() {
     if (!uploadIdCache) {
         if (cacheLimit) {
             try {
-                uploadIdCache = JSON.parse(util.localStorage.getItem(uploadIdCacheKey)) || [];
+                uploadIdCache = JSON.parse(localStorage.getItem(uploadIdCacheKey)) || [];
             } catch (e) {}
         }
         if (!uploadIdCache) {
@@ -10853,7 +10831,7 @@ function setUploadId(uuid, UploadId, isDisabled) {
     }
     cacheLimit && setTimeout(function () {
         try {
-            util.localStorage.setItem(uploadIdCacheKey, JSON.stringify(uploadIdCache));
+            localStorage.setItem(uploadIdCacheKey, JSON.stringify(uploadIdCache));
         } catch (e) {}
     });
 }
@@ -10872,9 +10850,9 @@ function removeUploadId(UploadId) {
     cacheLimit && setTimeout(function () {
         try {
             if (uploadIdCache.length) {
-                util.localStorage.setItem(uploadIdCacheKey, JSON.stringify(uploadIdCache));
+                localStorage.setItem(uploadIdCacheKey, JSON.stringify(uploadIdCache));
             } else {
-                util.localStorage.removeItem(uploadIdCacheKey);
+                localStorage.removeItem(uploadIdCacheKey);
             }
         } catch (e) {}
     });
@@ -11475,10 +11453,10 @@ function abortUploadTaskArray(params, callback) {
     var resultList = new Array(AbortArray.length);
     Async.eachLimit(AbortArray, AsyncLimit, function (AbortItem, callback) {
         var eachIndex = index;
-        if (Key && Key != AbortItem.Key) {
-            return callback(null, {
-                KeyNotMatch: true
-            });
+        if (Key && Key !== AbortItem.Key) {
+            resultList[eachIndex] = { error: { KeyNotMatch: true } };
+            callback(null);
+            return;
         }
         var UploadId = AbortItem.UploadId || AbortItem.UploadID;
 
@@ -11855,7 +11833,7 @@ module.exports.init = function (COS, task) {
 };
 
 /***/ }),
-/* 19 */
+/* 18 */
 /***/ (function(module, exports) {
 
 var eachLimit = function (arr, limit, iterator, callback) {

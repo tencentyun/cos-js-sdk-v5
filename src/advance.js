@@ -166,7 +166,7 @@ function initUploadId() {
     if (!uploadIdCache) {
         if (cacheLimit) {
             try {
-                uploadIdCache = JSON.parse(util.localStorage.getItem(uploadIdCacheKey)) || [];
+                uploadIdCache = JSON.parse(localStorage.getItem(uploadIdCacheKey)) || [];
             } catch (e) {}
         }
         if (!uploadIdCache) {
@@ -188,7 +188,7 @@ function setUploadId(uuid, UploadId, isDisabled) {
     }
     cacheLimit && setTimeout(function () {
         try {
-            util.localStorage.setItem(uploadIdCacheKey, JSON.stringify(uploadIdCache));
+            localStorage.setItem(uploadIdCacheKey, JSON.stringify(uploadIdCache));
         } catch (e) {}
     });
 }
@@ -207,9 +207,9 @@ function removeUploadId(UploadId) {
     cacheLimit && setTimeout(function () {
         try {
             if (uploadIdCache.length) {
-                util.localStorage.setItem(uploadIdCacheKey, JSON.stringify(uploadIdCache));
+                localStorage.setItem(uploadIdCacheKey, JSON.stringify(uploadIdCache));
             } else {
-                util.localStorage.removeItem(uploadIdCacheKey);
+                localStorage.removeItem(uploadIdCacheKey);
             }
         } catch (e) {}
     });
@@ -808,10 +808,10 @@ function abortUploadTaskArray(params, callback) {
     var resultList = new Array(AbortArray.length);
     Async.eachLimit(AbortArray, AsyncLimit, function (AbortItem, callback) {
         var eachIndex = index;
-        if (Key && Key != AbortItem.Key) {
-            return callback(null, {
-                KeyNotMatch: true
-            });
+        if (Key && Key !== AbortItem.Key) {
+            resultList[eachIndex] = {error: {KeyNotMatch: true}};
+            callback(null);
+            return;
         }
         var UploadId = AbortItem.UploadId || AbortItem.UploadID;
 
