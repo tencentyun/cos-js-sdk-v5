@@ -508,7 +508,7 @@ var fileSliceNeedCopy = (function () {
             && QQBrowserVersion && compareVersion(QQBrowserVersion, '9.0.2524.400') <= 0 || false;
         return need;
     };
-    return check(navigator.userAgent);
+    return check(navigator && navigator.userAgent);
 })();
 util.fileSlice = function (file, start, end, isUseToUpload, callback) {
     var blob;

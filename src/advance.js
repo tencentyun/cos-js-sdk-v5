@@ -519,7 +519,7 @@ function wholeMultipartList(params, callback) {
         self.multipartList(sendParams, function (err, data) {
             if (err) return callback(err);
             UploadList.push.apply(UploadList, data.Upload || []);
-            if (data.IsTruncated == 'true') { // 列表不完整
+            if (data.IsTruncated === 'true') { // 列表不完整
                 sendParams.KeyMarker = data.NextKeyMarker;
                 sendParams.UploadIdMarker = data.NextUploadIdMarker;
                 next();
@@ -545,7 +545,7 @@ function wholeMultipartListPart(params, callback) {
         self.multipartListPart(sendParams, function (err, data) {
             if (err) return callback(err);
             PartList.push.apply(PartList, data.Part || []);
-            if (data.IsTruncated == 'true') { // 列表不完整
+            if (data.IsTruncated === 'true') { // 列表不完整
                 sendParams.PartNumberMarker = data.NextPartNumberMarker;
                 next();
             } else {

@@ -1465,7 +1465,7 @@ function multipartInit(params, callback) {
 
     var xml;
     var headers = params.Headers;
-    var userAgent = navigator.userAgent || '';
+    var userAgent = navigator && navigator.userAgent || '';
     var m = userAgent.match(/ TBS\/(\d{6}) /);
     if (location.protocol === 'http:' && m && m[1].length <= 6 && m[1] < '044429') {
         xml = util.json2xml({});

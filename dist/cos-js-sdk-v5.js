@@ -573,7 +573,7 @@ var fileSliceNeedCopy = function () {
         var need = ChromeVersion && compareVersion(ChromeVersion, '53.0.2785.116') < 0 && QBCoreVersion && compareVersion(QBCoreVersion, '3.53.991.400') < 0 && QQBrowserVersion && compareVersion(QQBrowserVersion, '9.0.2524.400') <= 0 || false;
         return need;
     };
-    return check(navigator.userAgent);
+    return check(navigator && navigator.userAgent);
 }();
 util.fileSlice = function (file, start, end, isUseToUpload, callback) {
     var blob;
@@ -1983,7 +1983,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.10';
+COS.version = '0.5.11';
 
 module.exports = COS;
 
@@ -3721,7 +3721,9 @@ var initTask = function (cos) {
             for (i = 0; i < queue.length && queue.length > cos.options.UploadQueueSize && // 大于队列才处理
             i < nextUploadIndex; // 小于当前操作的 index 才处理
             i++) {
-                if (!queue[i] || queue[i].state !== 'waiting') {
+                var isActive = queue[i].state === 'waiting' || queue[i].state === 'checking' || queue[i].state === 'uploading';
+                if (!queue[i] || !isActive) {
+                    tasks[queue[i].id] && delete tasks[queue[i].id];
                     queue.splice(i, 1);
                     nextUploadIndex--;
                 }
@@ -3732,6 +3734,7 @@ var initTask = function (cos) {
     var startNextTask = function () {
         if (nextUploadIndex < queue.length && uploadingFileCount < cos.options.FileParallelLimit) {
             var task = queue[nextUploadIndex];
+            nextUploadIndex++;
             if (task.state === 'waiting') {
                 uploadingFileCount++;
                 task.state = 'checking';
@@ -3759,7 +3762,6 @@ var initTask = function (cos) {
                 });
                 emitListUpdate();
             }
-            nextUploadIndex++;
             startNextTask(cos);
         }
     };
@@ -5144,7 +5146,7 @@ function optionsObject(params, callback) {
  *     @param  {String}  CopySourceIfUnmodifiedSince    当Object在指定时间后未被修改，则执行操作，否则返回412。可与x-cos-copy-source-If-Match一起使用，与其他条件联合使用返回冲突。
  *     @param  {String}  CopySourceIfMatch              当Object的Etag和给定一致时，则执行操作，否则返回412。可与x-cos-copy-source-If-Unmodified-Since一起使用，与其他条件联合使用返回冲突。
  *     @param  {String}  CopySourceIfNoneMatch          当Object的Etag和给定不一致时，则执行操作，否则返回412。可与x-cos-copy-source-If-Modified-Since一起使用，与其他条件联合使用返回冲突。
- *     @param  {String}  StorageClass                   存储级别，枚举值：存储级别，枚举值：Standard, Standard_IA，Nearline；默认值：Standard
+ *     @param  {String}  StorageClass                   存储级别，枚举值：存储级别，枚举值：Standard, Standard_IA，Archive；默认值：Standard
  *     @param  {String}  CacheControl                   指定所有缓存机制在整个请求/响应链中必须服从的指令。
  *     @param  {String}  ContentDisposition             MIME 协议的扩展，MIME 协议指示 MIME 用户代理如何显示附加的文件
  *     @param  {String}  ContentEncoding                HTTP 中用来对「采用何种编码格式传输正文」进行协定的一对头部字段
@@ -5349,7 +5351,7 @@ function restoreObject(params, callback) {
  *     @param  {String}  params.GrantRead                       赋予被授权者读的权限 ，非必须
  *     @param  {String}  params.GrantWrite                      赋予被授权者写的权限 ，非必须
  *     @param  {String}  params.GrantFullControl                赋予被授权者读写权限 ，非必须
- *     @param  {String}  params.StorageClass                    设置Object的存储级别，枚举值：Standard，Standard_IA，Nearline，非必须
+ *     @param  {String}  params.StorageClass                    设置Object的存储级别，枚举值：Standard，Standard_IA，Archive，非必须
  *     @param  {String}  params.ServerSideEncryption           支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
  * @param  {Function}  callback                                 回调函数，必须
  * @return  {Object}  err                                       请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
@@ -5359,7 +5361,7 @@ function multipartInit(params, callback) {
 
     var xml;
     var headers = params.Headers;
-    var userAgent = navigator.userAgent || '';
+    var userAgent = navigator && navigator.userAgent || '';
     var m = userAgent.match(/ TBS\/(\d{6}) /);
     if (location.protocol === 'http:' && m && m[1].length <= 6 && m[1] < '044429') {
         xml = util.json2xml({});
@@ -11163,7 +11165,7 @@ function wholeMultipartList(params, callback) {
         self.multipartList(sendParams, function (err, data) {
             if (err) return callback(err);
             UploadList.push.apply(UploadList, data.Upload || []);
-            if (data.IsTruncated == 'true') {
+            if (data.IsTruncated === 'true') {
                 // 列表不完整
                 sendParams.KeyMarker = data.NextKeyMarker;
                 sendParams.UploadIdMarker = data.NextUploadIdMarker;
@@ -11190,7 +11192,7 @@ function wholeMultipartListPart(params, callback) {
         self.multipartListPart(sendParams, function (err, data) {
             if (err) return callback(err);
             PartList.push.apply(PartList, data.Part || []);
-            if (data.IsTruncated == 'true') {
+            if (data.IsTruncated === 'true') {
                 // 列表不完整
                 sendParams.PartNumberMarker = data.NextPartNumberMarker;
                 next();

@@ -52,7 +52,9 @@ var initTask = function (cos) {
                  queue.length > cos.options.UploadQueueSize && // 大于队列才处理
                  i < nextUploadIndex; // 小于当前操作的 index 才处理
                  i++) {
-                if (!queue[i] || queue[i].state !== 'waiting') {
+                var isActive = queue[i].state === 'waiting' || queue[i].state === 'checking' || queue[i].state === 'uploading';
+                if (!queue[i] || !isActive) {
+                    tasks[queue[i].id] && (delete tasks[queue[i].id]);
                     queue.splice(i, 1);
                     nextUploadIndex--;
                 }
@@ -64,6 +66,7 @@ var initTask = function (cos) {
         if (nextUploadIndex < queue.length &&
             uploadingFileCount < cos.options.FileParallelLimit) {
             var task = queue[nextUploadIndex];
+            nextUploadIndex++;
             if (task.state === 'waiting') {
                 uploadingFileCount++;
                 task.state = 'checking';
@@ -91,7 +94,6 @@ var initTask = function (cos) {
                 });
                 emitListUpdate();
             }
-            nextUploadIndex++;
             startNextTask(cos);
         }
     };
