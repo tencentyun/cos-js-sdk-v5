@@ -581,8 +581,12 @@ function putObject() {
         Region: config.Region,
         Key: filename, /* 必须 */
         Body: blob,
-        TaskReady: function (tid) {
+        onTaskReady: function (tid) {
             TaskId = tid;
+            console.log('onTaskReady', tid);
+        },
+        onTaskStart: function (info) {
+            console.log('onTaskStart', info);
         },
         onProgress: function (progressData) {
             logger.log(JSON.stringify(progressData));
@@ -725,7 +729,7 @@ function sliceUploadFile() {
         Region: config.Region,
         Key: '3mb.zip', /* 必须 */
         Body: blob,
-        TaskReady: function (tid) {
+        onTaskReady: function (tid) {
             TaskId = tid;
         },
         onHashProgress: function (progressData) {
@@ -751,7 +755,7 @@ function selectFileToUpload() {
                     Region: config.Region,
                     Key: file.name,
                     Body: file,
-                    TaskReady: function (tid) {
+                    onTaskReady: function (tid) {
                         TaskId = tid;
                     },
                     onHashProgress: function (progressData) {
@@ -769,7 +773,7 @@ function selectFileToUpload() {
                     Region: config.Region,
                     Key: file.name,
                     Body: file,
-                    TaskReady: function (tid) {
+                    onTaskReady: function (tid) {
                         TaskId = tid;
                     },
                     onProgress: function (progressData) {

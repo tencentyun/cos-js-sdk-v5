@@ -281,7 +281,7 @@ group('mock readAsBinaryString', function () {
             Region: config.Region,
             Key: filename,
             Body: blob,
-            TaskReady: function (taskId) {
+            onTaskReady: function (taskId) {
                 TaskId = taskId;
             },
             onProgress: function (info) {
@@ -293,7 +293,7 @@ group('mock readAsBinaryString', function () {
                         Region: config.Region,
                         Key: filename,
                         Body: blob,
-                        TaskReady: function (taskId) {
+                        onTaskReady: function (taskId) {
                             TaskId = taskId;
                         },
                         onProgress: function (info) {
@@ -436,7 +436,7 @@ group('putObject(),cancelTask()', function () {
             Region: config.Region,
             Key: filename,
             Body: util.createFile({size: 1024 * 1024 * 10}),
-            TaskReady: function (taskId) {
+            onTaskReady: function (taskId) {
                 TaskId = taskId;
             },
             onProgress: function (info) {
@@ -474,7 +474,7 @@ group('sliceUploadFile() 完整上传文件', function () {
                 Region: config.Region,
                 Key: filename,
                 Body: blob,
-                TaskReady: function (taskId) {
+                onTaskReady: function (taskId) {
                     TaskId = taskId;
                 },
                 onProgress: function (info) {
@@ -513,7 +513,7 @@ group('sliceUploadFile(),pauseTask(),restartTask()', function () {
                 Region: config.Region,
                 Key: filename,
                 Body: blob,
-                TaskReady: function (taskId) {
+                onTaskReady: function (taskId) {
                     TaskId = taskId;
                 },
                 onProgress: function (info) {
@@ -549,7 +549,7 @@ group('sliceUploadFile(),cancelTask()', function () {
             Region: config.Region,
             Key: filename,
             Body: blob,
-            TaskReady: function (taskId) {
+            onTaskReady: function (taskId) {
                 TaskId = taskId;
             },
             onProgress: function (info) {
@@ -605,7 +605,7 @@ group('abortUploadTask()', function () {
             Region: config.Region,
             Key: filename,
             Body: blob,
-            TaskReady: function (taskId) {
+            onTaskReady: function (taskId) {
                 TaskId = taskId;
             },
             onProgress: function (info) {
@@ -632,7 +632,7 @@ group('abortUploadTask()', function () {
             Region: config.Region,
             Key: filename,
             Body: blob,
-            TaskReady: function (taskId) {
+            onTaskReady: function (taskId) {
                 TaskId = taskId;
             },
             onProgress: function (info) {

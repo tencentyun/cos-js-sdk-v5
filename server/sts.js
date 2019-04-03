@@ -63,7 +63,6 @@ app.all('/sts', function (req, res, next) {
         'statement': [{
             'action': config.allowActions,
             'effect': 'allow',
-            'principal': {'qcs': ['*']},
             'resource': [
                 'qcs::cos:ap-guangzhou:uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/' + config.allowPrefix,
             ],

@@ -911,12 +911,12 @@ function uploadFiles(params, callback) {
             });
 
             // 处理单个文件 TaskReady
-            var _TaskReady = fileParams.TaskReady;
-            var TaskReady = function (tid) {
+            var _onTaskReady = fileParams.onTaskReady;
+            var onTaskReady = function (tid) {
                 fileInfo.TaskId = tid;
-                _TaskReady && _TaskReady(tid);
+                _onTaskReady && _onTaskReady(tid);
             };
-            fileParams.TaskReady = TaskReady;
+            fileParams.onTaskReady = onTaskReady;
 
             // 处理单个文件进度
             var PreAddSize = 0;

@@ -1983,7 +1983,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.11';
+COS.version = '0.5.12';
 
 module.exports = COS;
 
@@ -3738,6 +3738,7 @@ var initTask = function (cos) {
             if (task.state === 'waiting') {
                 uploadingFileCount++;
                 task.state = 'checking';
+                task.params.onTaskStart && task.params.onTaskStart(formatTask(task));
                 !task.params.UploadData && (task.params.UploadData = {});
                 var apiParams = util.formatParams(task.api, task.params);
                 originApiMap[task.api].call(cos, apiParams, function (err, data) {
@@ -3802,6 +3803,7 @@ var initTask = function (cos) {
         emitListUpdate();
     };
 
+    var isTaskReadyWarning = true;
     cos._addTask = function (api, params, callback, ignoreAddEvent) {
 
         // 复制参数对象
@@ -3810,7 +3812,12 @@ var initTask = function (cos) {
         // 生成 id
         var id = util.uuid();
         params.TaskId = id;
-        params.TaskReady && params.TaskReady(id);
+        params.onTaskReady && params.onTaskReady(id);
+        if (params.TaskReady) {
+            params.TaskReady(id);
+            isTaskReadyWarning && console.warn('warning: Param "TaskReady" has been deprecated. Please use "onTaskReady" instead.');
+            isTaskReadyWarning = false;
+        }
 
         var task = {
             // env
@@ -11557,12 +11564,12 @@ function uploadFiles(params, callback) {
             });
 
             // 处理单个文件 TaskReady
-            var _TaskReady = fileParams.TaskReady;
-            var TaskReady = function (tid) {
+            var _onTaskReady = fileParams.onTaskReady;
+            var onTaskReady = function (tid) {
                 fileInfo.TaskId = tid;
-                _TaskReady && _TaskReady(tid);
+                _onTaskReady && _onTaskReady(tid);
             };
-            fileParams.TaskReady = TaskReady;
+            fileParams.onTaskReady = onTaskReady;
 
             // 处理单个文件进度
             var PreAddSize = 0;

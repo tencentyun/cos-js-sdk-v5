@@ -70,6 +70,7 @@ var initTask = function (cos) {
             if (task.state === 'waiting') {
                 uploadingFileCount++;
                 task.state = 'checking';
+                task.params.onTaskStart && task.params.onTaskStart(formatTask(task));
                 !task.params.UploadData && (task.params.UploadData = {});
                 var apiParams = util.formatParams(task.api, task.params);
                 originApiMap[task.api].call(cos, apiParams, function (err, data) {
@@ -136,6 +137,7 @@ var initTask = function (cos) {
         emitListUpdate();
     };
 
+    var isTaskReadyWarning = true;
     cos._addTask = function (api, params, callback, ignoreAddEvent) {
 
         // 复制参数对象
@@ -144,7 +146,12 @@ var initTask = function (cos) {
         // 生成 id
         var id = util.uuid();
         params.TaskId = id;
-        params.TaskReady && params.TaskReady(id);
+        params.onTaskReady && params.onTaskReady(id);
+        if (params.TaskReady) {
+            params.TaskReady(id);
+            isTaskReadyWarning && console.warn('warning: Param "TaskReady" has been deprecated. Please use "onTaskReady" instead.');
+            isTaskReadyWarning = false;
+        }
 
         var task = {
             // env
