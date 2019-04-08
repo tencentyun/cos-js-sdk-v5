@@ -1983,7 +1983,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.12';
+COS.version = '0.5.13';
 
 module.exports = COS;
 
@@ -6031,7 +6031,7 @@ function getAuthorizationAsync(params, callback) {
 function allowRetry(err) {
     var allowRetry = false;
     var isTimeError = false;
-    var serverDate = err.headers && (err.headers.date || err.headers.Date) || '';
+    var serverDate = err.headers && (err.headers.date || err.headers.Date) || err.error && err.error.ServerTime;
     try {
         var errorCode = err.error.Code;
         var errorMessage = err.error.Message;
