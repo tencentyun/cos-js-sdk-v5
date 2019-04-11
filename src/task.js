@@ -45,21 +45,22 @@ var initTask = function (cos) {
     };
 
     var clearQueue = function () {
-        if (queue.length > cos.options.UploadQueueSize) {
-            var i;
-            for (i = 0;
-                 i < queue.length &&
-                 queue.length > cos.options.UploadQueueSize && // 大于队列才处理
-                 i < nextUploadIndex; // 小于当前操作的 index 才处理
-                 i++) {
-                var isActive = queue[i].state === 'waiting' || queue[i].state === 'checking' || queue[i].state === 'uploading';
-                if (!queue[i] || !isActive) {
-                    tasks[queue[i].id] && (delete tasks[queue[i].id]);
-                    queue.splice(i, 1);
-                    nextUploadIndex--;
-                }
+        if (queue.length <= cos.options.UploadQueueSize) return;
+        for (var i = 0;
+             i < nextUploadIndex && // 小于当前操作的 index 才清理
+             i < queue.length && // 大于队列才清理
+             queue.length > cos.options.UploadQueueSize // 如果还太多，才继续清理
+            ;) {
+            var isActive = queue[i].state === 'waiting' || queue[i].state === 'checking' || queue[i].state === 'uploading';
+            if (!queue[i] || !isActive) {
+                tasks[queue[i].id] && (delete tasks[queue[i].id]);
+                queue.splice(i, 1);
+                nextUploadIndex--;
+            } else {
+                i++;
             }
         }
+        emitListUpdate();
     };
 
     var startNextTask = function () {
@@ -113,7 +114,7 @@ var initTask = function (cos) {
             }
             task.state = switchToState;
             cos.emit('inner-kill-task', {TaskId: id, toState: switchToState});
-            emitListUpdate();
+            emitListUpdate(true);
             if (running) {
                 uploadingFileCount--;
                 startNextTask(cos);
@@ -134,7 +135,7 @@ var initTask = function (cos) {
         util.each(taskList, function (task) {
             cos._addTask(task.api, task.params, task.callback, true);
         });
-        emitListUpdate();
+        emitListUpdate(true);
     };
 
     var isTaskReadyWarning = true;
@@ -216,10 +217,10 @@ var initTask = function (cos) {
         return util.map(queue, formatTask);
     };
     cos.cancelTask = function (id) {
-        killTask(id, 'canceled')
+        killTask(id, 'canceled');
     };
     cos.pauseTask = function (id) {
-        killTask(id, 'paused')
+        killTask(id, 'paused');
     };
     cos.restartTask = function (id) {
         var task = tasks[id];

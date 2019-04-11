@@ -14,6 +14,7 @@
     <h1>COS 上传队列</h1>
     <div id="app">
         <form id="form">
+            <div class="float-right">共{{total}}个文件</div>
             <input type="file" value="选择上传文件" multiple @change="selectedFile">
         </form>
         <table class="file-list">

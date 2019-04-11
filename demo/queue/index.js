@@ -32,13 +32,15 @@ new Vue({
             FileParallelLimit: 5,
             ChunkParallelLimit: 16,
             ChunkMbSize: 2,
-            list: []
+            list: [],
+            total: 0,
         };
     },
     created: function () {
         var self = this;
         cos.on('list-update', function (data) {
             self.list = data.list;
+            self.total = data.list.length;
         });
     },
     methods: {
