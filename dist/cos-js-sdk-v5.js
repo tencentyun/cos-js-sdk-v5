@@ -1983,7 +1983,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.14';
+COS.version = '0.5.15';
 
 module.exports = COS;
 
@@ -5948,6 +5948,7 @@ function getAuthorizationAsync(params, callback) {
             Pathname: Pathname,
             Query: params.Query,
             Headers: headers,
+            Expires: params.Expires,
             UseRawKey: self.options.UseRawKey,
             SystemClockOffset: self.options.SystemClockOffset
         });
