@@ -2204,6 +2204,10 @@ function submitRequest(params, callback) {
             ResourceKey: params.ResourceKey,
             Scope: params.Scope,
         }, function (err, AuthData) {
+            if (err) {
+                callback(err);
+                return;
+            }
             params.AuthData = AuthData;
             _submitRequest.call(self, params, function (err, data) {
                 if (err && tryIndex < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
@@ -2409,9 +2413,25 @@ var API_MAP = {
     getAuth: getAuth,
 };
 
+function warnOldApi(apiName, fn, proto) {
+    util.each(['Cors', 'Acl'], function (suffix) {
+        if (apiName.slice(-suffix.length) === suffix) {
+            var oldName = apiName.slice(0, -suffix.length) + suffix.toUpperCase();
+            var apiFn = util.apiWrapper(apiName, fn);
+            var warned = false;
+            proto[oldName] = function () {
+                !warned && console.warn('warning: cos.' + oldName + ' has been deprecated. Please Use cos.' + apiName + ' instead.');
+                warned = true;
+                apiFn.apply(this, arguments);
+            };
+        }
+    });
+}
+
 module.exports.init = function (COS, task) {
     task.transferToTaskMethod(API_MAP, 'putObject');
     util.each(API_MAP, function (fn, apiName) {
         COS.prototype[apiName] = util.apiWrapper(apiName, fn);
+        warnOldApi(apiName, fn, COS.prototype);
     });
 };
