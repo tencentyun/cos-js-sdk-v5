@@ -1983,7 +1983,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.16';
+COS.version = '0.5.17';
 
 module.exports = COS;
 
@@ -3707,6 +3707,7 @@ var initTask = function (cos) {
             error: task.error
         };
         if (task.FilePath) t.FilePath = task.FilePath;
+        if (task._custom) t._custom = task._custom;
         return t;
     };
 
@@ -3839,7 +3840,8 @@ var initTask = function (cos) {
             speed: 0,
             percent: 0,
             hashPercent: 0,
-            error: null
+            error: null,
+            _custom: params._custom
         };
         var onHashProgress = params.onHashProgress;
         params.onHashProgress = function (info) {
@@ -11643,7 +11645,7 @@ function sliceCopyFile(params, callback) {
     var SourceRegion = m[3];
     var SourceKey = decodeURIComponent(m[4]);
     var CopySliceSize = params.SliceSize === undefined ? self.options.CopySliceSize : params.SliceSize;
-    CopySliceSize = Math.max(0, Math.min(CopySliceSize, 5 * 1024 * 1024 * 1024));
+    CopySliceSize = Math.max(0, CopySliceSize);
 
     var ChunkSize = params.ChunkSize || this.options.CopyChunkSize;
     var ChunkParallel = this.options.CopyChunkParallelLimit;

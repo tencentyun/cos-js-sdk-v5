@@ -36,6 +36,7 @@ var initTask = function (cos) {
             error: task.error,
         };
         if (task.FilePath) t.FilePath = task.FilePath;
+        if (task._custom) t._custom = task._custom;
         return t;
     };
 
@@ -173,6 +174,7 @@ var initTask = function (cos) {
             percent: 0,
             hashPercent: 0,
             error: null,
+            _custom: params._custom,
         };
         var onHashProgress = params.onHashProgress;
         params.onHashProgress = function (info) {
