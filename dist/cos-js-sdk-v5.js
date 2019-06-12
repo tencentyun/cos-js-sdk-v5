@@ -1983,7 +1983,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.17';
+COS.version = '0.5.18';
 
 module.exports = COS;
 
@@ -3712,9 +3712,16 @@ var initTask = function (cos) {
     };
 
     var emitListUpdate = function () {
-        cos.emit('task-list-update', { list: util.map(queue, formatTask) });
-        cos.emit('list-update', { list: util.map(queue, formatTask) });
-    };
+        var timer;
+        var emit = function () {
+            timer = 0;
+            cos.emit('task-list-update', { list: util.map(queue, formatTask) });
+            cos.emit('list-update', { list: util.map(queue, formatTask) });
+        };
+        return function () {
+            if (!timer) timer = setTimeout(emit);
+        };
+    }();
 
     var clearQueue = function () {
         if (queue.length <= cos.options.UploadQueueSize) return;
@@ -3782,7 +3789,7 @@ var initTask = function (cos) {
             }
             task.state = switchToState;
             cos.emit('inner-kill-task', { TaskId: id, toState: switchToState });
-            emitListUpdate(true);
+            emitListUpdate();
             if (running) {
                 uploadingFileCount--;
                 startNextTask(cos);
@@ -3803,7 +3810,7 @@ var initTask = function (cos) {
         util.each(taskList, function (task) {
             cos._addTask(task.api, task.params, task.callback, true);
         });
-        emitListUpdate(true);
+        emitListUpdate();
     };
 
     var isTaskReadyWarning = true;
@@ -3887,16 +3894,19 @@ var initTask = function (cos) {
         return util.map(queue, formatTask);
     };
     cos.cancelTask = function (id) {
-        killTask(id, 'canceled');
+        var options = (typeof id === 'string' ? { id: id } : id) || {};
+        killTask(id, 'canceled', options.IgnoreListUpdate);
     };
     cos.pauseTask = function (id) {
-        killTask(id, 'paused');
+        var options = (typeof id === 'string' ? { id: id } : id) || {};
+        killTask(id, 'paused', options.IgnoreListUpdate);
     };
     cos.restartTask = function (id) {
+        var options = (typeof id === 'string' ? { id: id } : id) || {};
         var task = tasks[id];
         if (task && (task.state === 'paused' || task.state === 'error')) {
             task.state = 'waiting';
-            emitListUpdate();
+            options && emitListUpdate();
             nextUploadIndex = Math.min(nextUploadIndex, task.index);
             startNextTask();
         }
