@@ -1466,8 +1466,13 @@ function multipartInit(params, callback) {
     var xml;
     var headers = params.Headers;
     var userAgent = navigator && navigator.userAgent || '';
-    var m = userAgent.match(/ TBS\/(\d{6}) /);
-    if (location.protocol === 'http:' && m && m[1].length <= 6 && m[1] < '044429') {
+    if (
+        location.protocol === 'http:' &&
+        /TBS\/(\d{6})/.test(userAgent) &&
+        /Android\/(\d{6})/.test(userAgent) &&
+        /MQQBrowser\/[\d.]+/.test(userAgent) &&
+        /MicroMessenger\/[\d.]+/.test(userAgent)
+    ) {
         xml = util.json2xml({});
         headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
         // 如果没有 Content-Type 指定一个
