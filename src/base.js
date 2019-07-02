@@ -2042,7 +2042,7 @@ function getAuthorizationAsync(params, callback) {
     var ScopeKey  = util.md5(JSON.stringify(Scope));
 
     // STS
-    self._StsCache = self._StsCache ||[];
+    self._StsCache = [];
     (function () {
         var i, AuthData;
         for (i = self._StsCache.length - 1; i >= 0; i--) {
