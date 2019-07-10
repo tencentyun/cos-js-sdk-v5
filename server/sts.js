@@ -64,7 +64,7 @@ app.all('/sts', function (req, res, next) {
             'action': config.allowActions,
             'effect': 'allow',
             'resource': [
-                'qcs::cos:ap-guangzhou:uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/' + config.allowPrefix,
+                'qcs::cos:' + config.region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/' + config.allowPrefix,
             ],
         }],
     };
