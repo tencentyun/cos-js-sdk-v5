@@ -1955,9 +1955,9 @@ var defaultOptions = {
     SecretId: '',
     SecretKey: '',
     XCosSecurityToken: '', // 使用临时密钥需要注意自行刷新 Token
+    ChunkRetryTimes: 2,
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
-    ChunkRetryTimes: 3,
     ChunkSize: 1024 * 1024,
     SliceSize: 1024 * 1024,
     CopyChunkParallelLimit: 20,
@@ -4996,11 +4996,11 @@ function putObject(params, callback) {
     var ContentType = headers['Content-Type'] || params.Body && params.Body.type;
     !headers['Content-Type'] && ContentType && (headers['Content-Type'] = ContentType);
 
-    var needCalcMd5 = params.AddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
+    var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
     util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
         if (md5) {
             if (self.options.UploadCheckContentMd5) params.Headers['Content-MD5'] = util.binaryBase64(md5);
-            if (params.AddMetaMd5 || self.options.UploadAddMetaMd5) params.Headers['x-cos-meta-md5'] = md5;
+            if (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5) params.Headers['x-cos-meta-md5'] = md5;
         }
 
         if (params.ContentLength !== undefined) {
@@ -5460,7 +5460,7 @@ function multipartInit(params, callback) {
 
     // 特殊处理 Cache-Control
     !headers['Cache-Control'] && (headers['Cache-Control'] = '');
-    util.getBodyMd5(params.AddMetaMd5 || self.options.UploadAddMetaMd5, params.Body, function (md5) {
+    util.getBodyMd5(params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5, params.Body, function (md5) {
         if (md5) params.Headers['x-cos-meta-md5'] = md5;
         submitRequest.call(self, {
             Action: 'name/cos:InitiateMultipartUpload',
@@ -6154,10 +6154,7 @@ function submitRequest(params, callback) {
     var Query = util.clone(params.qs);
     params.action && (Query[params.action] = '');
 
-    var next = function (tryIndex) {
-        if (!self.options) {
-            debugger;
-        }
+    var next = function (tryTimes) {
         var oldClockOffset = self.options.SystemClockOffset;
         getAuthorizationAsync.call(self, {
             Bucket: params.Bucket || '',
@@ -6176,7 +6173,7 @@ function submitRequest(params, callback) {
             }
             params.AuthData = AuthData;
             _submitRequest.call(self, params, function (err, data) {
-                if (err && tryIndex < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
+                if (err && tryTimes < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
                     if (params.headers) {
                         delete params.headers.Authorization;
                         delete params.headers['token'];
@@ -6184,14 +6181,14 @@ function submitRequest(params, callback) {
                         delete params.headers['clientUA'];
                         delete params.headers['x-cos-security-token'];
                     }
-                    next(tryIndex + 1);
+                    next(tryTimes + 1);
                 } else {
                     callback(err, data);
                 }
             });
         });
     };
-    next(0);
+    next(1);
 }
 
 // 发起请求
@@ -11724,10 +11721,10 @@ function sliceCopyFile(params, callback) {
     var SourceBucket = m[1];
     var SourceRegion = m[3];
     var SourceKey = decodeURIComponent(m[4]);
-    var CopySliceSize = params.SliceSize === undefined ? self.options.CopySliceSize : params.SliceSize;
+    var CopySliceSize = params.CopySliceSize === undefined ? self.options.CopySliceSize : params.CopySliceSize;
     CopySliceSize = Math.max(0, CopySliceSize);
 
-    var ChunkSize = params.ChunkSize || this.options.CopyChunkSize;
+    var ChunkSize = params.CopyChunkSize || this.options.CopyChunkSize;
     var ChunkParallel = this.options.CopyChunkParallelLimit;
 
     var FinishSize = 0;
