@@ -4,9 +4,9 @@
   "description": "JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)",
   "main": "index.js",
   "scripts": {
+    "sts.js": "node server/sts.js",
     "dev": "SET NODE_ENV=development&& webpack -w",
     "build": "SET NODE_ENV=production&& webpack",
-    "sts.js": "node server/sts.js",
     "cos-auth.min.js": "uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m"
   },
   "repository": {

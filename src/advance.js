@@ -66,6 +66,7 @@ function sliceUploadFile(params, callback) {
         });
 
         // 获取 UploadId
+        onProgress(null, true); // 任务状态开始 uploading
         uploadSliceList.call(self, {
             TaskId: TaskId,
             Bucket: Bucket,
