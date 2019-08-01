@@ -32,6 +32,7 @@ var defaultOptions = {
     CorrectClockSkew: true,
     SystemClockOffset: 0, // 单位毫秒，ms
     UploadCheckContentMd5: false,
+    UploadAddMetaMd5: false,
     UploadIdCacheLimit: 50,
 };
 

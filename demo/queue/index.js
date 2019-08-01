@@ -6,7 +6,7 @@ var cos = new COS({
     ChunkParallelLimit: 5,
     ChunkMbSize: 8 * 1024 * 1024,
     getAuthorization: function (options, callback) {
-        var url = '../../server/sts.php';
+        var url = '/sts';
         var xhr = new XMLHttpRequest();
         xhr.open('GET', url, true);
         xhr.onload = function (e) {
@@ -39,6 +39,7 @@ new Vue({
     created: function () {
         var self = this;
         cos.on('list-update', function (data) {
+            console.log('list-update');
             self.list = data.list;
             self.total = data.list.length;
         });

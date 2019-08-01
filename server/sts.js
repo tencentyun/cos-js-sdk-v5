@@ -1,7 +1,8 @@
 // 临时密钥服务例子
-var STS = require('qcloud-cos-sts');
 var bodyParser = require('body-parser');
+var STS = require('qcloud-cos-sts');
 var express = require('express');
+var pathLib = require('path');
 
 // 配置参数
 var config = {
@@ -30,20 +31,11 @@ var config = {
 
 // 创建临时密钥服务
 var app = express();
+app.use('/dist/', express.static(pathLib.resolve(__dirname, '../dist')));
+app.use('/demo/', express.static(pathLib.resolve(__dirname, '../demo')));
+app.use('/test/', express.static(pathLib.resolve(__dirname, '../test')));
+app.all('/', (req, res, next) => res.redirect('/demo/'));
 app.use(bodyParser.json());
-
-// 支持跨域访问
-app.all('*', function (req, res, next) {
-    res.header('Content-Type', 'application/json');
-    res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:88');
-    res.header('Access-Control-Allow-Headers', 'origin,accept,content-type');
-    if (req.method.toUpperCase() === 'OPTIONS') {
-        res.end();
-    } else {
-        next();
-    }
-});
-
 
 // 格式一：临时密钥接口
 app.all('/sts', function (req, res, next) {
@@ -64,7 +56,7 @@ app.all('/sts', function (req, res, next) {
             'action': config.allowActions,
             'effect': 'allow',
             'resource': [
-                'qcs::cos:ap-guangzhou:uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/' + config.allowPrefix,
+                'qcs::cos:' + config.region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/' + config.allowPrefix,
             ],
         }],
     };
@@ -80,7 +72,6 @@ app.all('/sts', function (req, res, next) {
         res.send(result);
     });
 });
-
 
 // // 格式二：临时密钥接口，支持细粒度权限控制
 // // 判断是否允许获取密钥
@@ -118,7 +109,6 @@ app.all('/sts', function (req, res, next) {
 //         res.send(result);
 //     });
 // });
-
 
 app.all('*', function (req, res, next) {
     res.send({code: -1, message: '404 Not Found'});

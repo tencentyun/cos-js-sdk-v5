@@ -41,8 +41,8 @@ var getAuthorization = function (options, callback) {
     // 格式一、（推荐）后端通过获取临时密钥给到前端，前端计算签名
     // 服务端 JS 和 PHP 例子：https://github.com/tencentyun/cos-js-sdk-v5/blob/master/server/
     // 服务端其他语言参考 COS STS SDK ：https://github.com/tencentyun/qcloud-cos-sts-sdk
-    // var url = 'http://127.0.0.1:3000/sts';
-    var url = '../server/sts.php';
+    // var url = '../server/sts.php';
+    var url = '/sts';
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
     xhr.onload = function (e) {
@@ -63,7 +63,8 @@ var getAuthorization = function (options, callback) {
 
     // // 格式二、（推荐）【细粒度控制权限】后端通过获取临时密钥给到前端，前端只有相同请求才重用临时密钥，后端可以通过 Scope 细粒度控制权限
     // // 服务端例子：https://github.com/tencentyun/qcloud-cos-sts-sdk/edit/master/scope.md
-    // var url = 'http://127.0.0.1:3000/sts-scope';
+    // // var url = '../server/sts.php';
+    // var url = '/sts-scope';
     // var xhr = new XMLHttpRequest();
     // xhr.open('POST', url, true);
     // xhr.setRequestHeader('Content-Type', 'application/json');
@@ -2277,7 +2278,6 @@ group('Cache-Control', function () {
                 Key: '1mb.zip',
             }, function (err, data) {
                 assert.ok(data.headers['cache-control'] === undefined || data.headers['cache-control'] === 'max-age=259200', 'cache-control 正确');
-                console.log(data.headers['cache-control']);
                 done();
             });
         });
@@ -2296,7 +2296,6 @@ group('Cache-Control', function () {
                 Key: '1mb.zip',
             }, function (err, data) {
                 assert.ok(data.headers['cache-control'] === 'max-age=7200', 'cache-control 正确');
-                console.log(data.headers['cache-control']);
                 done();
             });
         });
@@ -2315,7 +2314,6 @@ group('Cache-Control', function () {
                 Key: '1mb.zip',
             }, function (err, data) {
                 assert.ok(data.headers['cache-control'] === 'no-cache' || data.headers['cache-control'] === 'no-cache, max-age=259200', 'cache-control 正确');
-                console.log(data.headers['cache-control']);
                 done();
             });
         });
@@ -2334,7 +2332,6 @@ group('Cache-Control', function () {
                 Key: '1mb.zip',
             }, function (err, data) {
                 assert.ok(data.headers['cache-control'] === undefined || data.headers['cache-control'] === 'max-age=259200', 'cache-control 正确');
-                console.log(data.headers['cache-control']);
                 done();
             });
         });
@@ -2353,7 +2350,6 @@ group('Cache-Control', function () {
                 Key: '1mb.zip',
             }, function (err, data) {
                 assert.ok(data.headers['cache-control'] === 'max-age=7200', 'cache-control 正确');
-                console.log(data.headers['cache-control']);
                 done();
             });
         });
@@ -2372,7 +2368,6 @@ group('Cache-Control', function () {
                 Key: '1mb.zip',
             }, function (err, data) {
                 assert.ok(data.headers['cache-control'] === 'no-cache' || data.headers['cache-control'] === 'no-cache, max-age=259200', 'cache-control 正确');
-                console.log(data.headers['cache-control']);
                 done();
             });
         });

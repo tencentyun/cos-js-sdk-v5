@@ -157,11 +157,30 @@ var readAsBinaryString = function (blob, callback) {
 };
 
 // 获取文件 md5 值
-var getFileMd5 = function (blob, callback) {
-    readAsBinaryString(blob, function (content) {
-        var hash = md5(content, true);
-        callback(null, hash);
-    });
+var md5ChunkSize = 1024 * 1024 * 100;
+var getFileMd5 = function (blob, callback, onProgress) {
+    var size = blob.size;
+    var loaded = 0;
+    var md5ctx = md5.getCtx();
+    var next = function (start) {
+        if (start >= size) {
+            var hash = md5ctx.digest('hex');
+            callback(null, hash);
+            return;
+        }
+        var end = Math.min(size, start + md5ChunkSize);
+        util.fileSlice(blob, start, end, false, function (chunk) {
+            readAsBinaryString(chunk, function (content) {
+                chunk = null;
+                md5ctx = md5ctx.update(content, true);
+                loaded += content.length;
+                content = null;
+                if (onProgress) onProgress({loaded: loaded, total: size, percent: Math.round(loaded / size * 10000) / 10000});
+                next(start + md5ChunkSize);
+            });
+        });
+    };
+    next(0);
 };
 
 function clone(obj) {
@@ -538,7 +557,7 @@ util.getFileUUID = function (file, ChunkSize) {
         return null;
     }
 };
-util.getBodyMd5 = function (UploadCheckContentMd5, Body, callback) {
+util.getBodyMd5 = function (UploadCheckContentMd5, Body, callback, onProgress) {
     callback = callback || noop;
     if (UploadCheckContentMd5) {
         if (typeof Body === 'string') {
@@ -546,7 +565,7 @@ util.getBodyMd5 = function (UploadCheckContentMd5, Body, callback) {
         } else if (Blob && Body instanceof Blob) {
             util.getFileMd5(Body, function (err, md5) {
                 callback(md5);
-            });
+            }, onProgress);
         } else {
             callback();
         }

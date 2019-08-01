@@ -32,8 +32,8 @@ var getAuthorization = function (options, callback) {
     // 格式一、（推荐）后端通过获取临时密钥给到前端，前端计算签名
     // 服务端 JS 和 PHP 例子：https://github.com/tencentyun/cos-js-sdk-v5/blob/master/server/
     // 服务端其他语言参考 COS STS SDK ：https://github.com/tencentyun/qcloud-cos-sts-sdk
-    // var url = 'http://127.0.0.1:3000/sts';
-    var url = '../server/sts.php';
+    // var url = '../server/sts.php'; // 如果起的是 php server 用这个
+    var url = '/sts'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
     xhr.onload = function (e) {
@@ -54,7 +54,8 @@ var getAuthorization = function (options, callback) {
 
     // // 格式二、（推荐）【细粒度控制权限】后端通过获取临时密钥给到前端，前端只有相同请求才重复使用临时密钥，后端可以通过 Scope 细粒度控制权限
     // // 服务端例子：https://github.com/tencentyun/qcloud-cos-sts-sdk/edit/master/scope.md
-    // var url = 'http://127.0.0.1:3000/sts-scope';
+    // // var url = '../server/sts.php'; // 如果起的是 php server 用这个
+    // var url = '/sts-scope'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     // var xhr = new XMLHttpRequest();
     // xhr.open('POST', url, true);
     // xhr.setRequestHeader('Content-Type', 'application/json');
@@ -124,7 +125,7 @@ var getAuthorization = function (options, callback) {
 };
 
 var cos = new COS({
-    getAuthorization: getAuthorization
+    getAuthorization: getAuthorization,
 });
 
 var TaskId;
@@ -775,6 +776,9 @@ function selectFileToUpload() {
                     Body: file,
                     onTaskReady: function (tid) {
                         TaskId = tid;
+                    },
+                    onHashProgress: function (progressData) {
+                        logger.log('onHashProgress', JSON.stringify(progressData));
                     },
                     onProgress: function (progressData) {
                         logger.log(JSON.stringify(progressData));

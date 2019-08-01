@@ -222,11 +222,30 @@ var readAsBinaryString = function (blob, callback) {
 };
 
 // 获取文件 md5 值
-var getFileMd5 = function (blob, callback) {
-    readAsBinaryString(blob, function (content) {
-        var hash = md5(content, true);
-        callback(null, hash);
-    });
+var md5ChunkSize = 1024 * 1024 * 100;
+var getFileMd5 = function (blob, callback, onProgress) {
+    var size = blob.size;
+    var loaded = 0;
+    var md5ctx = md5.getCtx();
+    var next = function (start) {
+        if (start >= size) {
+            var hash = md5ctx.digest('hex');
+            callback(null, hash);
+            return;
+        }
+        var end = Math.min(size, start + md5ChunkSize);
+        util.fileSlice(blob, start, end, false, function (chunk) {
+            readAsBinaryString(chunk, function (content) {
+                chunk = null;
+                md5ctx = md5ctx.update(content, true);
+                loaded += content.length;
+                content = null;
+                if (onProgress) onProgress({ loaded: loaded, total: size, percent: Math.round(loaded / size * 10000) / 10000 });
+                next(start + md5ChunkSize);
+            });
+        });
+    };
+    next(0);
 };
 
 function clone(obj) {
@@ -603,7 +622,7 @@ util.getFileUUID = function (file, ChunkSize) {
         return null;
     }
 };
-util.getBodyMd5 = function (UploadCheckContentMd5, Body, callback) {
+util.getBodyMd5 = function (UploadCheckContentMd5, Body, callback, onProgress) {
     callback = callback || noop;
     if (UploadCheckContentMd5) {
         if (typeof Body === 'string') {
@@ -611,7 +630,7 @@ util.getBodyMd5 = function (UploadCheckContentMd5, Body, callback) {
         } else if (Blob && Body instanceof Blob) {
             util.getFileMd5(Body, function (err, md5) {
                 callback(md5);
-            });
+            }, onProgress);
         } else {
             callback();
         }
@@ -1957,6 +1976,7 @@ var defaultOptions = {
     CorrectClockSkew: true,
     SystemClockOffset: 0, // 单位毫秒，ms
     UploadCheckContentMd5: false,
+    UploadAddMetaMd5: false,
     UploadIdCacheLimit: 50
 };
 
@@ -2112,6 +2132,53 @@ function md51(s) {
     return state;
 }
 
+var binaryBase64 = function (str) {
+    var i,
+        len,
+        char,
+        res = '';
+    for (i = 0, len = str.length / 2; i < len; i++) {
+        char = parseInt(str[i * 2] + str[i * 2 + 1], 16);
+        res += String.fromCharCode(char);
+    }
+    return btoa(res);
+};
+function getCtx() {
+    var ctx = {};
+    ctx.state = [1732584193, -271733879, -1732584194, 271733878];
+    ctx.tail = '';
+    ctx.size = 0;
+    ctx.update = function (s, isBinaryString) {
+        if (!isBinaryString) s = Utf8Encode(s);
+        ctx.size += s.length;
+        s = ctx.tail + s;
+        var i,
+            state = ctx.state;
+        for (i = 64; i <= s.length; i += 64) {
+            md5cycle(state, md5blk(s.substring(i - 64, i)));
+        }
+        ctx.tail = s.substring(i - 64);
+        return ctx;
+    };
+    ctx.digest = function (encode) {
+        var i,
+            n = ctx.size,
+            state = ctx.state,
+            s = ctx.tail,
+            tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        for (i = 0; i < s.length; i++) tail[i >> 2] |= s.charCodeAt(i) << (i % 4 << 3);
+        tail[i >> 2] |= 0x80 << (i % 4 << 3);
+        if (i > 55) {
+            md5cycle(state, tail);
+            for (i = 0; i < 16; i++) tail[i] = 0;
+        }
+        tail[14] = n * 8;
+        md5cycle(state, tail);
+        return encode === 'hex' ? hex(state) : encode === 'base64' ? binaryBase64(hex(state)) : state;
+    };
+    return ctx;
+}
+
 /* there needs to be support for Unicode here,
  * unless we pretend that we can redefine the MD-5
  * algorithm for multi-byte characters (perhaps
@@ -2193,6 +2260,8 @@ if (md5('hello') != '5d41402abc4b2a76b9719d911017c592') {
         return msw << 16 | lsw & 0xFFFF;
     };
 }
+
+md5.getCtx = getCtx;
 
 module.exports = md5;
 
@@ -4927,8 +4996,13 @@ function putObject(params, callback) {
     var ContentType = headers['Content-Type'] || params.Body && params.Body.type;
     !headers['Content-Type'] && ContentType && (headers['Content-Type'] = ContentType);
 
-    util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
-        md5 && (params.Headers['Content-MD5'] = util.binaryBase64(md5));
+    var needCalcMd5 = params.AddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
+    util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
+        if (md5) {
+            if (self.options.UploadCheckContentMd5) params.Headers['Content-MD5'] = util.binaryBase64(md5);
+            if (params.AddMetaMd5 || self.options.UploadAddMetaMd5) params.Headers['x-cos-meta-md5'] = md5;
+        }
+
         if (params.ContentLength !== undefined) {
             params.Headers['Content-Length'] = params.ContentLength;
         }
@@ -4967,7 +5041,7 @@ function putObject(params, callback) {
             }
             callback(null, data);
         });
-    });
+    }, params.onHashProgress);
 }
 
 /**
@@ -5380,43 +5454,35 @@ function restoreObject(params, callback) {
  */
 function multipartInit(params, callback) {
 
-    var xml;
+    var self = this;
     var headers = params.Headers;
-    var userAgent = navigator && navigator.userAgent || '';
-    if (location.protocol === 'http:' && /TBS\/(\d{6})/.test(userAgent) && /Android\/(\d{6})/.test(userAgent) && /MQQBrowser\/[\d.]+/.test(userAgent) && /MicroMessenger\/[\d.]+/.test(userAgent)) {
-        xml = util.json2xml({});
-        headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-        // 如果没有 Content-Type 指定一个
-        if (!headers['Content-Type']) {
-            headers['Content-Type'] = params.Body && params.Body.type || 'application/octet-stream';
-        }
-    }
 
     // 特殊处理 Cache-Control
     !headers['Cache-Control'] && (headers['Cache-Control'] = '');
-
-    submitRequest.call(this, {
-        Action: 'name/cos:InitiateMultipartUpload',
-        method: 'POST',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        action: 'uploads',
-        headers: params.Headers,
-        body: xml
-    }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
-        data = util.clone(data || {});
-        if (data && data.InitiateMultipartUploadResult) {
-            return callback(null, util.extend(data.InitiateMultipartUploadResult, {
-                statusCode: data.statusCode,
-                headers: data.headers
-            }));
-        }
-        callback(null, data);
-    });
+    util.getBodyMd5(params.AddMetaMd5 || self.options.UploadAddMetaMd5, params.Body, function (md5) {
+        if (md5) params.Headers['x-cos-meta-md5'] = md5;
+        submitRequest.call(self, {
+            Action: 'name/cos:InitiateMultipartUpload',
+            method: 'POST',
+            Bucket: params.Bucket,
+            Region: params.Region,
+            Key: params.Key,
+            action: 'uploads',
+            headers: params.Headers
+        }, function (err, data) {
+            if (err) {
+                return callback(err);
+            }
+            data = util.clone(data || {});
+            if (data && data.InitiateMultipartUploadResult) {
+                return callback(null, util.extend(data.InitiateMultipartUploadResult, {
+                    statusCode: data.statusCode,
+                    headers: data.headers
+                }));
+            }
+            callback(null, data);
+        });
+    }, params.onHashProgress);
 }
 
 /**
@@ -5440,7 +5506,7 @@ function multipartUpload(params, callback) {
     var self = this;
     util.getFileSize('multipartUpload', params, function () {
         util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
-            md5 && (params.Headers['Content-MD5'] = util.binaryBase64(md5));
+            if (md5) params.Headers['Content-MD5'] = util.binaryBase64(md5);
             submitRequest.call(self, {
                 Action: 'name/cos:UploadPart',
                 TaskId: params.TaskId,
@@ -6088,6 +6154,9 @@ function submitRequest(params, callback) {
     params.action && (Query[params.action] = '');
 
     var next = function (tryIndex) {
+        if (!self.options) {
+            debugger;
+        }
         var oldClockOffset = self.options.SystemClockOffset;
         getAuthorizationAsync.call(self, {
             Bucket: params.Bucket || '',

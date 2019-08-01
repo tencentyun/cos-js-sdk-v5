@@ -1009,8 +1009,13 @@ function putObject(params, callback) {
     var ContentType = headers['Content-Type'] || (params.Body && params.Body.type);
     !headers['Content-Type'] && ContentType && (headers['Content-Type'] = ContentType);
 
-    util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
-        md5 && (params.Headers['Content-MD5'] = util.binaryBase64(md5));
+    var needCalcMd5 = params.AddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
+    util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
+        if (md5) {
+            if (self.options.UploadCheckContentMd5) params.Headers['Content-MD5'] = util.binaryBase64(md5);
+            if (params.AddMetaMd5 || self.options.UploadAddMetaMd5) params.Headers['x-cos-meta-md5'] = md5;
+        }
+
         if (params.ContentLength !== undefined) {
             params.Headers['Content-Length'] = params.ContentLength;
         }
@@ -1049,7 +1054,7 @@ function putObject(params, callback) {
             }
             callback(null, data);
         });
-    });
+    }, params.onHashProgress);
 }
 
 /**
@@ -1463,49 +1468,35 @@ function restoreObject(params, callback) {
  */
 function multipartInit(params, callback) {
 
-    var xml;
+    var self = this;
     var headers = params.Headers;
-    var userAgent = navigator && navigator.userAgent || '';
-    if (
-        location.protocol === 'http:' &&
-        /TBS\/(\d{6})/.test(userAgent) &&
-        /Android\/(\d{6})/.test(userAgent) &&
-        /MQQBrowser\/[\d.]+/.test(userAgent) &&
-        /MicroMessenger\/[\d.]+/.test(userAgent)
-    ) {
-        xml = util.json2xml({});
-        headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-        // 如果没有 Content-Type 指定一个
-        if (!headers['Content-Type']) {
-            headers['Content-Type'] = (params.Body && params.Body.type) || 'application/octet-stream';
-        }
-    }
 
     // 特殊处理 Cache-Control
     !headers['Cache-Control'] && (headers['Cache-Control'] = '');
-
-    submitRequest.call(this, {
-        Action: 'name/cos:InitiateMultipartUpload',
-        method: 'POST',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        action: 'uploads',
-        headers: params.Headers,
-        body: xml,
-    }, function (err, data) {
-        if (err) {
-            return callback(err);
-        }
-        data = util.clone(data || {});
-        if (data && data.InitiateMultipartUploadResult) {
-            return callback(null, util.extend(data.InitiateMultipartUploadResult, {
-                statusCode: data.statusCode,
-                headers: data.headers,
-            }));
-        }
-        callback(null, data);
-    });
+    util.getBodyMd5(params.AddMetaMd5 || self.options.UploadAddMetaMd5, params.Body, function (md5) {
+        if (md5) params.Headers['x-cos-meta-md5'] = md5;
+        submitRequest.call(self, {
+            Action: 'name/cos:InitiateMultipartUpload',
+            method: 'POST',
+            Bucket: params.Bucket,
+            Region: params.Region,
+            Key: params.Key,
+            action: 'uploads',
+            headers: params.Headers,
+        }, function (err, data) {
+            if (err) {
+                return callback(err);
+            }
+            data = util.clone(data || {});
+            if (data && data.InitiateMultipartUploadResult) {
+                return callback(null, util.extend(data.InitiateMultipartUploadResult, {
+                    statusCode: data.statusCode,
+                    headers: data.headers,
+                }));
+            }
+            callback(null, data);
+        });
+    }, params.onHashProgress);
 }
 
 /**
@@ -1529,7 +1520,7 @@ function multipartUpload(params, callback) {
     var self = this;
     util.getFileSize('multipartUpload', params, function () {
         util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
-            md5 && (params.Headers['Content-MD5'] = util.binaryBase64(md5));
+            if (md5) params.Headers['Content-MD5'] = util.binaryBase64(md5);
             submitRequest.call(self, {
                 Action: 'name/cos:UploadPart',
                 TaskId: params.TaskId,
@@ -2197,6 +2188,9 @@ function submitRequest(params, callback) {
     params.action && (Query[params.action] = '');
 
     var next = function (tryIndex) {
+        if (!self.options) {
+            debugger;
+        }
         var oldClockOffset = self.options.SystemClockOffset;
         getAuthorizationAsync.call(self, {
             Bucket: params.Bucket || '',
