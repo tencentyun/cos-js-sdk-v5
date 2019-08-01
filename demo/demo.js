@@ -745,50 +745,53 @@ function sliceUploadFile() {
 }
 
 function selectFileToUpload() {
-    var input = document.createElement('input');
+    var input = document.getElementById('file_selector') || document.createElement('input');
     input.type = 'file';
     input.onchange = function (e) {
+        document.body.removeChild(input);
         var file = this.files[0];
-        if (file) {
-            if (file.size > 1024 * 1024) {
-                cos.sliceUploadFile({
-                    Bucket: config.Bucket, // Bucket 格式：test-1250000000
-                    Region: config.Region,
-                    Key: file.name,
-                    Body: file,
-                    onTaskReady: function (tid) {
-                        TaskId = tid;
-                    },
-                    onHashProgress: function (progressData) {
-                        logger.log('onHashProgress', JSON.stringify(progressData));
-                    },
-                    onProgress: function (progressData) {
-                        logger.log('onProgress', JSON.stringify(progressData));
-                    },
-                }, function (err, data) {
-                    logger.log(err || data);
-                });
-            } else {
-                cos.putObject({
-                    Bucket: config.Bucket, // Bucket 格式：test-1250000000
-                    Region: config.Region,
-                    Key: file.name,
-                    Body: file,
-                    onTaskReady: function (tid) {
-                        TaskId = tid;
-                    },
-                    onHashProgress: function (progressData) {
-                        logger.log('onHashProgress', JSON.stringify(progressData));
-                    },
-                    onProgress: function (progressData) {
-                        logger.log(JSON.stringify(progressData));
-                    },
-                }, function (err, data) {
-                    logger.log(err || data);
-                });
-            }
+        if (!file) return;
+        if (file.size > 1024 * 1024) {
+            cos.sliceUploadFile({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: file.name,
+                Body: file,
+                onTaskReady: function (tid) {
+                    TaskId = tid;
+                },
+                onHashProgress: function (progressData) {
+                    logger.log('onHashProgress', JSON.stringify(progressData));
+                },
+                onProgress: function (progressData) {
+                    logger.log('onProgress', JSON.stringify(progressData));
+                },
+            }, function (err, data) {
+                logger.log(err || data);
+            });
+        } else {
+            cos.putObject({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: file.name,
+                Body: file,
+                onTaskReady: function (tid) {
+                    TaskId = tid;
+                },
+                onHashProgress: function (progressData) {
+                    logger.log('onHashProgress', JSON.stringify(progressData));
+                },
+                onProgress: function (progressData) {
+                    logger.log(JSON.stringify(progressData));
+                },
+            }, function (err, data) {
+                logger.log(err || data);
+            });
         }
     };
+    input.style = 'width:0;height:0;border:0;margin:0;padding:0;';
+    input.id = 'file_selector';
+    document.body.appendChild(input);
     input.click();
 }
 

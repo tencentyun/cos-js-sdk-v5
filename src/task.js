@@ -239,7 +239,7 @@ var initTask = function (cos) {
         if (task && (task.state === 'paused' || task.state === 'error')) {
             task.state = 'waiting';
             options && emitListUpdate();
-            nextUploadIndex = Math.min(nextUploadIndex, task.index);
+            nextUploadIndex = 0;
             startNextTask();
         }
     };

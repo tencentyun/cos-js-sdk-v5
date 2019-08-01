@@ -157,7 +157,7 @@ var readAsBinaryString = function (blob, callback) {
 };
 
 // 获取文件 md5 值
-var md5ChunkSize = 1024 * 1024 * 100;
+var md5ChunkSize = 1024 * 1024;
 var getFileMd5 = function (blob, callback, onProgress) {
     var size = blob.size;
     var loaded = 0;

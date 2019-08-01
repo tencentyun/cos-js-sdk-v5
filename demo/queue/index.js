@@ -39,7 +39,6 @@ new Vue({
     created: function () {
         var self = this;
         cos.on('list-update', function (data) {
-            console.log('list-update');
             self.list = data.list;
             self.total = data.list.length;
         });
