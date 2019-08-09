@@ -599,7 +599,7 @@ function deleteBucketTagging(params, callback) {
 function putBucketLifecycle(params, callback) {
 
     var LifecycleConfiguration = params['LifecycleConfiguration'] || {};
-    var Rules = LifecycleConfiguration.Rules || [];
+    var Rules = LifecycleConfiguration.Rules || params.Rules || [];
     Rules = util.clone(Rules);
     var xml = util.json2xml({LifecycleConfiguration: {Rule: Rules}});
 
