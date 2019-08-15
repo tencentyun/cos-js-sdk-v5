@@ -155,8 +155,8 @@ var logger = {
 
         var logStr = args.join(' ');
 
-        if(logStr.length > 10000) {
-            logStr = logStr.slice(0, 10000) + '...content is too long, the first 10000 characters are intercepted';
+        if(logStr.length > 1000000) {
+            logStr = logStr.slice(0, 1000000) + '...content is too long, the first 1000000 characters are intercepted';
         }
 
         showLogText(logStr);
