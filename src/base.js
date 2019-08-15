@@ -2321,10 +2321,17 @@ function _submitRequest(params, callback) {
         }
 
         var jsonRes;
-        try {
-            jsonRes = body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body) || {};
-        } catch (e) {
-            jsonRes = body || {};
+
+        // 不对 body 进行转换，body 直接挂载返回
+        if(rawBody) {
+            jsonRes = {};
+            jsonRes.body = body;
+        } else {
+            try {
+                jsonRes = body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body) || {};
+            } catch (e) {
+                jsonRes = body || {};
+            }
         }
 
         // 请求返回码不为 200
@@ -2335,11 +2342,6 @@ function _submitRequest(params, callback) {
             return;
         }
 
-        // 不对 body 进行转换，body 直接挂载返回
-        if (rawBody) {
-            jsonRes = {};
-            jsonRes.body = body;
-        }
 
         if (jsonRes.Error) {
             cb({error: jsonRes.Error});
