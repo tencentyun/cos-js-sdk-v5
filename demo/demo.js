@@ -152,7 +152,14 @@ var logger = {
         var args = [].map.call(arguments, function (v) {
             return typeof v === 'object' ? JSON.stringify(v) : v;
         });
-        showLogText(args.join(' '));
+
+        var logStr = args.join(' ');
+
+        if(logStr.length > 1000000) {
+            logStr = logStr.slice(0, 1000000) + '...content is too long, the first 1000000 characters are intercepted';
+        }
+
+        showLogText(logStr);
     },
     error: function (text) {
         console.error(text);
