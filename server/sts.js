@@ -65,11 +65,12 @@ app.all('/sts', function (req, res, next) {
         secretId: config.secretId,
         secretKey: config.secretKey,
         proxy: config.proxy,
+        region: config.region,
         durationSeconds: config.durationSeconds,
         policy: policy,
     }, function (err, tempKeys) {
-        var result = JSON.stringify(err || tempKeys) || '';
-        res.send(result);
+        if (tempKeys) tempKeys.startTime = startTime;
+        res.send(err || tempKeys);
     });
 });
 
@@ -105,8 +106,8 @@ app.all('/sts', function (req, res, next) {
 //         durationSeconds: config.durationSeconds,
 //         policy: policy,
 //     }, function (err, tempKeys) {
-//         var result = JSON.stringify(err || tempKeys) || '';
-//         res.send(result);
+//         if (tempKeys) tempKeys.startTime = startTime;
+//         res.send(err || tempKeys);
 //     });
 // });
 

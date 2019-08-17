@@ -22,7 +22,7 @@
   "homepage": "https://github.com/tencentyun/cos-js-sdk-v5#readme",
   "dependencies": {
     "body-parser": "^1.18.3",
-    "qcloud-cos-sts": "^3.0.0",
+    "qcloud-cos-sts": "^3.0.2",
     "express": "^4.16.4"
   },
   "devDependencies": {

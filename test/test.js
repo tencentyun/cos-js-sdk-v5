@@ -298,6 +298,7 @@ group('mock readAsBinaryString', function () {
                             TaskId = taskId;
                         },
                         onProgress: function (info) {
+                            if (info.percent === 0) return;
                             assert.ok(info.percent > 0.3, '分片续传成功');
                             cos.cancelTask(TaskId);
                             FileReader.prototype.readAsBinaryString = FileReader.prototype._readAsBinaryString;
@@ -527,6 +528,7 @@ group('sliceUploadFile(),pauseTask(),restartTask()', function () {
                         }, 1000);
                     }
                     if (paused && restarted) {
+                        if (info.percent === 0) return;
                         assert.ok(info.percent > 0.3, '暂停和重试成功');
                         cos.cancelTask(TaskId);
                         done();
