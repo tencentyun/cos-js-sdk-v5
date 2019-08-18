@@ -1,6 +1,6 @@
 {
   "name": "cos-js-sdk-v5",
-  "version": "0.5.18",
+  "version": "0.5.19",
   "description": "JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)",
   "main": "index.js",
   "scripts": {
@@ -21,16 +21,16 @@
   },
   "homepage": "https://github.com/tencentyun/cos-js-sdk-v5#readme",
   "dependencies": {
-    "body-parser": "^1.18.3",
-    "qcloud-cos-sts": "^3.0.2",
-    "express": "^4.16.4"
+    "xmldom": "^0.1.27"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
+    "body-parser": "^1.18.3",
     "cross-env": "^5.2.0",
+    "express": "^4.16.4",
+    "qcloud-cos-sts": "^3.0.2",
     "request": "^2.87.0",
-    "webpack": "^3.8.1",
-    "xmldom": "^0.1.27"
+    "webpack": "^3.8.1"
   }
 }
