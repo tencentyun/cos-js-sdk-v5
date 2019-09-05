@@ -6,12 +6,12 @@ var pathLib = require('path');
 
 // 配置参数
 var config = {
-    secretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    secretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    proxy: '',
+    secretId: process.env.SecretId,
+    secretKey: process.env.SecretKey,
+    proxy: process.env.Proxy,
     durationSeconds: 1800,
-    bucket: 'test-1250000000',
-    region: 'ap-guangzhou',
+    bucket: process.env.Bucket,
+    region: process.env.Region,
     allowPrefix: '_ALLOW_DIR_/*',
     // 密钥的权限列表
     allowActions: [
