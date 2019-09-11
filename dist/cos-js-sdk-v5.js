@@ -2003,7 +2003,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.19';
+COS.version = '0.5.20';
 
 module.exports = COS;
 
@@ -5026,7 +5026,7 @@ function putObject(params, callback) {
                 return callback(err);
             }
             onProgress({ loaded: FileSize, total: FileSize }, true);
-            if (data && data.headers && data.headers['etag']) {
+            if (data) {
                 var url = getUrl({
                     ForcePathStyle: self.options.ForcePathStyle,
                     protocol: self.options.Protocol,
@@ -5036,12 +5036,15 @@ function putObject(params, callback) {
                     object: params.Key
                 });
                 url = url.substr(url.indexOf('://') + 3);
-                return callback(null, {
+                var result = {
                     Location: url,
-                    ETag: data.headers['etag'],
                     statusCode: data.statusCode,
                     headers: data.headers
-                });
+                };
+                if (data.headers && data.headers.etag) {
+                    result.ETag = data.headers.etag;
+                }
+                return callback(null, result);
             }
             callback(null, data);
         });
