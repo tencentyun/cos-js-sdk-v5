@@ -4809,6 +4809,275 @@ function deleteBucketReplication(params, callback) {
     });
 }
 
+/**
+ * 设置 Bucket 的日志记录
+ * @param  {Object}  params                                                 参数对象，必须
+ *     @param  {String}  params.Bucket                                      Bucket名称，必须
+ *     @param  {String}  params.Region                                      地域名称，必须
+ *     @param  {(Object|String)}  params.BucketLoggingStatus                         说明日志记录配置的状态，如果无子节点信息则意为关闭日志记录，必须
+ * @param  {Function}  callback                                             回调函数，必须
+ * @return  {Object}  err                                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data                                                  返回数据
+ */
+function putBucketLogging(params, callback) {
+    var xml = util.json2xml({
+        BucketLoggingStatus: params['BucketLoggingStatus'] || ''
+    });
+
+    var headers = params.Headers;
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        Action: 'name/cos:PutBucketLogging',
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        body: xml,
+        action: 'logging',
+        headers: headers
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, { statusCode: err.statusCode });
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers
+        });
+    });
+}
+
+/**
+ * 获取 Bucket 的日志记录
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data              返回数据
+ */
+function getBucketLogging(params, callback) {
+    submitRequest.call(this, {
+        Action: 'name/cos:GetBucketLogging',
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'logging'
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            BucketLoggingStatus: data.BucketLoggingStatus,
+            statusCode: data.statusCode,
+            headers: data.headers
+        });
+    });
+}
+
+/**
+ * 创建/编辑 Bucket 的清单任务
+ * @param  {Object}  params                                                 参数对象，必须
+ *     @param  {String}  params.Bucket                                      Bucket名称，必须
+ *     @param  {String}  params.Region                                      地域名称，必须
+ *     @param  {String}  params.Id                                          清单任务的名称，必须
+ *     @param  {Object}  params.InventoryConfiguration                      包含清单的配置参数，必须
+ * @param  {Function}  callback                                             回调函数，必须
+ * @return  {Object}  err                                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data                                                  返回数据
+ */
+function putBucketInventory(params, callback) {
+    var InventoryConfiguration = util.clone(params['InventoryConfiguration']);
+
+    if (InventoryConfiguration.OptionalFields) {
+        var Field = InventoryConfiguration.OptionalFields || [];
+        InventoryConfiguration.OptionalFields = {
+            Field: Field
+        };
+    }
+
+    if (InventoryConfiguration.Destination && InventoryConfiguration.Destination.COSBucketDestination && InventoryConfiguration.Destination.COSBucketDestination.Encryption) {
+        var Encryption = InventoryConfiguration.Destination.COSBucketDestination.Encryption;
+        if (Object.keys(Encryption).indexOf('SSECOS') > -1) {
+            Encryption['SSE-COS'] = Encryption['SSECOS'];
+            delete Encryption['SSECOS'];
+        }
+    }
+
+    var xml = util.json2xml({
+        InventoryConfiguration: InventoryConfiguration
+    });
+
+    var headers = params.Headers;
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        Action: 'name/cos:PutBucketInventory',
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        body: xml,
+        action: 'inventory',
+        qs: {
+            id: params['Id']
+        },
+        headers: headers
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, { statusCode: err.statusCode });
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers
+        });
+    });
+}
+
+/**
+ * 获取 Bucket 的清单任务信息
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ *     @param  {String}  params.Id      清单任务的名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data              返回数据
+ */
+function getBucketInventory(params, callback) {
+    submitRequest.call(this, {
+        Action: 'name/cos:GetBucketInventory',
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'inventory',
+        qs: {
+            id: params['Id']
+        }
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+
+        var InventoryConfiguration = data['InventoryConfiguration'];
+        if (InventoryConfiguration && InventoryConfiguration.OptionalFields && InventoryConfiguration.OptionalFields.Field) {
+            var Field = InventoryConfiguration.OptionalFields.Field;
+            if (!util.isArray(Field)) {
+                Field = [Field];
+            }
+            InventoryConfiguration.OptionalFields = Field;
+        }
+        if (InventoryConfiguration.Destination && InventoryConfiguration.Destination.COSBucketDestination && InventoryConfiguration.Destination.COSBucketDestination.Encryption) {
+            var Encryption = InventoryConfiguration.Destination.COSBucketDestination.Encryption;
+            if (Object.keys(Encryption).indexOf('SSE-COS') > -1) {
+                Encryption['SSECOS'] = Encryption['SSE-COS'];
+                delete Encryption['SSE-COS'];
+            }
+        }
+
+        callback(null, {
+            InventoryConfiguration: InventoryConfiguration,
+            statusCode: data.statusCode,
+            headers: data.headers
+        });
+    });
+}
+
+/**
+ * 获取 Bucket 的清单任务信息
+ * @param  {Object}  params                             参数对象，必须
+ *     @param  {String}  params.Bucket                  Bucket名称，必须
+ *     @param  {String}  params.Region                  地域名称，必须
+ *     @param  {String}  params.ContinuationToken       当 COS 响应体中 IsTruncated 为 true，且 NextContinuationToken 节点中存在参数值时，您可以将这个参数作为 continuation-token 参数值，以获取下一页的清单任务信息，非必须
+ * @param  {Function}  callback                         回调函数，必须
+ * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data                              返回数据
+ */
+function listBucketInventory(params, callback) {
+    submitRequest.call(this, {
+        Action: 'name/cos:ListBucketInventory',
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'inventory',
+        qs: {
+            'continuation-token': params['ContinuationToken']
+        }
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        var ListInventoryConfigurationResult = data['ListInventoryConfigurationResult'];
+        var InventoryConfigurations = ListInventoryConfigurationResult.InventoryConfiguration;
+        InventoryConfigurations = util.isArray(InventoryConfigurations) ? InventoryConfigurations : [InventoryConfigurations];
+        delete ListInventoryConfigurationResult['InventoryConfiguration'];
+        util.each(InventoryConfigurations, function (InventoryConfiguration) {
+            if (InventoryConfiguration && InventoryConfiguration.OptionalFields && InventoryConfiguration.OptionalFields.Field) {
+                var Field = InventoryConfiguration.OptionalFields.Field;
+                if (!util.isArray(Field)) {
+                    Field = [Field];
+                }
+                InventoryConfiguration.OptionalFields = Field;
+            }
+
+            if (InventoryConfiguration.Destination && InventoryConfiguration.Destination.COSBucketDestination && InventoryConfiguration.Destination.COSBucketDestination.Encryption) {
+                var Encryption = InventoryConfiguration.Destination.COSBucketDestination.Encryption;
+                if (Object.keys(Encryption).indexOf('SSE-COS') > -1) {
+                    Encryption['SSECOS'] = Encryption['SSE-COS'];
+                    delete Encryption['SSE-COS'];
+                }
+            }
+        });
+        ListInventoryConfigurationResult.InventoryConfigurations = InventoryConfigurations;
+        util.extend(ListInventoryConfigurationResult, {
+            statusCode: data.statusCode,
+            headers: data.headers
+        });
+        callback(null, ListInventoryConfigurationResult);
+    });
+}
+
+/**
+ * 删除 Bucket 的清单任务
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ *     @param  {String}  params.Id      清单任务的名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data              返回数据
+ */
+function deleteBucketInventory(params, callback) {
+    submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucketInventory',
+        method: 'DELETE',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'inventory',
+        qs: {
+            id: params['Id']
+        }
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, { statusCode: err.statusCode });
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers
+        });
+    });
+}
+
 // Object 相关
 
 /**
@@ -6352,6 +6621,12 @@ var API_MAP = {
     putBucketReplication: putBucketReplication,
     getBucketReplication: getBucketReplication,
     deleteBucketReplication: deleteBucketReplication,
+    putBucketLogging: putBucketLogging, // BucketLogging
+    getBucketLogging: getBucketLogging,
+    putBucketInventory: putBucketInventory, // BucketInventory
+    getBucketInventory: getBucketInventory,
+    listBucketInventory: listBucketInventory,
+    deleteBucketInventory: deleteBucketInventory,
 
     // Object 相关方法
     getObject: getObject,

@@ -1,6 +1,7 @@
 var config = {
-    Bucket: 'test-1250000000',
-    Region: 'ap-guangzhou'
+    Bucket: '${Bucket}',
+    Region: '${Region}',
+    AccountId: '${AccountId}'
 };
 
 var util = {
@@ -579,6 +580,96 @@ function deleteBucket() {
     });
 }
 
+function putBucketLogging() {
+    var BucketLoggingStatus = {
+        LoggingEnabled: {
+            TargetBucket: config.Bucket,
+            TargetPrefix: 'bucket-logging-prefix/'
+        }
+    };
+    cos.putBucketLogging({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        BucketLoggingStatus: BucketLoggingStatus
+    }, function (err, data) {
+        logger.log(err || data);
+    });
+}
+
+function getBucketLogging() {
+    cos.getBucketLogging({
+        Bucket: config.Bucket,
+        Region: config.Region
+    }, function (err, data) {
+        logger.log(err || data);
+    });
+}
+
+function putBucketInventory() {
+    var InventoryConfiguration = {
+        Id: 'inventory_test',
+        IsEnabled: 'true',
+        Destination: {
+            COSBucketDestination: {
+                Format: 'CSV',
+                AccountId: config.AccountId,
+                Bucket: 'qcs::cos:' + config.Region + '::' + config.Bucket,
+                Prefix: 'inventory_prefix_1',
+                Encryption: {
+                    SSECOS: ''
+                }
+            }
+        },
+        Schedule: {
+            Frequency: 'Daily'
+        },
+        Filter: {
+            Prefix: 'myPrefix'
+        },
+        IncludedObjectVersions: 'All',
+        OptionalFields: [
+            'Size'
+        ]
+    };
+    cos.putBucketInventory({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Id: InventoryConfiguration.Id,
+        InventoryConfiguration: InventoryConfiguration
+    }, function (err, data) {
+        logger.log(err || data);
+    });
+}
+
+function getBucketInventory() {
+    cos.getBucketInventory({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Id: 'inventory_test'
+    }, function (err, data) {
+        logger.log(err || data);
+    });
+}
+
+function listBucketInventory() {
+    cos.listBucketInventory({
+        Bucket: config.Bucket,
+        Region: config.Region
+    }, function (err, data) {
+        logger.log(err || data);
+    });
+}
+
+function deleteBucketInventory() {
+    cos.deleteBucketInventory({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Id: 'inventory_test'
+    }, function (err, data) {
+        logger.log(err || data);
+    });
+}
+
 function putObject() {
     // 创建测试文件
     var filename = '1mb.zip';
@@ -879,6 +970,8 @@ function sliceCopyFile() {
 
 }
 
+
+
 (function () {
     var list = [
         // 'getService', // 不支持
@@ -909,6 +1002,12 @@ function sliceCopyFile() {
         'getBucketReplication',
         'deleteBucketReplication',
         'deleteBucket',
+        'putBucketLogging',
+        'getBucketLogging',
+        'putBucketInventory',
+        'getBucketInventory',
+        'listBucketInventory',
+        'deleteBucketInventory',
         'putObject',
         'putObjectCopy',
         'getObject',
@@ -925,7 +1024,7 @@ function sliceCopyFile() {
         'pauseTask',
         'restartTask',
         'uploadFiles',
-        'sliceCopyFile',
+        'sliceCopyFile'
     ];
     var container = document.querySelector('.main');
     var html = [];
