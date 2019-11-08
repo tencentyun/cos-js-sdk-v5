@@ -19,7 +19,6 @@
 <div id="msg"></div>
 
 <script src="common/cos-auth.min.js"></script>
-<script src="common/crypto.js"></script>
 <script>
     (function () {
         // 请求用到的参数
@@ -43,42 +42,6 @@
 
         // 获取权限策略
         var getPostPolicyCredentials = function (opt, callback) {
-            // var now = Math.round(Date.now() / 1000);
-            // var exp = now + 900;
-            // var qKeyTime = now + ';' + exp;
-            // var qSignAlgorithm = 'sha1';
-            // var policy = JSON.stringify({
-            //     'expiration': new Date(exp * 1000).toISOString(),
-            //     'conditions': [
-            //         // {'acl': opt.ACL || 'default'},
-            //         {'bucket': opt.Bucket},
-            //         // ['starts-with', '$key', opt.Key],
-            //         // ['starts-with', '$Content-Type', 'image/'],
-            //         // ['starts-with', '$success_action_redirect', redirectUrl],
-            //         // ['eq', '$x-cos-server-side-encryption', 'AES256'],
-            //         {'q-sign-algorithm': qSignAlgorithm},
-            //         {'q-ak': SecretId},
-            //         {'q-sign-time': qKeyTime}
-            //     ]
-            // });
-            //
-            // // 步骤一：生成 SignKey
-            // var signKey = CryptoJS.HmacSHA1(qKeyTime, SecretKey).toString();
-            //
-            // // 步骤二：生成 StringToSign
-            // var stringToSign = CryptoJS.SHA1(policy).toString();
-            //
-            // // 步骤三：生成 Signature
-            // var qSignature = CryptoJS.HmacSHA1(stringToSign, signKey).toString();
-            //
-            // callback(null, {
-            //     policy: btoa(policy),
-            //     qSignAlgorithm: qSignAlgorithm,
-            //     qAk: SecretId,
-            //     qKeyTime: qKeyTime,
-            //     qSignature: qSignature,
-            // });
-
             var url = 'http://127.0.0.1:3000/post-policy?key=' + encodeURIComponent(opt.Key);
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
