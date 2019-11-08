@@ -23,8 +23,10 @@
 <div id="msg"></div>
 
 <script src="common/cos-auth.min.js"></script>
+<script src="common/crypto.js"></script>
 <script>
     (function () {
+
         // 请求用到的参数
         var Bucket = 'test-1250000000';
         var Region = 'ap-guangzhou';
@@ -41,10 +43,9 @@
                 .replace(/\*/g, '%2A');
         };
 
-        // 计算签名
-        var getAuthorization = function (options, callback) {
-            // var url = 'http://127.0.0.1:3000/sts';
-            var url = '../server/sts.php';
+        // 获取权限策略
+        var getPostPolicyCredentials = function (opt, callback) {
+            var url = 'http://127.0.0.1:3000/post-policy?key=' + encodeURIComponent(opt.Key);
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.onreadystatechange = function (e) {
@@ -52,18 +53,10 @@
                     if (xhr.status === 200) {
                         var credentials;
                         try {
-                            credentials = (new Function('return ' + xhr.responseText))().credentials;
+                            credentials = (new Function('return ' + xhr.responseText))();
                         } catch (e) {}
                         if (credentials) {
-                            callback(null, {
-                                XCosSecurityToken: credentials.sessionToken,
-                                Authorization: CosAuth({
-                                    SecretId: credentials.tmpSecretId,
-                                    SecretKey: credentials.tmpSecretKey,
-                                    Method: options.Method,
-                                    Pathname: options.Pathname,
-                                })
-                            });
+                            callback(null, credentials);
                         } else {
                             console.error(xhr.responseText);
                             callback('获取签名出错');
@@ -79,13 +72,32 @@
         // 上传文件
         var uploadFile = function (file, callback) {
             var Key = 'dir/' + file.name; // 这里指定上传目录和文件名
-            getAuthorization({Method: 'POST', Pathname: '/'}, function (err, info) {
+            getPostPolicyCredentials({
+                Bucket: Bucket,
+                Key: Key,
+                ACL: 'default'
+            }, function (err, credentials) {
                 var fd = new FormData();
+
+                // 在当前目录下放一个空的 empty.html 以便让接口上传完成跳转回来
                 fd.append('key', Key);
-                fd.append('signature', info.Authorization);
-                fd.append('Content-Type', '');
-                info.XCosSecurityToken && fd.append('x-cos-security-token', info.XCosSecurityToken);
+
+                // // 使用普通签名格式
+                // fd.append('Signature', credentials.Authorization);
+                // fd.append('x-cos-security-token', credentials.XCosSecurityToken || '');
+
+                // 使用 policy 签名保护格式
+                credentials.securityToken && fd.append('x-cos-security-token', credentials.securityToken);
+                fd.append('q-sign-algorithm', credentials.qSignAlgorithm);
+                fd.append('q-ak', credentials.qAk);
+                fd.append('q-key-time', credentials.qKeyTime);
+                fd.append('q-signature', credentials.qSignature);
+                fd.append('policy', credentials.policy);
+
+                // 文件内容
                 fd.append('file', file);
+
+                // xhr
                 var url = prefix;
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', url, true);

@@ -2,6 +2,7 @@
 var bodyParser = require('body-parser');
 var STS = require('qcloud-cos-sts');
 var express = require('express');
+var crypto = require('crypto');
 var pathLib = require('path');
 
 // 配置参数
@@ -110,6 +111,51 @@ app.all('/sts', function (req, res, next) {
 //         res.send(err || tempKeys);
 //     });
 // });
+//
+// // 用于 PostObject 签名保护
+// app.all('/post-policy', function (req, res, next) {
+//     var query = req.query;
+//     var now = Math.round(Date.now() / 1000);
+//     var exp = now + 900;
+//     var qKeyTime = now + ';' + exp;
+//     var qSignAlgorithm = 'sha1';
+//     var policy = JSON.stringify({
+//         'expiration': new Date(exp * 1000).toISOString(),
+//         'conditions': [
+//             // {'acl': query.ACL},
+//             // ['starts-with', '$Content-Type', 'image/'],
+//             // ['starts-with', '$success_action_redirect', redirectUrl],
+//             // ['eq', '$x-cos-server-side-encryption', 'AES256'],
+//             {'q-sign-algorithm': qSignAlgorithm},
+//             {'q-ak': config.secretId},
+//             {'q-sign-time': qKeyTime},
+//             {'bucket': config.bucket},
+//             {'key': query.key},
+//         ]
+//     });
+//
+//     // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
+//     // 步骤一：生成 SignKey
+//     var signKey = crypto.createHmac('sha1', config.secretKey).update(qKeyTime).digest('hex');
+//
+//     // 步骤二：生成 StringToSign
+//     var stringToSign = crypto.createHash('sha1').update(policy).digest('hex');
+//
+//     // 步骤三：生成 Signature
+//     var qSignature = crypto.createHmac('sha1', signKey).update(stringToSign).digest('hex');
+//
+//     console.log(policy);
+//     res.send({
+//         policyObj: JSON.parse(policy),
+//         policy: Buffer.from(policy).toString('base64'),
+//         qSignAlgorithm: qSignAlgorithm,
+//         qAk: config.secretId,
+//         qKeyTime: qKeyTime,
+//         qSignature: qSignature,
+//         // securityToken: securityToken, // 如果使用临时密钥，要返回在这个资源 sessionToken 的值
+//     });
+// });
+//
 
 app.all('*', function (req, res, next) {
     res.send({code: -1, message: '404 Not Found'});
