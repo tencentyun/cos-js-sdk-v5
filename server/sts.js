@@ -4,6 +4,7 @@ var STS = require('qcloud-cos-sts');
 var express = require('express');
 var crypto = require('crypto');
 var pathLib = require('path');
+var fs = require('fs');
 
 // 配置参数
 var config = {
@@ -13,7 +14,7 @@ var config = {
     durationSeconds: 1800,
     bucket: process.env.Bucket,
     region: process.env.Region,
-    allowPrefix: '_ALLOW_DIR_/*',
+    allowPrefix: '*',
     // 密钥的权限列表
     allowActions: [
         // 所有 action 请看文档 https://cloud.tencent.com/document/product/436/31923
@@ -29,9 +30,20 @@ var config = {
     ],
 };
 
-
-// 创建临时密钥服务
+// 创建临时密钥服务和用于调试的静态服务
 var app = express();
+
+var replaceBucketRegion = (filePath) => {
+    return (req, res, next) => {
+        var content = fs.readFileSync(filePath).toString()
+            .replace(/(var config = {\r?\n *Bucket: ')test-1250000000(',\r?\n *Region: ')ap-guangzhou(',?\r?\n};?)/,
+            '$1' + process.env.Bucket + '$2' + process.env.Region +'$3');
+        res.header('Content-Type', 'application/javascript');
+        res.send(content);
+    };
+};
+app.use('/demo/demo.js', replaceBucketRegion(pathLib.resolve(__dirname, '../demo/demo.js')));
+app.use('/test/test.js', replaceBucketRegion(pathLib.resolve(__dirname, '../test/test.js')));
 app.use('/dist/', express.static(pathLib.resolve(__dirname, '../dist')));
 app.use('/demo/', express.static(pathLib.resolve(__dirname, '../demo')));
 app.use('/test/', express.static(pathLib.resolve(__dirname, '../test')));
