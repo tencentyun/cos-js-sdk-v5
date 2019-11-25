@@ -72,40 +72,43 @@ var initTask = function (cos) {
     };
 
     var startNextTask = function () {
-        if (nextUploadIndex < queue.length &&
-            uploadingFileCount < cos.options.FileParallelLimit) {
-            var task = queue[nextUploadIndex];
-            nextUploadIndex++;
-            if (task.state === 'waiting') {
-                uploadingFileCount++;
-                task.state = 'checking';
-                task.params.onTaskStart && task.params.onTaskStart(formatTask(task));
-                !task.params.UploadData && (task.params.UploadData = {});
-                var apiParams = util.formatParams(task.api, task.params);
-                originApiMap[task.api].call(cos, apiParams, function (err, data) {
-                    if (!cos._isRunningTask(task.id)) return;
-                    if (task.state === 'checking' || task.state === 'uploading') {
-                        task.state = err ? 'error' : 'success';
-                        err && (task.error = err);
-                        uploadingFileCount--;
-                        emitListUpdate();
-                        startNextTask(cos);
-                        task.callback && task.callback(err, data);
-                        if (task.state === 'success') {
-                            if (task.params) {
-                                delete task.params.UploadData;
-                                delete task.params.Body;
-                                delete task.params;
-                            }
-                            delete task.callback;
-                        }
-                    }
-                    clearQueue();
-                });
+        // 检查是否允许增加执行进程
+        if (uploadingFileCount >= cos.options.FileParallelLimit) return;
+        // 跳过不可执行的任务
+        while (queue[nextUploadIndex] && queue[nextUploadIndex].state !== 'waiting') nextUploadIndex++;
+        // 检查是否已遍历结束
+        if (nextUploadIndex >= queue.length) return;
+        // 上传该遍历到的任务
+        var task = queue[nextUploadIndex];
+        nextUploadIndex++;
+        uploadingFileCount++;
+        task.state = 'checking';
+        task.params.onTaskStart && task.params.onTaskStart(formatTask(task));
+        !task.params.UploadData && (task.params.UploadData = {});
+        var apiParams = util.formatParams(task.api, task.params);
+        originApiMap[task.api].call(cos, apiParams, function (err, data) {
+            if (!cos._isRunningTask(task.id)) return;
+            if (task.state === 'checking' || task.state === 'uploading') {
+                task.state = err ? 'error' : 'success';
+                err && (task.error = err);
+                uploadingFileCount--;
                 emitListUpdate();
+                startNextTask();
+                task.callback && task.callback(err, data);
+                if (task.state === 'success') {
+                    if (task.params) {
+                        delete task.params.UploadData;
+                        delete task.params.Body;
+                        delete task.params;
+                    }
+                    delete task.callback;
+                }
             }
-            startNextTask(cos);
-        }
+            clearQueue();
+        });
+        emitListUpdate();
+        // 异步执行下一个任务
+        setTimeout(startNextTask);
     };
 
     var killTask = function (id, switchToState) {
@@ -125,7 +128,7 @@ var initTask = function (cos) {
             emitListUpdate();
             if (running) {
                 uploadingFileCount--;
-                startNextTask(cos);
+                startNextTask();
             }
             if (switchToState === 'canceled') {
                 if (task.params) {
@@ -213,7 +216,7 @@ var initTask = function (cos) {
             queue.push(task);
             task.size = size;
             !ignoreAddEvent && emitListUpdate();
-            startNextTask(cos);
+            startNextTask();
             clearQueue();
         });
         return id;
