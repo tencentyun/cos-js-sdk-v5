@@ -1071,6 +1071,26 @@ function sliceCopyFile(params, callback) {
         }
         TargetHeader['x-cos-storage-class'] = params.Headers['x-cos-storage-class'] || SourceHeaders['x-cos-storage-class'];
         TargetHeader = util.clearKey(TargetHeader);
+        /**
+         * 对于归档存储的对象，如果未恢复副本，则不允许 Copy
+         */
+        if (SourceHeaders['x-cos-storage-class'] === 'ARCHIVE') {
+            var restoreHeader = SourceHeaders['x-cos-restore'];
+            if (!restoreHeader || restoreHeader === 'ongoing-request="true"') {
+                callback({ error: 'Unrestored archive object is not allowed to be copied' });
+                return;
+            }
+        }
+        /**
+         * 去除一些无用的头部，规避 multipartInit 出错
+         * 这些头部通常是在 putObjectCopy 时才使用
+         */
+        delete TargetHeader['x-cos-copy-source'];
+        delete TargetHeader['x-cos-metadata-directive'];
+        delete TargetHeader['x-cos-copy-source-If-Modified-Since'];
+        delete TargetHeader['x-cos-copy-source-If-Unmodified-Since'];
+        delete TargetHeader['x-cos-copy-source-If-Match'];
+        delete TargetHeader['x-cos-copy-source-If-None-Match'];
         self.multipartInit({
             Bucket: Bucket,
             Region: Region,
