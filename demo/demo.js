@@ -218,6 +218,15 @@ function headBucket() {
     });
 }
 
+function deleteBucket() {
+    cos.deleteBucket({
+        Bucket: 'testnew-' + config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1),
+        Region: 'ap-guangzhou'
+    }, function (err, data) {
+        console.log(err || data);
+    });
+}
+
 function putBucketAcl() {
     cos.putBucketAcl({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
@@ -275,15 +284,13 @@ function putBucketCors() {
     cos.putBucketCors({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
-        CORSConfiguration: {
-            "CORSRules": [{
-                "AllowedOrigin": ["*"],
-                "AllowedMethod": ["GET", "POST", "PUT", "DELETE", "HEAD"],
-                "AllowedHeader": ["*"],
-                "ExposeHeader": ["ETag", "Date", "Content-Length", "x-cos-acl", "x-cos-version-id", "x-cos-delete-marker", "x-cos-server-side-encryption"],
-                "MaxAgeSeconds": "5"
-            }]
-        }
+        CORSRules: [{
+            "AllowedOrigin": ["*"],
+            "AllowedMethod": ["GET", "POST", "PUT", "DELETE", "HEAD"],
+            "AllowedHeader": ["*"],
+            "ExposeHeader": ["ETag", "Date", "Content-Length", "x-cos-acl", "x-cos-version-id", "x-cos-request-id", "x-cos-delete-marker", "x-cos-server-side-encryption"],
+            "MaxAgeSeconds": "5"
+        }]
     }, function (err, data) {
         logger.log(err || data);
     });
@@ -570,11 +577,65 @@ function deleteBucketReplication() {
     });
 }
 
-function deleteBucket() {
-    cos.deleteBucket({
-        Bucket: config.Bucket,
+function putBucketWebsite() {
+    cos.putBucketWebsite({
+        Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
+        WebsiteConfiguration: {
+            IndexDocument: {
+                Suffix: "index.html" // 必选
+            },
+            RedirectAllRequestsTo: {
+                Protocol: "https"
+            },
+            // ErrorDocument: {
+            //     Key: "error.html"
+            // },
+            // RoutingRules: [{
+            //     Condition: {
+            //         HttpErrorCodeReturnedEquals: "404"
+            //     },
+            //     Redirect: {
+            //         Protocol: "https",
+            //         ReplaceKeyWith: "404.html"
+            //     }
+            // }, {
+            //     Condition: {
+            //         KeyPrefixEquals: "docs/"
+            //     },
+            //     Redirect: {
+            //         Protocol: "https",
+            //         ReplaceKeyPrefixWith: "documents/"
+            //     }
+            // }, {
+            //     Condition: {
+            //         KeyPrefixEquals: "img/"
+            //     },
+            //     Redirect: {
+            //         Protocol: "https",
+            //         ReplaceKeyWith: "picture.jpg"
+            //     }
+            // }]
+        }
     }, function (err, data) {
+        logger.log(err || data);
+    });
+}
+
+function getBucketWebsite() {
+    cos.getBucketWebsite({
+        Bucket: config.Bucket, // Bucket 格式：test-1250000000
+        Region: config.Region
+    },function(err, data){
+        logger.log(err || data);
+    });
+}
+
+function deleteBucketWebsite() {
+    cos.deleteBucketWebsite({
+        Bucket: config.Bucket, // Bucket 格式：test-1250000000
+        Region: config.Region
+    },function(err, data){
         logger.log(err || data);
     });
 }
@@ -908,6 +969,9 @@ function sliceCopyFile() {
         'putBucketReplication',
         'getBucketReplication',
         'deleteBucketReplication',
+        'putBucketWebsite',
+        'getBucketWebsite',
+        'deleteBucketWebsite',
         'deleteBucket',
         'putObject',
         'putObjectCopy',

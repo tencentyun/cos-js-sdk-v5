@@ -190,7 +190,6 @@ var request = function (opt, callback) {
 };
 var proxy = '';
 
-
 var cos = new COS({
     // 必选参数
     getAuthorization: getAuthorization,

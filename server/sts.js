@@ -14,7 +14,7 @@ var config = {
     durationSeconds: 1800,
     bucket: process.env.Bucket,
     region: process.env.Region,
-    allowPrefix: '*',
+    allowPrefix: '_ALLOW_DIR_/*',
     // 密钥的权限列表
     allowActions: [
         // 所有 action 请看文档 https://cloud.tencent.com/document/product/436/31923
