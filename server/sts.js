@@ -37,7 +37,7 @@ var replaceBucketRegion = (filePath) => {
     return (req, res, next) => {
         var content = fs.readFileSync(filePath).toString()
             .replace(/(var config = {\r?\n *Bucket: ')test-1250000000(',\r?\n *Region: ')ap-guangzhou(',?\r?\n};?)/,
-            '$1' + process.env.Bucket + '$2' + process.env.Region +'$3');
+            '$1' + config.bucket + '$2' + config.region +'$3');
         res.header('Content-Type', 'application/javascript');
         res.send(content);
     };
@@ -61,8 +61,8 @@ app.all('/sts', function (req, res, next) {
 
     // 获取临时密钥
     var LongBucketName = config.bucket;
-    var ShortBucketName = LongBucketName.substr(0, LongBucketName.indexOf('-'));
-    var AppId = LongBucketName.substr(LongBucketName.indexOf('-') + 1);
+    var ShortBucketName = LongBucketName.substr(0, LongBucketName.lastIndexOf('-'));
+    var AppId = LongBucketName.substr(LongBucketName.lastIndexOf('-') + 1);
     var policy = {
         'version': '2.0',
         'statement': [{
