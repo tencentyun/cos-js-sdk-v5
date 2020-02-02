@@ -229,12 +229,10 @@ var initTask = function (cos) {
         return util.map(queue, formatTask);
     };
     cos.cancelTask = function (id) {
-        var options = (typeof id === 'string' ? {id: id}: id) || {};
-        killTask(id, 'canceled', options.IgnoreListUpdate);
+        killTask(id, 'canceled');
     };
     cos.pauseTask = function (id) {
-        var options = (typeof id === 'string' ? {id: id}: id) || {};
-        killTask(id, 'paused', options.IgnoreListUpdate);
+        killTask(id, 'paused');
     };
     cos.restartTask = function (id) {
         var options = (typeof id === 'string' ? {id: id}: id) || {};
