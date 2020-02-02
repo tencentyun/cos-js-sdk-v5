@@ -95,6 +95,7 @@ var getAuth = function (opt) {
 
     var SecretId = opt.SecretId;
     var SecretKey = opt.SecretKey;
+    var KeyTime = opt.KeyTime;
     var method = (opt.method || opt.Method || 'get').toLowerCase();
     var queryParams = clone(opt.Query || opt.params || {});
     var headers = clone(opt.Headers || opt.headers || {});
@@ -154,8 +155,8 @@ var getAuth = function (opt) {
     // 要用到的 Authorization 参数列表
     var qSignAlgorithm = 'sha1';
     var qAk = SecretId;
-    var qSignTime = now + ';' + exp;
-    var qKeyTime = now + ';' + exp;
+    var qSignTime = KeyTime || now + ';' + exp;
+    var qKeyTime = KeyTime || now + ';' + exp;
     var qHeaderList = getObjectKeys(headers).join(';').toLowerCase();
     var qUrlParamList = getObjectKeys(queryParams).join(';').toLowerCase();
 
@@ -274,6 +275,10 @@ function isInArray(arr, item) {
         }
     }
     return flag;
+}
+
+function makeArray(arr) {
+    return isArray(arr) ? arr : [arr];
 }
 
 function each(obj, fn) {
@@ -561,6 +566,7 @@ var util = {
     extend: extend,
     isArray: isArray,
     isInArray: isInArray,
+    makeArray: makeArray,
     each: each,
     map: map,
     filter: filter,
@@ -2003,7 +2009,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '0.5.22';
+COS.version = '0.5.23';
 
 module.exports = COS;
 
@@ -4175,6 +4181,7 @@ function putBucketAcl(params, callback) {
  *     @return  {Object}  data.AccessControlPolicy  访问权限信息
  */
 function getBucketAcl(params, callback) {
+
     submitRequest.call(this, {
         Action: 'name/cos:GetBucketACL',
         method: 'GET',
@@ -4526,6 +4533,7 @@ function putBucketTagging(params, callback) {
  * @return  {Object}  data              返回数据
  */
 function getBucketTagging(params, callback) {
+
     submitRequest.call(this, {
         Action: 'name/cos:GetBucketTagging',
         method: 'GET',
@@ -6163,6 +6171,7 @@ function getAuthorizationAsync(params, callback) {
     })();
 
     var calcAuthByTmpKey = function () {
+        var KeyTime = StsData.StartTime && StsData.ExpiredTime ? StsData.StartTime + ';' + StsData.ExpiredTime : '';
         var Authorization = util.getAuth({
             SecretId: StsData.TmpSecretId,
             SecretKey: StsData.TmpSecretKey,
@@ -6172,7 +6181,8 @@ function getAuthorizationAsync(params, callback) {
             Headers: headers,
             Expires: params.Expires,
             UseRawKey: self.options.UseRawKey,
-            SystemClockOffset: self.options.SystemClockOffset
+            SystemClockOffset: self.options.SystemClockOffset,
+            KeyTime: KeyTime
         });
         var AuthData = {
             Authorization: Authorization,

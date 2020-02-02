@@ -178,6 +178,7 @@ function putBucketAcl(params, callback) {
  *     @return  {Object}  data.AccessControlPolicy  访问权限信息
  */
 function getBucketAcl(params, callback) {
+
     submitRequest.call(this, {
         Action: 'name/cos:GetBucketACL',
         method: 'GET',
@@ -530,6 +531,7 @@ function putBucketTagging(params, callback) {
  * @return  {Object}  data              返回数据
  */
 function getBucketTagging(params, callback) {
+
     submitRequest.call(this, {
         Action: 'name/cos:GetBucketTagging',
         method: 'GET',
@@ -2191,6 +2193,7 @@ function getAuthorizationAsync(params, callback) {
     })();
 
     var calcAuthByTmpKey = function () {
+        var KeyTime = StsData.StartTime && StsData.ExpiredTime ? StsData.StartTime + ';' + StsData.ExpiredTime : '';
         var Authorization = util.getAuth({
             SecretId: StsData.TmpSecretId,
             SecretKey: StsData.TmpSecretKey,
@@ -2201,6 +2204,7 @@ function getAuthorizationAsync(params, callback) {
             Expires: params.Expires,
             UseRawKey: self.options.UseRawKey,
             SystemClockOffset: self.options.SystemClockOffset,
+            KeyTime: KeyTime
         });
         var AuthData = {
             Authorization: Authorization,
