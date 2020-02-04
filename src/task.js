@@ -1,3 +1,4 @@
+var session = require('./session');
 var util = require('./util');
 
 var originApiMap = {};
@@ -125,6 +126,10 @@ var initTask = function (cos) {
             }
             task.state = switchToState;
             cos.emit('inner-kill-task', {TaskId: id, toState: switchToState});
+            try {
+                var UploadId = task && task.params && task.params.UploadData.UploadId
+            } catch(e) {}
+            if (switchToState === 'canceled' && UploadId) session.removeUsing(UploadId)
             emitListUpdate();
             if (running) {
                 uploadingFileCount--;
@@ -235,12 +240,11 @@ var initTask = function (cos) {
         killTask(id, 'paused');
     };
     cos.restartTask = function (id) {
-        var options = (typeof id === 'string' ? {id: id}: id) || {};
         var task = tasks[id];
         if (task && (task.state === 'paused' || task.state === 'error')) {
             task.state = 'waiting';
-            options && emitListUpdate();
-            nextUploadIndex = 0;
+            emitListUpdate();
+            nextUploadIndex = Math.min(nextUploadIndex, task.index);
             startNextTask();
         }
     };

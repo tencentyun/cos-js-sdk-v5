@@ -1611,9 +1611,8 @@ function restoreObject(params, callback) {
 function multipartInit(params, callback) {
 
     var self = this;
-    var headers = params.Headers;
-
     // 特殊处理 Cache-Control
+    var headers = params.Headers;
     !headers['Cache-Control'] && (headers['Cache-Control'] = '');
     util.getBodyMd5(params.Body && (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5), params.Body, function (md5) {
         if (md5) params.Headers['x-cos-meta-md5'] = md5;

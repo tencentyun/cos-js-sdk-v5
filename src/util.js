@@ -157,6 +157,69 @@ var readAsBinaryString = function (blob, callback) {
     readFun.call(fr, blob);
 };
 
+var fileSliceNeedCopy = (function () {
+    var compareVersion = function(a, b) {
+        a = a.split('.');
+        b = b.split('.');
+        for (var i = 0; i < b.length; i++) {
+            if (a[i] !== b[i]) {
+                return parseInt(a[i]) > parseInt(b[i]) ? 1 : -1;
+            }
+        }
+        return 0;
+    };
+    var check = function (ua) {
+        var ChromeVersion = (ua.match(/Chrome\/([.\d]+)/) || [])[1];
+        var QBCoreVersion = (ua.match(/QBCore\/([.\d]+)/) || [])[1];
+        var QQBrowserVersion = (ua.match(/QQBrowser\/([.\d]+)/) || [])[1];
+        var need = ChromeVersion && compareVersion(ChromeVersion, '53.0.2785.116') < 0
+            && QBCoreVersion && compareVersion(QBCoreVersion, '3.53.991.400') < 0
+            && QQBrowserVersion && compareVersion(QQBrowserVersion, '9.0.2524.400') <= 0 || false;
+        return need;
+    };
+    return check(navigator && navigator.userAgent);
+})();
+
+// 获取文件分片
+var fileSlice = function (file, start, end, isUseToUpload, callback) {
+    var blob;
+    if (file.slice) {
+        blob = file.slice(start, end);
+    } else if (file.mozSlice) {
+        blob = file.mozSlice(start, end);
+    } else if (file.webkitSlice) {
+        blob = file.webkitSlice(start, end);
+    }
+    if (isUseToUpload && fileSliceNeedCopy) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            blob = null;
+            callback(new Blob([reader.result]));
+        };
+        reader.readAsArrayBuffer(blob);
+    } else {
+        callback(blob);
+    }
+};
+
+// 获取文件内容的 MD5
+var getBodyMd5 = function (UploadCheckContentMd5, Body, callback, onProgress) {
+    callback = callback || noop;
+    if (UploadCheckContentMd5) {
+        if (typeof Body === 'string') {
+            callback(util.md5(Body, true));
+        } else if (Blob && Body instanceof Blob) {
+            util.getFileMd5(Body, function (err, md5) {
+                callback(md5);
+            }, onProgress);
+        } else {
+            callback();
+        }
+    } else {
+        callback();
+    }
+};
+
 // 获取文件 md5 值
 var md5ChunkSize = 1024 * 1024;
 var getFileMd5 = function (blob, callback, onProgress) {
@@ -482,6 +545,7 @@ var getFileSize = function (api, params, callback) {
     callback(null, size);
 };
 
+// 获取调正的时间戳
 var getSkewTime = function (offset) {
     return Date.now() + (offset || 0);
 };
@@ -494,6 +558,8 @@ var util = {
     json2xml: json2xml,
     md5: md5,
     clearKey: clearKey,
+    fileSlice: fileSlice,
+    getBodyMd5: getBodyMd5,
     getFileMd5: getFileMd5,
     binaryBase64: binaryBase64,
     extend: extend,
@@ -511,73 +577,6 @@ var util = {
     getSkewTime: getSkewTime,
     getAuth: getAuth,
     isBrowser: true,
-};
-
-var fileSliceNeedCopy = (function () {
-    var compareVersion = function(a, b) {
-        a = a.split('.');
-        b = b.split('.');
-        for (var i = 0; i < b.length; i++) {
-            if (a[i] !== b[i]) {
-                return parseInt(a[i]) > parseInt(b[i]) ? 1 : -1;
-            }
-        }
-        return 0;
-    };
-    var check = function (ua) {
-        var ChromeVersion = (ua.match(/Chrome\/([.\d]+)/) || [])[1];
-        var QBCoreVersion = (ua.match(/QBCore\/([.\d]+)/) || [])[1];
-        var QQBrowserVersion = (ua.match(/QQBrowser\/([.\d]+)/) || [])[1];
-        var need = ChromeVersion && compareVersion(ChromeVersion, '53.0.2785.116') < 0
-            && QBCoreVersion && compareVersion(QBCoreVersion, '3.53.991.400') < 0
-            && QQBrowserVersion && compareVersion(QQBrowserVersion, '9.0.2524.400') <= 0 || false;
-        return need;
-    };
-    return check(navigator && navigator.userAgent);
-})();
-util.fileSlice = function (file, start, end, isUseToUpload, callback) {
-    var blob;
-    if (file.slice) {
-        blob = file.slice(start, end);
-    } else if (file.mozSlice) {
-        blob = file.mozSlice(start, end);
-    } else if (file.webkitSlice) {
-        blob = file.webkitSlice(start, end);
-    }
-    if (isUseToUpload && fileSliceNeedCopy) {
-        var reader = new FileReader();
-        reader.onload = function (e) {
-            blob = null;
-            callback(new Blob([reader.result]));
-        };
-        reader.readAsArrayBuffer(blob);
-    } else {
-        callback(blob);
-    }
-};
-util.getFileUUID = function (file, ChunkSize) {
-    // 如果信息不完整，不获取
-    if (file.name && file.size && file.lastModifiedDate && ChunkSize) {
-        return util.md5([file.name, file.size, file.lastModifiedDate, ChunkSize].join('::'));
-    } else {
-        return null;
-    }
-};
-util.getBodyMd5 = function (UploadCheckContentMd5, Body, callback, onProgress) {
-    callback = callback || noop;
-    if (UploadCheckContentMd5) {
-        if (typeof Body === 'string') {
-            callback(util.md5(Body, true));
-        } else if (Blob && Body instanceof Blob) {
-            util.getFileMd5(Body, function (err, md5) {
-                callback(md5);
-            }, onProgress);
-        } else {
-            callback();
-        }
-    } else {
-        callback();
-    }
 };
 
 module.exports = util;
