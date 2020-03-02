@@ -6100,7 +6100,7 @@ function decodeAcl(AccessControlPolicy) {
         Grant = util.isArray(Grant) ? Grant : [Grant];
     }
     var PublicAcl = { READ: 0, WRITE: 0, FULL_CONTROL: 0 };
-    Grant.length && util.each(Grant, function (item) {
+    Grant && Grant.length && util.each(Grant, function (item) {
         if (item.Grantee.ID === 'qcs::cam::anyone:anyone' || item.Grantee.URI === 'http://cam.qcloud.com/groups/global/AllUsers') {
             PublicAcl[item.Permission] = 1;
         } else if (item.Grantee.ID !== AccessControlPolicy.Owner.ID) {
