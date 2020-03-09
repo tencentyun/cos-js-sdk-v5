@@ -43,13 +43,15 @@ var cos = new COS({
         xhr.onload = function (e) {
             try {
                 var data = JSON.parse(e.target.responseText);
+                var credentials = data.credentials;
             } catch (e) {
             }
             callback({
-                TmpSecretId: data.credentials && data.credentials.tmpSecretId,
-                TmpSecretKey: data.credentials && data.credentials.tmpSecretKey,
-                XCosSecurityToken: data.credentials && data.credentials.sessionToken,
-                ExpiredTime: data.expiredTime,
+                TmpSecretId: credentials.tmpSecretId,
+                TmpSecretKey: credentials.tmpSecretKey,
+                XCosSecurityToken: credentials.sessionToken,
+                StartTime: data.startTime, // 密钥申请时服务器时间，签名用的开始时间，避免客户端时间偏差导致报错
+                ExpiredTime: data.expiredTime, // SDK 在 ExpiredTime 时间前，不会再次调用 getAuthorization
             });
         };
         xhr.send();
