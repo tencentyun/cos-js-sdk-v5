@@ -46,7 +46,7 @@ var getAuthorization = function (options, callback) {
             TmpSecretId: credentials.tmpSecretId,
             TmpSecretKey: credentials.tmpSecretKey,
             XCosSecurityToken: credentials.sessionToken,
-            StartTime: data.startTime, // 密钥申请时服务器时间
+            StartTime: data.startTime, // 密钥申请时服务器时间，签名用的开始时间，避免客户端时间偏差导致报错
             ExpiredTime: data.expiredTime, // SDK 在 ExpiredTime 时间前，不会再次调用 getAuthorization
         });
     };
@@ -70,7 +70,7 @@ var getAuthorization = function (options, callback) {
     //         TmpSecretId: credentials.tmpSecretId,
     //         TmpSecretKey: credentials.tmpSecretKey,
     //         XCosSecurityToken: credentials.sessionToken,
-    //         StartTime: data.startTime, // 密钥申请时服务器时间
+    //         StartTime: data.startTime, // 密钥申请时服务器时间，签名用的开始时间，避免客户端时间偏差导致报错
     //         ExpiredTime: data.expiredTime,
     //         ScopeLimit: true, // 细粒度控制权限需要设为 true，会限制密钥只在相同请求时重复使用
     //     });
