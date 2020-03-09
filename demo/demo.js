@@ -42,14 +42,13 @@ var getAuthorization = function (options, callback) {
             var credentials = data.credentials;
         } catch (e) {
         }
-        if (!data || !credentials) return console.error('获取 STS 临时密钥出错');
+        if (!data || !credentials) return console.error('credentials invalid');
         callback({
             TmpSecretId: credentials.tmpSecretId,
             TmpSecretKey: credentials.tmpSecretKey,
             XCosSecurityToken: credentials.sessionToken,
-            // 建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
-            StartTime: data.startTime, // 单位是秒
-            ExpiredTime: data.expiredTime
+            StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+            ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000900
         });
     };
     xhr.send();
@@ -68,12 +67,13 @@ var getAuthorization = function (options, callback) {
     //         var credentials = data.credentials;
     //     } catch (e) {
     //     }
+    //     if (!data || !credentials) return console.error('credentials invalid');
     //     callback({
     //         TmpSecretId: credentials.tmpSecretId,
     //         TmpSecretKey: credentials.tmpSecretKey,
     //         XCosSecurityToken: credentials.sessionToken,
-    //         StartTime: data.startTime, // 密钥申请时服务器时间，签名用的开始时间，避免客户端时间偏差导致报错
-    //         ExpiredTime: data.expiredTime,
+    //         StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+    //         ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000000
     //         ScopeLimit: true, // 细粒度控制权限需要设为 true，会限制密钥只在相同请求时重复使用
     //     });
     // };
@@ -103,6 +103,7 @@ var getAuthorization = function (options, callback) {
     //         var data = JSON.parse(e.target.responseText);
     //     } catch (e) {
     //     }
+    //     if (!data || !data.authorization) return console.error('authorization invalid');
     //     callback({
     //         Authorization: data.authorization,
     //         // XCosSecurityToken: data.sessionToken, // 如果使用临时密钥，需要把 sessionToken 传给 XCosSecurityToken
