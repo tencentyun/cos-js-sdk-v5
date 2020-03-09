@@ -42,12 +42,14 @@ var getAuthorization = function (options, callback) {
             var credentials = data.credentials;
         } catch (e) {
         }
+        if (!data || !credentials) return console.error('获取 STS 临时密钥出错');
         callback({
             TmpSecretId: credentials.tmpSecretId,
             TmpSecretKey: credentials.tmpSecretKey,
             XCosSecurityToken: credentials.sessionToken,
-            StartTime: data.startTime, // 密钥申请时服务器时间，签名用的开始时间，避免客户端时间偏差导致报错
-            ExpiredTime: data.expiredTime, // SDK 在 ExpiredTime 时间前，不会再次调用 getAuthorization
+            // 建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+            StartTime: data.startTime, // 单位是秒
+            ExpiredTime: data.expiredTime
         });
     };
     xhr.send();
