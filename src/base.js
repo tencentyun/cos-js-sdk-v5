@@ -1174,26 +1174,26 @@ function putObject(params, callback) {
                 return callback(err);
             }
             onProgress({loaded: FileSize, total: FileSize}, true);
-            if (data) {
-                var url = getUrl({
-                    ForcePathStyle: self.options.ForcePathStyle,
-                    protocol: self.options.Protocol,
-                    domain: self.options.Domain,
-                    bucket: params.Bucket,
-                    region: params.Region,
-                    object: params.Key,
-                });
-                url = url.substr(url.indexOf('://') + 3);
-                var result = {
-                    Location: url,
-                    statusCode: data.statusCode,
-                    headers: data.headers,
-                };
-                if (data.headers && data.headers.etag) {
-                    result.ETag = data.headers.etag;
-                }
-                return callback(null, result);
-            }
+            // if (data) {
+            //     var url = getUrl({
+            //         ForcePathStyle: self.options.ForcePathStyle,
+            //         protocol: self.options.Protocol,
+            //         domain: self.options.Domain,
+            //         bucket: params.Bucket,
+            //         region: params.Region,
+            //         object: params.Key,
+            //     });
+            //     url = url.substr(url.indexOf('://') + 3);
+            //     var result = {
+            //         Location: url,
+            //         statusCode: data.statusCode,
+            //         headers: data.headers,
+            //     };
+            //     if (data.headers && data.headers.etag) {
+            //         result.ETag = data.headers.etag;
+            //     }
+            //     return callback(null, result);
+            // }
             callback(null, data);
         });
     }, params.onHashProgress);
