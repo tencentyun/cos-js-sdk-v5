@@ -2008,7 +2008,7 @@ function decodeAcl(AccessControlPolicy) {
         'READ_ACP': 'GrantReadAcp',
         'WRITE_ACP': 'GrantWriteAcp',
     };
-    var AccessControlList = AccessControlPolicy.AccessControlList || {};
+    var AccessControlList = AccessControlPolicy && AccessControlPolicy.AccessControlList || {};
     var Grant = AccessControlList.Grant;
     if (Grant) {
         Grant = util.isArray(Grant) ? Grant : [Grant];
