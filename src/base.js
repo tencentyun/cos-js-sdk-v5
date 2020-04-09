@@ -5,6 +5,99 @@ var util = require('./util');
 // Bucket 相关
 
 /**
+ * 获取用户的 bucket 列表
+ * @param  {Object}  params         回调函数，必须，下面为参数列表
+ * 无特殊参数
+ * @param  {Function}  callback     回调函数，必须
+ */
+function getService(params, callback) {
+
+    if (typeof params === 'function') {
+        callback = params;
+        params = {};
+    }
+    var protocol = this.options.Protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
+    var domain = this.options.ServiceDomain;
+    var region = params.Region;
+    if (domain) {
+        domain = domain.replace(/\{Region\}/ig, region || '').replace(/\{.*?\}/ig, '');
+        if (!/^[a-zA-Z]+:\/\//.test(domain)) {
+            domain = protocol + '//' + domain;
+        }
+        if (domain.slice(-1) === '/') {
+            domain = domain.slice(0, -1);
+        }
+    } else if(region){
+        domain = protocol + '//cos.'+ region + '.myqcloud.com';
+    } else {
+        domain = protocol + '//service.cos.myqcloud.com';
+    }
+
+    submitRequest.call(this, {
+        Action: 'name/cos:GetService',
+        url: domain,
+        method: 'GET',
+        headers: params.Headers,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        var buckets = (data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Buckets
+            && data.ListAllMyBucketsResult.Buckets.Bucket) || [];
+        buckets = util.isArray(buckets) ? buckets : [buckets];
+        var owner = (data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Owner) || {};
+        callback(null, {
+            Buckets: buckets,
+            Owner: owner,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 创建 Bucket，并初始化访问权限
+ * @param  {Object}  params                         参数对象，必须
+ *     @param  {String}  params.Bucket              Bucket名称，必须
+ *     @param  {String}  params.Region              地域名称，必须
+ *     @param  {String}  params.ACL                 用户自定义文件权限，可以设置：private，public-read；默认值：private，非必须
+ *     @param  {String}  params.GrantRead           赋予被授权者读的权限，格式x-cos-grant-read: uin=" ",uin=" "，非必须
+ *     @param  {String}  params.GrantWrite          赋予被授权者写的权限，格式x-cos-grant-write: uin=" ",uin=" "，非必须
+ *     @param  {String}  params.GrantFullControl    赋予被授权者读写权限，格式x-cos-grant-full-control: uin=" ",uin=" "，非必须
+ * @param  {Function}  callback                     回调函数，必须
+ * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data                          返回的数据
+ *     @return  {String}  data.Location             操作地址
+ */
+function putBucket(params, callback) {
+
+    var self = this;
+    submitRequest.call(this, {
+        Action: 'name/cos:PutBucket',
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        var url = getUrl({
+            protocol: self.options.Protocol,
+            domain: self.options.Domain,
+            bucket: params.Bucket,
+            region: params.Region,
+            isLocation: true,
+        });
+        callback(null, {
+            Location: url,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
  * 查看是否存在该Bucket，是否有权限访问
  * @param  {Object}  params                     参数对象，必须
  *     @param  {String}  params.Bucket          Bucket名称，必须
@@ -2504,6 +2597,8 @@ function _submitRequest(params, callback) {
 
 var API_MAP = {
     // Bucket 相关方法
+    getService: getService,                      // Bucket
+    putBucket: putBucket,
     headBucket: headBucket,                      // Bucket
     getBucket: getBucket,
     deleteBucket: deleteBucket,

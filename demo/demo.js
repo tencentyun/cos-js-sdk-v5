@@ -203,6 +203,26 @@ function getAuth() {
     });
 }
 
+function getService() {
+    cos.getService({
+        Bucket: config.Bucket, // Bucket 格式：test-1250000000
+        Region: config.Region,
+    }, function (err, data) {
+        logger.log(err || data);
+    });
+}
+
+function putBucket() {
+    cos.putBucket({
+        Bucket: config.Bucket, // Bucket 格式：test-1250000000
+        Region: config.Region,
+        // Prefix: 'dir/'
+        // Delimiter: '/'
+    }, function (err, data) {
+        logger.log(err || data);
+    });
+}
+getObject();
 function getBucket() {
     cos.getBucket({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
@@ -947,7 +967,8 @@ function sliceCopyFile() {
 
 (function () {
     var list = [
-        // 'getService', // 不支持
+        'getService', // 不支持
+        'putBucket', // 不支持
         'getObjectUrl',
         'getAuth',
         // 'putBucket', // 不支持
