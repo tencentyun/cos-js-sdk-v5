@@ -14,7 +14,8 @@ var config = {
     durationSeconds: 1800,
     bucket: process.env.Bucket,
     region: process.env.Region,
-    allowPrefix: '_ALLOW_DIR_/*', // 允许操作的对象前缀，可以根据自己网站的用户登录态判断允许上传的目录，例子：a/* 或者 * 或者 a.jpg
+    allowPrefix: '_ALLOW_DIR_/*', // 允许操作（上传）的对象前缀，可以根据自己网站的用户登录态判断允许上传的目录，例子：* 或者 a/* 或者 a.jpg
+                                  // 请注意当使用 * 时，可能存在安全风险，详情请参阅：https://cloud.tencent.com/document/product/436/40265
     // 密钥的权限列表
     allowActions: [
         // 所有 action 请看文档 https://cloud.tencent.com/document/product/436/31923
