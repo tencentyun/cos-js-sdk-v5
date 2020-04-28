@@ -98,7 +98,7 @@ npm i cos-js-sdk-v5 --save
 1. git clone cos-js-sdk-v5 至本地
 2. cd cos-js-sdk-v5
 3. 修改 server 文件夹中 sts.js 或 sts.php 中的 secretId、secretKey、bucket、region 配置
-4. npm run sts.js # 用 node 启动服务
+4.npm run server  # 用 node 启动服务  或者 node server/sts.js
 4. 浏览器输入 http://127.0.0.1:3000/ 即可进行 demo 演示
 ```
 
