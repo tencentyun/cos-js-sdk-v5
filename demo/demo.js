@@ -203,6 +203,7 @@ function getAuth() {
     });
 }
 
+// getService、putBucket 接口会跨域，不支持浏览器使用，只在场景下可调用，比如改了 ServiceDomain 到代理地址
 function getService() {
     cos.getService({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
@@ -212,6 +213,7 @@ function getService() {
     });
 }
 
+// getService、putBucket 接口会跨域，不支持浏览器使用，只在场景下可调用，比如改了 ServiceDomain 到代理地址
 function putBucket() {
     cos.putBucket({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
@@ -222,7 +224,7 @@ function putBucket() {
         logger.log(err || data);
     });
 }
-getObject();
+
 function getBucket() {
     cos.getBucket({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
@@ -967,18 +969,17 @@ function sliceCopyFile() {
 
 (function () {
     var list = [
-        'getService', // 不支持
-        'putBucket', // 不支持
+        //'getService', // 不支持，正常场景会跨域
+        //'putBucket', // 不支持，正常场景会跨域
         'getObjectUrl',
         'getAuth',
-        // 'putBucket', // 不支持
         'getBucket',
         'headBucket',
         'putBucketAcl',
         'getBucketAcl',
         'putBucketCors',
         'getBucketCors',
-        // 'deleteBucketCors', // 不提供
+        // 'deleteBucketCors', // 不建议调用，删除 CORS，浏览器不能正常调用
         'putBucketTagging',
         'getBucketTagging',
         'deleteBucketTagging',
