@@ -205,10 +205,7 @@ function getAuth() {
 
 // getService、putBucket 接口会跨域，不支持浏览器使用，只在场景下可调用，比如改了 ServiceDomain 到代理地址
 function getService() {
-    cos.getService({
-        Bucket: config.Bucket, // Bucket 格式：test-1250000000
-        Region: config.Region,
-    }, function (err, data) {
+    cos.getService(function (err, data) {
         logger.log(err || data);
     });
 }
