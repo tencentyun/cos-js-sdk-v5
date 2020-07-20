@@ -85,7 +85,7 @@
                 fd.append('signature', info.Authorization);
                 fd.append('Content-Type', '');
                 info.XCosSecurityToken && fd.append('x-cos-security-token', info.XCosSecurityToken);
-                fd.append('file', file);
+                fd.append('file', file); // file 字段放在表单最后，避免文件内容过长影响签名判断和鉴权
                 var url = prefix;
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', url, true);
