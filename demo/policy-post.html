@@ -93,7 +93,7 @@
                 fd.append('q-signature', credentials.qSignature);
                 fd.append('policy', credentials.policy);
 
-                // 文件内容
+                // 文件内容，file 字段放在表单最后，避免文件内容过长影响签名判断和鉴权
                 fd.append('file', file);
 
                 // xhr
