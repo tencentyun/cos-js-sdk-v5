@@ -15,17 +15,19 @@ var util = {
         var blob = new Blob([buffer], options);
         return blob;
     },
-    selectLocalFile: function (params, onChange) {
+    selectLocalFile: function (onChange) {
         var id = 'file_selector';
         var input = document.createElement('input');
         input.style = 'width:0;height:0;border:0;margin:0;padding:0;';
         input.type = 'file';
         input.id = id;
         input.onchange = function (e) {
-            if (!this.files.length) return;
+            var files = this.files;
+            if (!files.length) return;
             onChange && onChange(files);
             document.body.removeChild(input);
         };
+        document.body.appendChild(input);
         input.click();
     },
 };
@@ -1009,21 +1011,26 @@ function uploadFolder() {
 function listFolder() {
     var _listFolder = function(params, callback) {
         var Contents = [];
+        var CommonPrefixes = [];
         var marker;
         var next = function() {
             params.Marker = marker;
             cos.getBucket(params, function(err, data) {
                 if (err) return callback(err);
-                if (data && data.Contents && data.Contents.length) {
-                    data.Contents.forEach(function (item) {
-                        Contents.push(item);
-                    });
-                }
+                data && data.CommonPrefixes && data.CommonPrefixes.forEach(function (item) {
+                    CommonPrefixes.push(item);
+                });
+                data && data.Contents && data.Contents.forEach(function (item) {
+                    Contents.push(item);
+                });
                 if (data.IsTruncated === 'true') {
                     marker = data.NextMarker;
                     next();
                 } else {
-                    callback(null, { Contents });
+                    callback(null, {
+                        CommonPrefixes: CommonPrefixes,
+                        Contents: Contents,
+                    });
                 }
             });
         };
@@ -1032,7 +1039,7 @@ function listFolder() {
     _listFolder({
         Bucket: config.Bucket,
         Region: config.Region,
-        Delimiter: '/', // 分隔符
+        Delimiter: '/', // 如果按目录列出文件传入该分隔符，如果要深度列出文件不传改参数
         Prefix: 'folder/', // 要列出的目录前缀
     }, function (err, data) {
         logger.log(err || data);
@@ -1125,7 +1132,6 @@ function deleteFolder() {
         'getBucketWebsite',
         'deleteBucketWebsite',
         'deleteBucket',
-        'putObject',
         'putObjectCopy',
         'getObject',
         'headObject',
@@ -1139,6 +1145,7 @@ function deleteFolder() {
         'cancelTask',
         'pauseTask',
         'restartTask',
+        'putObject',
         'sliceCopyFile',
         'uploadFiles',
         'selectFileToUpload',
@@ -1148,8 +1155,10 @@ function deleteFolder() {
         'deleteFolder',
     ];
     var labelMap = {
+        putObject: '简单上传',
+        sliceCopyFile: '分片上传',
         uploadFiles: '批量上传文件',
-        selectFileToUpload: '选择文件上传',
+        selectFileToUpload: '上传本地文件',
         uploadFolder: '上传文件夹',
         listFolder: '列出文件夹',
         deleteFolder: '删除文件夹',
