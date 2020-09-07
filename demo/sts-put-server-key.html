@@ -1,8 +1,9 @@
+
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Ajax Post 上传</title>
+    <title>Ajax Put 上传</title>
     <style>
         h1, h2 {
             font-weight: normal;
@@ -15,7 +16,7 @@
 </head>
 <body>
 
-<h1>Ajax Post 上传</h1>
+<h1>Ajax Put 上传</h1>
 
 <input id="fileSelector" type="file">
 <input id="submitBtn" type="submit">
@@ -42,60 +43,63 @@
         };
 
         // 计算签名
-        var getAuthorization = function (options, callback) {
-            // var url = 'http://127.0.0.1:3000/sts';
-            var url = '../server/sts.php';
+        var getKeyAndAuth = function (options, callback) {
+            var url = 'http://127.0.0.1:3000/sts-server-key';
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
-            xhr.onreadystatechange = function (e) {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        var credentials;
-                        try {
-                            credentials = (new Function('return ' + xhr.responseText))().credentials;
-                        } catch (e) {}
-                        if (credentials) {
-                            callback(null, {
-                                XCosSecurityToken: credentials.sessionToken,
-                                Authorization: CosAuth({
-                                    SecretId: credentials.tmpSecretId,
-                                    SecretKey: credentials.tmpSecretKey,
-                                    Method: options.Method,
-                                    Pathname: options.Pathname,
-                                })
-                            });
-                        } else {
-                            console.error(xhr.responseText);
-                            callback('获取签名出错');
-                        }
-                    } else {
-                        callback('获取签名出错');
-                    }
+            xhr.onload = function (e) {
+                var result, credentials;
+                try {
+                    result = (new Function('return ' + xhr.responseText))();
+                    credentials = result.credentials;
+                } catch (e) {}
+                if (result && credentials) {
+                    debugger;
+                    callback(null, {
+                        Key: result.Key, // 这里在后端加一个字段决定上传的文件名
+                        XCosSecurityToken: credentials.sessionToken,
+                        Authorization: CosAuth({
+                            SecretId: credentials.tmpSecretId,
+                            SecretKey: credentials.tmpSecretKey,
+                            Method: options.Method,
+                            Pathname: '/' + options.Key,
+                        }),
+                    });
+                } else {
+                    console.error(xhr.responseText);
+                    callback('获取签名出错');
                 }
+            };
+            xhr.onerror = function (e) {
+                callback('获取签名出错');
             };
             xhr.send();
         };
 
         // 上传文件
         var uploadFile = function (file, callback) {
-            var Key = 'dir/' + file.name; // 这里指定上传目录和文件名
-            getAuthorization({Method: 'POST', Pathname: '/'}, function (err, info) {
-                var fd = new FormData();
-                fd.append('key', Key);
-                fd.append('signature', info.Authorization);
-                fd.append('Content-Type', '');
-                info.XCosSecurityToken && fd.append('x-cos-security-token', info.XCosSecurityToken);
-                fd.append('file', file); // file 字段放在表单最后，避免文件内容过长影响签名判断和鉴权
-                var url = prefix;
+            getKeyAndAuth({Method: 'PUT', FileName: file.name}, function (err, info) {
+                var Key = info.Key;
+
+                if (err) {
+                    alert(err);
+                    return;
+                }
+
+                var auth = info.Authorization;
+                var XCosSecurityToken = info.XCosSecurityToken;
+                var url = prefix + camSafeUrlEncode(Key).replace(/%2F/g, '/');
                 var xhr = new XMLHttpRequest();
-                xhr.open('POST', url, true);
+                xhr.open('PUT', url, true);
+                xhr.setRequestHeader('Authorization', auth);
+                XCosSecurityToken && xhr.setRequestHeader('x-cos-security-token', XCosSecurityToken);
                 xhr.upload.onprogress = function (e) {
                     console.log('上传进度 ' + (Math.round(e.loaded / e.total * 10000) / 100) + '%');
                 };
                 xhr.onload = function () {
-                    if (Math.floor(xhr.status / 100) === 2) {
+                    if (xhr.status === 200 || xhr.status === 206) {
                         var ETag = xhr.getResponseHeader('etag');
-                        callback(null, {url: prefix + camSafeUrlEncode(Key).replace(/%2F/g, '/'), ETag: ETag});
+                        callback(null, {url: url, ETag: ETag});
                     } else {
                         callback('文件 ' + Key + ' 上传失败，状态码：' + xhr.status);
                     }
@@ -103,7 +107,7 @@
                 xhr.onerror = function () {
                     callback('文件 ' + Key + ' 上传失败，请检查是否没配置 CORS 跨域规则');
                 };
-                xhr.send(fd);
+                xhr.send(file);
             });
         };
 

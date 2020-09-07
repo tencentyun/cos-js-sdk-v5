@@ -11,6 +11,7 @@
 <div>最低兼容到 IE6 上传，使用 policy 签名保护，不支持 onprogress</div>
 
 <form id="form" target="submitTarget" action="" method="post" enctype="multipart/form-data" accept="*/*">
+    <!-- file 字段放在表单最后，避免文件内容过长影响签名判断和鉴权 -->
     <input id="fileSelector" name="file" type="file">
     <input id="submitBtn" type="button" value="提交">
 </form>
