@@ -14,7 +14,20 @@ var util = {
         options.type && (opt.type = options.type);
         var blob = new Blob([buffer], options);
         return blob;
-    }
+    },
+    selectLocalFile: function (params, onChange) {
+        var id = 'file_selector';
+        var input = document.createElement('input');
+        input.style = 'width:0;height:0;border:0;margin:0;padding:0;';
+        input.type = 'file';
+        input.id = id;
+        input.onchange = function (e) {
+            if (!this.files.length) return;
+            onChange && onChange(files);
+            document.body.removeChild(input);
+        };
+        input.click();
+    },
 };
 
 // 对更多字符编码的 url encode 格式
@@ -222,7 +235,7 @@ function putBucket() {
         logger.log(err || data);
     });
 }
-getObject();
+
 function getBucket() {
     cos.getBucket({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
@@ -248,7 +261,7 @@ function deleteBucket() {
         Bucket: 'testnew-' + config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1),
         Region: 'ap-guangzhou'
     }, function (err, data) {
-        console.log(err || data);
+        logger.log(err || data);
     });
 }
 
@@ -677,10 +690,10 @@ function putObject() {
         Body: blob,
         onTaskReady: function (tid) {
             TaskId = tid;
-            console.log('onTaskReady', tid);
+            logger.log('onTaskReady', tid);
         },
         onTaskStart: function (info) {
-            console.log('onTaskStart', info);
+            logger.log('onTaskStart', info);
         },
         onProgress: function (progressData) {
             logger.log(JSON.stringify(progressData));
@@ -838,11 +851,8 @@ function sliceUploadFile() {
 }
 
 function selectFileToUpload() {
-    var input = document.getElementById('file_selector') || document.createElement('input');
-    input.type = 'file';
-    input.onchange = function (e) {
-        document.body.removeChild(input);
-        var file = this.files[0];
+    util.selectLocalFile(function (files) {
+        var file = files && files[0];
         if (!file) return;
         if (file.size > 1024 * 1024) {
             cos.sliceUploadFile({
@@ -881,11 +891,7 @@ function selectFileToUpload() {
                 logger.log(err || data);
             });
         }
-    };
-    input.style = 'width:0;height:0;border:0;margin:0;padding:0;';
-    input.id = 'file_selector';
-    document.body.appendChild(input);
-    input.click();
+    });
 }
 
 function cancelTask() {
@@ -962,7 +968,129 @@ function sliceCopyFile() {
             logger.log(data);
         }
     });
+}
 
+function uploadFolder() {
+    // <input type='file' name="file" webkitdirectory >
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.webkitdirectory = true;
+    input.onchange = function(){
+        var oFiles = input.files;
+        if (!oFiles.length) return;
+        var files = [];
+        for (var i = 0; i < oFiles.length; i++) {
+            var file = oFiles[i];
+            var Key = 'folder/' + file.webkitRelativePath;
+            files.push({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: Key,
+                Body: file,
+            });
+        }
+        cos.uploadFiles({
+            files: files,
+            SliceSize: 1024 * 1024,
+            onProgress: function (info) {
+                var percent = parseInt(info.percent * 10000) / 100;
+                var speed = parseInt(info.speed / 1024 / 1024 * 100) / 100;
+                logger.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
+            },
+            onFileFinish: function (err, data, options) {
+                logger.log(options.Key + ' 上传' + (err ? '失败' : '完成'));
+            },
+        }, function (err, data) {
+            logger.log(err || data);
+        });
+    };
+    input.click();
+}
+
+function listFolder() {
+    var _listFolder = function(params, callback) {
+        var Contents = [];
+        var marker;
+        var next = function() {
+            params.Marker = marker;
+            cos.getBucket(params, function(err, data) {
+                if (err) return callback(err);
+                if (data && data.Contents && data.Contents.length) {
+                    data.Contents.forEach(function (item) {
+                        Contents.push(item);
+                    });
+                }
+                if (data.IsTruncated === 'true') {
+                    marker = data.NextMarker;
+                    next();
+                } else {
+                    callback(null, { Contents });
+                }
+            });
+        };
+        next();
+    };
+    _listFolder({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Delimiter: '/', // 分隔符
+        Prefix: 'folder/', // 要列出的目录前缀
+    }, function (err, data) {
+        logger.log(err || data);
+    });
+}
+
+function deleteFolder() {
+    var _deleteFolder = function(params, callback) {
+        var deletedList = [];
+        var errorList = [];
+        var marker;
+        var next = function() {
+            params.Marker = marker;
+            cos.getBucket(params, function(err, data) {
+                if (err) return callback(err);
+                var Objects = [];
+                if (data && data.Contents && data.Contents.length) {
+                    data.Contents.forEach(function (item) {
+                        Objects.push({Key: item.Key});
+                    });
+                }
+                var afterDeleted = function () {
+                    if (data.IsTruncated === 'true') {
+                        marker = data.NextMarker;
+                        next();
+                    } else {
+                        callback(null, { Deleted: deletedList, Error: errorList });
+                    }
+                };
+                if (Objects.length) {
+                    cos.deleteMultipleObject({
+                        Bucket: params.Bucket,
+                        Region: params.Region,
+                        Objects: Objects,
+                    }, function (err, data) {
+                        data.Deleted && data.Deleted.forEach(function (item) {
+                            errorList.push(item);
+                        });
+                        data.Error && data.Error.forEach(function (item) {
+                            errorList.push(item);
+                        });
+                        afterDeleted();
+                    });
+                } else {
+                    afterDeleted();
+                }
+            });
+        };
+        next();
+    };
+    _deleteFolder({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Prefix: 'folder/', // 要列出的目录前缀
+    }, function (err, data) {
+        logger.log(err || data);
+    });
 }
 
 (function () {
@@ -1010,22 +1138,37 @@ function sliceCopyFile() {
         'restoreObject',
         'abortUploadTask',
         'sliceUploadFile',
-        'selectFileToUpload',
         'cancelTask',
         'pauseTask',
         'restartTask',
-        'uploadFiles',
         'sliceCopyFile',
+        'uploadFiles',
+        'selectFileToUpload',
+        '-',
+        'uploadFolder',
+        'listFolder',
+        'deleteFolder',
     ];
+    var labelMap = {
+        uploadFiles: '批量上传文件',
+        selectFileToUpload: '选择文件上传',
+        uploadFolder: '上传文件夹',
+        listFolder: '列出文件夹',
+        deleteFolder: '删除文件夹',
+    };
     var container = document.querySelector('.main');
     var html = [];
     list.forEach(function (name) {
-        html.push('<a href="javascript:void(0)">' + name + '</a>');
+        if (name === '-') {
+            html.push('<hr/>');
+        } else {
+            html.push('<a href="javascript:void(0)" data-method="' + name + '">' + (labelMap[name] || name) + '</a>');
+        }
     });
     container.innerHTML = html.join('');
     container.onclick = function (e) {
         if (e.target.tagName === 'A') {
-            var name = e.target.innerText.trim();
+            var name = e.target.getAttribute('data-method').trim();
             window[name]();
         }
     };
