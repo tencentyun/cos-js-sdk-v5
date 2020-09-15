@@ -18,17 +18,19 @@ function getService(params, callback) {
     }
     var protocol = this.options.Protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
     var domain = this.options.ServiceDomain;
+    var appId = params.AppId || this.options.appId;
     var region = params.Region;
     if (domain) {
-        domain = domain.replace(/\{Region\}/ig, region || '').replace(/\{.*?\}/ig, '');
+        domain = domain.replace(/\{\{AppId\}\}/ig, appId || '')
+            .replace(/\{\{Region\}\}/ig, region || '').replace(/\{\{.*?\}\}/ig, '');
         if (!/^[a-zA-Z]+:\/\//.test(domain)) {
             domain = protocol + '//' + domain;
         }
         if (domain.slice(-1) === '/') {
             domain = domain.slice(0, -1);
         }
-    } else if(region){
-        domain = protocol + '//cos.'+ region + '.myqcloud.com';
+    } else if (region) {
+        domain = protocol + '//cos.' + region + '.myqcloud.com';
     } else {
         domain = protocol + '//service.cos.myqcloud.com';
     }
@@ -72,12 +74,22 @@ function getService(params, callback) {
 function putBucket(params, callback) {
 
     var self = this;
+
+    var xml = '';
+    if(params['BucketAZConfig']){
+        var CreateBucketConfiguration = {
+            BucketAZConfig: params.BucketAZConfig
+        };
+        xml = util.json2xml({CreateBucketConfiguration: CreateBucketConfiguration});
+    }
+
     submitRequest.call(this, {
         Action: 'name/cos:PutBucket',
         method: 'PUT',
         Bucket: params.Bucket,
         Region: params.Region,
         headers: params.Headers,
+        body: xml,
     }, function (err, data) {
         if (err) {
             return callback(err);
@@ -482,7 +494,7 @@ function putBucketPolicy(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         action: 'policy',
-        body: util.isBrowser ? PolicyStr : Policy,
+        body: PolicyStr,
         headers: headers,
         json: true,
     }, function (err, data) {
@@ -940,7 +952,7 @@ function putBucketWebsite(params, callback) {
     RoutingRules = util.isArray(RoutingRules) ? RoutingRules : [RoutingRules];
     delete WebsiteConfiguration.RoutingRule;
     delete WebsiteConfiguration.RoutingRules;
-    RoutingRules.length > 0 && (WebsiteConfiguration.RoutingRules = { RoutingRule: RoutingRules });
+    if (RoutingRules.length) WebsiteConfiguration.RoutingRules = { RoutingRule: RoutingRules };
     var xml = util.json2xml({ WebsiteConfiguration: WebsiteConfiguration });
 
     var headers = params.Headers;
@@ -1045,6 +1057,655 @@ function deleteBucketWebsite(params, callback) {
             statusCode: data.statusCode,
             headers: data.headers,
         });
+    });
+}
+
+/**
+ * 设置 Bucket 的防盗链白名单或者黑名单
+ * @param  {Object}  params                                                 参数对象，必须
+ *     @param  {String}  params.Bucket                                      Bucket名称，必须
+ *     @param  {String}  params.Region                                      地域名称，必须
+ *     @param  {Object}  params.RefererConfiguration                        地域名称，必须
+ *         @param  {String}   RefererConfiguration.Status                   是否开启防盗链，枚举值：Enabled、Disabled
+ *         @param  {String}   RefererConfiguration.RefererType              防盗链类型，枚举值：Black-List、White-List，必须
+ *         @param  {Array}   RefererConfiguration.DomianList.Domain         生效域名，必须
+ *         @param  {String}   RefererConfiguration.EmptyReferConfiguration  ，非必须
+ * @param  {Function}  callback                                             回调函数，必须
+ * @return  {Object}  err                                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data                                                  返回数据
+ */
+function putBucketReferer(params, callback) {
+
+    if (!params['RefererConfiguration']) {
+        callback({ error: 'missing param RefererConfiguration' });
+        return;
+    }
+
+    var RefererConfiguration = util.clone(params['RefererConfiguration'] || {});
+    var DomainList = RefererConfiguration['DomainList'] || {};
+    var Domains = DomainList['Domains'] || DomainList['Domain'] || [];
+    Domains = util.isArray(Domains) ? Domains : [Domains];
+    if (Domains.length) RefererConfiguration.DomainList = {Domain: Domains};
+    var xml = util.json2xml({ RefererConfiguration: RefererConfiguration });
+
+    var headers = params.Headers;
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        Action: 'name/cos:PutBucketReferer',
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        body: xml,
+        action: 'referer',
+        headers: headers,
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 获取 Bucket 的防盗链白名单或者黑名单
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data              返回数据
+ */
+function getBucketReferer(params, callback) {
+
+    submitRequest.call(this, {
+        Action: 'name/cos:GetBucketReferer',
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        headers: params.Headers,
+        action: 'referer',
+    }, function (err, data) {
+        if (err) {
+            if(err.statusCode === 404 && err.error.Code === 'NoSuchRefererConfiguration'){
+                var result = {
+                    WebsiteConfiguration: {},
+                    statusCode: err.statusCode,
+                };
+                err.headers && (result.headers = err.headers);
+                callback(null, result);
+            } else {
+                callback(err);
+            }
+            return;
+        }
+
+        var RefererConfiguration = data.RefererConfiguration || {};
+        if (RefererConfiguration['DomainList']) {
+            var Domains = util.clone(RefererConfiguration['DomainList'].Domain || []);
+            Domains = util.makeArray(Domains);
+            RefererConfiguration.DomainList = {Domains: Domains};
+        }
+
+        callback(null, {
+            RefererConfiguration: RefererConfiguration,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 设置 Bucket 自定义域名
+ * @param  {Object}  params                                                 参数对象，必须
+ *     @param  {String}  params.Bucket                                      Bucket名称，必须
+ *     @param  {String}  params.Region                                      地域名称，必须
+ * @param  {Function}  callback                                             回调函数，必须
+ * @return  {Object}  err                                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data                                                  返回数据
+ */
+function putBucketDomain(params, callback) {
+
+    var DomainConfiguration = params['DomainConfiguration'] || {};
+    var DomainRule = DomainConfiguration.DomainRule || params.DomainRule || [];
+    DomainRule = util.clone(DomainRule);
+    var xml = util.json2xml({DomainConfiguration: {DomainRule: DomainRule}});
+
+    var headers = params.Headers;
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        Action: 'name/cos:PutBucketDomain',
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        body: xml,
+        action: 'domain',
+        headers: headers,
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 获取 Bucket 的自定义域名
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data              返回数据
+ */
+function getBucketDomain(params, callback) {
+
+    submitRequest.call(this, {
+        Action: 'name/cos:GetBucketDomain',
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'domain',
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+
+        var DomainRule = [];
+        try {
+            DomainRule = data.DomainConfiguration.DomainRule || [];
+        } catch (e) {
+        }
+        DomainRule = util.clone(util.isArray(DomainRule) ? DomainRule : [DomainRule]);
+        callback(null, {
+            DomainRule: DomainRule,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 删除 Bucket 自定义域名
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data              返回数据
+ */
+function deleteBucketDomain(params, callback) {
+
+    submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucketDomain',
+        method: 'DELETE',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'domain',
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 设置 Bucket 的回源
+ * @param  {Object}  params                                                 参数对象，必须
+ *     @param  {String}  params.Bucket                                      Bucket名称，必须
+ *     @param  {String}  params.Region                                      地域名称，必须
+ * @param  {Function}  callback                                             回调函数，必须
+ * @return  {Object}  err                                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data                                                  返回数据
+ */
+function putBucketOrigin(params, callback){
+    var OriginConfiguration = params['OriginConfiguration'] || {};
+    var OriginRule = OriginConfiguration.OriginRule || params.OriginRule || [];
+    OriginRule = util.clone(OriginRule);
+    var xml = util.json2xml({OriginConfiguration: {OriginRule: OriginRule}});
+
+    var headers = params.Headers;
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        Action: 'name/cos:PutBucketOrigin',
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        body: xml,
+        action: 'origin',
+        headers: headers,
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 获取 Bucket 的回源
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data              返回数据
+ */
+function getBucketOrigin(params, callback) {
+
+    submitRequest.call(this, {
+        Action: 'name/cos:GetBucketOrigin',
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'origin',
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+
+        var OriginRule = [];
+        try {
+            OriginRule = data.OriginConfiguration.OriginRule || [];
+        } catch (e) {
+        }
+        OriginRule = util.clone(util.isArray(OriginRule) ? OriginRule : [OriginRule]);
+        callback(null, {
+            OriginRule: OriginRule,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 删除 Bucket 的回源
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data              返回数据
+ */
+function deleteBucketOrigin(params, callback) {
+
+    submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucketOrigin',
+        method: 'DELETE',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'origin',
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 设置 Bucket 的日志记录
+ * @param  {Object}  params                                                 参数对象，必须
+ *     @param  {String}  params.Bucket                                      Bucket名称，必须
+ *     @param  {String}  params.Region                                      地域名称，必须
+ *     @param  {(Object|String)}  params.BucketLoggingStatus                         说明日志记录配置的状态，如果无子节点信息则意为关闭日志记录，必须
+ * @param  {Function}  callback                                             回调函数，必须
+ * @return  {Object}  err                                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data                                                  返回数据
+ */
+function putBucketLogging(params, callback) {
+    var xml = util.json2xml({
+        BucketLoggingStatus: params['BucketLoggingStatus'] || ''
+    });
+
+    var headers = params.Headers;
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        Action: 'name/cos:PutBucketLogging',
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        body: xml,
+        action: 'logging',
+        headers: headers,
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 获取 Bucket 的日志记录
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data              返回数据
+ */
+function getBucketLogging(params, callback) {
+    submitRequest.call(this, {
+        Action: 'name/cos:GetBucketLogging',
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'logging',
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            BucketLoggingStatus: data.BucketLoggingStatus,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 创建/编辑 Bucket 的清单任务
+ * @param  {Object}  params                                                 参数对象，必须
+ *     @param  {String}  params.Bucket                                      Bucket名称，必须
+ *     @param  {String}  params.Region                                      地域名称，必须
+ *     @param  {String}  params.Id                                          清单任务的名称，必须
+ *     @param  {Object}  params.InventoryConfiguration                      包含清单的配置参数，必须
+ * @param  {Function}  callback                                             回调函数，必须
+ * @return  {Object}  err                                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data                                                  返回数据
+ */
+function putBucketInventory(params, callback) {
+    var InventoryConfiguration = util.clone(params['InventoryConfiguration']);
+
+    if (InventoryConfiguration.OptionalFields) {
+        var Field = InventoryConfiguration.OptionalFields || [];
+        InventoryConfiguration.OptionalFields = {
+            Field: Field
+        };
+    }
+
+    if (InventoryConfiguration.Destination
+        && InventoryConfiguration.Destination.COSBucketDestination
+        && InventoryConfiguration.Destination.COSBucketDestination.Encryption
+    ) {
+        var Encryption = InventoryConfiguration.Destination.COSBucketDestination.Encryption;
+        if (Object.keys(Encryption).indexOf('SSECOS') > -1) {
+            Encryption['SSE-COS'] = Encryption['SSECOS'];
+            delete Encryption['SSECOS'];
+        }
+    }
+
+    var xml = util.json2xml({
+        InventoryConfiguration: InventoryConfiguration
+    });
+
+    var headers = params.Headers;
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        Action: 'name/cos:PutBucketInventory',
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        body: xml,
+        action: 'inventory',
+        qs: {
+            id: params['Id']
+        },
+        headers: headers,
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 获取 Bucket 的清单任务信息
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ *     @param  {String}  params.Id      清单任务的名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data              返回数据
+ */
+function getBucketInventory(params, callback) {
+    submitRequest.call(this, {
+        Action: 'name/cos:GetBucketInventory',
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'inventory',
+        qs: {
+            id: params['Id']
+        }
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+
+        var InventoryConfiguration = data['InventoryConfiguration'];
+        if (InventoryConfiguration && InventoryConfiguration.OptionalFields && InventoryConfiguration.OptionalFields.Field) {
+            var Field = InventoryConfiguration.OptionalFields.Field;
+            if (!util.isArray(Field)) {
+                Field = [Field];
+            }
+            InventoryConfiguration.OptionalFields = Field;
+        }
+        if (InventoryConfiguration.Destination
+            && InventoryConfiguration.Destination.COSBucketDestination
+            && InventoryConfiguration.Destination.COSBucketDestination.Encryption
+        ) {
+            var Encryption = InventoryConfiguration.Destination.COSBucketDestination.Encryption;
+            if (Object.keys(Encryption).indexOf('SSE-COS') > -1) {
+                Encryption['SSECOS'] = Encryption['SSE-COS'];
+                delete Encryption['SSE-COS'];
+            }
+        }
+
+        callback(null, {
+            InventoryConfiguration: InventoryConfiguration,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 获取 Bucket 的清单任务信息
+ * @param  {Object}  params                             参数对象，必须
+ *     @param  {String}  params.Bucket                  Bucket名称，必须
+ *     @param  {String}  params.Region                  地域名称，必须
+ *     @param  {String}  params.ContinuationToken       当 COS 响应体中 IsTruncated 为 true，且 NextContinuationToken 节点中存在参数值时，您可以将这个参数作为 continuation-token 参数值，以获取下一页的清单任务信息，非必须
+ * @param  {Function}  callback                         回调函数，必须
+ * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data                              返回数据
+ */
+function listBucketInventory(params, callback) {
+    submitRequest.call(this, {
+        Action: 'name/cos:ListBucketInventory',
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'inventory',
+        qs: {
+            'continuation-token': params['ContinuationToken']
+        }
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        var ListInventoryConfigurationResult = data['ListInventoryConfigurationResult'];
+        var InventoryConfigurations = ListInventoryConfigurationResult.InventoryConfiguration || [];
+        InventoryConfigurations = util.isArray(InventoryConfigurations) ? InventoryConfigurations : [InventoryConfigurations];
+        delete ListInventoryConfigurationResult['InventoryConfiguration'];
+        util.each(InventoryConfigurations, function (InventoryConfiguration) {
+            if (InventoryConfiguration && InventoryConfiguration.OptionalFields && InventoryConfiguration.OptionalFields.Field) {
+                var Field = InventoryConfiguration.OptionalFields.Field;
+                if (!util.isArray(Field)) {
+                    Field = [Field];
+                }
+                InventoryConfiguration.OptionalFields = Field;
+            }
+
+            if (InventoryConfiguration.Destination
+                && InventoryConfiguration.Destination.COSBucketDestination
+                && InventoryConfiguration.Destination.COSBucketDestination.Encryption
+            ) {
+                var Encryption = InventoryConfiguration.Destination.COSBucketDestination.Encryption;
+                if (Object.keys(Encryption).indexOf('SSE-COS') > -1) {
+                    Encryption['SSECOS'] = Encryption['SSE-COS'];
+                    delete Encryption['SSE-COS'];
+                }
+            }
+        });
+        ListInventoryConfigurationResult.InventoryConfigurations = InventoryConfigurations;
+        util.extend(ListInventoryConfigurationResult, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+        callback(null, ListInventoryConfigurationResult);
+    });
+}
+
+/**
+ * 删除 Bucket 的清单任务
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ *     @param  {String}  params.Id      清单任务的名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ * @return  {Object}  data              返回数据
+ */
+function deleteBucketInventory(params, callback) {
+    submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucketInventory',
+        method: 'DELETE',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'inventory',
+        qs: {
+            id: params['Id']
+        }
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/* 全球加速 */
+function putBucketAccelerate(params, callback) {
+
+    if (!params['AccelerateConfiguration']) {
+        callback({error: 'missing param AccelerateConfiguration'});
+        return;
+    }
+
+    var configuration = { AccelerateConfiguration: params.AccelerateConfiguration || {} };
+
+    var xml = util.json2xml(configuration);
+
+    var headers = {};
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        Interface: 'putBucketAccelerate',
+        Action: 'name/cos:PutBucketAccelerate',
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        body: xml,
+        action: 'accelerate',
+        headers: headers,
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+function getBucketAccelerate(params, callback) {
+    submitRequest.call(this, {
+        Interface: 'getBucketAccelerate',
+        Action: 'name/cos:GetBucketAccelerate',
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        action: 'accelerate',
+    }, function (err, data) {
+        if (!err) {
+            !data.AccelerateConfiguration && (data.AccelerateConfiguration = {});
+        }
+        callback(err, data);
     });
 }
 
@@ -1212,6 +1873,7 @@ function getObject(params, callback) {
  *     @param  {String}  params.ContentType                         RFC 2616 中定义的内容类型（MIME），将作为 Object 元数据保存，非必须
  *     @param  {String}  params.Expect                              当使用 Expect: 100-continue 时，在收到服务端确认后，才会发送请求内容，非必须
  *     @param  {String}  params.Expires                             RFC 2616 中定义的过期时间，将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.ContentSha1                         RFC 3174 中定义的 160-bit 内容 SHA-1 算法校验，非必须
  *     @param  {String}  params.ACL                                 允许用户自定义文件权限，有效值：private | public-read，非必须
  *     @param  {String}  params.GrantRead                           赋予被授权者读取对象的权限，格式：id="[OwnerUin]"，可使用半角逗号（,）分隔多组被授权者，非必须
  *     @param  {String}  params.GrantReadAcp                        赋予被授权者读取对象的访问控制列表（ACL）的权限，格式：id="[OwnerUin]"，可使用半角逗号（,）分隔多组被授权者，非必须
@@ -1232,24 +1894,17 @@ function putObject(params, callback) {
     var FileSize = params.ContentLength;
     var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
-    // 特殊处理 Cache-Control
+    // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
     var headers = params.Headers;
-    !headers['Cache-Control'] && (headers['Cache-Control'] = '');
-
-    // 获取 File 或 Blob 的 type 属性，如果有，作为文件 Content-Type
-    var ContentType = headers['Content-Type'] || (params.Body && params.Body.type);
-    !headers['Content-Type'] && ContentType && (headers['Content-Type'] = ContentType);
-
+    if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
+    if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
     var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
     util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
         if (md5) {
-            if (self.options.UploadCheckContentMd5) params.Headers['Content-MD5'] = util.binaryBase64(md5);
-            if (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5) params.Headers['x-cos-meta-md5'] = md5;
+            if (self.options.UploadCheckContentMd5) headers['Content-MD5'] = util.binaryBase64(md5);
+            if (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5) headers['x-cos-meta-md5'] = md5;
         }
-
-        if (params.ContentLength !== undefined) {
-            params.Headers['Content-Length'] = params.ContentLength;
-        }
+        if (params.ContentLength !== undefined) headers['Content-Length'] = params.ContentLength;
         onProgress(null, true); // 任务状态开始 uploading
         submitRequest.call(self, {
             Action: 'name/cos:PutObject',
@@ -1505,7 +2160,7 @@ function putObjectCopy(params, callback) {
 
     // 特殊处理 Cache-Control
     var headers = params.Headers;
-    !headers['Cache-Control'] && (headers['Cache-Control'] = '');
+    if (!headers['Cache-Control'] && !!headers['cache-control']) headers['Cache-Control'] = '';
 
     var CopySource = params.CopySource || '';
     var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
@@ -1675,6 +2330,133 @@ function restoreObject(params, callback) {
     });
 }
 
+/**
+ * 设置 Object 的标签
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Object名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ *     @param  {Array}   params.TagSet  标签设置，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/42998
+ * @return  {Object}  data              返回数据
+ */
+function putObjectTagging(params, callback) {
+
+    var Tagging = params['Tagging'] || {};
+    var Tags = Tagging.TagSet || Tagging.Tags || params['Tags'] || [];
+    Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
+    var xml = util.json2xml({Tagging: {TagSet: {Tag: Tags}}});
+
+    var headers = params.Headers;
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        Interface: 'putObjectTagging',
+        Action: 'name/cos:PutObjectTagging',
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Key: params.Key,
+        Region: params.Region,
+        body: xml,
+        action: 'tagging',
+        headers: headers,
+        VersionId: params.VersionId,
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 获取 Object 的标签设置
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Bucket名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/42998
+ * @return  {Object}  data              返回数据
+ */
+function getObjectTagging(params, callback) {
+
+    submitRequest.call(this, {
+        Interface: 'getObjectTagging',
+        Action: 'name/cos:GetObjectTagging',
+        method: 'GET',
+        Key: params.Key,
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'tagging',
+        VersionId: params.VersionId,
+    }, function (err, data) {
+        if (err) {
+            if (err.statusCode === 404 && err.error && (err.error === "Not Found" || err.error.Code === 'NoSuchTagSet')) {
+                var result = {
+                    Tags: [],
+                    statusCode: err.statusCode,
+                };
+                err.headers && (result.headers = err.headers);
+                callback(null, result);
+            } else {
+                callback(err);
+            }
+            return;
+        }
+        var Tags = [];
+        try {
+            Tags = data.Tagging.TagSet.Tag || [];
+        } catch (e) {
+        }
+        Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
+        callback(null, {
+            Tags: Tags,
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+/**
+ * 删除 Object 的 标签设置
+ * @param  {Object}  params             参数对象，必须
+ *     @param  {String}  params.Bucket  Object名称，必须
+ *     @param  {String}  params.Region  地域名称，必须
+ * @param  {Function}  callback         回调函数，必须
+ * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/42998
+ * @return  {Object}  data              返回的数据
+ */
+function deleteObjectTagging(params, callback) {
+    submitRequest.call(this, {
+        Interface: 'deleteObjectTagging',
+        Action: 'name/cos:DeleteObjectTagging',
+        method: 'DELETE',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        headers: params.Headers,
+        action: 'tagging',
+        VersionId: params.VersionId,
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
 
 // 分块上传
 
@@ -1704,9 +2486,12 @@ function restoreObject(params, callback) {
 function multipartInit(params, callback) {
 
     var self = this;
-    // 特殊处理 Cache-Control
     var headers = params.Headers;
-    !headers['Cache-Control'] && (headers['Cache-Control'] = '');
+
+    // 特殊处理 Cache-Control、Content-Type
+    if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
+    if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
+
     util.getBodyMd5(params.Body && (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5), params.Body, function (md5) {
         if (md5) params.Headers['x-cos-meta-md5'] = md5;
         submitRequest.call(self, {
@@ -2040,7 +2825,7 @@ function getObjectUrl(params, callback) {
     var url = getUrl({
         ForcePathStyle: self.options.ForcePathStyle,
         protocol: params.Protocol || self.options.Protocol,
-        domain: self.options.Domain,
+        domain: params.Domain || self.options.Domain,
         bucket: params.Bucket,
         region: params.Region,
         object: params.Key,
@@ -2322,6 +3107,7 @@ function getAuthorizationAsync(params, callback) {
             Query: params.Query,
             Headers: headers,
             Scope: Scope,
+            SystemClockOffset: self.options.SystemClockOffset,
         }, function (AuthData) {
             if (typeof AuthData === 'string') {
                 AuthData = {Authorization: AuthData};
@@ -2398,7 +3184,7 @@ function allowRetry(err) {
                 this.options.SystemClockOffset = serverTime - Date.now();
                 allowRetry = true;
             }
-        } else if (Math.round(err.statusCode / 100) === 5) {
+        } else if (Math.floor(err.statusCode / 100) === 5) {
             allowRetry = true;
         }
     }
@@ -2625,6 +3411,22 @@ var API_MAP = {
     putBucketWebsite: putBucketWebsite,          // BucketWebsite
     getBucketWebsite: getBucketWebsite,
     deleteBucketWebsite: deleteBucketWebsite,
+    putBucketReferer: putBucketReferer,          // BucketReferer
+    getBucketReferer: getBucketReferer,
+    putBucketDomain: putBucketDomain,            // BucketDomain
+    getBucketDomain: getBucketDomain,
+    deleteBucketDomain: deleteBucketDomain,
+    putBucketOrigin: putBucketOrigin,            // BucketOrigin
+    getBucketOrigin: getBucketOrigin,
+    deleteBucketOrigin: deleteBucketOrigin,
+    putBucketLogging: putBucketLogging,             // BucketLogging
+    getBucketLogging: getBucketLogging,
+    putBucketInventory: putBucketInventory,         // BucketInventory
+    getBucketInventory: getBucketInventory,
+    listBucketInventory: listBucketInventory,
+    deleteBucketInventory: deleteBucketInventory,
+    putBucketAccelerate: putBucketAccelerate,
+    getBucketAccelerate: getBucketAccelerate,
 
     // Object 相关方法
     getObject: getObject,
@@ -2638,6 +3440,9 @@ var API_MAP = {
     putObjectCopy: putObjectCopy,
     deleteMultipleObject: deleteMultipleObject,
     restoreObject: restoreObject,
+    putObjectTagging: putObjectTagging,
+    getObjectTagging: getObjectTagging,
+    deleteObjectTagging: deleteObjectTagging,
 
     // 分块上传相关方法
     uploadPartCopy: uploadPartCopy,
