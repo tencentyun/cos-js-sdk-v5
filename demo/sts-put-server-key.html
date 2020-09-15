@@ -54,7 +54,6 @@
                     credentials = result.credentials;
                 } catch (e) {}
                 if (result && credentials) {
-                    debugger;
                     callback(null, {
                         Key: result.Key, // 这里在后端加一个字段决定上传的文件名
                         XCosSecurityToken: credentials.sessionToken,
