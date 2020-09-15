@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/tencentyun/cos-js-sdk-v5#readme",
   "dependencies": {
-    "xmldom": "^0.3.0"
+    "xmldom": "^0.1.31"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",

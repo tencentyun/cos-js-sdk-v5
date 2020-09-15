@@ -14,7 +14,7 @@ function sliceUploadFile(params, callback) {
     var Body = params.Body;
     var ChunkSize = params.ChunkSize || params.SliceSize || self.options.ChunkSize;
     var AsyncLimit = params.AsyncLimit;
-    var StorageClass = params.StorageClass || 'Standard';
+    var StorageClass = params.StorageClass;
     var ServerSideEncryption = params.ServerSideEncryption;
     var FileSize;
 
@@ -279,11 +279,6 @@ function getUploadIdAndPartList(params, callback) {
             StorageClass: StorageClass,
             Body: params.Body,
         }, params);
-        // 获取 File 或 Blob 的 type 属性，如果有，作为文件 Content-Type
-        var ContentType = params.Headers['Content-Type'] || (params.Body && params.Body.type);
-        if (ContentType) {
-            _params.Headers['Content-Type'] = ContentType;
-        }
         self.multipartInit(_params, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (err) return ep.emit('error', err);
@@ -542,7 +537,7 @@ function uploadSliceList(params, cb) {
             },
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
-            if (util.isBrowser && !err && !data.ETag) {
+            if (!err && !data.ETag) {
                 err = 'get ETag error, please add "ETag" to CORS ExposeHeader setting.';
             }
             if (err) {
@@ -551,11 +546,12 @@ function uploadSliceList(params, cb) {
                 FinishSize += currentSize - preAddSize;
                 SliceItem.ETag = data.ETag;
             }
+            onProgress({loaded: FinishSize, total: FileSize});
             asyncCallback(err || null, data);
         });
     }, function (err) {
         if (!self._isRunningTask(TaskId)) return;
-        if (err)  return cb(err);
+        if (err) return cb(err);
         cb(null, {
             UploadId: UploadData.UploadId,
             SliceList: UploadData.PartList

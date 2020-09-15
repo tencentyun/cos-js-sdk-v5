@@ -534,6 +534,8 @@ var getFileSize = function (api, params, callback) {
     var size;
     if (typeof params.Body === 'string') {
         params.Body = new Blob([params.Body], {type: 'text/plain'});
+    } else if (params.Body instanceof ArrayBuffer) {
+        params.Body = new Blob([params.Body]);
     }
     if ((params.Body && (params.Body instanceof Blob || params.Body.toString() === '[object File]' || params.Body.toString() === '[object Blob]'))) {
         size = params.Body.size;
