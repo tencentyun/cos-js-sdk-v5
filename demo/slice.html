@@ -60,6 +60,7 @@
         var uploadFile = function (file, callback) {
             var fileSize = file.size;
             var Key = 'dir/' + file.name; // 这里指定上传目录和文件名
+            // 创建 UploadId
             cos.multipartInit({
                 Bucket: Bucket,
                 Region: Region,
@@ -76,6 +77,7 @@
                     var start = (PartNumber - 1) * ChunkSize;
                     var end = Math.min(start + ChunkSize);
                     var blob = file.slice(start, end);
+                    // 上传每个分片
                     cos.multipartUpload({
                         Bucket: Bucket,
                         Region: Region,
@@ -92,6 +94,7 @@
                     });
                 }, function (err) {
                     if (err) return console.error('上传分片出错：', err);
+                    // 完成分片上传
                     cos.multipartComplete({
                         Bucket: Bucket,
                         Region: Region,
