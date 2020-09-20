@@ -6,9 +6,24 @@ var expires = 30 * 24 * 3600;
 var cache;
 var timer;
 
+var getCache = function () {
+    try {
+        var val = JSON.parse(localStorage.getItem(cacheKey));
+    } catch (e) {
+    }
+    if (!val) val = [];
+    return val;
+};
+var setCache = function () {
+    try {
+        localStorage.setItem(cacheKey, JSON.stringify(cache))
+    } catch (e) {
+    }
+};
+
 var init = function () {
     if (cache) return;
-    cache = JSON.parse(localStorage.getItem(cacheKey) || '[]') || [];
+    cache = getCache();
     // 清理太老旧的数据
     var changed = false;
     var now = Math.round(Date.now() / 1000);
@@ -19,14 +34,14 @@ var init = function () {
             changed = true;
         }
     }
-    changed && localStorage.setItem(cacheKey, JSON.stringify(cache));
+    changed && setCache();
 };
 
 // 把缓存存到本地
 var save = function () {
     if (timer) return;
     timer = setTimeout(function () {
-        localStorage.setItem(cacheKey, JSON.stringify(cache));
+        setCache();
         timer = null;
     }, 400);
 };
@@ -64,7 +79,7 @@ var mod = {
     saveUploadId: function (uuid, UploadId, limit) {
         init();
         if (!uuid) return;
-        // 清理没用的 UploadId
+        // 清理没用的 UploadId，js 文件没有 FilePath ，只清理相同记录
         for (var i = cache.length - 1; i >= 0; i--) {
             var item = cache[i];
             if (item[0] === uuid && item[1] === UploadId) {
