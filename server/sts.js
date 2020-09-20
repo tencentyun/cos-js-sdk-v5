@@ -40,6 +40,7 @@ var replaceBucketRegion = (filePath) => {
         var content = fs.readFileSync(filePath).toString()
             .replace(/(var config = {\r?\n *Bucket: ')test-1250000000(',\r?\n *Region: ')ap-guangzhou(',?\r?\n};?)/,
             '$1' + config.bucket + '$2' + config.region +'$3');
+        content = content.replace("config.Uin = '10001';", "config.Uin = '" + process.env.Uin + "'");
         res.header('Content-Type', 'application/javascript');
         res.send(content);
     };

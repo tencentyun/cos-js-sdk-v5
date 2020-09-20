@@ -2,7 +2,6 @@ var config = {
     Bucket: 'test-1250000000',
     Region: 'ap-guangzhou',
 };
-
 config.Uin = '10001';
 
 var util = {
