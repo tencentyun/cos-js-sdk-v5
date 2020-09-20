@@ -812,6 +812,71 @@ function restoreObject() {
     });
 }
 
+function selectObjectContent() {
+    // 查询 CSV
+    cos.selectObjectContent({
+        Bucket: config.Bucket, // Bucket 格式：test-1250000000
+        Region: config.Region,
+        Key: '1.csv',
+        SelectType: 2,
+        SelectRequest: {
+            Expression: "Select * from COSObject",
+            ExpressionType: "SQL",
+            InputSerialization: {
+                CSV: {
+                    FileHeaderInfo: "IGNORE",
+                    RecordDelimiter: "\\n",
+                    FieldDelimiter: ",",
+                    QuoteCharacter: "\"",
+                    QuoteEscapeCharacter: "\"",
+                    Comments: "#",
+                    AllowQuotedRecordDelimiter: "FALSE"
+                }
+            },
+            OutputSerialization: {
+                CSV: {
+                    QuoteFields: "ASNEEDED",
+                    RecordDelimiter: "\\n",
+                    FieldDelimiter: ",",
+                    QuoteCharacter: "\"",
+                    QuoteEscapeCharacter: "\""
+                }
+            },
+            RequestProgress: {
+                Enabled: "FALSE"
+            }
+        },
+    }, function (err, data) {
+        logger.log(err || data);
+    });
+    // 查询 JSON
+    cos.selectObjectContent({
+        Bucket: config.Bucket, // Bucket 格式：test-1250000000
+        Region: config.Region,
+        Key: '1.json',
+        SelectType: 2,
+        SelectRequest: {
+            Expression: "Select b from COSObject",
+            ExpressionType: "SQL",
+            InputSerialization: {
+                JSON: {
+                    Type: "DOCUMENT",
+                },
+            },
+            OutputSerialization: {
+                JSON: {
+                    RecordDelimiter: "\n"
+                },
+            },
+            RequestProgress: {
+                Enabled: "FALSE"
+            }
+        },
+    }, function (err, data) {
+        logger.log(err || data);
+    });
+}
+
 function abortUploadTask() {
     cos.abortUploadTask({
         Bucket: config.Bucket, /* 必须 */ // Bucket 格式：test-1250000000
@@ -1140,6 +1205,7 @@ function deleteFolder() {
         'deleteObject',
         'deleteMultipleObject',
         'restoreObject',
+        'selectObjectContent',
         'abortUploadTask',
         'sliceUploadFile',
         'cancelTask',
