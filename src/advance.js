@@ -395,7 +395,7 @@ function getUploadIdAndPartList(params, callback) {
     });
 
     // 获取线上 UploadId 列表
-    ep.on('get_remote_upload_id_list', function (RemoteUploadIdList) {
+    ep.on('get_remote_upload_id_list', function () {
         // 获取符合条件的 UploadId 列表，因为同一个文件可以有多个上传任务。
         wholeMultipartList.call(self, {
             Bucket: Bucket,
@@ -748,7 +748,7 @@ function abortUploadTaskArray(params, callback) {
             Key: AbortItem.Key,
             Headers: params.Headers,
             UploadId: UploadId
-        }, function (err, data) {
+        }, function (err) {
             var task = {
                 Bucket: Bucket,
                 Region: Region,
@@ -1000,7 +1000,7 @@ function sliceCopyFile(params, callback) {
         /**
          * 对于归档存储的对象，如果未恢复副本，则不允许 Copy
          */
-        if (SourceHeaders['x-cos-storage-class'] === 'ARCHIVE') {
+        if (SourceHeaders['x-cos-storage-class'] === 'ARCHIVE' || SourceHeaders['x-cos-storage-class'] === 'DEEP_ARCHIVE') {
             var restoreHeader = SourceHeaders['x-cos-restore'];
             if (!restoreHeader || restoreHeader === 'ongoing-request="true"') {
                 callback({ error: 'Unrestored archive object is not allowed to be copied' });

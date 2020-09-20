@@ -31,6 +31,6 @@
     "express": "^4.16.4",
     "qcloud-cos-sts": "^3.0.2",
     "request": "^2.87.0",
-    "webpack": "^3.8.1"
+    "webpack": "^3.12.0"
   }
 }

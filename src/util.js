@@ -253,6 +253,10 @@ function clone(obj) {
     });
 }
 
+function attr(obj, name, defaultValue) {
+    return obj && name in obj ? obj[name] : defaultValue;
+}
+
 function extend(target, source) {
     each(source, function (val, key) {
         target[key] = source[key];
@@ -439,8 +443,8 @@ var apiWrapper = function (apiName, apiFn) {
 
         if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
             // 判断参数是否完整
-            var missingResult;
-            if (missingResult = hasMissingParams(apiName, params)) {
+            var missingResult = hasMissingParams(apiName, params)
+            if (missingResult) {
                 _callback({error: 'missing param ' + missingResult});
                 return;
             }
@@ -499,12 +503,12 @@ var throttleOnProgress = function (total, onProgress) {
         timer = 0;
         if (onProgress && (typeof onProgress === 'function')) {
             time1 = Date.now();
-            var speed = Math.max(0, Math.round((size1 - size0) / ((time1 - time0) / 1000) * 100) / 100);
+            var speed = Math.max(0, Math.round((size1 - size0) / ((time1 - time0) / 1000) * 100) / 100) || 0;
             var percent;
             if (size1 === 0 && total === 0) {
                 percent = 1;
             } else {
-                percent = Math.round(size1 / total * 100) / 100 || 0;
+                percent = Math.floor(size1 / total * 100) / 100 || 0;
             }
             time0 = time1;
             size0 = size1;
@@ -572,6 +576,7 @@ var util = {
     map: map,
     filter: filter,
     clone: clone,
+    attr: attr,
     uuid: uuid,
     camSafeUrlEncode: camSafeUrlEncode,
     throttleOnProgress: throttleOnProgress,

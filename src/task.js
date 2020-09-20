@@ -37,7 +37,7 @@ var initTask = function (cos) {
             error: task.error,
         };
         if (task.FilePath) t.FilePath = task.FilePath;
-        if (task._custom) t._custom = task._custom;
+        if (task._custom) t._custom = task._custom; // 控制台使用
         return t;
     };
 
