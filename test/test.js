@@ -2988,3 +2988,63 @@ group('getBucketAccelerate', function () {
         });
     });
 });
+
+group('Promise', function () {
+    test('getService callback', function (done, assert) {
+        var res = cos.headBucket({
+            Bucket: config.Bucket,
+            Region: config.Region,
+        }, function (err, data) {
+            assert.ok(!err && data);
+            done();
+        });
+        assert.ok(!res);
+    });
+
+    test('Promise() getObjectUrl', function (done, assert) {
+        var res = cos.getObjectUrl({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '123.txt',
+        });
+        assert.ok(!res.then);
+        done();
+    });
+
+    test('Promise() headBucket', function (done, assert) {
+        cos.headBucket({
+            Bucket: config.Bucket,
+            Region: config.Region,
+        }).then(function (data) {
+            assert.ok(data);
+            done();
+        }).catch(function () {
+            assert.ok(false);
+            done();
+        });
+    });
+
+    test('headBucket callback', function (done, assert) {
+        var res = cos.headBucket({
+            Bucket: config.Bucket,
+            Region: config.Region,
+        }, function (err, data) {
+            assert.ok(!err && data);
+            done();
+        });
+        assert.ok(!res);
+    });
+
+    test('Promise() headBucket error', function (done, assert) {
+        cos.headBucket({
+            Bucket: config.Bucket,
+            Region: config.Region + '/',
+        }).then(function (data) {
+            assert.ok(!data);
+            done();
+        }).catch(function (err) {
+            assert.ok(err && err.error === 'Region format error.');
+            done();
+        });
+    });
+});

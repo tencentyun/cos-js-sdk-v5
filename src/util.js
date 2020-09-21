@@ -420,6 +420,8 @@ var formatParams = function (apiName, params) {
 var apiWrapper = function (apiName, apiFn) {
     return function (params, callback) {
 
+        var self = this;
+
         // 处理参数
         if (typeof params === 'function') {
             callback = params;
@@ -441,52 +443,63 @@ var apiWrapper = function (apiName, apiFn) {
             callback && callback(formatResult(err), formatResult(data));
         };
 
-        if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
-            // 判断参数是否完整
-            var missingResult = hasMissingParams(apiName, params)
-            if (missingResult) {
-                _callback({error: 'missing param ' + missingResult});
-                return;
-            }
-            // 判断 region 格式
-            if (params.Region) {
-                if (params.Region.indexOf('cos.') > -1) {
-                    _callback({error: 'param Region should not be start with "cos."'});
-                    return;
-                } else if (!/^([a-z\d-]+)$/.test(params.Region)) {
-                    _callback({error: 'Region format error.'});
-                    return;
+        var checkParams = function () {
+            if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
+                // 判断参数是否完整
+                var missingResult = hasMissingParams(apiName, params)
+                if (missingResult) {
+                    return 'missing param ' + missingResult;
                 }
                 // 判断 region 格式
-                if (!this.options.CompatibilityMode && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
-                    console.warn('warning: param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
-                }
-            }
-            // 兼容不带 AppId 的 Bucket
-            if (params.Bucket) {
-                if (!/^([a-z\d-]+)-(\d+)$/.test(params.Bucket)) {
-                    if (params.AppId) {
-                        params.Bucket = params.Bucket + '-' + params.AppId;
-                    } else if (this.options.AppId) {
-                        params.Bucket = params.Bucket + '-' + this.options.AppId;
-                    } else {
-                        _callback({error: 'Bucket should format as "test-1250000000".'});
-                        return;
+                if (params.Region) {
+                    if (params.Region.indexOf('cos.') > -1) {
+                        return 'param Region should not be start with "cos."';
+                    } else if (!/^([a-z\d-]+)$/.test(params.Region)) {
+                        return 'Region format error.';
+                    }
+                    // 判断 region 格式
+                    if (!self.options.CompatibilityMode && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
+                        console.warn('warning: param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
                     }
                 }
-                if (params.AppId) {
-                    console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g Bucket:"test-1250000000" ).');
-                    delete params.AppId;
+                // 兼容不带 AppId 的 Bucket
+                if (params.Bucket) {
+                    if (!/^([a-z\d-]+)-(\d+)$/.test(params.Bucket)) {
+                        if (params.AppId) {
+                            params.Bucket = params.Bucket + '-' + params.AppId;
+                        } else if (self.options.AppId) {
+                            params.Bucket = params.Bucket + '-' + self.options.AppId;
+                        } else {
+                            return 'Bucket should format as "test-1250000000".';
+                        }
+                    }
+                    if (params.AppId) {
+                        console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g Bucket:"test-1250000000" ).');
+                        delete params.AppId;
+                    }
+                }
+                // 如果 Key 是 / 开头，强制去掉第一个 /
+                if (!self.options.UseRawKey && params.Key && params.Key.substr(0, 1) === '/') {
+                    params.Key = params.Key.substr(1);
                 }
             }
-            // 如果 Key 是 / 开头，强制去掉第一个 /
-            if (!this.options.UseRawKey && params.Key && params.Key.substr(0, 1) === '/') {
-                params.Key = params.Key.substr(1);
-            }
-        }
-        var res = apiFn.call(this, params, _callback);
-        if (apiName === 'getAuth' || apiName === 'getObjectUrl') {
-            return res;
+        };
+
+        var errMsg = checkParams();
+        var isSync = apiName === 'getAuth' || apiName === 'getObjectUrl';
+        var Promise = global.Promise;
+        if (!isSync && Promise && !callback) {
+            return new Promise(function (resolve, reject) {
+                callback = function (err, data) {
+                    err ? reject(err) : resolve(data);
+                };
+                if (errMsg) return _callback({error: errMsg});
+                apiFn.call(self, params, _callback);
+            });
+        } else {
+            if (errMsg) return _callback({error: errMsg});
+            var res = apiFn.call(self, params, _callback);
+            if (isSync) return res;
         }
     }
 };
