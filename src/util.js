@@ -37,11 +37,11 @@ var getAuth = function (opt) {
     if (!SecretId) return console.error('missing param SecretId');
     if (!SecretKey) return console.error('missing param SecretKey');
 
-    var getObjectKeys = function (obj) {
+    var getObjectKeys = function (obj, forKey) {
         var list = [];
         for (var key in obj) {
             if (obj.hasOwnProperty(key)) {
-                list.push(key);
+                list.push(forKey ? camSafeUrlEncode(key).toLowerCase() : key);
             }
         }
         return list.sort(function (a, b) {
@@ -58,8 +58,7 @@ var getAuth = function (opt) {
         for (i = 0; i < keyList.length; i++) {
             key = keyList[i];
             val = (obj[key] === undefined || obj[key] === null) ? '' : ('' + obj[key]);
-            key = key.toLowerCase();
-            key = camSafeUrlEncode(key);
+            key = camSafeUrlEncode(key).toLowerCase();
             val = camSafeUrlEncode(val) || '';
             list.push(key + '=' + val)
         }
