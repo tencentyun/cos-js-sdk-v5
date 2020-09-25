@@ -2161,7 +2161,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.0.1';
+COS.version = '1.0.2';
 
 module.exports = COS;
 
@@ -8300,8 +8300,8 @@ var request = function (opt, callback) {
         } else {
             // 0
             var error = xhr.statusText;
-            if (error === 'error' && xhr.status === 0) error = 'CORS limit or network error';
-            callback(xhr.statusText, xhrRes(xhr), xhr.responseText);
+            if (!error && xhr.status === 0) error = 'CORS blocked or network error';
+            callback(error, xhrRes(xhr), xhr.responseText);
         }
     };
 
