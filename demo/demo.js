@@ -1141,7 +1141,7 @@ function deleteFolder() {
                         Objects: Objects,
                     }, function (err, data) {
                         data.Deleted && data.Deleted.forEach(function (item) {
-                            errorList.push(item);
+                            deletedList.push(item);
                         });
                         data.Error && data.Error.forEach(function (item) {
                             errorList.push(item);
