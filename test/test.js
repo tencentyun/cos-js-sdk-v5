@@ -249,7 +249,6 @@ function prepareBigObject(needHeaders) {
                 params.ContentType = 'text/html';
                 params.CacheControl = 'max-age=7200';
                 params.ContentDisposition = 'inline;filename=hello.jpg';
-                params.ContentEncoding = 'gzip';
                 params.Expires = (new Date()).toGMTString();
                 params.Headers = {
                     'x-cos-meta-test': 'xxx'
@@ -701,6 +700,11 @@ group('headBucket()', function () {
 });
 
 group('putObject()', function () {
+    var buf = new ArrayBuffer(8);
+    var arr = new Uint8Array(buf);
+    [0xe8,0xaf,0xb4,0x2e,0x70,0x72,0x70,0x72].forEach(function (v, i) {
+        arr[i] = v;
+    });
     test('putObject()', function (done, assert) {
         var filename = '1.txt';
         var getObjectETag = function (callback) {
@@ -737,7 +741,6 @@ group('putObject()', function () {
     test('putObject(),string', function (done, assert) {
         var filename = '1.txt';
         var content = '中文_' + Date.now().toString(36);
-        var content = '中文';
         var lastPercent = 0;
         cos.putObject({
             Bucket: config.Bucket,
@@ -791,9 +794,6 @@ group('putObject()', function () {
         var content = '';
         var lastPercent = 0;
         var Key = '1.mp4';
-        var buf = new ArrayBuffer(8);
-        var arr = new Uint8Array(buf);
-        [0xe8,0xaf,0xb4,0x2e,0x70,0x72,0x70,0x72].forEach((v, i) => arr[i] = v);
         var blob = new Blob([buf]);
         cos.putObject({
             Bucket: config.Bucket,
@@ -812,7 +812,9 @@ group('putObject()', function () {
                 Region: config.Region,
                 Key: Key,
             }, function (err, data) {
-                var isSame = unescape(encodeURIComponent(data.Body)).split(0).every((v, i) => v.charCodeAt(0) === arr[i]);
+                var isSame = unescape(encodeURIComponent(data.Body)).split(0).every(function (v, i) {
+                    return v.charCodeAt(0) === arr[i]
+                });
                 assert.ok(isSame && (data.headers && data.headers.etag) === ETag);
                 done();
             });
@@ -822,9 +824,6 @@ group('putObject()', function () {
         var content = '';
         var lastPercent = 0;
         var Key = '1.mp4';
-        var buf = new ArrayBuffer(8);
-        var arr = new Uint8Array(buf);
-        [0xe8,0xaf,0xb4,0x2e,0x70,0x72,0x70,0x72].forEach((v, i) => arr[i] = v);
         cos.putObject({
             Bucket: config.Bucket,
             Region: config.Region,
@@ -842,7 +841,9 @@ group('putObject()', function () {
                 Region: config.Region,
                 Key: Key,
             }, function (err, data) {
-                var isSame = unescape(encodeURIComponent(data.Body)).split(0).every((v, i) => v.charCodeAt(0) === arr[i]);
+                var isSame = unescape(encodeURIComponent(data.Body)).split(0).every(function (v, i) {
+                    return v.charCodeAt(0) === arr[i];
+                });
                 assert.ok(isSame && (data.headers && data.headers.etag) === ETag);
                 done();
             });
@@ -1001,7 +1002,6 @@ group('putObjectCopy()', function () {
 });
 
 group('sliceCopyFile()', function () {
-    var filename = 'bigger.zip';
     var Key = 'bigger.copy.zip';
     test('正常分片复制 object', function (done, assert) {
         prepareBigObject(true).then(function () {
@@ -1050,6 +1050,7 @@ group('sliceCopyFile()', function () {
             done();
         });
     });
+    var filename = 'bigger.zip';
     test('单片复制 object', function (done, assert) {
         setTimeout(function () {
             prepareBigObject(true).then(function () {
@@ -2532,7 +2533,13 @@ group('upload Content-Type', function () {
     });
 });
 
-group('Cache-Control', function () {
+group('Cache-Control', function (val) {
+    var isNormalCacheControl = function (val) {
+        return val === undefined
+            || val === 'max-age=259200'
+            // || val === 'no-cache, max-age=259200' // IE 10
+            // || val === 'no-cache, max-age=7200' // firefox
+    };
     // putObject
     test('putObject Cache-Control: null -> Cache-Control: null or max-age=259200', function (done, assert) {
         cos.putObject({
@@ -2546,7 +2553,7 @@ group('Cache-Control', function () {
                 Region: config.Region,
                 Key: '1mb.zip',
             }, function (err, data) {
-                assert.ok(data.headers['cache-control'] === undefined || data.headers['cache-control'] === 'max-age=259200', 'cache-control 正确');
+                assert.ok(isNormalCacheControl(data.headers['cache-control']), 'cache-control 正确');
                 done();
             });
         });
@@ -2582,7 +2589,7 @@ group('Cache-Control', function () {
                 Region: config.Region,
                 Key: '1mb.zip',
             }, function (err, data) {
-                assert.ok(data.headers['cache-control'] === 'no-cache' || data.headers['cache-control'] === 'no-cache, max-age=259200', 'cache-control 正确');
+                assert.ok(isNormalCacheControl(data.headers['cache-control']), 'cache-control 正确');
                 done();
             });
         });
@@ -2600,7 +2607,7 @@ group('Cache-Control', function () {
                 Region: config.Region,
                 Key: '1mb.zip',
             }, function (err, data) {
-                assert.ok(data.headers['cache-control'] === undefined || data.headers['cache-control'] === 'max-age=259200', 'cache-control 正确');
+                assert.ok(data.headers['cache-control'] === undefined || data.headers['cache-control'] === 'max-age=259200' || data.headers['cache-control'] === 'no-cache, max-age=259200', 'cache-control 正确');
                 done();
             });
         });
@@ -2818,9 +2825,11 @@ group('BucketInventory', function () {
 });
 
 
-var tagging2str = (obj) => {
+var tagging2str = function (obj) {
     var arr = [];
-    obj.forEach(v => arr.push(v.Key + '=' + encodeURIComponent(v.Value)))
+    obj.forEach(function (v) {
+        arr.push(v.Key + '=' + encodeURIComponent(v.Value));
+    })
     return arr.join('&');
 }
 group('上传带 tagging', function () {

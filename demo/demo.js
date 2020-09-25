@@ -1205,16 +1205,17 @@ function deleteFolder() {
         'deleteObject',
         'deleteMultipleObject',
         'restoreObject',
-        'selectObjectContent',
         'abortUploadTask',
+        'selectObjectContent',
+        'putObject',
         'sliceUploadFile',
+        'selectFileToUpload',
+        'sliceCopyFile',
+        'uploadFiles',
         'cancelTask',
         'pauseTask',
         'restartTask',
-        'putObject',
-        'sliceCopyFile',
-        'uploadFiles',
-        'selectFileToUpload',
+        'sliceUploadFile',
         '-',
         'uploadFolder',
         'listFolder',
@@ -1222,7 +1223,8 @@ function deleteFolder() {
     ];
     var labelMap = {
         putObject: '简单上传',
-        sliceCopyFile: '分片上传',
+        sliceUploadFile: '分片上传',
+        sliceCopyFile: '分片复制',
         uploadFiles: '批量上传文件',
         selectFileToUpload: '上传本地文件',
         uploadFolder: '上传文件夹',
@@ -1235,7 +1237,7 @@ function deleteFolder() {
         if (name === '-') {
             html.push('<hr/>');
         } else {
-            html.push('<a href="javascript:void(0)" data-method="' + name + '">' + (labelMap[name] || name) + '</a>');
+            html.push('<a href="javascript:void(0)" data-method="' + name + '">' + name + (labelMap[name] ? ' (' + labelMap[name] + ')' : '') + '</a>');
         }
     });
     container.innerHTML = html.join('');
