@@ -2161,7 +2161,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.0.2';
+COS.version = '1.0.3';
 
 module.exports = COS;
 
@@ -6556,6 +6556,7 @@ function getObject(params, callback) {
         Region: params.Region,
         Key: params.Key,
         VersionId: params.VersionId,
+        DataType: params.DataType,
         headers: params.Headers,
         qs: reqParams,
         rawBody: true
@@ -8025,6 +8026,9 @@ function _submitRequest(params, callback) {
             params.onProgress({ loaded: loaded, total: contentLength });
         };
     }
+    if (params.DataType) {
+        opt.dataType = params.DataType;
+    }
     if (this.options.Timeout) {
         opt.timeout = this.options.Timeout;
     }
@@ -8255,6 +8259,10 @@ var xhrRes = function (xhr) {
     };
 };
 
+var xhrBody = function (xhr, dataType) {
+    return !dataType && dataType === 'text' ? xhr.responseText : xhr.response;
+};
+
 var request = function (opt, callback) {
 
     // method
@@ -8289,19 +8297,20 @@ var request = function (opt, callback) {
 
     // success 2xx/3xx/4xx
     xhr.onload = function () {
-        callback(null, xhrRes(xhr), xhr.responseText);
+        callback(null, xhrRes(xhr), xhrBody(xhr, opt.dataType));
     };
 
     // error 5xx/0 (网络错误、跨域报错、Https connect-src 限制的报错时 statusCode 为 0)
     xhr.onerror = function (err) {
-        if (xhr.responseText) {
+        var res = xhrBody(xhr, opt.dataType);
+        if (res) {
             // 5xx
-            callback(null, xhrRes(xhr), xhr.responseText);
+            callback(null, xhrRes(xhr), res);
         } else {
             // 0
             var error = xhr.statusText;
             if (!error && xhr.status === 0) error = 'CORS blocked or network error';
-            callback(error, xhrRes(xhr), xhr.responseText);
+            callback(error, xhrRes(xhr), res);
         }
     };
 

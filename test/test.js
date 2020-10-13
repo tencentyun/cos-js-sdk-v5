@@ -920,6 +920,50 @@ group('getObject()', function () {
             });
         });
     });
+    test('getObject() DataType blob', function (done, assert) {
+        var key = '1.txt';
+        var content = Date.now().toString();
+        cos.putObject({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: key,
+            Body: content,
+        }, function (err, data) {
+            cos.getObject({
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: key,
+                DataType: 'blob',
+            }, function (err, data) {
+                if (err) throw err;
+                assert.ok(data.Body instanceof Blob);
+                assert.ok(data.headers['content-length'] === '' + content.length);
+                done();
+            });
+        });
+    });
+    test('getObject() DataType arraybuffer', function (done, assert) {
+        var key = '1.txt';
+        var content = Date.now().toString();
+        cos.putObject({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: key,
+            Body: content,
+        }, function (err, data) {
+            cos.getObject({
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: key,
+                DataType: 'arraybuffer',
+            }, function (err, data) {
+                if (err) throw err;
+                assert.ok(data.Body instanceof ArrayBuffer);
+                assert.ok(data.headers['content-length'] === '' + content.length);
+                done();
+            });
+        });
+    });
 });
 
 group('Key 特殊字符', function () {
@@ -2536,6 +2580,7 @@ group('upload Content-Type', function () {
 group('Cache-Control', function (val) {
     var isNormalCacheControl = function (val) {
         return val === undefined
+            || val === 'no-cache'
             || val === 'max-age=259200'
             // || val === 'no-cache, max-age=259200' // IE 10
             // || val === 'no-cache, max-age=7200' // firefox
@@ -2589,7 +2634,7 @@ group('Cache-Control', function (val) {
                 Region: config.Region,
                 Key: '1mb.zip',
             }, function (err, data) {
-                assert.ok(isNormalCacheControl(data.headers['cache-control']), 'cache-control 正确');
+                assert.ok(data.headers['cache-control'] === 'no-cache' || data.headers['cache-control'] === 'no-cache, max-age=259200', 'cache-control 正确');
                 done();
             });
         });

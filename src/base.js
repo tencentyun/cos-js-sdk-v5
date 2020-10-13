@@ -1802,6 +1802,7 @@ function getObject(params, callback) {
         Region: params.Region,
         Key: params.Key,
         VersionId: params.VersionId,
+        DataType: params.DataType,
         headers: params.Headers,
         qs: reqParams,
         rawBody: true,
@@ -3294,6 +3295,9 @@ function _submitRequest(params, callback) {
             var loaded = e ? e.loaded : 0;
             params.onProgress({loaded: loaded, total: contentLength});
         };
+    }
+    if (params.DataType) {
+        opt.dataType = params.DataType;
     }
     if (this.options.Timeout) {
         opt.timeout = this.options.Timeout;
