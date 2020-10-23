@@ -4,6 +4,11 @@ var config = {
 };
 config.Uin = '10001';
 
+QUnit.jUnitDone(function(report) {
+    console.log('[report]' + report.xml);
+    console.log('[finish]');
+});
+
 var util = {
     createFile: function (options) {
         var buffer = new ArrayBuffer(options.size || 0);
