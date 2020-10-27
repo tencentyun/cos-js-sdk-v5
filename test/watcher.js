@@ -16,6 +16,8 @@ console.error = console.log;
 puppeteer.launch({
   args: [
       '--no-proxy-server',
+      '--no-sandbox',
+      '--disable-setuid-sandbox'
   ]
 }).then(function (browser) {
   browser.newPage().then(function (page) {
