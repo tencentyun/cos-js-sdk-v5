@@ -4,9 +4,8 @@ var config = {
 };
 config.Uin = '10001';
 
-QUnit.jUnitDone(function(report) {
-    console.log('[report]' + report.xml);
-    console.log('[finish]');
+QUnit.done(function(details) {
+    console.log("[test-result]" + JSON.stringify(details));
 });
 
 var util = {
@@ -124,7 +123,7 @@ var getAuthorization = function (options, callback) {
 
     // // 格式四、（不推荐，适用于前端调试，避免泄露密钥）前端使用固定密钥计算签名，通过 COS.getAuthorization 静态方法计算
     // var authorization = COS.getAuthorization({
-    //     SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 可传固定密钥或者临时密钥
+    //     SecretId: 'AKIDxxxxxxxxxxxx', // 可传固定密钥或者临时密钥
     //     SecretKey: 'xxx', // 可传固定密钥或者临时密钥
     //     Method: options.Method,
     //     Pathname: options.Pathname,
