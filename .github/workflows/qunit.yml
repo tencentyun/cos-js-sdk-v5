@@ -34,7 +34,7 @@ jobs:
       # Runs a single command using the runners shell
       - name: Install dependencies
         run: | 
-          npm install puppeteer --unsafe-perm
+          npm link puppeteer
           npm install
           
       # Runs a single command using the runners shell
