@@ -59,7 +59,9 @@ jobs:
         run: ./node_modules/pm2/bin/pm2 start server/sts.js
 
       - name: Test
-        run: node test/watcher.js
+        run: |
+          curl http://127.0.0.1:3000/sts
+          node test/watcher.js
 
       - name: End Server
         run: ./node_modules/pm2/bin/pm2 stop server/sts.js
