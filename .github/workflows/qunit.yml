@@ -52,7 +52,6 @@ jobs:
       - name: Start Server
         run: |
           pm2 kill
-          pm2 stop server/sts.js
           pm2 start server/sts.js
 
       - name: Test
