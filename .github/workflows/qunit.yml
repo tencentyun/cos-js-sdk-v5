@@ -60,7 +60,6 @@ jobs:
 
       - name: Test
         run: |
-          curl http://127.0.0.1:3000/sts
           node test/watcher.js
 
       - name: End Server
