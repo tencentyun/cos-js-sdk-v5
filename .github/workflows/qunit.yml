@@ -34,7 +34,7 @@ jobs:
       # Runs a single command using the runners shell
       - name: Install dependencies
         run: | 
-          npm install puppeteer --unsafe-perm
+          npm install pm2
           npm install
           
       # Runs a single command using the runners shell
@@ -56,10 +56,10 @@ jobs:
       
       # Runs a set of commands using the runners shell
       - name: Start Server
-        run: pm2 start server/sts.js
+        run: ./node_modules/pm2/bin/pm2 start server/sts.js
 
       - name: Test
         run: node test/watcher.js
 
       - name: End Server
-        run: pm2 stop server/sts.js
+        run: ./node_modules/pm2/bin/pm2 stop server/sts.js
