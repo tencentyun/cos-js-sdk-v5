@@ -46,13 +46,7 @@ jobs:
           BUCKET: ${{ secrets.BUCKET }}
           UIN: ${{ secrets.UIN }}  
         run: |
-          sed -i -e "s/10001/$UIN/" test/test.js
-          sed -i -e "s/allowPrefix: '_ALLOW_DIR_\/\*'/allowPrefix: '\*'/" server/sts.js
-          sed -i -e "s/process.env.SecretId/\"$SECRET_ID\"/" server/sts.js
-          sed -i -e "s/process.env.SecretKey/\"$SECRET_KEY\"/" server/sts.js
-          sed -i -e "s/process.env.Bucket/\"$BUCKET\"/" server/sts.js
-          sed -i -e "s/process.env.Region/\"$REGION\"/" server/sts.js
-          sed -i -e "s/PutObject/\*/" server/sts.js
+          ~/sh/js.sh .
       
       # Runs a set of commands using the runners shell
       - name: Start Server
