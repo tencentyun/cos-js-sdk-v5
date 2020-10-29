@@ -51,6 +51,7 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Start Server
         run: |
+          pm2 kill
           pm2 stop server/sts.js
           pm2 start server/sts.js
 
@@ -59,4 +60,6 @@ jobs:
           node test/watcher.js
 
       - name: End Server
-        run: pm2 stop server/sts.js
+        run: |
+          pm2 stop server/sts.js
+          pm2 kill
