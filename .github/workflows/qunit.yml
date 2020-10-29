@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: UnitTest
+name: QUnit
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
@@ -33,7 +33,9 @@ jobs:
           
       # Runs a single command using the runners shell
       - name: Install dependencies
-        run: npm install
+        run: | 
+          npm install puppeteer --unsafe-perm
+          npm install
           
       # Runs a single command using the runners shell
       - name: Prepare Task
