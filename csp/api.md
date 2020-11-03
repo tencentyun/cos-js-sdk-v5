@@ -45,7 +45,7 @@ var cos = new COS({
 - 格式二：前端使用固定密钥，前端计算签名（建议只在调试使用，避免泄露密钥）：
 ```js
 var cos = new COS({
-    SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    SecretId: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
 });
 ```
@@ -118,7 +118,7 @@ COS.getAuthorization 方法用于计算鉴权凭证（Authorization），用以�
 获取文件下载的鉴权凭证：
 ```js
 var Authorization = COS.getAuthorization({
-    SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    SecretId: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     Method: 'get',
     Key: 'a.jpg',

@@ -129,7 +129,7 @@ var getAuthorization = function (options, callback) {
 
     // // 格式四、（不推荐，适用于前端调试，避免泄露密钥）前端使用固定密钥计算签名
     // var authorization = COS.getAuthorization({
-    //     SecretId: 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 可传固定密钥或者临时密钥
+    //     SecretId: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 可传固定密钥或者临时密钥
     //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 可传固定密钥或者临时密钥
     //     Method: options.Method,
     //     Pathname: options.Pathname,

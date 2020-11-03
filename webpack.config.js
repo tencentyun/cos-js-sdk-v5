@@ -24,7 +24,7 @@ var replaceDevCode = function (list) {
         newContent = newContent.replace(/test-125\d{7}/, 'test-1250000000');
         newContent = newContent.replace(/'proxy' => 'http:\/\/[^']+',/, "'proxy' => '',");
         newContent = newContent.replace(/proxy: 'http:\/\/[^']+',/, "proxy: '',");
-        newContent = newContent.replace(/AKID\w+/, 'AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
+        newContent = newContent.replace(/AKID\w+/, 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
         newContent = newContent.replace(/'secretKey' => '[^']+',/, "'secretKey' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',");
         newContent = newContent.replace(/secretKey: '[^']+',/, "secretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',");
         newContent = newContent.replace(/'allowActions' *=> *array\([^)]+\)/, `'allowActions' => array(
