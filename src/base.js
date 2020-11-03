@@ -2559,7 +2559,7 @@ function multipartUpload(params, callback) {
             }, function (err, data) {
                 if (err) return callback(err);
                 callback(null, {
-                    ETag: util.attr(data.headers, 'etag', {}),
+                    ETag: util.attr(data.headers, 'etag', ''),
                     statusCode: data.statusCode,
                     headers: data.headers,
                 });

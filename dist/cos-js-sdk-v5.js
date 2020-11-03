@@ -311,7 +311,7 @@ var getFileMd5 = function (blob, callback, onProgress) {
 
 function clone(obj) {
     return map(obj, function (v) {
-        return typeof v === 'object' ? clone(v) : v;
+        return typeof v === 'object' && v !== null ? clone(v) : v;
     });
 }
 
@@ -2161,7 +2161,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.0.3';
+COS.version = '1.0.4';
 
 module.exports = COS;
 
@@ -7310,7 +7310,7 @@ function multipartUpload(params, callback) {
             }, function (err, data) {
                 if (err) return callback(err);
                 callback(null, {
-                    ETag: util.attr(data.headers, 'etag', {}),
+                    ETag: util.attr(data.headers, 'etag', ''),
                     statusCode: data.statusCode,
                     headers: data.headers
                 });
