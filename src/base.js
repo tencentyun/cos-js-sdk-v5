@@ -458,17 +458,8 @@ function getBucketLocation(params, callback) {
 }
 
 function putBucketPolicy(params, callback) {
-    var Policy = params['Policy'];
-    var PolicyStr = Policy;
-    try {
-        if (typeof Policy === 'string') {
-            Policy = JSON.parse(PolicyStr);
-        } else {
-            PolicyStr = JSON.stringify(Policy);
-        }
-    } catch (e) {
-        callback({error: 'Policy format error'});
-    }
+    var PolicyStr = params['Policy'];
+    if (typeof PolicyStr !== 'string') PolicyStr = JSON.stringify(PolicyStr);
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/json';
@@ -482,7 +473,6 @@ function putBucketPolicy(params, callback) {
         action: 'policy',
         body: PolicyStr,
         headers: headers,
-        json: true,
     }, function (err, data) {
         if (err && err.statusCode === 204) {
             return callback(null, {statusCode: err.statusCode});
@@ -1650,7 +1640,6 @@ function putBucketAccelerate(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
-        Interface: 'putBucketAccelerate',
         Action: 'name/cos:PutBucketAccelerate',
         method: 'PUT',
         Bucket: params.Bucket,
@@ -1669,7 +1658,6 @@ function putBucketAccelerate(params, callback) {
 
 function getBucketAccelerate(params, callback) {
     submitRequest.call(this, {
-        Interface: 'getBucketAccelerate',
         Action: 'name/cos:GetBucketAccelerate',
         method: 'GET',
         Bucket: params.Bucket,
@@ -2132,6 +2120,7 @@ function putObjectCopy(params, callback) {
     var SourceKey = decodeURIComponent(m[4]);
 
     submitRequest.call(this, {
+        Interface: 'PutObjectCopy',
         Scope: [{
             action: 'name/cos:GetObject',
             bucket: SourceBucket,
@@ -2174,6 +2163,7 @@ function uploadPartCopy(params, callback) {
     var SourceKey = decodeURIComponent(m[4]);
 
     submitRequest.call(this, {
+        Interface: 'UploadPartCopy',
         Scope: [{
             action: 'name/cos:GetObject',
             bucket: SourceBucket,
@@ -2227,6 +2217,7 @@ function deleteMultipleObject(params, callback) {
     });
 
     submitRequest.call(this, {
+        Interface: 'DeleteMultipleObjects',
         Scope: Scope,
         method: 'POST',
         Bucket: params.Bucket,
@@ -2304,7 +2295,6 @@ function putObjectTagging(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
-        Interface: 'putObjectTagging',
         Action: 'name/cos:PutObjectTagging',
         method: 'PUT',
         Bucket: params.Bucket,
@@ -2339,7 +2329,6 @@ function putObjectTagging(params, callback) {
 function getObjectTagging(params, callback) {
 
     submitRequest.call(this, {
-        Interface: 'getObjectTagging',
         Action: 'name/cos:GetObjectTagging',
         method: 'GET',
         Key: params.Key,
@@ -2387,7 +2376,6 @@ function getObjectTagging(params, callback) {
  */
 function deleteObjectTagging(params, callback) {
     submitRequest.call(this, {
-        Interface: 'deleteObjectTagging',
         Action: 'name/cos:DeleteObjectTagging',
         method: 'DELETE',
         Bucket: params.Bucket,
@@ -2431,7 +2419,7 @@ function selectObjectContent(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
-        Interface: 'selectObjectContent',
+        Interface: 'SelectObjectContent',
         Action: 'name/cos:GetObject',
         method: 'POST',
         Bucket: params.Bucket,
@@ -3251,7 +3239,6 @@ function _submitRequest(params, callback) {
     var method = params.method || 'GET';
     var url = params.url;
     var body = params.body;
-    var json = params.json;
     var rawBody = params.rawBody;
 
     // url
@@ -3273,7 +3260,6 @@ function _submitRequest(params, callback) {
         headers: params.headers,
         qs: params.qs,
         body: body,
-        json: json,
     };
 
     // 获取签名
@@ -3303,10 +3289,23 @@ function _submitRequest(params, callback) {
         opt.timeout = this.options.Timeout;
     }
 
+    // 整理 cosInterface 用于 before-send 使用
+    if (params.Interface) {
+        opt.cosInterface = params.Interface;
+    } else if (params.Action) {
+        opt.cosInterface = params.Action.replace(/^name\/cos:/, '');
+    }
+
     self.options.ForcePathStyle && (opt.pathStyle = self.options.ForcePathStyle);
     self.emit('before-send', opt);
-    var sender = REQUEST(opt, function (err, response, body) {
-        if (err === 'abort') return;
+    var sender = (self.options.Request || REQUEST)(opt, function (r) {
+        if (r.error === 'abort') return;
+
+        // 抛出事件，允许修改返回值的 error、statusCode、statusMessage、body
+        self.emit('after-receive', r);
+        var response = {statusCode: r.statusCode, statusMessage: r.statusMessage, headers: r.headers};
+        var err = r.error;
+        var body = r.body;
 
         // 返回内容添加 状态码 和 headers
         var hasReturned;
@@ -3319,7 +3318,7 @@ function _submitRequest(params, callback) {
             response && response.headers && (attrs.headers = response.headers);
 
             if (err) {
-                err = util.extend(err || {}, attrs);
+                err = util.extend(err || {}, attrs)
                 callback(err, null);
             } else {
                 data = util.extend(data || {}, attrs);
