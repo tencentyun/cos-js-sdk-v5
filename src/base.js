@@ -1773,7 +1773,7 @@ function listObjectVersions(params, callback) {
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
 function getObject(params, callback) {
-    var reqParams = {};
+    var reqParams = params.Query || {};
 
     reqParams['response-content-type'] = params['ResponseContentType'];
     reqParams['response-content-language'] = params['ResponseContentLanguage'];
@@ -1869,6 +1869,7 @@ function putObject(params, callback) {
             Region: params.Region,
             Key: params.Key,
             headers: params.Headers,
+            qs: params.Query,
             body: params.Body,
             onProgress: onProgress,
         }, function (err, data) {
@@ -1886,13 +1887,9 @@ function putObject(params, callback) {
                 object: params.Key,
             });
             url = url.substr(url.indexOf('://') + 3);
-            var result = {
-                Location: url,
-                ETag: util.attr(data.headers, 'etag', ''),
-                statusCode: data.statusCode,
-                headers: data.headers,
-            };
-            callback(null, result);
+            data.Location = url;
+            data.ETag = util.attr(data.headers, 'etag', '');
+            callback(null, data);
         });
     }, params.onHashProgress);
 }
@@ -2492,6 +2489,7 @@ function multipartInit(params, callback) {
             Key: params.Key,
             action: 'uploads',
             headers: params.Headers,
+            qs: params.Query,
         }, function (err, data) {
             if (err) {
                 return callback(err);
