@@ -34,12 +34,17 @@ function sliceUploadFile(params, callback) {
 
     // 上传分块完成，开始 uploadSliceComplete 操作
     ep.on('upload_slice_complete', function (UploadData) {
+        var metaHeaders = {};
+        util.each(params.Headers, function (val, k) {
+            if (k.toLowerCase().indexOf('x-cos-meta-') === 0) metaHeaders[k] = val;
+        });
         uploadSliceComplete.call(self, {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
             UploadId: UploadData.UploadId,
             SliceList: UploadData.SliceList,
+            Headers: metaHeaders,
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             session.removeUsing(UploadData.UploadId);
@@ -627,6 +632,7 @@ function uploadSliceComplete(params, callback) {
     var SliceList = params.SliceList;
     var self = this;
     var ChunkRetryTimes = this.options.ChunkRetryTimes + 1;
+    var Headers = params.Headers;
     var Parts = SliceList.map(function (item) {
         return {
             PartNumber: item.PartNumber,
@@ -640,7 +646,8 @@ function uploadSliceComplete(params, callback) {
             Region: Region,
             Key: Key,
             UploadId: UploadId,
-            Parts: Parts
+            Parts: Parts,
+            Headers: Headers,
         }, tryCallback);
     }, function (err, data) {
         callback(err, data);
@@ -905,7 +912,10 @@ function sliceCopyFile(params, callback) {
     var onProgress;
 
     // 分片复制完成，开始 multipartComplete 操作
-    ep.on('copy_slice_complete', function (UploadData) {
+    ep.on('copy_slice_complete', function (UploadData) {var metaHeaders = {};
+        util.each(params.Headers, function (val, k) {
+            if (k.toLowerCase().indexOf('x-cos-meta-') === 0) metaHeaders[k] = val;
+        });
         self.multipartComplete({
             Bucket: Bucket,
             Region: Region,
