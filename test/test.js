@@ -4,6 +4,10 @@ var config = {
 };
 config.Uin = '10001';
 
+QUnit.log(function(details) {
+    console.log("[test-log]" + JSON.stringify(details));
+});
+
 QUnit.done(function(details) {
     console.log("[test-result]" + JSON.stringify(details));
 });
