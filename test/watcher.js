@@ -32,7 +32,7 @@ puppeteer.launch({
 
             browser.close()
         } else {
-            console.log(msg)
+            console.log(msg.text())
         }
 
     });

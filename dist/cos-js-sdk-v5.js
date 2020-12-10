@@ -2161,7 +2161,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.0';
+COS.version = '1.1.2';
 
 module.exports = COS;
 
@@ -6527,7 +6527,7 @@ function listObjectVersions(params, callback) {
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
 function getObject(params, callback) {
-    var reqParams = {};
+    var reqParams = params.Query || {};
 
     reqParams['response-content-type'] = params['ResponseContentType'];
     reqParams['response-content-language'] = params['ResponseContentLanguage'];
@@ -6622,6 +6622,7 @@ function putObject(params, callback) {
             Region: params.Region,
             Key: params.Key,
             headers: params.Headers,
+            qs: params.Query,
             body: params.Body,
             onProgress: onProgress
         }, function (err, data) {
@@ -6639,13 +6640,9 @@ function putObject(params, callback) {
                 object: params.Key
             });
             url = url.substr(url.indexOf('://') + 3);
-            var result = {
-                Location: url,
-                ETag: util.attr(data.headers, 'etag', ''),
-                statusCode: data.statusCode,
-                headers: data.headers
-            };
-            callback(null, result);
+            data.Location = url;
+            data.ETag = util.attr(data.headers, 'etag', '');
+            callback(null, data);
         });
     }, params.onHashProgress);
 }
@@ -7242,7 +7239,8 @@ function multipartInit(params, callback) {
             Region: params.Region,
             Key: params.Key,
             action: 'uploads',
-            headers: params.Headers
+            headers: params.Headers,
+            qs: params.Query
         }, function (err, data) {
             if (err) {
                 return callback(err);
@@ -8364,12 +8362,17 @@ function sliceUploadFile(params, callback) {
 
     // 上传分块完成，开始 uploadSliceComplete 操作
     ep.on('upload_slice_complete', function (UploadData) {
+        var metaHeaders = {};
+        util.each(params.Headers, function (val, k) {
+            if (k.toLowerCase().indexOf('x-cos-meta-') === 0) metaHeaders[k] = val;
+        });
         uploadSliceComplete.call(self, {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
             UploadId: UploadData.UploadId,
-            SliceList: UploadData.SliceList
+            SliceList: UploadData.SliceList,
+            Headers: metaHeaders
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             session.removeUsing(UploadData.UploadId);
@@ -8605,6 +8608,7 @@ function getUploadIdAndPartList(params, callback) {
             Region: Region,
             Key: Key,
             Headers: util.clone(params.Headers),
+            Query: util.clone(params.Query),
             StorageClass: StorageClass,
             Body: params.Body
         }, params);
@@ -8956,6 +8960,7 @@ function uploadSliceComplete(params, callback) {
     var SliceList = params.SliceList;
     var self = this;
     var ChunkRetryTimes = this.options.ChunkRetryTimes + 1;
+    var Headers = params.Headers;
     var Parts = SliceList.map(function (item) {
         return {
             PartNumber: item.PartNumber,
@@ -8969,7 +8974,8 @@ function uploadSliceComplete(params, callback) {
             Region: Region,
             Key: Key,
             UploadId: UploadId,
-            Parts: Parts
+            Parts: Parts,
+            Headers: Headers
         }, tryCallback);
     }, function (err, data) {
         callback(err, data);
@@ -9234,6 +9240,10 @@ function sliceCopyFile(params, callback) {
 
     // 分片复制完成，开始 multipartComplete 操作
     ep.on('copy_slice_complete', function (UploadData) {
+        var metaHeaders = {};
+        util.each(params.Headers, function (val, k) {
+            if (k.toLowerCase().indexOf('x-cos-meta-') === 0) metaHeaders[k] = val;
+        });
         self.multipartComplete({
             Bucket: Bucket,
             Region: Region,
