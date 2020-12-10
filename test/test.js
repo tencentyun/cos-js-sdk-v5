@@ -1801,8 +1801,13 @@ group('BucketPolicy', function () {
                 "name/cos:AbortMultipartUpload",
                 "name/cos:AppendObject"
             ],
-            "resource": ["qcs::cos:" + config.Region + ":uid/" + AppId + ":" + BucketLongName + ".cos." + config.Region + ".myqcloud.com//" + AppId + "/" + BucketShortName + "/" + Prefix + "/*"] // 1250000000 是 appid
+            "resource": ["qcs::cos:" + config.Region + ":uid/" + AppId + ":" + BucketLongName + "//" + AppId + "/" + BucketShortName + "/" + Prefix + "/*"] // 1250000000 是 appid
         }]
+    };
+    var getRes = function (s) {
+        var t = s && s[0];
+        var res = t && t.resource && t.resource[0];
+        return res;
     };
     test('putBucketPolicy(),getBucketPolicy()', function (done, assert) {
         cos.putBucketPolicy({
@@ -1815,7 +1820,7 @@ group('BucketPolicy', function () {
                 Bucket: config.Bucket,
                 Region: config.Region
             }, function (err, data) {
-                assert.ok(Policy, data.Policy);
+                assert.ok(getRes(Policy.statement) === getRes(data.Policy.Statement));
                 done();
             });
         });
@@ -1831,7 +1836,7 @@ group('BucketPolicy', function () {
                 Bucket: config.Bucket,
                 Region: config.Region
             }, function (err, data) {
-                assert.ok(Policy, data.Policy);
+                assert.ok(getRes(Policy.statement) === getRes(data.Policy.Statement));
                 done();
             });
         });
