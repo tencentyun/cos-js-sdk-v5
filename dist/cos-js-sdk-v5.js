@@ -2161,7 +2161,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.2';
+COS.version = '1.1.3';
 
 module.exports = COS;
 
@@ -8364,7 +8364,8 @@ function sliceUploadFile(params, callback) {
     ep.on('upload_slice_complete', function (UploadData) {
         var metaHeaders = {};
         util.each(params.Headers, function (val, k) {
-            if (k.toLowerCase().indexOf('x-cos-meta-') === 0) metaHeaders[k] = val;
+            var shortKey = k.toLowerCase();
+            if (shortKey.indexOf('x-cos-meta-') === 0 || shortKey === 'pic-operations') metaHeaders[k] = val;
         });
         uploadSliceComplete.call(self, {
             Bucket: Bucket,
