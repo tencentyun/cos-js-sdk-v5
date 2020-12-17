@@ -7367,7 +7367,7 @@ function multipartComplete(params, callback) {
                 res.UploadResult = {
                     OriginalInfo: {
                         Key: res.Key,
-                        Location: res.Location,
+                        Location: url,
                         ETag: res.ETag,
                         ImageInfo: res.ImageInfo
                     },
