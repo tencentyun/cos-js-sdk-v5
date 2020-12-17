@@ -2612,8 +2612,23 @@ function multipartComplete(params, callback) {
             object: params.Key,
             isLocation: true,
         });
-        var CompleteMultipartUploadResult = data.CompleteMultipartUploadResult || {};
-        var result = util.extend(CompleteMultipartUploadResult, {
+        var res = data.CompleteMultipartUploadResult || {};
+        if (res.ProcessResults) {
+            if (res && res.ProcessResults) {
+                res.UploadResult = {
+                    OriginalInfo: {
+                        Key: res.Key,
+                        Location: res.Location,
+                        ETag: res.ETag,
+                        ImageInfo: res.ImageInfo,
+                    },
+                    ProcessResults: res.ProcessResults,
+                };
+                delete res.ImageInfo;
+                delete res.ProcessResults;
+            }
+        }
+        var result = util.extend(res, {
             Location: url,
             statusCode: data.statusCode,
             headers: data.headers,
