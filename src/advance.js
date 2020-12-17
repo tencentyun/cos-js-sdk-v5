@@ -651,6 +651,22 @@ function uploadSliceComplete(params, callback) {
             Headers: Headers,
         }, tryCallback);
     }, function (err, data) {
+        if (data && data.ProcessResults) {
+            data.UploadResult = {
+                OriginalInfo: {
+                    Key: data.Key,
+                    Location: data.Location,
+                    ETag: data.ETag,
+                    ImageInfo: data.ImageInfo,
+                },
+                ProcessResults: data.ProcessResults,
+            };
+            delete data.Key;
+            delete data.Location;
+            delete data.ETag;
+            delete data.ImageInfo;
+            delete data.ProcessResults;
+        }
         callback(err, data);
     });
 }
