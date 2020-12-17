@@ -2586,7 +2586,8 @@ function multipartComplete(params, callback) {
     var xml = util.json2xml({CompleteMultipartUpload: {Part: Parts}});
 
     var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
+    if (!headers['Pic-Operations'] || !headers['pic-operations']) headers['Content-Type'] = '';
+    else if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = 'application/xml';
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
