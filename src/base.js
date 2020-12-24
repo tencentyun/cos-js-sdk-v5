@@ -2999,7 +2999,7 @@ function getAuthorizationAsync(params, callback) {
         if (formatAllow) {
             callback && callback(null, AuthData);
         } else {
-            callback && callback('authorization error');
+            callback && callback({error: 'authorization error'});
         }
     };
 
