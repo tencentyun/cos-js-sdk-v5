@@ -2161,7 +2161,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.2';
+COS.version = '1.1.5';
 
 module.exports = COS;
 
@@ -7361,8 +7361,23 @@ function multipartComplete(params, callback) {
             object: params.Key,
             isLocation: true
         });
-        var CompleteMultipartUploadResult = data.CompleteMultipartUploadResult || {};
-        var result = util.extend(CompleteMultipartUploadResult, {
+        var res = data.CompleteMultipartUploadResult || {};
+        if (res.ProcessResults) {
+            if (res && res.ProcessResults) {
+                res.UploadResult = {
+                    OriginalInfo: {
+                        Key: res.Key,
+                        Location: url,
+                        ETag: res.ETag,
+                        ImageInfo: res.ImageInfo
+                    },
+                    ProcessResults: res.ProcessResults
+                };
+                delete res.ImageInfo;
+                delete res.ProcessResults;
+            }
+        }
+        var result = util.extend(res, {
             Location: url,
             statusCode: data.statusCode,
             headers: data.headers
@@ -8364,7 +8379,8 @@ function sliceUploadFile(params, callback) {
     ep.on('upload_slice_complete', function (UploadData) {
         var metaHeaders = {};
         util.each(params.Headers, function (val, k) {
-            if (k.toLowerCase().indexOf('x-cos-meta-') === 0) metaHeaders[k] = val;
+            var shortKey = k.toLowerCase();
+            if (shortKey.indexOf('x-cos-meta-') === 0 || shortKey === 'pic-operations') metaHeaders[k] = val;
         });
         uploadSliceComplete.call(self, {
             Bucket: Bucket,

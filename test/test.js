@@ -1815,6 +1815,7 @@ group('BucketPolicy', function () {
             Region: config.Region,
             Policy: Policy
         }, function (err, data) {
+            if (err) console.log(JSON.stringify(err));
             assert.ok(!err);
             cos.getBucketPolicy({
                 Bucket: config.Bucket,
@@ -1831,6 +1832,7 @@ group('BucketPolicy', function () {
             Region: config.Region,
             Policy: JSON.stringify(Policy)
         }, function (err, data) {
+            if (err) console.log(JSON.stringify(err));
             assert.ok(!err);
             cos.getBucketPolicy({
                 Bucket: config.Bucket,

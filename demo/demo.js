@@ -1074,6 +1074,8 @@ function sliceUploadFile() {
         Region: config.Region,
         Key: '3mb.zip', /* 必须 */
         Body: blob,
+        // 万象持久化接口，上传时持久化
+        // 'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "test.jpg", "rule": "imageMogr2/thumbnail/!50p"}]}'
         onTaskReady: function (tid) {
             TaskId = tid;
         },
@@ -1400,7 +1402,6 @@ function deleteFolder() {
         'cancelTask',
         'pauseTask',
         'restartTask',
-        'sliceUploadFile',
         '-',
         'uploadFolder',
         'listFolder',
