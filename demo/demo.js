@@ -892,6 +892,9 @@ function getObject() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
         Key: '1mb.zip',
+        onProgress: function (progressData) {
+            console.log(JSON.stringify(progressData));
+        }
     }, function (err, data) {
         logger.log(err || data);
     });

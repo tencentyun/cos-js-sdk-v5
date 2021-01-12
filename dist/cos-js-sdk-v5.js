@@ -2161,7 +2161,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.5';
+COS.version = '1.1.6';
 
 module.exports = COS;
 
@@ -6528,6 +6528,7 @@ function listObjectVersions(params, callback) {
  */
 function getObject(params, callback) {
     var reqParams = params.Query || {};
+    var onProgress = util.throttleOnProgress.call(this, 0, params.onProgress);
 
     reqParams['response-content-type'] = params['ResponseContentType'];
     reqParams['response-content-language'] = params['ResponseContentLanguage'];
@@ -6547,8 +6548,10 @@ function getObject(params, callback) {
         DataType: params.DataType,
         headers: params.Headers,
         qs: reqParams,
-        rawBody: true
+        rawBody: true,
+        onDownloadProgress: onProgress
     }, function (err, data) {
+        onProgress(null, true);
         if (err) {
             var statusCode = err.statusCode;
             if (params.Headers['If-Modified-Since'] && statusCode && statusCode === 304) {
@@ -7746,7 +7749,7 @@ function getAuthorizationAsync(params, callback) {
         if (formatAllow) {
             callback && callback(null, AuthData);
         } else {
-            callback && callback('authorization error');
+            callback && callback({ error: 'authorization error' });
         }
     };
 
@@ -8024,6 +8027,9 @@ function _submitRequest(params, callback) {
             var loaded = e ? e.loaded : 0;
             params.onProgress({ loaded: loaded, total: contentLength });
         };
+    }
+    if (params.onDownloadProgress) {
+        opt.onDownloadProgress = params.onDownloadProgress;
     }
     if (params.DataType) {
         opt.dataType = params.DataType;
@@ -8308,6 +8314,7 @@ var request = function (opt, callback) {
 
     // onprogress
     if (opt.onProgress && xhr.upload) xhr.upload.onprogress = opt.onProgress;
+    if (opt.onDownloadProgress) xhr.onprogress = opt.onDownloadProgress;
 
     // success 2xx/3xx/4xx
     xhr.onload = function () {

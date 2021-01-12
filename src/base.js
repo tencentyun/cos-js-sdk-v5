@@ -1774,6 +1774,7 @@ function listObjectVersions(params, callback) {
  */
 function getObject(params, callback) {
     var reqParams = params.Query || {};
+    var onProgress = util.throttleOnProgress.call(this, 0, params.onProgress);
 
     reqParams['response-content-type'] = params['ResponseContentType'];
     reqParams['response-content-language'] = params['ResponseContentLanguage'];
@@ -1794,7 +1795,9 @@ function getObject(params, callback) {
         headers: params.Headers,
         qs: reqParams,
         rawBody: true,
+        onDownloadProgress: onProgress,
     }, function (err, data) {
+        onProgress(null, true);
         if (err) {
             var statusCode = err.statusCode;
             if (params.Headers['If-Modified-Since'] && statusCode && statusCode === 304) {
@@ -3294,6 +3297,9 @@ function _submitRequest(params, callback) {
             var loaded = e ? e.loaded : 0;
             params.onProgress({loaded: loaded, total: contentLength});
         };
+    }
+    if (params.onDownloadProgress) {
+        opt.onDownloadProgress = params.onDownloadProgress;
     }
     if (params.DataType) {
         opt.dataType = params.DataType;
