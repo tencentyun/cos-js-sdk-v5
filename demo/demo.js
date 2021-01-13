@@ -1,3 +1,4 @@
+// @ts-check
 var config = {
     Bucket: 'test-1250000000',
     Region: 'ap-guangzhou'
@@ -891,7 +892,6 @@ function getObject() {
     cos.getObject({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
-        Key: '1mb.zip',
         onProgress: function (progressData) {
             console.log(JSON.stringify(progressData));
         }
@@ -1174,8 +1174,8 @@ function uploadFiles() {
         }],
         SliceSize: 1024 * 1024,
         onProgress: function (info) {
-            var percent = parseInt(info.percent * 10000) / 100;
-            var speed = parseInt(info.speed / 1024 / 1024 * 100) / 100;
+            var percent = Math.floor(info.percent * 10000) / 100;
+            var speed = Math.floor(info.speed / 1024 / 1024 * 100) / 100;
             logger.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
         },
         onFileFinish: function (err, data, options) {
@@ -1200,8 +1200,8 @@ function sliceCopyFile() {
         CopySource: sourcePath,
         SliceSize: 2 * 1024 * 1024, // 大于2M的文件用分片复制，小于则用单片复制
         onProgress:function (info) {
-            var percent = parseInt(info.percent * 10000) / 100;
-            var speed = parseInt(info.speed / 1024 / 1024 * 100) / 100;
+            var percent = Math.floor(info.percent * 10000) / 100;
+            var speed = Math.floor(info.speed / 1024 / 1024 * 100) / 100;
             logger.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
         }
     },function (err,data) {
@@ -1236,8 +1236,8 @@ function uploadFolder() {
             files: files,
             SliceSize: 1024 * 1024,
             onProgress: function (info) {
-                var percent = parseInt(info.percent * 10000) / 100;
-                var speed = parseInt(info.speed / 1024 / 1024 * 100) / 100;
+                var percent = Math.floor(info.percent * 10000) / 100;
+                var speed = Math.floor(info.speed / 1024 / 1024 * 100) / 100;
                 logger.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
             },
             onFileFinish: function (err, data, options) {
@@ -1332,8 +1332,7 @@ function deleteFolder() {
         };
         next();
     };
-    _delet
-    eFolder({
+    _deleteFolder({
         Bucket: config.Bucket,
         Region: config.Region,
         Prefix: 'folder/', // 要列出的目录前缀

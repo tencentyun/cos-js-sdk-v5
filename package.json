@@ -1,8 +1,9 @@
 {
   "name": "cos-js-sdk-v5",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)",
   "main": "index.js",
+  "types": "types",
   "scripts": {
     "server": "node server/sts.js",
     "dev": "cross-env NODE_ENV=development webpack -w",
