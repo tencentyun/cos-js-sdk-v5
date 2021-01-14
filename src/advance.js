@@ -917,12 +917,18 @@ function sliceCopyFile(params, callback) {
         util.each(params.Headers, function (val, k) {
             if (k.toLowerCase().indexOf('x-cos-meta-') === 0) metaHeaders[k] = val;
         });
+        var Parts = util.map(UploadData.PartList, function (item) {
+            return {
+                PartNumber: item.PartNumber,
+                ETag: item.ETag,
+            };
+        });
         self.multipartComplete({
             Bucket: Bucket,
             Region: Region,
             Key: Key,
             UploadId: UploadData.UploadId,
-            Parts: UploadData.PartList,
+            Parts: Parts,
         },function (err, data) {
             if (err) {
                 onProgress(null, true);

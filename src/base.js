@@ -2587,6 +2587,8 @@ function multipartComplete(params, callback) {
     }
 
     var xml = util.json2xml({CompleteMultipartUpload: {Part: Parts}});
+    // CSP/ceph CompleteMultipartUpload 接口 body 写死了限制 1MB，这里醉倒 10000 片时，xml 字符串去掉空格853KB
+    xml = xml.replace(/\n\s*/g, '');
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';

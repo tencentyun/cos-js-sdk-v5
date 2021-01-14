@@ -2161,7 +2161,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.6';
+COS.version = '1.1.8';
 
 module.exports = COS;
 
@@ -7337,6 +7337,8 @@ function multipartComplete(params, callback) {
     }
 
     var xml = util.json2xml({ CompleteMultipartUpload: { Part: Parts } });
+    // CSP/ceph CompleteMultipartUpload 接口 body 写死了限制 1MB，这里醉倒 10000 片时，xml 字符串去掉空格853KB
+    xml = xml.replace(/\n\s*/g, '');
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
@@ -9267,12 +9269,18 @@ function sliceCopyFile(params, callback) {
         util.each(params.Headers, function (val, k) {
             if (k.toLowerCase().indexOf('x-cos-meta-') === 0) metaHeaders[k] = val;
         });
+        var Parts = util.map(UploadData.PartList, function (item) {
+            return {
+                PartNumber: item.PartNumber,
+                ETag: item.ETag
+            };
+        });
         self.multipartComplete({
             Bucket: Bucket,
             Region: Region,
             Key: Key,
             UploadId: UploadData.UploadId,
-            Parts: UploadData.PartList
+            Parts: Parts
         }, function (err, data) {
             if (err) {
                 onProgress(null, true);
