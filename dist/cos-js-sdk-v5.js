@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "/dist/";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 5);
+/******/ 	return __webpack_require__(__webpack_require__.s = 4);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -78,9 +78,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-/* WEBPACK VAR INJECTION */(function(global) {
 
-var md5 = __webpack_require__(7);
+
+var md5 = __webpack_require__(6);
 var CryptoJS = __webpack_require__(10);
 var xml2json = __webpack_require__(11);
 var json2xml = __webpack_require__(14);
@@ -552,8 +552,7 @@ var apiWrapper = function (apiName, apiFn) {
 
         var errMsg = checkParams();
         var isSync = apiName === 'getAuth' || apiName === 'getObjectUrl';
-        var Promise = global.Promise;
-        if (!isSync && Promise && !callback) {
+        if (Promise && !isSync && !callback) {
             return new Promise(function (resolve, reject) {
                 callback = function (err, data) {
                     err ? reject(err) : resolve(data);
@@ -664,37 +663,9 @@ var util = {
 };
 
 module.exports = util;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ }),
 /* 1 */
-/***/ (function(module, exports) {
-
-var g;
-
-// This works in non-strict mode
-g = (function() {
-	return this;
-})();
-
-try {
-	// This works if eval is allowed (see CSP)
-	g = g || Function("return this")() || (1,eval)("this");
-} catch(e) {
-	// This works if the window reference is available
-	if(typeof window === "object")
-		g = window;
-}
-
-// g can still be undefined, but nothing to do about it...
-// We return undefined, instead of nothing here, so it's
-// easier to handle this case. if(!global) { ...}
-
-module.exports = g;
-
-
-/***/ }),
-/* 2 */
 /***/ (function(module, exports) {
 
 /*
@@ -1944,7 +1915,7 @@ try{
 
 
 /***/ }),
-/* 3 */
+/* 2 */
 /***/ (function(module, exports) {
 
 var initEvent = function (cos) {
@@ -1983,7 +1954,7 @@ module.exports.init = initEvent;
 module.exports.EventProxy = EventProxy;
 
 /***/ }),
-/* 4 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var util = __webpack_require__(0);
@@ -2089,21 +2060,21 @@ var mod = {
 module.exports = mod;
 
 /***/ }),
-/* 5 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var COS = __webpack_require__(6);
+var COS = __webpack_require__(5);
 module.exports = COS;
 
 /***/ }),
-/* 6 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 var util = __webpack_require__(0);
-var event = __webpack_require__(3);
+var event = __webpack_require__(2);
 var task = __webpack_require__(15);
 var base = __webpack_require__(16);
 var advance = __webpack_require__(18);
@@ -2161,12 +2132,12 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.8';
+COS.version = '1.1.9';
 
 module.exports = COS;
 
 /***/ }),
-/* 7 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(process, global) {var __WEBPACK_AMD_DEFINE_RESULT__;/* https://github.com/emn178/js-md5 */
@@ -2836,10 +2807,10 @@ module.exports = COS;
         }
     }
 })();
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(8), __webpack_require__(1)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7), __webpack_require__(8)))
 
 /***/ }),
-/* 8 */
+/* 7 */
 /***/ (function(module, exports) {
 
 // shim for using process in browser
@@ -3026,6 +2997,33 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 process.umask = function() { return 0; };
+
+
+/***/ }),
+/* 8 */
+/***/ (function(module, exports) {
+
+var g;
+
+// This works in non-strict mode
+g = (function() {
+	return this;
+})();
+
+try {
+	// This works if eval is allowed (see CSP)
+	g = g || Function("return this")() || (1,eval)("this");
+} catch(e) {
+	// This works if the window reference is available
+	if(typeof window === "object")
+		g = window;
+}
+
+// g can still be undefined, but nothing to do about it...
+// We return undefined, instead of nothing here, so it's
+// easier to handle this case. if(!global) { ...}
+
+module.exports = g;
 
 
 /***/ }),
@@ -3702,8 +3700,8 @@ function appendElement (hander,node) {
 
 //if(typeof require == 'function'){
 	var XMLReader = __webpack_require__(13).XMLReader;
-	var DOMImplementation = exports.DOMImplementation = __webpack_require__(2).DOMImplementation;
-	exports.XMLSerializer = __webpack_require__(2).XMLSerializer ;
+	var DOMImplementation = exports.DOMImplementation = __webpack_require__(1).DOMImplementation;
+	exports.XMLSerializer = __webpack_require__(1).XMLSerializer ;
 	exports.DOMParser = DOMParser;
 //}
 
@@ -4510,7 +4508,7 @@ module.exports = function (obj, options) {
 /* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var session = __webpack_require__(4);
+var session = __webpack_require__(3);
 var util = __webpack_require__(0);
 
 var originApiMap = {};
@@ -8350,9 +8348,9 @@ module.exports = request;
 /* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var session = __webpack_require__(4);
+var session = __webpack_require__(3);
 var Async = __webpack_require__(19);
-var EventProxy = __webpack_require__(3).EventProxy;
+var EventProxy = __webpack_require__(2).EventProxy;
 var util = __webpack_require__(0);
 
 // 文件分块上传全过程，暴露的分块上传接口
