@@ -30,9 +30,9 @@ declare namespace COS {
   /** COS API 使用的时间字符串，为 ISO8601 格式，例如2019-05-24T10:56:40Z */
   type IsoDateTime = string;
   /** 请求里的 Url Query 参数 */
-  type Query = object;
+  type Query = Record<string, any>;
   /** 请求里的 Header 参数 */
-  type Headers = object;
+  type Headers = Record<string, any>;
   /** 一个字符的分隔符，常用 / 字符，用于对对象键进行分组。所有对象键中从 prefix 或从头（如未指定 prefix）到首个 delimiter 之间相同的部分将作为 CommonPrefixes 下的一个 Prefix 节点。被分组的对象键不再出现在后续对象列表中 */
   type Delimiter = '/' | string;
   /** 规定返回值的编码方式，可选值：url，代表返回的对象键为 URL 编码（百分号编码）后的值，例如“腾讯云”将被编码为%E8%85%BE%E8%AE%AF%E4%BA%91 */
@@ -514,7 +514,7 @@ declare namespace COS {
   /** putBucketCors 接口返回值 */
   interface PutBucketCorsResult extends GeneralResult {
     /** 存储桶跨域资源共享（CORS）访问控制规则 */
-    CORSRules: object,
+    CORSRules: Record<string, any>,
   }
 
   // getBucketCors
@@ -541,7 +541,7 @@ declare namespace COS {
   /** putBucketPolicy 接口参数 */
   interface PutBucketPolicyParams extends BucketParams {
     /** 存储桶的权限策略 @see https://cloud.tencent.com/document/product/436/31923 */
-    Policy: object,
+    Policy: Record<string, any>,
   }
   /** putBucketPolicy 接口返回值 */
   interface PutBucketPolicyResult extends GeneralResult {}
@@ -552,7 +552,7 @@ declare namespace COS {
   /** getBucketPolicy 接口返回值 */
   interface GetBucketPolicyResult extends GeneralResult {
     /** 存储桶的权限策略 @see https://cloud.tencent.com/document/product/436/31923 */
-    Policy: object
+    Policy: Record<string, any>
   }
 
   // deleteBucketPolicy
@@ -593,17 +593,17 @@ declare namespace COS {
     /** 指明规则是否启用，枚举值：Enabled，Disabled，必选 */
     Status: 'Enabled' | 'Disabled',
     /** Filter 用于描述规则影响的 Object 集合，必选 */
-    Filter?: object,
+    Filter?: Record<string, any>,
     /** 规则转换属性，对象何时转换为 Standard_IA 或 Archive 等存储类型 */
-    Transition?: object,
+    Transition?: Record<string, any>,
     /** 规则过期属性 */
-    Expiration?: object,
+    Expiration?: Record<string, any>,
     /** 设置允许分片上传保持运行的最长时间 */
-    AbortIncompleteMultipartUpload?: object,
+    AbortIncompleteMultipartUpload?: Record<string, any>,
     /** 指明非当前版本对象何时过期 */
-    NoncurrentVersionExpiration?: object,
+    NoncurrentVersionExpiration?: Record<string, any>,
     /** 指明非当前版本对象何时转换为 STANDARD_IA 或 ARCHIVE 等存储类型 */
-    NoncurrentVersionTransition?: object,
+    NoncurrentVersionTransition?: Record<string, any>,
   };
   /** putBucketLifecycle 接口参数 */
   interface PutBucketLifecycleParams extends BucketParams {
@@ -637,7 +637,7 @@ declare namespace COS {
   /** putBucketVersioning 接口参数 */
   interface PutBucketVersioningParams extends BucketParams {
     /** 存储桶版本控制开关信息 */
-    VersioningConfiguration,
+    VersioningConfiguration: VersioningConfiguration,
   }
   /** putBucketVersioning 接口返回值 */
   interface PutBucketVersioningResult extends GeneralResult {}
@@ -648,7 +648,7 @@ declare namespace COS {
   /** getBucketVersioning 接口返回值 */
   interface GetBucketVersioningResult extends GeneralResult {
     /** 存储桶版本控制开关信息 */
-    VersioningConfiguration,
+    VersioningConfiguration: VersioningConfiguration,
   }
 
   // putBucketReplication
@@ -677,7 +677,7 @@ declare namespace COS {
   /** putBucketReplication 接口参数 */
   interface PutBucketReplicationParams extends BucketParams {
     /** 说明所有复制配置信息 */
-    ReplicationConfiguration,
+    ReplicationConfiguration: ReplicationConfiguration,
   }
   /** putBucketReplication 接口返回值 */
   interface PutBucketReplicationResult extends GeneralResult {}
@@ -688,7 +688,7 @@ declare namespace COS {
   /** getBucketReplication 接口返回值 */
   interface GetBucketReplicationResult extends GeneralResult {
     /** 说明所有复制配置信息 */
-    ReplicationConfiguration
+    ReplicationConfiguration: ReplicationConfiguration,
   }
 
   // deleteBucketReplication
@@ -930,7 +930,7 @@ declare namespace COS {
   /** putBucketLogging 接口参数 */
   interface PutBucketLoggingParams extends BucketParams {
     /** 说明日志记录配置的状态，如果无子节点信息则意为关闭日志记录 */
-    BucketLoggingStatus,
+    BucketLoggingStatus: BucketLoggingStatus,
   }
   /** putBucketLogging 接口返回值 */
   interface PutBucketLoggingResult extends GeneralResult {}
@@ -941,7 +941,7 @@ declare namespace COS {
   /** getBucketLogging 接口返回值 */
   interface GetBucketLoggingResult extends GeneralResult {
     /** 说明日志记录配置的状态，如果无子节点信息则意为关闭日志记录 */
-    BucketLoggingStatus,
+    BucketLoggingStatus: BucketLoggingStatus,
   }
 
   // putBucketInventory
@@ -1012,7 +1012,7 @@ declare namespace COS {
   /** listBucketInventory 接口返回值 */
   interface ListBucketInventoryResult extends GeneralResult {
     /** 包含清单任务的详细信息 */
-    InventoryConfigurations: object,
+    InventoryConfigurations: Record<string, any>,
     /** 当 COS 响应体中 IsTruncated 为 true，且 NextContinuationToken 节点中存在参数值时，您可以将这个参数作为 continuation-token 参数值，以获取下一页的清单任务信息。缺省值：None */
     ContinuationToken: string,
     /** 是否已列出所有清单任务信息的标识。如果已经展示完则为 false，否则为 true */
@@ -1040,7 +1040,7 @@ declare namespace COS {
   /** putBucketAccelerate 接口参数 */
   interface PutBucketAccelerateParams extends BucketParams {
     /** 全球加速的具体信息 */
-    AccelerateConfiguration,
+    AccelerateConfiguration: AccelerateConfiguration,
   }
   /** putBucketAccelerate 接口返回值 */
   interface PutBucketAccelerateResult extends GeneralResult {}
@@ -1051,7 +1051,7 @@ declare namespace COS {
   /** getBucketAccelerate 接口返回值 */
   interface GetBucketAccelerateResult extends GeneralResult {
     /** 全球加速的具体信息 */
-    InventoryConfiguration,
+    InventoryConfiguration: AccelerateConfiguration,
   }
 
   // headObject
@@ -1240,6 +1240,8 @@ declare namespace COS {
   // optionsObject
   /** optionsObject 接口参数 */
   interface OptionsObjectParams extends ObjectParams {
+    /** 发起 CORS 请求所在的页面域名（Origin） */
+    Origin: string,
     /** 发起 CORS 请求所用的方法（Method） */
     AccessControlRequestMethod: Method,
     /** 发起 CORS 请求时使用的 HTTP 请求头部，不区分英文大小写，可使用英文逗号(,)分隔多个头部 */
@@ -1294,7 +1296,7 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     /** 接口的版本信息，当前最新版本是 2 */
     SelectType: number,
     /** 检索参数，当前版本支持检索 JSON、CSV 文件内容 */
-    SelectRequest: object,
+    SelectRequest: Record<string, any>,
     /** 当启用版本控制时，指定要检索的版本 ID，如不指定则检索对象的最新版本 */
     VersionId?: VersionId,
   }
@@ -1637,7 +1639,7 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     /** 上传的进度回调方法 */
     onProgress?: onProgress,
     /** 上传完成回调方法 */
-    onFileFinish?: (err: Error, data?: object) => void,
+    onFileFinish?: (err: Error, data?: Record<string, any>) => void,
   }
   /** 要上传的单个文件参数 */
   interface UploadFileItemResult extends GeneralResult {
@@ -1656,7 +1658,7 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     /** 所有文件整体上传进度回调方法 */
     onProgress?: onProgress,
     /** 所有文件上传完成回调方法 */
-    onFileFinish?: (err: CosError, data?: object) => void,
+    onFileFinish?: (err: CosError, data?: Record<string, any>) => void,
   }
   /** uploadFiles 接口返回值 */
   interface UploadFilesResult extends GeneralResult {
