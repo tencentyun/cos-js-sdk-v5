@@ -1,6 +1,6 @@
 {
   "name": "cos-js-sdk-v5",
-  "version": "1.1.10",
+  "version": "1.1.11",
   "description": "JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)",
   "main": "index.js",
   "types": "types",
@@ -8,7 +8,8 @@
     "server": "node server/sts.js",
     "dev": "cross-env NODE_ENV=development webpack -w",
     "build": "cross-env NODE_ENV=production webpack",
-    "cos-auth.min.js": "uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m"
+    "cos-auth.min.js": "uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m",
+    "nyc": "node test/watcher.js && nyc report --reporter=clover --reporter=cobertura"
   },
   "repository": {
     "type": "git",
@@ -30,9 +31,10 @@
     "body-parser": "^1.18.3",
     "cross-env": "^5.2.0",
     "express": "^4.16.4",
+    "puppeteer": "^5.3.1",
+    "puppeteer-to-istanbul": "^1.4.0",
     "qcloud-cos-sts": "^3.0.2",
     "request": "^2.87.0",
-    "webpack": "^3.12.0",
-    "puppeteer": "^5.3.1"
+    "webpack": "^3.12.0"
   }
 }

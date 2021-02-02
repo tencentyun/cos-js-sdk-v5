@@ -2132,7 +2132,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.9';
+COS.version = '1.1.11';
 
 module.exports = COS;
 

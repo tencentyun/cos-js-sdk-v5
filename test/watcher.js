@@ -1,5 +1,7 @@
+const pti = require('puppeteer-to-istanbul')
 const puppeteer = require('puppeteer');
 
+var path = require('path');
 var fs = require('fs');
 var util = require('util');
 
@@ -13,29 +15,22 @@ console.log = function () {
 }
 console.error = console.log;
 
-puppeteer.launch({
-  args: [
-      '--no-proxy-server',
-      '--no-sandbox',
-      '--disable-setuid-sandbox'
-  ]
-}).then(function (browser) {
-  browser.newPage().then(function (page) {
-    page.on('console', function (msg) {
+(async () => {
+    const browser = await puppeteer.launch({args: ['--no-proxy-server', '--no-sandbox', '--disable-setuid-sandbox']});
+    const page = await browser.newPage();
+    page.on('console', async function (msg) {
         var text = msg.text();
-        var type = msg.type();
         if (text.startsWith('[test-result]')) {
             console.log('==[TESTING-ENDS]==')
-            
             const details = JSON.parse(text.replace('[test-result]', ''))
             console.log(details)
-
-            browser.close()
+            const jsCoverage = await page.coverage.stopJSCoverage();
+            pti.write(jsCoverage, { includeHostname: true , storagePath: './.nyc_output' })
+            await browser.close()
         } else {
             console.log(msg.text())
         }
-
     });
-    page.goto(`http://127.0.0.1:3000/test`);
-  })
-});
+    await page.coverage.startJSCoverage();
+    await page.goto('http://127.0.0.1:3000/test');
+})()

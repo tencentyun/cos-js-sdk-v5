@@ -165,9 +165,9 @@ declare namespace COS {
     /** 获取签名的回调方法，如果没有 SecretId、SecretKey 时，必选 */
     getAuthorization?: (
       options: GetAuthorizationOptions,
-      /** 获取完签名或临时密钥后，回传给 SDK 的方法 */
+      /** callback 获取完签名或临时密钥后，回传给 SDK 的方法 */
       callback: (
-        /** 回传给 SDK 的签名或获取临时密钥 */
+        /** params 回传给 SDK 的签名或获取临时密钥 */
         params: GetAuthorizationCallbackParams
       ) => void
     ) => void,
@@ -182,12 +182,16 @@ declare namespace COS {
     Method?: Method,
     /** 请求路径，最前面带 /，例如 /images/1.jpg，可选 */
     Pathname?: Pathname,
+    /** 请求的对象键，最前面不带 /，例如 images/1.jpg，可选 */
+    Key?: Key,
     /** 要参与签名计算的 Url Query 参数，可选 */
     Query?: Query,
     /** 要参与签名计算的 Header 参数，可选 */
     Headers?: Headers,
     /** 校正时间的偏移值，单位 ms(毫秒)，计算签名时会用设备当前时间戳加上该偏移值，在设备时间有误时可用于校正签名用的时间参数。 */
     SystemClockOffset?: number,
+    /** 签名有效时间戳区间，如果传入了该参数，会赋值给在签名里的 q-key-time 和 q-sign-time 字段，格式如：1611915436;1611916336 */
+    KeyTime: string,
   }
   /** 计算签名或获取临时密钥可能需要的参数列表 */
   interface GetAuthorizationOptions {
@@ -210,6 +214,7 @@ declare namespace COS {
     /** 校正时间的偏移值，单位 ms(毫秒)，计算签名时会用设备当前时间戳加上该偏移值，在设备时间有误时可用于校正签名用的时间参数。 */
     SystemClockOffset: number,
   }
+  /** 请求凭证，包含临时密钥信息 */
   interface Credentials {
     /** 临时密钥 tmpSecretId */
     TmpSecretId: string,
@@ -229,22 +234,27 @@ declare namespace COS {
   type Authorization = string;
   /** SDK 用于请求的凭证，可以是签名，也可以是临时密钥信息 */
   type GetAuthorizationCallbackParams = Authorization | Credentials;
-  /** 错误格式，其中服务端返回错误码可查看 @see https://cloud.tencent.com/document/product/436/7730 */
-  type CosError = null | {
-    /** 请求返回的 HTTP 状态码 */
-    statusCode?: number,
-    /** 请求返回的 header 字段 */
-    headers?: Headers,
-    /** 错误信息，可能是参数错误、客户端出错、或服务端返回的错误 */
-    error: string | Error | { Code: string, Message: string }
-  }
   /** 一般接口的返回结果 */
   interface GeneralResult {
     /** 请求返回的 HTTP 状态码 */
     statusCode?: number,
     /** 请求返回的 header 字段 */
     headers?: Headers,
+    /** 请求的唯一标识 */
+    RequestId?: string,
   }
+  /** SDK 的错误格式，其中服务端返回错误码可查看 @see https://cloud.tencent.com/document/product/436/7730 */
+  interface CosSdkError extends GeneralResult {
+    /** 错误码 */
+    code: string,
+    /** 错误信息 */
+    message: string,
+    /** 错误信息，可能是参数错误、客户端出错、或服务端返回的错误 */
+    error: string | Error | { Code: string, Message: string },
+  }
+  /** 回调的错误格式，其中服务端返回错误码可查看 @see https://cloud.tencent.com/document/product/436/7730 */
+  type CosError = null | CosSdkError;
+  /** 存储桶操作接口的公共参数 */
   interface BucketParams {
     /** 存储桶的名称，格式为<bucketname-appid>，例如examplebucket-1250000000 */
     Bucket: Bucket,
@@ -253,6 +263,7 @@ declare namespace COS {
     /** 请求时带上的 Header 字段 */
     Headers?: Headers,
   }
+  /** 对象操作接口的公共参数 */
   interface ObjectParams {
     /** 存储桶的名称，格式为<bucketname-appid>，例如examplebucket-1250000000 */
     Bucket: Bucket,
@@ -2085,7 +2096,6 @@ declare class COS {
 
   /** 获取文件下载链接 @see https://cloud.tencent.com/document/product/436/35651 */
   getObjectUrl(params: COS.GetObjectUrlParams, callback: (err: COS.CosError, data: COS.GetObjectUrlResult) => void): string;
-  getObjectUrl(params: COS.GetObjectUrlParams): Promise<COS.GetObjectUrlResult>;
 
   /** 获取 COS JSON API (v4) 签名 @see https://cloud.tencent.com/document/product/436/6054 */
   getV4Auth(params: COS.GetV4AuthParams): COS.Authorization;

@@ -89,7 +89,7 @@ if (process.env.NODE_ENV === 'production') {
             }
         }),
         new webpack.optimize.UglifyJsPlugin({
-            sourceMap: true,
+            sourceMap: false,
             output: {
                 ascii_only: true,
             },
