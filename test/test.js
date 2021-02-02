@@ -414,19 +414,34 @@ group('auth check', function () {
     });
 });
 
-group('getBucket()', function () {
+group('getBucket(),listObjectVersions', function () {
     test('正常获取 bucket 里的文件列表', function (done, assert) {
         prepareBucket().then(function () {
             cos.getBucket({
                 Bucket: config.Bucket,
                 Region: config.Region
             }, function (err, data) {
-                assert.equal(true, data.Name === BucketLongName);
-                assert.equal(data.Contents.constructor, Array);
+                assert.ok(data.Name === BucketLongName);
+                assert.ok(data.Contents.constructor, Array);
                 done();
             });
         }).catch(function () {
-            assert.equal(false);
+            assert.ok(false);
+            done();
+        });
+    });
+    test('正常获取 bucket 里的文件版本列表', function (done, assert) {
+        prepareBucket().then(function () {
+            cos.listObjectVersions({
+                Bucket: config.Bucket,
+                Region: config.Region
+            }, function (err, data) {
+                assert.ok(data.Name === BucketLongName);
+                assert.ok(data.Versions.constructor === Array);
+                done();
+            });
+        }).catch(function () {
+            assert.ok(false);
             done();
         });
     });
@@ -500,9 +515,6 @@ group('sliceUploadFile() 完整上传文件', function () {
             });
         });
     });
-});
-
-group('sliceUploadFile(),pauseTask(),restartTask()', function () {
     test('sliceUploadFile(),pauseTask(),restartTask()', function (done, assert) {
         var filename = '10m.zip';
         var blob = util.createFile({size: 1024 * 1024 * 10});
@@ -514,6 +526,7 @@ group('sliceUploadFile(),pauseTask(),restartTask()', function () {
             Key: filename,
             Level: 'file',
         }, function (err, data) {
+            var TaskId;
             cos.sliceUploadFile({
                 Bucket: config.Bucket,
                 Region: config.Region,
@@ -543,19 +556,54 @@ group('sliceUploadFile(),pauseTask(),restartTask()', function () {
             });
         });
     });
-});
-
-group('sliceUploadFile(),cancelTask()', function () {
+    test('sliceUploadFile(),cancelTask(),restartTask()', function (done, assert) {
+        var filename = '10m.zip';
+        var blob = util.createFile({size: 1024 * 1024 * 3});
+        var paused = false;
+        cos.abortUploadTask({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: filename,
+            Level: 'file',
+        }, function (err, data) {
+            var TaskId;
+            cos.sliceUploadFile({
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: filename,
+                Body: blob,
+                onTaskReady: function (taskId) {
+                    TaskId = taskId;
+                },
+                onProgress: function (info) {
+                    if (!paused && info.percent > 0.6) {
+                        cos.cancelTask(TaskId);
+                        setTimeout(function () {
+                            cos.sliceUploadFile({
+                                Bucket: config.Bucket,
+                                Region: config.Region,
+                                Key: filename,
+                                Body: blob,
+                            }, function (err, data) {
+                                assert.ok(!err);
+                                done();
+                            });
+                        }, 10);
+                    }
+                }
+            }, function (err, data) {
+            });
+        });
+    });
     test('sliceUploadFile(),cancelTask()', function (done, assert) {
         var filename = '3m.zip';
-        var blob = util.createFile({size: 1024 * 1024 * 3});
         var alive = false;
         var canceled = false;
         cos.sliceUploadFile({
             Bucket: config.Bucket,
             Region: config.Region,
             Key: filename,
-            Body: blob,
+            Body: util.createFile({size: 1024 * 1024 * 3}),
             onTaskReady: function (taskId) {
                 TaskId = taskId;
             },
@@ -700,8 +748,8 @@ group('headBucket()', function () {
             Bucket: config.Bucket,
             Region: config.Region
         }, function (err, data) {
-            assert.equal(true, data.Name === BucketLongName, '能列出 bucket');
-            assert.equal(data.Contents.constructor, Array, '正常获取 bucket 里的文件列表');
+            assert.ok(data.Name === BucketLongName, '能列出 bucket');
+            assert.ok(data.Contents.constructor === Array, '正常获取 bucket 里的文件列表');
             done();
         });
     });
@@ -1054,6 +1102,7 @@ group('putObjectCopy()', function () {
 });
 
 group('sliceCopyFile()', function () {
+    var filename = 'bigger.zip';
     var Key = 'bigger.copy.zip';
     test('正常分片复制 object', function (done, assert) {
         prepareBigObject(true).then(function () {
@@ -1068,7 +1117,7 @@ group('sliceCopyFile()', function () {
                     Region: config.Region,
                     Key: Key,
                     CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/'+ filename,
-                    SliceSize: 5 * 1024 * 1024,
+                    CopySliceSize: 5 * 1024 * 1024,
                 },function (err, data) {
                     if (err) throw err;
                     assert.ok(data.ETag.length > 0);
@@ -1084,6 +1133,8 @@ group('sliceCopyFile()', function () {
                         delete data2.headers['x-cos-request-id'];
                         delete data1.headers['x-cos-version-id'];
                         delete data2.headers['x-cos-version-id'];
+                        delete data1.headers['x-cos-replication-status'];
+                        delete data2.headers['x-cos-replication-status'];
                         delete data1.headers['last-modified'];
                         delete data2.headers['last-modified'];
                         delete data1.headers['date'];
@@ -1092,6 +1143,8 @@ group('sliceCopyFile()', function () {
                         delete data2.headers['etag'];
                         delete data1.ETag;
                         delete data2.ETag;
+                        delete data1.RequestId;
+                        delete data2.RequestId;
                         assert.ok(comparePlainObject(data1, data2));
                         done();
                     });
@@ -1102,7 +1155,6 @@ group('sliceCopyFile()', function () {
             done();
         });
     });
-    var filename = 'bigger.zip';
     test('单片复制 object', function (done, assert) {
         setTimeout(function () {
             prepareBigObject(true).then(function () {
@@ -1134,10 +1186,14 @@ group('sliceCopyFile()', function () {
                                 delete data2.headers['x-cos-request-id'];
                                 delete data1.headers['x-cos-version-id'];
                                 delete data2.headers['x-cos-version-id'];
+                                delete data1.headers['x-cos-replication-status'];
+                                delete data2.headers['x-cos-replication-status'];
                                 delete data1.headers['last-modified'];
                                 delete data2.headers['last-modified'];
                                 delete data1.headers['date'];
                                 delete data2.headers['date'];
+                                delete data1.RequestId;
+                                delete data2.RequestId;
                                 assert.ok(comparePlainObject(data1, data2));
                                 done();
                             });
@@ -1149,6 +1205,36 @@ group('sliceCopyFile()', function () {
                 done();
             });
         }, 2000);
+    });
+    test('CopySource nor found', function (done, assert) {
+        cos.sliceCopyFile({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: Key,
+            CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + Date.now(),
+        }, function (err, data) {
+            assert.ok(err);
+            done();
+        });
+    });
+    test('复制归档文件', function (done, assert) {
+        var sourceKey = Date.now().toString(36);
+        cos.putObject({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: sourceKey,
+            StorageClass: 'ARCHIVE',
+        }, function () {
+            cos.sliceCopyFile({
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: Key,
+                CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + sourceKey,
+            }, function (err, data) {
+                assert.ok(err);
+                done();
+            });
+        });
     });
 });
 
@@ -1815,7 +1901,6 @@ group('BucketPolicy', function () {
             Region: config.Region,
             Policy: Policy
         }, function (err, data) {
-            if (err) console.log(JSON.stringify(err));
             assert.ok(!err);
             cos.getBucketPolicy({
                 Bucket: config.Bucket,
@@ -1832,13 +1917,28 @@ group('BucketPolicy', function () {
             Region: config.Region,
             Policy: JSON.stringify(Policy)
         }, function (err, data) {
-            if (err) console.log(JSON.stringify(err));
             assert.ok(!err);
             cos.getBucketPolicy({
                 Bucket: config.Bucket,
                 Region: config.Region
             }, function (err, data) {
                 assert.ok(getRes(Policy.statement) === getRes(data.Policy.Statement));
+                done();
+            });
+        });
+    });
+    test('deleteBucketPolicy()', function (done, assert) {
+        cos.deleteBucketPolicy({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Policy: JSON.stringify(Policy)
+        }, function (err, data) {
+            assert.ok(!err);
+            cos.getBucketPolicy({
+                Bucket: config.Bucket,
+                Region: config.Region
+            }, function (err, data) {
+                assert.ok(err.ErrorStatus === 'Policy Not Found');
                 done();
             });
         });
@@ -2065,11 +2165,11 @@ group('BucketDomain', function () {
         Name: "www.testDomain1.com",
         Type: "REST"
     },
-        {
-            Status: "DISABLED",
-            Name: "www.testDomain2.com",
-            Type: "WEBSITE"
-        }];
+    {
+        Status: "DISABLED",
+        Name: "www.testDomain2.com",
+        Type: "WEBSITE"
+    }];
     test('putBucketDomain(),getBucketDomain()', function (done, assert) {
         cos.putBucketDomain({
             Bucket: config.Bucket,
@@ -2131,7 +2231,7 @@ group('params check Region', function () {
             Bucket: config.Bucket,
             Region: 'cos.ap-guangzhou'
         }, function (err, data) {
-            assert.ok(err.error === 'param Region should not be start with "cos."');
+            assert.ok(err.message === 'param Region should not be start with "cos."');
             done();
         });
     });
@@ -2184,7 +2284,7 @@ group('Bucket 格式有误', function () {
             Bucket: '中文-1250000000',
             Region: config.Region,
         }, function (err, data) {
-            assert.ok(err && err.error === 'Bucket should format as "test-1250000000".');
+            assert.ok(err && err.message === 'Bucket should format as "test-1250000000".');
             done();
         });
     });
@@ -2193,7 +2293,7 @@ group('Bucket 格式有误', function () {
             Bucket: 'te/st-1250000000',
             Region: config.Region,
         }, function (err, data) {
-            assert.ok(err && err.error === 'Bucket should format as "test-1250000000".');
+            assert.ok(err && err.message === 'Bucket should format as "test-1250000000".');
             done();
         });
     });
@@ -2202,7 +2302,7 @@ group('Bucket 格式有误', function () {
             Bucket: 'te.st-1250000000',
             Region: config.Region,
         }, function (err, data) {
-            assert.ok(err && err.error === 'Bucket should format as "test-1250000000".');
+            assert.ok(err && err.message === 'Bucket should format as "test-1250000000".');
             done();
         });
     });
@@ -2211,7 +2311,7 @@ group('Bucket 格式有误', function () {
             Bucket: 'te:st-1250000000',
             Region: config.Region,
         }, function (err, data) {
-            assert.ok(err && err.error === 'Bucket should format as "test-1250000000".');
+            assert.ok(err && err.message === 'Bucket should format as "test-1250000000".');
             done();
         });
     });
@@ -2223,7 +2323,7 @@ group('Region 格式有误', function () {
             Bucket: 'test-1250000000',
             Region: '中文',
         }, function (err, data) {
-            assert.ok(err && err.error === 'Region format error.');
+            assert.ok(err && err.message === 'Region format error.');
             done();
         });
     });
@@ -2232,7 +2332,7 @@ group('Region 格式有误', function () {
             Bucket: 'test-1250000000',
             Region: 'test/',
         }, function (err, data) {
-            assert.ok(err && err.error === 'Region format error.');
+            assert.ok(err && err.message === 'Region format error.');
             done();
         });
     });
@@ -2241,7 +2341,7 @@ group('Region 格式有误', function () {
             Bucket: 'test-1250000000',
             Region: 'test:',
         }, function (err, data) {
-            assert.ok(err && err.error === 'Region format error.');
+            assert.ok(err && err.message === 'Region format error.');
             done();
         });
     });
@@ -2710,7 +2810,6 @@ group('Cache-Control', function (val) {
     });
 });
 
-
 group('BucketLogging', function () {
     var TargetBucket = config.Bucket;
     var TargetPrefix = 'bucket-logging-prefix' + Date.now().toString(36) + '/';
@@ -3059,7 +3158,7 @@ group('getBucketAccelerate', function () {
 });
 
 group('Promise', function () {
-    test('getService callback', function (done, assert) {
+    test('headBucket callback', function (done, assert) {
         var res = cos.headBucket({
             Bucket: config.Bucket,
             Region: config.Region,
@@ -3112,8 +3211,575 @@ group('Promise', function () {
             assert.ok(!data);
             done();
         }).catch(function (err) {
-            assert.ok(err && err.error === 'Region format error.');
+            assert.ok(err && err.message === 'Region format error.');
             done();
         });
     });
 });
+
+group('Query 的键值带有特殊字符', function () {
+    test('getAuth() 特殊字符', function (done, assert) {
+        var content = Date.now().toString();
+        var key = '1.txt';
+        cos.putObject({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: key,
+            Body: content,
+        }, function (err, data) {
+            var str = 'qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM,./;\'[]\\-=0987654321`~!@#$%^&*()_+{}|":>?<';
+            var qs = {};
+            qs[str] = str;
+            cos.options.getAuthorization({
+                Method: 'get',
+                Key: key,
+                // Query: qs,
+                Scope: [{
+                    action: 'GetObject',
+                    bucket: config.Bucket,
+                    region: config.Region,
+                    prefix: key,
+                }],
+            }, function (AuthData) {
+                if (typeof AuthData === 'string') {
+                    AuthData = {Authorization: AuthData};
+                }
+                if (!AuthData.Authorization) {
+                    AuthData.Authorization = COS.getAuthorization({
+                        SecretId: AuthData.TmpSecretId,
+                        SecretKey: AuthData.TmpSecretKey,
+                        Method: 'get',
+                        Key: key,
+                        SystemClockOffset: cos.options.SystemClockOffset,
+                    });
+                }
+                var link = 'http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' +
+                    camSafeUrlEncode(key).replace(/%2F/g, '/') + '?' + AuthData.Authorization +
+                    (AuthData.XCosSecurityToken ? '&x-cos-security-token=' + AuthData.XCosSecurityToken : '') +''
+                    // '&' + camSafeUrlEncode(str) + '=' + camSafeUrlEncode(str);
+                request({
+                    url: link,
+                }, function (err, response, body) {
+                    assert.ok(response.statusCode === 200);
+                    assert.ok(body === content);
+                    done();
+                });
+            });
+        });
+    });
+    // test('getAuth()', function (done, assert) {
+    //     var content = Date.now().toString();
+    //     var key = '1.txt';
+    //     cos.putObject({
+    //         Bucket: config.Bucket,
+    //         Region: config.Region,
+    //         Key: key,
+    //         Body: content,
+    //     }, function (err, data) {
+    //         var str = 'qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM,./;\'[]\\-=0987654321`~!@#$%^&*()_+{}|":>?<';
+    //         var qs = {};
+    //         qs[str] = str;
+    //         cos.options.getAuthorization({
+    //             Method: 'get',
+    //             Key: key,
+    //             Scope: [{
+    //                 action: 'GetObject',
+    //                 bucket: config.Bucket,
+    //                 region: config.Region,
+    //                 prefix: key,
+    //             }],
+    //             Query: qs,
+    //         }, function (AuthData) {
+    //             if (typeof AuthData === 'string') {
+    //                 AuthData = {Authorization: AuthData};
+    //             }
+    //             if (!AuthData.Authorization) {
+    //                 AuthData.Authorization = COS.getAuthorization({
+    //                     SecretId: AuthData.TmpSecretId,
+    //                     SecretKey: AuthData.TmpSecretKey,
+    //                     Method: 'get',
+    //                     Key: key,
+    //                     SystemClockOffset: cos.options.SystemClockOffset,
+    //                 });
+    //             }
+    //             var link = 'http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' +
+    //                 camSafeUrlEncode(key).replace(/%2F/g, '/') +
+    //                 '?sign=' + camSafeUrlEncode(AuthData.Authorization) +
+    //                 (AuthData.XCosSecurityToken ? '&x-cos-security-token=' + AuthData.XCosSecurityToken : '') +
+    //                 '&' + camSafeUrlEncode(str) + '=' + camSafeUrlEncode(str);
+    //             request({
+    //                 method: 'GET',
+    //                 url: link,
+    //             }, function (err, response, body) {
+    //                 assert.ok(response.statusCode === 200);
+    //                 assert.ok(body === content);
+    //                 done();
+    //             });
+    //         });
+    //     });
+    // });
+});
+
+// group('selectObjectContent(),selectObjectContentStream()', function () {
+//     var key = '1.json';
+//     var selectJsonOpt = {
+//         Bucket: config.Bucket,
+//         Region: config.Region,
+//         Key: key,
+//         SelectType: 2,
+//         SelectRequest: {
+//             Expression: "Select * from COSObject",
+//             ExpressionType: "SQL",
+//             InputSerialization: {JSON: {Type: "DOCUMENT",},},
+//             OutputSerialization: {JSON: {RecordDelimiter: "\n"},},
+//             RequestProgress: {Enabled: "FALSE"}
+//         },
+//     };
+//     test('selectObjectContent', function (done, assert) {
+//         var time = Date.now();
+//         var content = `{"a":123,"b":"${time}","c":{"d":456}}`;
+//         cos.putObject({
+//             Bucket: config.Bucket,
+//             Region: config.Region,
+//             Key: key,
+//             Body: content,
+//         }, function (err, data) {
+//             var bufList = [];
+//             var writeStream = new Writable({
+//                 write: function (chunk, encoding, callback) {
+//                     bufList.push(chunk);
+//                     callback();
+//                 },
+//             });
+//             cos.selectObjectContent(selectJsonOpt, function (err, data) {
+//                 assert.ok(data.Payload.toString() === content + '\n');
+//                 done();
+//             });
+//         });
+//     });
+//     test('selectObjectContent', function (done, assert) {
+//         var time = Date.now();
+//         var content = `{"a":123,"b":"${time}","c":{"d":456}`;
+//         cos.putObject({
+//             Bucket: config.Bucket,
+//             Region: config.Region,
+//             Key: key,
+//             Body: content,
+//         }, function (err, data) {
+//             var bufList = [];
+//             cos.selectObjectContent(selectJsonOpt, function (err, data) {
+//                 assert.ok(err);
+//                 done();
+//             });
+//         });
+//     });
+//     test('selectObjectContentStream', function (done, assert) {
+//         var time = Date.now();
+//         var content = `{"a":123,"b":"${time}","c":{"d":456}}`;
+//         cos.putObject({
+//             Bucket: config.Bucket,
+//             Region: config.Region,
+//             Key: key,
+//             Body: content,
+//         }, function (err, data) {
+//             var bufList = [];
+//             var writeStream = new Writable({
+//                 write: function (chunk, encoding, callback) {
+//                     bufList.push(chunk);
+//                     callback();
+//                 },
+//             });
+//             cos.selectObjectContentStream(selectJsonOpt, function (err, data) {
+//                 assert.ok(Buffer.concat(bufList).toString() === content + '\n');
+//                 done();
+//             }).pipe(writeStream);
+//         });
+//     });
+// });
+//
+// group('putBucketVersioning(),getBucketVersioning()', function () {
+//     test('Enabled', function (done, assert) {
+//         cos.deleteBucketReplication({
+//             Bucket: config.Bucket, // Bucket 格式：test-1250000000
+//             Region: config.Region,
+//             VersioningConfiguration: {
+//                 Status: "Enabled"
+//             }
+//         }, function (err, data) {
+//             cos.putBucketVersioning({
+//                 Bucket: config.Bucket, // Bucket 格式：test-1250000000
+//                 Region: config.Region,
+//                 VersioningConfiguration: {
+//                     Status: "Enabled"
+//                 }
+//             }, function (err, data) {
+//                 setTimeout(function () {
+//                     cos.getBucketVersioning({
+//                         Bucket: config.Bucket,
+//                         Region: config.Region,
+//                     }, function (err, data) {
+//                         assert.ok(data.VersioningConfiguration.Status === 'Enabled');
+//                         done();
+//                     });
+//                 }, 2000);
+//             });
+//         });
+//     });
+//     test('Suspended', function (done, assert) {
+//         cos.putBucketVersioning({
+//             Bucket: config.Bucket, // Bucket 格式：test-1250000000
+//             Region: config.Region,
+//             VersioningConfiguration: {
+//                 Status: 'Suspended'
+//             }
+//         }, function (err, data) {
+//             assert.ok(!err);
+//             setTimeout(function () {
+//                 cos.getBucketVersioning({
+//                     Bucket: config.Bucket,
+//                     Region: config.Region,
+//                 }, function (err, data) {
+//                     console.log(data.VersioningConfiguration.Status);
+//                     assert.ok(data.VersioningConfiguration.Status === 'Suspended');
+//                     done();
+//                 });
+//             }, 2000);
+//         });
+//     });
+// });
+//
+// group('BucketReplication', function () {
+//     var prepared = false;
+//     var repBucket = config.Bucket.replace(/^(.*)(-\d+)$/, '$1-replication$2')
+//     var repBucketName = repBucket.replace(/(-\d+)$/, '')
+//     var repRegion = 'ap-chengdu';
+//     var prepareBucket = function (callback) {
+//         cos.putBucket({
+//             Bucket: repBucket,
+//             Region: repRegion,
+//         }, function (err, data) {
+//             cos.putBucketVersioning({
+//                 Bucket: config.Bucket,
+//                 Region: config.Region,
+//                 VersioningConfiguration: {
+//                     Status: 'Enabled'
+//                 }
+//             }, function (err, data) {
+//                 cos.putBucketVersioning({
+//                     Bucket: repBucket,
+//                     Region: repRegion,
+//                     VersioningConfiguration: {
+//                         Status: 'Enabled'
+//                     }
+//                 }, function (err, data) {
+//                     prepared = true
+//                     callback();
+//                 });
+//             });
+//         });
+//     };
+//     test('putBucketReplication();getBucketReplication()', function (done, assert) {
+//         var ruleId = Date.now().toString(36);
+//         prepareBucket(function () {
+//             cos.putBucketReplication({
+//                 Bucket: config.Bucket, // Bucket 格式：test-1250000000
+//                 Region: config.Region,
+//                 ReplicationConfiguration: {
+//                     Role: "qcs::cam::uin/10001:uin/10001",
+//                     Rules: [{
+//                         ID: ruleId,
+//                         Status: "Enabled",
+//                         Prefix: "sync/",
+//                         Destination: {
+//                             Bucket: `qcs:id/0:cos:${repRegion}:appid/${AppId}:${repBucketName}`,
+//                         }
+//                     }]
+//                 }
+//             }, function (err, data) {
+//                 assert.ok(!err);
+//                 cos.getBucketReplication({
+//                     Bucket: config.Bucket, // Bucket 格式：test-1250000000
+//                     Region: config.Region,
+//                 }, function (err, data) {
+//                     assert.ok(data.ReplicationConfiguration.Rules[0].ID === ruleId);
+//                     done();
+//                 });
+//             });
+//         });
+//     });
+//     test('deleteBucketReplication()', function (done, assert) {
+//         cos.deleteBucketReplication({
+//             Bucket: config.Bucket, // Bucket 格式：test-1250000000
+//             Region: config.Region,
+//             VersioningConfiguration: {
+//                 Status: 'Suspended'
+//             }
+//         }, function (err, data) {
+//             assert.ok(!err);
+//             setTimeout(function () {
+//                 cos.getBucketReplication({
+//                     Bucket: config.Bucket,
+//                     Region: config.Region,
+//                 }, function (err, data) {
+//                     assert.ok(err && err.statusCode === 404);
+//                     done();
+//                 });
+//             }, 2000);
+//         });
+//     });
+// });
+//
+// group('optionsObject()', function () {
+//     test('optionsObject()', function (done, assert) {
+//         cos.putBucketCors({
+//             Bucket: config.Bucket, // Bucket 格式：test-1250000000
+//             Region: config.Region,
+//             CORSRules: [{
+//                 "AllowedOrigins": ["*"],
+//                 "AllowedMethods": ["GET", "POST", "PUT", "DELETE", "HEAD"],
+//                 "AllowedHeaders": ["*", 'test-' + Date.now().toString(36)],
+//                 "ExposeHeaders": ['etag'],
+//                 "MaxAgeSeconds": "5"
+//             }],
+//         }, function (err, data) {
+//             cos.optionsObject({
+//                 Bucket: config.Bucket, // Bucket 格式：test-1250000000
+//                 Region: config.Region,
+//                 Key: '1.jpg',
+//                 Origin: 'https://qq.com',
+//                 'AccessControlRequestMethod': 'PUT',
+//                 'AccessControlRequestHeaders': 'Authorization,x-cos-security-token',
+//             }, function (err, data) {
+//                 assert.ok(data && data.statusCode === 200);
+//                 done();
+//             });
+//         });
+//     });
+//     test('delete cors, optionsObject()', function (done, assert) {
+//         cos.deleteBucketCors({
+//             Bucket: config.Bucket, // Bucket 格式：test-1250000000
+//             Region: config.Region,
+//         }, function (err, data) {
+//             cos.optionsObject({
+//                 Bucket: config.Bucket, // Bucket 格式：test-1250000000
+//                 Region: config.Region,
+//                 Key: '1.jpg',
+//                 Headers: {
+//                     Origin: 'https://qq.com',
+//                     'Access-Control-Request-Method': 'PUT',
+//                     'Access-Control-Request-Headers': 'Authorization,x-cos-security-token',
+//                 },
+//             }, function (err, data) {
+//                 assert.ok(err);
+//                 done();
+//             });
+//         });
+//     });
+// });
+//
+// group('BucketOrigin', function () {
+//     test('putBucketOrigin(),getBucketOrigin()', function (done, assert) {
+//         var prefix = Date.now().toString(36) + '/';
+//         cos.putBucketOrigin({
+//             Bucket: config.Bucket,
+//             Region: config.Region,
+//             OriginRule: [{
+//                 OriginType: 'Mirror',
+//                 OriginCondition: {HTTPStatusCode: 404, Prefix: ''},
+//                 OriginParameter: {
+//                     Protocol: 'HTTP',
+//                     FollowQueryString: 'true',
+//                     HttpHeader: {
+//                         NewHttpHeader: {
+//                             Header: [{
+//                                 Key: 'a',
+//                                 Value: 'a'
+//                             }]
+//                         }
+//                     },
+//                     FollowRedirection: 'true',
+//                     HttpRedirectCode: ['301', '302']
+//                 },
+//                 OriginInfo: {
+//                     HostInfo: {HostName: 'qq.com'},
+//                     FileInfo: {
+//                         PrefixConfiguration: {Prefix: prefix},
+//                         SuffixConfiguration: {Suffix: '.jpg'}
+//                     }
+//                 },
+//                 RulePriority: 1
+//             }]
+//         }, function (err, data) {
+//             assert.ok(!err);
+//             cos.getBucketOrigin({
+//                 Bucket: config.Bucket,
+//                 Region: config.Region
+//             }, function (err, data) {
+//                 assert.ok(data.OriginRule[0].OriginInfo.FileInfo.PrefixConfiguration.Prefix === prefix);
+//                 done();
+//             });
+//         });
+//     });
+//     test('deleteBucketOrigin()', function (done, assert) {
+//         cos.deleteBucketOrigin({
+//             Bucket: config.Bucket,
+//             Region: config.Region
+//         }, function (err, data) {
+//             assert.ok(!err);
+//             setTimeout(function () {
+//                 cos.getBucketOrigin({
+//                     Bucket: config.Bucket,
+//                     Region: config.Region
+//                 }, function (err, data) {
+//                     assert.ok(err);
+//                     done();
+//                 });
+//             }, 2000);
+//         });
+//     });
+// });
+//
+// group('BucketReferer', function () {
+//     test('putBucketReferer(),getBucketReferer()', function (done, assert) {
+//         var conf = {
+//             Status: 'Enabled',
+//             RefererType: 'White-List',
+//             DomainList: {
+//                 Domains: [
+//                     Date.now().toString(36) + '.qq.com',
+//                     '*.qcloud.com',
+//                 ]
+//             },
+//             EmptyReferConfiguration: 'Allow',
+//         };
+//         cos.putBucketReferer({
+//             Bucket: config.Bucket,
+//             Region: config.Region,
+//             RefererConfiguration: conf
+//         }, function (err, data) {
+//             assert.ok(!err);
+//             setTimeout(function () {
+//                 cos.getBucketReferer({
+//                     Bucket: config.Bucket,
+//                     Region: config.Region
+//                 }, function (err, data) {
+//                     assert.ok(comparePlainObject(conf, data.RefererConfiguration));
+//                     done();
+//                 });
+//             }, 2000);
+//         });
+//     });
+// });
+//
+// group('restoreObject()', function () {
+//     test('restoreObject()', function (done, assert) {
+//         cos.putObject({
+//             Bucket: config.Bucket,
+//             Region: config.Region,
+//             Key: '1.jpg',
+//             Body: '123',
+//             StorageClass: 'ARCHIVE'
+//         }, function (err, data) {
+//             assert.ok(!err);
+//             cos.restoreObject({
+//                 Bucket: config.Bucket,
+//                 Region: config.Region,
+//                 Key: '1.jpg',
+//                 RestoreRequest: {
+//                     Days: 1,
+//                     CASJobParameters: {
+//                         Tier: 'Expedited'
+//                     }
+//                 },
+//             }, function (err, data) {
+//                 assert.ok(data && Math.floor(data.statusCode / 100) === 2);
+//                 done();
+//             });
+//         });
+//     });
+// });
+//
+// group('uploadFiles()', function () {
+//     test('uploadFiles()', function (done, assert) {
+//         var filename = '1.zip';
+//         cos.uploadFiles({
+//             files: [{
+//                 Bucket: config.Bucket,
+//                 Region: config.Region,
+//                 Key: filename,
+//                 Body: '123456',
+//             }],
+//         }, function (err, data) {
+//             assert.ok(!data.files.error);
+//             done();
+//         });
+//     });
+// });
+//
+// group('multipartAbort()', function () {
+//     test('multipartAbort()', function (done, assert) {
+//         var Key = '1.jpg'
+//         cos.multipartInit({
+//             Bucket: config.Bucket,
+//             Region: config.Region,
+//             Key: Key,
+//         }, function (err, data) {
+//             assert.ok(!err);
+//             var UploadId = data.UploadId;
+//             cos.multipartAbort({
+//                 Bucket: config.Bucket,
+//                 Region: config.Region,
+//                 Key: Key,
+//                 UploadId: UploadId,
+//             }, function (err, data) {
+//                 assert.ok(!err);
+//                 cos.multipartListPart({
+//                     Bucket: config.Bucket,
+//                     Region: config.Region,
+//                     Key: Key,
+//                     UploadId: UploadId,
+//                 }, function (err, data) {
+//                     assert.ok(err);
+//                     done();
+//                 });
+//             });
+//         });
+//     });
+// });
+//
+//
+// group('sliceUploadFile() 续传', function () {
+//     test('multipartAbort()', function (done, assert) {
+//         var Key = '3.zip'
+//         var filepath = path.resolve(__dirname, Key);
+//         cos.multipartInit({
+//             Bucket: config.Bucket,
+//             Region: config.Region,
+//             Key: Key,
+//         }, function (err, data) {
+//             assert.ok(!err);
+//             var UploadId = data.UploadId;
+//             cos.multipartUpload({
+//                 Bucket: config.Bucket,
+//                 Region: config.Region,
+//                 Key: Key,
+//                 UploadId: UploadId,
+//                 PartNumber: 1,
+//                 Body: util.createFile({size: 1024 * 1024}),
+//             }, function (err, data) {
+//                 assert.ok(!err);
+//                 cos.sliceUploadFile({
+//                     Bucket: config.Bucket,
+//                     Region: config.Region,
+//                     Key: Key,
+//                     Body: util.createFile({size: 1024 * 1024 * 3}),
+//                     ChunkSize: 1024 * 1024,
+//                 }, function (err, data) {
+//                     assert.ok(data);
+//                     fs.unlinkSync(filepath);
+//                     done();
+//                 });
+//             });
+//         });
+//     });
+// });

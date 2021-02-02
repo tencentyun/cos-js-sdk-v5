@@ -1,7 +1,6 @@
 const pti = require('puppeteer-to-istanbul')
 const puppeteer = require('puppeteer');
 
-var path = require('path');
 var fs = require('fs');
 var util = require('util');
 
