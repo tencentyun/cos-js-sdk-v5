@@ -249,7 +249,7 @@ declare namespace COS {
     code: string,
     /** 错误信息 */
     message: string,
-    /** 错误信息，可能是参数错误、客户端出错、或服务端返回的错误 */
+    /** 兼容老的错误信息字段，不建议使用，可能是参数错误、客户端出错、或服务端返回的错误 */
     error: string | Error | { Code: string, Message: string },
   }
   /** 回调的错误格式，其中服务端返回错误码可查看 @see https://cloud.tencent.com/document/product/436/7730 */
