@@ -34,8 +34,8 @@ var getAuth = function (opt) {
         pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
     }
 
-    if (!SecretId) return console.error('missing param SecretId');
-    if (!SecretKey) return console.error('missing param SecretKey');
+    if (!SecretId) throw new Error('missing param SecretId');
+    if (!SecretKey) throw new Error('missing param SecretKey');
 
     var getObjectKeys = function (obj, forKey) {
         var list = [];
@@ -110,6 +110,65 @@ var getAuth = function (opt) {
 
     return authorization;
 
+};
+
+var readIntBE = function (chunk, size, offset) {
+    var bytes = size / 8;
+    var buf = chunk.slice(offset, offset + bytes);
+    new Uint8Array(buf).reverse();
+    return new ({8: Uint8Array, 16: Uint16Array, 32: Uint32Array})[size](buf)[0];
+};
+var buf2str = function (chunk, start, end, isUtf8) {
+    var buf = chunk.slice(start, end);
+    var str = '';
+    new Uint8Array(buf).forEach(function (charCode) {
+        str += String.fromCharCode(charCode)
+    });
+    if (isUtf8) str = decodeURIComponent(escape(str));
+    return str;
+};
+var parseSelectPayload = function (chunk) {
+    var header = {};
+    var body = buf2str(chunk);
+    var result = {records:[]};
+    while (chunk.byteLength) {
+        var totalLength = readIntBE(chunk, 32, 0);
+        var headerLength = readIntBE(chunk, 32, 4);
+        var payloadRestLength = totalLength - headerLength - 16;
+        var offset = 0;
+        var content;
+        chunk = chunk.slice(12);
+        // 获取 Message 的 header 信息
+        while (offset < headerLength) {
+            var headerNameLength = readIntBE(chunk, 8, offset);
+            var headerName = buf2str(chunk, offset + 1, offset + 1 + headerNameLength);
+            var headerValueLength = readIntBE(chunk, 16, offset + headerNameLength + 2);
+            var headerValue = buf2str(chunk, offset + headerNameLength + 4, offset + headerNameLength + 4 + headerValueLength);
+            header[headerName] = headerValue;
+            offset += headerNameLength + 4 + headerValueLength;
+        }
+        if (header[':event-type'] === 'Records') {
+            content = buf2str(chunk, offset, offset + payloadRestLength, true);
+            result.records.push(content);
+        } else if (header[':event-type'] === 'Stats') {
+            content = buf2str(chunk, offset, offset + payloadRestLength, true);
+            result.stats = util.xml2json(content).Stats;
+        } else if (header[':event-type'] === 'error') {
+            var errCode = header[':error-code'];
+            var errMessage = header[':error-message'];
+            var err = new Error(errMessage);
+            err.message = errMessage;
+            err.name = err.code = errCode;
+            result.error = err;
+        } else if (['Progress', 'Continuation', 'End'].includes(header[':event-type'])) {
+            // do nothing
+        }
+        chunk = chunk.slice(offset + payloadRestLength + 4);
+    }
+    return {
+        payload: result.records.join(''),
+        body: body,
+    };
 };
 
 var noop = function () {
@@ -394,6 +453,7 @@ var formatParams = function (apiName, params) {
                 'x-cos-grant-read-acp': 'GrantReadAcp',
                 'x-cos-grant-write-acp': 'GrantWriteAcp',
                 'x-cos-storage-class': 'StorageClass',
+                'x-cos-traffic-limit': 'TrafficLimit',
                 // SSE-C
                 'x-cos-server-side-encryption-customer-algorithm': 'SSECustomerAlgorithm',
                 'x-cos-server-side-encryption-customer-key': 'SSECustomerKey',
@@ -433,6 +493,7 @@ var apiWrapper = function (apiName, apiFn) {
         // 代理回调函数
         var formatResult = function (result) {
             if (result && result.headers) {
+                result.headers['x-cos-request-id'] && (result.RequestId = result.headers['x-cos-request-id']);
                 result.headers['x-cos-version-id'] && (result.VersionId = result.headers['x-cos-version-id']);
                 result.headers['x-cos-delete-marker'] && (result.DeleteMarker = result.headers['x-cos-delete-marker']);
             }
@@ -491,11 +552,11 @@ var apiWrapper = function (apiName, apiFn) {
                 callback = function (err, data) {
                     err ? reject(err) : resolve(data);
                 };
-                if (errMsg) return _callback({error: errMsg});
+                if (errMsg) return _callback(util.error(new Error(errMsg)));
                 apiFn.call(self, params, _callback);
             });
         } else {
-            if (errMsg) return _callback({error: errMsg});
+            if (errMsg) return _callback(util.error(new Error(errMsg)));
             var res = apiFn.call(self, params, _callback);
             if (isSync) return res;
         }
@@ -555,7 +616,7 @@ var getFileSize = function (api, params, callback) {
     if ((params.Body && (params.Body instanceof Blob || params.Body.toString() === '[object File]' || params.Body.toString() === '[object Blob]'))) {
         size = params.Body.size;
     } else {
-        callback({error: 'params body format error, Only allow File|Blob|String.'});
+        callback(util.error(new Error('params body format error, Only allow File|Blob|String.')));
         return;
     }
     params.ContentLength = size;
@@ -566,6 +627,33 @@ var getFileSize = function (api, params, callback) {
 var getSkewTime = function (offset) {
     return Date.now() + (offset || 0);
 };
+
+
+var error = function (err, opt) {
+    var sourceErr = err;
+    err.message = err.message || null;
+
+    if (typeof opt === 'string') {
+        err.error = opt;
+        err.message = opt;
+    } else if (typeof opt === 'object' && opt !== null) {
+        extend(err, opt);
+        if (opt.code || opt.name) err.code = opt.code || opt.name;
+        if (opt.message) err.message = opt.message;
+        if (opt.stack) err.stack = opt.stack;
+    }
+
+    if (typeof Object.defineProperty === 'function') {
+        Object.defineProperty(err, 'name', {writable: true, enumerable: false});
+        Object.defineProperty(err, 'message', {enumerable: true});
+    }
+
+    err.name = opt && opt.name || err.name || err.code || 'Error';
+    if (!err.code) err.code = err.name;
+    if (!err.error) err.error = clone(sourceErr); // 兼容老的错误格式
+
+    return err;
+}
 
 var util = {
     noop: noop,
@@ -593,7 +681,9 @@ var util = {
     throttleOnProgress: throttleOnProgress,
     getFileSize: getFileSize,
     getSkewTime: getSkewTime,
+    error: error,
     getAuth: getAuth,
+    parseSelectPayload: parseSelectPayload,
     isBrowser: true,
 };
 

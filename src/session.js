@@ -12,7 +12,7 @@ var getCache = function () {
     } catch (e) {
     }
     if (!val) val = [];
-    return val;
+    cache = val;
 };
 var setCache = function () {
     try {
@@ -23,7 +23,7 @@ var setCache = function () {
 
 var init = function () {
     if (cache) return;
-    cache = getCache();
+    getCache.call(this);
     // 清理太老旧的数据
     var changed = false;
     var now = Math.round(Date.now() / 1000);
@@ -67,7 +67,7 @@ var mod = {
     // 获取文件对应的 UploadId 列表
     getUploadIdList: function (uuid) {
         if (!uuid) return null;
-        init();
+        init.call(this);
         var list = [];
         for (var i = 0; i < cache.length; i++) {
             if (cache[i][0] === uuid)
@@ -77,7 +77,7 @@ var mod = {
     },
     // 缓存 UploadId
     saveUploadId: function (uuid, UploadId, limit) {
-        init();
+        init.call(this);
         if (!uuid) return;
         // 清理没用的 UploadId，js 文件没有 FilePath ，只清理相同记录
         for (var i = cache.length - 1; i >= 0; i--) {
@@ -92,7 +92,7 @@ var mod = {
     },
     // UploadId 已用完，移除掉
     removeUploadId: function (UploadId) {
-        init();
+        init.call(this);
         delete mod.using[UploadId];
         for (var i = cache.length - 1; i >= 0; i--) {
             if (cache[i][1] === UploadId) cache.splice(i, 1)

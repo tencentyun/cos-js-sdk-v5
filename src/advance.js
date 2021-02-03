@@ -53,7 +53,7 @@ function sliceUploadFile(params, callback) {
                 onProgress(null, true);
                 return ep.emit('error', err);
             }
-            session.removeUploadId(UploadData.UploadId);
+            session.removeUploadId.call(self, UploadData.UploadId);
             onProgress({loaded: FileSize, total: FileSize}, true);
             ep.emit('upload_complete', data);
         });
@@ -64,7 +64,7 @@ function sliceUploadFile(params, callback) {
 
         // 处理 UploadId 缓存
         var uuid = session.getFileId(Body, params.ChunkSize, Bucket, Key);
-        uuid && session.saveUploadId(uuid, UploadData.UploadId, self.options.UploadIdCacheLimit); // 缓存 UploadId
+        uuid && session.saveUploadId.call(self, uuid, UploadData.UploadId, self.options.UploadIdCacheLimit); // 缓存 UploadId
         session.setUsing(UploadData.UploadId); // 标记 UploadId 为正在使用
 
         // 获取 UploadId
@@ -147,12 +147,7 @@ function sliceUploadFile(params, callback) {
         params.Body = '';
         params.ContentLength = 0;
         params.SkipTask = true;
-        self.putObject(params, function (err, data) {
-            if (err) {
-                return callback(err);
-            }
-            callback(null, data);
-        });
+        self.putObject(params, callback);
     } else {
         ep.emit('get_file_size_finish');
     }
@@ -190,17 +185,17 @@ function getUploadIdAndPartList(params, callback) {
         } else {
             util.fileSlice(params.Body, start, end, false, function (chunkItem) {
                 util.getFileMd5(chunkItem, function (err, md5) {
-                    if (err) return callback(err);
+                    if (err) return callback(util.error(err));
                     var ETag = '"' + md5 + '"';
                     ETagMap[PartNumber] = ETag;
                     FinishSliceCount += 1;
                     FinishSize += ChunkSize;
-                    callback(err, {
+                    onHashProgress({loaded: FinishSize, total: FileSize});
+                    callback(null, {
                         PartNumber: PartNumber,
                         ETag: ETag,
                         Size: ChunkSize
                     });
-                    onHashProgress({loaded: FinishSize, total: FileSize});
                 });
             });
         }
@@ -291,7 +286,7 @@ function getUploadIdAndPartList(params, callback) {
             if (err) return ep.emit('error', err);
             var UploadId = data.UploadId;
             if (!UploadId) {
-                return callback({Message: 'no upload id'});
+                return callback(util.error(new Error('no such upload id')));
             }
             ep.emit('upload_id_available', {UploadId: UploadId, PartList: []});
         });
@@ -354,7 +349,7 @@ function getUploadIdAndPartList(params, callback) {
     ep.on('seek_local_avail_upload_id', function (RemoteUploadIdList) {
         // 在本地找可用的 UploadId
         var uuid = session.getFileId(params.Body, params.ChunkSize, Bucket, Key);
-        var LocalUploadIdList = session.getUploadIdList(uuid);
+        var LocalUploadIdList = session.getUploadIdList.call(self, uuid);
         if (!uuid || !LocalUploadIdList) {
             ep.emit('has_and_check_upload_id', RemoteUploadIdList);
             return;
@@ -368,7 +363,7 @@ function getUploadIdAndPartList(params, callback) {
             var UploadId = LocalUploadIdList[index];
             // 如果不在远端 UploadId 列表里，跳过并删除
             if (!util.isInArray(RemoteUploadIdList, UploadId)) {
-                session.removeUploadId(UploadId);
+                session.removeUploadId.call(self, UploadId);
                 next(index + 1);
                 return;
             }
@@ -387,7 +382,7 @@ function getUploadIdAndPartList(params, callback) {
                 if (!self._isRunningTask(TaskId)) return;
                 if (err) {
                     // 如果 UploadId 获取会出错，跳过并删除
-                    session.removeUploadId(UploadId);
+                    session.removeUploadId.call(self, UploadId);
                     next(index + 1);
                 } else {
                     // 找到可用 UploadId
@@ -410,9 +405,7 @@ function getUploadIdAndPartList(params, callback) {
             Key: Key,
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
-            if (err) {
-                return ep.emit('error', err);
-            }
+            if (err) return ep.emit('error', err);
             // 整理远端 UploadId 列表
             var RemoteUploadIdList = util.filter(data.UploadList, function (item) {
                 return item.Key === Key && (!StorageClass || item.StorageClass.toUpperCase() === StorageClass.toUpperCase());
@@ -424,9 +417,9 @@ function getUploadIdAndPartList(params, callback) {
             } else {
                 // 远端没有 UploadId，清理缓存的 UploadId
                 var uuid = session.getFileId(params.Body, params.ChunkSize, Bucket, Key), LocalUploadIdList;
-                if (uuid && (LocalUploadIdList = session.getUploadIdList(uuid))) {
+                if (uuid && (LocalUploadIdList = session.getUploadIdList.call(self, uuid))) {
                     util.each(LocalUploadIdList, function (UploadId) {
-                        session.removeUploadId(UploadId);
+                        session.removeUploadId.call(self, UploadId);
                     });
                 }
                 ep.emit('no_available_upload_id');
@@ -544,9 +537,7 @@ function uploadSliceList(params, cb) {
             },
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
-            if (!err && !data.ETag) {
-                err = 'get ETag error, please add "ETag" to CORS ExposeHeader setting.';
-            }
+            if (!err && !data.ETag) err = 'get ETag error, please add "ETag" to CORS ExposeHeader setting.';
             if (err) {
                 FinishSize -= preAddSize;
             } else {
@@ -609,12 +600,9 @@ function uploadSliceItem(params, callback) {
                 onProgress: params.onProgress,
             }, function (err, data) {
                 if (!self._isRunningTask(TaskId)) return;
-                if (err) {
-                    return tryCallback(err);
-                } else {
-                    PartItem.Uploaded = true;
-                    return tryCallback(null, data);
-                }
+                if (err) return tryCallback(err);
+                PartItem.Uploaded = true;
+                return tryCallback(null, data);
             });
         });
     }, function (err, data) {
@@ -685,12 +673,7 @@ function abortUploadTask(params, callback) {
             Headers: params.Headers,
             AsyncLimit: AsyncLimit,
             AbortArray: AbortArray
-        }, function (err, data) {
-            if (err) {
-                return callback(err);
-            }
-            callback(null, data);
-        });
+        }, callback);
     });
 
     if (Level === 'bucket') {
@@ -699,34 +682,30 @@ function abortUploadTask(params, callback) {
             Bucket: Bucket,
             Region: Region
         }, function (err, data) {
-            if (err) {
-                return callback(err);
-            }
+            if (err) return callback(err);
             ep.emit('get_abort_array', data.UploadList || []);
         });
     } else if (Level === 'file') {
         // 文件级别的任务抛弃，抛弃该文件的全部上传任务
-        if (!Key) return callback({error: 'abort_upload_task_no_key'});
+        if (!Key) return callback(util.error(new Error('abort_upload_task_no_key')));
         wholeMultipartList.call(self, {
             Bucket: Bucket,
             Region: Region,
             Key: Key
         }, function (err, data) {
-            if (err) {
-                return callback(err);
-            }
+            if (err) return callback(err);
             ep.emit('get_abort_array', data.UploadList || []);
         });
     } else if (Level === 'task') {
         // 单个任务级别的任务抛弃，抛弃指定 UploadId 的上传任务
-        if (!UploadId) return callback({error: 'abort_upload_task_no_id'});
-        if (!Key) return callback({error: 'abort_upload_task_no_key'});
+        if (!UploadId) return callback(util.error(new Error('abort_upload_task_no_id')));
+        if (!Key) return callback(util.error(new Error('abort_upload_task_no_key')));
         ep.emit('get_abort_array', [{
             Key: Key,
             UploadId: UploadId
         }]);
     } else {
-        return callback({error: 'abort_unknown_level'});
+        return callback(util.error(new Error('abort_unknown_level')));
     }
 }
 
@@ -742,11 +721,11 @@ function abortUploadTaskArray(params, callback) {
 
     var index = 0;
     var resultList = new Array(AbortArray.length);
-    Async.eachLimit(AbortArray, AsyncLimit, function (AbortItem, callback) {
+    Async.eachLimit(AbortArray, AsyncLimit, function (AbortItem, nextItem) {
         var eachIndex = index;
         if (Key && Key !== AbortItem.Key) {
             resultList[eachIndex] = {error: {KeyNotMatch: true}};
-            callback(null);
+            nextItem(null);
             return;
         }
         var UploadId = AbortItem.UploadId || AbortItem.UploadID;
@@ -765,14 +744,12 @@ function abortUploadTaskArray(params, callback) {
                 UploadId: UploadId
             };
             resultList[eachIndex] = {error: err, task: task};
-            callback(null);
+            nextItem(null);
         });
         index++;
 
     }, function (err) {
-        if (err) {
-            return callback(err);
-        }
+        if (err) return callback(err);
 
         var successList = [];
         var errorList = [];
@@ -821,9 +798,7 @@ function uploadFiles(params, callback) {
             data: data
         };
         if (--unFinishCount <= 0 && callback) {
-            callback(null, {
-                files: resultList,
-            });
+            callback(null, {files: resultList});
         }
     };
 
@@ -873,7 +848,7 @@ function uploadFiles(params, callback) {
             };
 
             // 添加上传任务
-            var api = FileSize >= SliceSize ? 'sliceUploadFile' : 'putObject';
+            var api = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
             taskList.push({
                 api: api,
                 params: fileParams,
@@ -895,7 +870,7 @@ function sliceCopyFile(params, callback) {
     var CopySource = params.CopySource;
     var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
     if (!m) {
-        callback({error: 'CopySource format error'});
+        callback(util.error(new Error('CopySource format error')));
         return;
     }
 
@@ -913,7 +888,8 @@ function sliceCopyFile(params, callback) {
     var onProgress;
 
     // 分片复制完成，开始 multipartComplete 操作
-    ep.on('copy_slice_complete', function (UploadData) {var metaHeaders = {};
+    ep.on('copy_slice_complete', function (UploadData) {
+        var metaHeaders = {};
         util.each(params.Headers, function (val, k) {
             if (k.toLowerCase().indexOf('x-cos-meta-') === 0) metaHeaders[k] = val;
         });
@@ -944,7 +920,6 @@ function sliceCopyFile(params, callback) {
             var PartNumber = SliceItem.PartNumber;
             var CopySourceRange = SliceItem.CopySourceRange;
             var currentSize = SliceItem.end - SliceItem.start;
-            var preAddSize = 0;
 
             copySliceItem.call(self, {
                 Bucket: Bucket,
@@ -954,18 +929,10 @@ function sliceCopyFile(params, callback) {
                 UploadId: UploadData.UploadId,
                 PartNumber: PartNumber,
                 CopySourceRange: CopySourceRange,
-                onProgress: function (data) {
-                    FinishSize += data.loaded - preAddSize;
-                    preAddSize = data.loaded;
-                    onProgress({loaded: FinishSize, total: FileSize});
-                }
             },function (err,data) {
-                if (err) {
-                    return asyncCallback(err);
-                }
+                if (err) return asyncCallback(err);
+                FinishSize += currentSize;
                 onProgress({loaded: FinishSize, total: FileSize});
-
-                FinishSize += currentSize - preAddSize;
                 SliceItem.ETag = data.ETag;
                 asyncCallback(err || null, data);
             });
@@ -1021,7 +988,7 @@ function sliceCopyFile(params, callback) {
         if (SourceHeaders['x-cos-storage-class'] === 'ARCHIVE' || SourceHeaders['x-cos-storage-class'] === 'DEEP_ARCHIVE') {
             var restoreHeader = SourceHeaders['x-cos-restore'];
             if (!restoreHeader || restoreHeader === 'ongoing-request="true"') {
-                callback({ error: 'Unrestored archive object is not allowed to be copied' });
+                callback(util.error(new Error('Unrestored archive object is not allowed to be copied')));
                 return;
             }
         }
@@ -1041,9 +1008,7 @@ function sliceCopyFile(params, callback) {
             Key: Key,
             Headers: TargetHeader,
         },function (err,data) {
-            if (err) {
-                return callback(err);
-            }
+            if (err) return callback(err);
             params.UploadId = data.UploadId;
             ep.emit('get_copy_data_finish', params);
         });
@@ -1057,7 +1022,7 @@ function sliceCopyFile(params, callback) {
     },function(err, data) {
         if (err) {
             if (err.statusCode && err.statusCode === 404) {
-                callback({ErrorStatus: SourceKey + ' Not Exist'});
+                callback(util.error(err, {ErrorStatus: SourceKey + ' Not Exist'}));
             } else {
                 callback(err);
             }
@@ -1066,7 +1031,7 @@ function sliceCopyFile(params, callback) {
 
         FileSize = params.FileSize = data.headers['content-length'];
         if (FileSize === undefined || !FileSize) {
-            callback({error: 'get Content-Length error, please add "Content-Length" to CORS ExposeHeader setting.'});
+            callback(util.error(new Error('get Content-Length error, please add "Content-Length" to CORS ExposeHeader setting.')));
             return;
         }
 
@@ -1130,7 +1095,6 @@ function copySliceItem(params, callback) {
             UploadId: UploadId,
             PartNumber:PartNumber,
             CopySourceRange:CopySourceRange,
-            onProgress:params.onProgress,
         },function (err,data) {
             tryCallback(err || null, data);
         })

@@ -10,7 +10,7 @@ var defaultOptions = {
     AppId: '', // AppId 已废弃，请拼接到 Bucket 后传入，例如：test-1250000000
     SecretId: '',
     SecretKey: '',
-    XCosSecurityToken: '', // 使用临时密钥需要注意自行刷新 Token
+    SecurityToken: '', // 使用临时密钥需要注意自行刷新 Token
     ChunkRetryTimes: 2,
     FileParallelLimit: 3,
     ChunkParallelLimit: 3,
@@ -21,7 +21,6 @@ var defaultOptions = {
     CopySliceSize: 1024 * 1024 * 10,
     MaxPartNumber: 10000,
     ProgressInterval: 1000,
-    UploadQueueSize: 10000,
     Domain: '',
     ServiceDomain: '',
     Protocol: '',
@@ -32,6 +31,7 @@ var defaultOptions = {
     CorrectClockSkew: true,
     SystemClockOffset: 0, // 单位毫秒，ms
     UploadCheckContentMd5: false,
+    UploadQueueSize: 10000,
     UploadAddMetaMd5: false,
     UploadIdCacheLimit: 50,
 };
@@ -59,6 +59,6 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.1.11';
+COS.version = '1.2.0';
 
 module.exports = COS;

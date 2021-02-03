@@ -87,7 +87,7 @@ var getAuthorization = function (options, callback) {
     //     callback({
     //         TmpSecretId: credentials.tmpSecretId,
     //         TmpSecretKey: credentials.tmpSecretKey,
-    //         XCosSecurityToken: credentials.sessionToken,
+    //         SecurityToken: credentials.sessionToken,
     //         StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
     //         ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000000
     //         ScopeLimit: true, // 细粒度控制权限需要设为 true，会限制密钥只在相同请求时重复使用
@@ -122,7 +122,7 @@ var getAuthorization = function (options, callback) {
     //     if (!data || !data.authorization) return console.error('authorization invalid');
     //     callback({
     //         Authorization: data.authorization,
-    //         // XCosSecurityToken: data.sessionToken, // 如果使用临时密钥，需要把 sessionToken 传给 XCosSecurityToken
+    //         // SecurityToken: data.sessionToken, // 如果使用临时密钥，需要把 sessionToken 传给 SecurityToken
     //     });
     // };
     // xhr.send(JSON.stringify(data));
@@ -140,7 +140,7 @@ var getAuthorization = function (options, callback) {
     // });
     // callback({
     //     Authorization: authorization,
-    //     // XCosSecurityToken: credentials.sessionToken, // 如果使用临时密钥，需要传 XCosSecurityToken
+    //     // SecurityToken: credentials.sessionToken, // 如果使用临时密钥，需要传 SecurityToken
     // });
 
 };
@@ -214,7 +214,7 @@ function getAuth() {
         var url = 'http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' +
             camSafeUrlEncode(key).replace(/%2F/g, '/') +
             '?' + AuthData +
-            (AuthData.XCosSecurityToken ? '&' + AuthData.XCosSecurityToken : '');
+            (AuthData.SecurityToken ? '&' + AuthData.SecurityToken : '');
         logger.log(url);
     });
 }

@@ -123,9 +123,7 @@ function headBucket(params, callback) {
         Region: params.Region,
         headers: params.Headers,
         method: 'HEAD',
-    }, function (err, data) {
-        callback(err, data);
-    });
+    }, callback);
 }
 
 /**
@@ -451,15 +449,18 @@ function getBucketLocation(params, callback) {
         Region: params.Region,
         headers: params.Headers,
         action: 'location',
-    }, function (err, data) {
-        if (err) return callback(err);
-        callback(null, data);
-    });
+    }, callback);
 }
 
 function putBucketPolicy(params, callback) {
-    var PolicyStr = params['Policy'];
-    if (typeof PolicyStr !== 'string') PolicyStr = JSON.stringify(PolicyStr);
+    var Policy = params['Policy'];
+    try {
+        if (typeof Policy === 'string') Policy = JSON.parse(Policy);
+    } catch (e) {
+    }
+    if (!Policy || typeof Policy === 'string') return callback(util.error(new Error('Policy format error')));
+    var PolicyStr = JSON.stringify(Policy);
+    if (!Policy.version) Policy.version = '2.0';
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/json';
@@ -507,13 +508,13 @@ function getBucketPolicy(params, callback) {
     }, function (err, data) {
         if (err) {
             if (err.statusCode && err.statusCode === 403) {
-                return callback({ErrorStatus: 'Access Denied'});
+                return callback(util.error(err, {ErrorStatus: 'Access Denied'}));
             }
             if (err.statusCode && err.statusCode === 405) {
-                return callback({ErrorStatus: 'Method Not Allowed'});
+                return callback(util.error(err, {ErrorStatus: 'Method Not Allowed'}));
             }
             if (err.statusCode && err.statusCode === 404) {
-                return callback({ErrorStatus: 'Policy Not Found'});
+                return callback(util.error(err, {ErrorStatus: 'Policy Not Found'}));
             }
             return callback(err);
         }
@@ -770,7 +771,7 @@ function deleteBucketLifecycle(params, callback) {
 function putBucketVersioning(params, callback) {
 
     if (!params['VersioningConfiguration']) {
-        callback({error: 'missing param VersioningConfiguration'});
+        callback(util.error(new Error('missing param VersioningConfiguration')));
         return;
     }
     var VersioningConfiguration = params['VersioningConfiguration'] || {};
@@ -874,7 +875,7 @@ function getBucketReplication(params, callback) {
             !data.ReplicationConfiguration && (data.ReplicationConfiguration = {});
         }
         if (data.ReplicationConfiguration.Rule) {
-            data.ReplicationConfiguration.Rules = data.ReplicationConfiguration.Rule;
+            data.ReplicationConfiguration.Rules = util.makeArray(data.ReplicationConfiguration.Rule);
             delete data.ReplicationConfiguration.Rule;
         }
         callback(err, data);
@@ -919,7 +920,7 @@ function deleteBucketReplication(params, callback) {
 function putBucketWebsite(params, callback) {
 
     if (!params['WebsiteConfiguration']) {
-        callback({ error: 'missing param WebsiteConfiguration' });
+        callback(util.error(new Error('missing param WebsiteConfiguration')));
         return;
     }
 
@@ -1053,7 +1054,7 @@ function deleteBucketWebsite(params, callback) {
 function putBucketReferer(params, callback) {
 
     if (!params['RefererConfiguration']) {
-        callback({ error: 'missing param RefererConfiguration' });
+        callback(util.error(new Error('missing param RefererConfiguration')));
         return;
     }
 
@@ -1627,7 +1628,7 @@ function deleteBucketInventory(params, callback) {
 function putBucketAccelerate(params, callback) {
 
     if (!params['AccelerateConfiguration']) {
-        callback({error: 'missing param AccelerateConfiguration'});
+        callback(util.error(new Error('missing param AccelerateConfiguration')));
         return;
     }
 
@@ -1831,7 +1832,6 @@ function getObject(params, callback) {
  *     @param  {String}  params.ContentType                         RFC 2616 中定义的内容类型（MIME），将作为 Object 元数据保存，非必须
  *     @param  {String}  params.Expect                              当使用 Expect: 100-continue 时，在收到服务端确认后，才会发送请求内容，非必须
  *     @param  {String}  params.Expires                             RFC 2616 中定义的过期时间，将作为 Object 元数据保存，非必须
- *     @param  {String}  params.ContentSha1                         RFC 3174 中定义的 160-bit 内容 SHA-1 算法校验，非必须
  *     @param  {String}  params.ACL                                 允许用户自定义文件权限，有效值：private | public-read，非必须
  *     @param  {String}  params.GrantRead                           赋予被授权者读取对象的权限，格式：id="[OwnerUin]"，可使用半角逗号（,）分隔多组被授权者，非必须
  *     @param  {String}  params.GrantReadAcp                        赋予被授权者读取对象的访问控制列表（ACL）的权限，格式：id="[OwnerUin]"，可使用半角逗号（,）分隔多组被授权者，非必须
@@ -1919,9 +1919,7 @@ function deleteObject(params, callback) {
     }, function (err, data) {
         if (err) {
             var statusCode = err.statusCode;
-            if (statusCode && statusCode === 204) {
-                return callback(null, {statusCode: statusCode});
-            } else if (statusCode && statusCode === 404) {
+            if (statusCode && statusCode === 404) {
                 return callback(null, {BucketNotFound: true, statusCode: statusCode,});
             } else {
                 return callback(err);
@@ -1962,6 +1960,7 @@ function getObjectAcl(params, callback) {
         var Grant = AccessControlPolicy.AccessControlList && AccessControlPolicy.AccessControlList.Grant || [];
         Grant = util.isArray(Grant) ? Grant : [Grant];
         var result = decodeAcl(AccessControlPolicy);
+        delete result.GrantWrite;
         if (data.headers && data.headers['x-cos-acl']) {
             result.ACL = data.headers['x-cos-acl'];
         }
@@ -2106,12 +2105,12 @@ function putObjectCopy(params, callback) {
 
     // 特殊处理 Cache-Control
     var headers = params.Headers;
-    if (!headers['Cache-Control'] && !!headers['cache-control']) headers['Cache-Control'] = '';
+    if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
 
     var CopySource = params.CopySource || '';
     var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
     if (!m) {
-        callback({error: 'CopySource format error'});
+        callback(util.error(new Error('CopySource format error')));
         return;
     }
 
@@ -2120,7 +2119,6 @@ function putObjectCopy(params, callback) {
     var SourceKey = decodeURIComponent(m[4]);
 
     submitRequest.call(this, {
-        Interface: 'PutObjectCopy',
         Scope: [{
             action: 'name/cos:GetObject',
             bucket: SourceBucket,
@@ -2154,7 +2152,7 @@ function uploadPartCopy(params, callback) {
     var CopySource = params.CopySource || '';
     var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
     if (!m) {
-        callback({error: 'CopySource format error'});
+        callback(util.error(new Error('CopySource format error')));
         return;
     }
 
@@ -2163,7 +2161,6 @@ function uploadPartCopy(params, callback) {
     var SourceKey = decodeURIComponent(m[4]);
 
     submitRequest.call(this, {
-        Interface: 'UploadPartCopy',
         Scope: [{
             action: 'name/cos:GetObject',
             bucket: SourceBucket,
@@ -2217,7 +2214,6 @@ function deleteMultipleObject(params, callback) {
     });
 
     submitRequest.call(this, {
-        Interface: 'DeleteMultipleObjects',
         Scope: Scope,
         method: 'POST',
         Bucket: params.Bucket,
@@ -2248,7 +2244,7 @@ function deleteMultipleObject(params, callback) {
 function restoreObject(params, callback) {
     var headers = params.Headers;
     if (!params['RestoreRequest']) {
-        callback({error: 'missing param RestoreRequest'});
+        callback(util.error(new Error('missing param RestoreRequest')));
         return;
     }
 
@@ -2268,9 +2264,7 @@ function restoreObject(params, callback) {
         body: xml,
         action: 'restore',
         headers: headers,
-    }, function (err, data) {
-        callback(err, data);
-    });
+    }, callback);
 }
 
 /**
@@ -2409,7 +2403,7 @@ function deleteObjectTagging(params, callback) {
  */
 function selectObjectContent(params, callback) {
     var SelectType = params['SelectType'];
-    if (!SelectType) return callback({error: 'missing param SelectType'});
+    if (!SelectType) return callback(util.error(new Error('missing param SelectType')));
 
     var SelectRequest = params['SelectRequest'] || {};
     var xml = util.json2xml({SelectRequest: SelectRequest});
@@ -2419,7 +2413,6 @@ function selectObjectContent(params, callback) {
     headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
 
     submitRequest.call(this, {
-        Interface: 'SelectObjectContent',
         Action: 'name/cos:GetObject',
         method: 'POST',
         Bucket: params.Bucket,
@@ -2432,6 +2425,7 @@ function selectObjectContent(params, callback) {
         },
         VersionId: params.VersionId,
         body: xml,
+        DataType: 'arraybuffer',
         rawBody: true,
     }, function (err, data) {
         if (err && err.statusCode === 204) {
@@ -2439,10 +2433,12 @@ function selectObjectContent(params, callback) {
         } else if (err) {
             return callback(err);
         }
+        var result = util.parseSelectPayload(data.body);
         callback(null, {
             statusCode: data.statusCode,
             headers: data.headers,
-            Body: data.body,
+            Body: result.body,
+            Payload: result.payload,
         });
     });
 }
@@ -2476,6 +2472,7 @@ function selectObjectContent(params, callback) {
 function multipartInit(params, callback) {
 
     var self = this;
+    // 特殊处理 Cache-Control
     var headers = params.Headers;
 
     // 特殊处理 Cache-Control、Content-Type
@@ -2494,9 +2491,7 @@ function multipartInit(params, callback) {
             headers: params.Headers,
             qs: params.Query,
         }, function (err, data) {
-            if (err) {
-                return callback(err);
-            }
+            if (err) return callback(err);
             data = util.clone(data || {});
             if (data && data.InitiateMultipartUploadResult) {
                 return callback(null, util.extend(data.InitiateMultipartUploadResult, {
@@ -2685,14 +2680,8 @@ function multipartList(params, callback) {
 
         if (data && data.ListMultipartUploadsResult) {
             var Upload = data.ListMultipartUploadsResult.Upload || [];
-
-            var CommonPrefixes = data.ListMultipartUploadsResult.CommonPrefixes || [];
-
-            CommonPrefixes = util.isArray(CommonPrefixes) ? CommonPrefixes : [CommonPrefixes];
             Upload = util.isArray(Upload) ? Upload : [Upload];
-
             data.ListMultipartUploadsResult.Upload = Upload;
-            data.ListMultipartUploadsResult.CommonPrefixes = CommonPrefixes;
         }
         var result = util.clone(data.ListMultipartUploadsResult || {});
         util.extend(result, {
@@ -2847,7 +2836,7 @@ function getObjectUrl(params, callback) {
         var signUrl = url;
         signUrl += '?' + (AuthData.Authorization.indexOf('q-signature') > -1 ?
             AuthData.Authorization : 'sign=' + encodeURIComponent(AuthData.Authorization));
-        AuthData.XCosSecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.XCosSecurityToken);
+        AuthData.SecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.SecurityToken);
         AuthData.ClientIP && (signUrl += '&clientIP=' + AuthData.ClientIP);
         AuthData.ClientUA && (signUrl += '&clientUA=' + AuthData.ClientUA);
         AuthData.Token && (signUrl += '&token=' + AuthData.Token);
@@ -2857,7 +2846,7 @@ function getObjectUrl(params, callback) {
     });
     if (AuthData) {
         return url + '?' + AuthData.Authorization +
-            (AuthData.XCosSecurityToken ? '&x-cos-security-token=' + AuthData.XCosSecurityToken : '');
+            (AuthData.SecurityToken ? '&x-cos-security-token=' + AuthData.SecurityToken : '');
     } else {
         return url;
     }
@@ -2983,44 +2972,16 @@ function getUrl(params) {
 function getAuthorizationAsync(params, callback) {
 
     var headers = util.clone(params.Headers);
-    delete headers['Content-Type'];
-    delete headers['Cache-Control'];
     util.each(headers, function (v, k) {
-        v === '' && delete headers[k];
+        (v === '' || ['content-type', 'cache-control', 'expires'].indexOf(k.toLowerCase())) && delete headers[k];
     });
 
-    var cb = function (AuthData) {
-
-        // 检查签名格式
-        var formatAllow = false;
-        var auth = AuthData.Authorization;
-        if (auth) {
-            if (auth.indexOf(' ') > -1) {
-                formatAllow = false;
-            } else if (auth.indexOf('q-sign-algorithm=') > -1 &&
-                auth.indexOf('q-ak=') > -1 &&
-                auth.indexOf('q-sign-time=') > -1 &&
-                auth.indexOf('q-key-time=') > -1 &&
-                auth.indexOf('q-url-param-list=') > -1) {
-                formatAllow = true;
-            } else {
-                try {
-                    auth = atob(auth);
-                    if (auth.indexOf('a=') > -1 &&
-                        auth.indexOf('k=') > -1 &&
-                        auth.indexOf('t=') > -1 &&
-                        auth.indexOf('r=') > -1 &&
-                        auth.indexOf('b=') > -1) {
-                        formatAllow = true;
-                    }
-                } catch (e) {}
-            }
-        }
-        if (formatAllow) {
-            callback && callback(null, AuthData);
-        } else {
-            callback && callback({error: 'authorization error'});
-        }
+    // 获取凭证的回调，避免用户 callback 多次
+    var cbDone = false;
+    var cb = function (err, AuthData) {
+        if (cbDone) return;
+        cbDone = true;
+        callback && callback(err, AuthData);
     };
 
     var self = this;
@@ -3083,12 +3044,50 @@ function getAuthorizationAsync(params, callback) {
         });
         var AuthData = {
             Authorization: Authorization,
-            XCosSecurityToken: StsData.XCosSecurityToken || '',
+            SecurityToken: StsData.SecurityToken || StsData.XCosSecurityToken || '',
             Token: StsData.Token || '',
             ClientIP: StsData.ClientIP || '',
             ClientUA: StsData.ClientUA || '',
         };
-        cb(AuthData);
+        cb(null, AuthData);
+    };
+    var checkAuthError = function (AuthData) {
+        if (AuthData.Authorization) {
+            // 检查签名格式
+            var formatAllow = false;
+            var auth = AuthData.Authorization;
+            if (auth) {
+                if (auth.indexOf(' ') > -1) {
+                    formatAllow = false;
+                } else if (auth.indexOf('q-sign-algorithm=') > -1 &&
+                    auth.indexOf('q-ak=') > -1 &&
+                    auth.indexOf('q-sign-time=') > -1 &&
+                    auth.indexOf('q-key-time=') > -1 &&
+                    auth.indexOf('q-url-param-list=') > -1) {
+                    formatAllow = true;
+                } else {
+                    try {
+                        auth = Buffer.from(auth, 'base64').toString();
+                        if (auth.indexOf('a=') > -1 &&
+                            auth.indexOf('k=') > -1 &&
+                            auth.indexOf('t=') > -1 &&
+                            auth.indexOf('r=') > -1 &&
+                            auth.indexOf('b=') > -1) {
+                            formatAllow = true;
+                        }
+                    } catch (e) {}
+                }
+            }
+            if (!formatAllow) return util.error(new Error('getAuthorization callback params format error'));
+        } else {
+            if (!AuthData.TmpSecretId) return util.error(new Error('getAuthorization callback params missing "TmpSecretId"'));
+            if (!AuthData.TmpSecretKey) return util.error(new Error('getAuthorization callback params missing "TmpSecretKey"'));
+            if (!AuthData.SecurityToken && !AuthData.XCosSecurityToken) return util.error(new Error('getAuthorization callback params missing "SecurityToken"'));
+            if (!AuthData.ExpiredTime) return util.error(new Error('getAuthorization callback params missing "ExpiredTime"'));
+            if (AuthData.ExpiredTime && AuthData.ExpiredTime.toString().length !== 10) return util.error(new Error('getAuthorization callback params "ExpiredTime" should be 10 digits'));
+            if (AuthData.StartTime && AuthData.StartTime.toString().length !== 10) return util.error(new Error('getAuthorization callback params "StartTime" should be 10 StartTime'));
+        }
+        return false;
     };
 
     // 先判断是否有临时密钥
@@ -3106,20 +3105,17 @@ function getAuthorizationAsync(params, callback) {
             Scope: Scope,
             SystemClockOffset: self.options.SystemClockOffset,
         }, function (AuthData) {
-            if (typeof AuthData === 'string') {
-                AuthData = {Authorization: AuthData};
-            }
-            if (AuthData.TmpSecretId &&
-                AuthData.TmpSecretKey &&
-                AuthData.XCosSecurityToken &&
-                AuthData.ExpiredTime) {
+            if (typeof AuthData === 'string') AuthData = {Authorization: AuthData};
+            var AuthError = checkAuthError(AuthData);
+            if (AuthError) return cb(AuthError);
+            if (AuthData.Authorization) {
+                cb(null, AuthData);
+            } else {
                 StsData = AuthData || {};
                 StsData.Scope = Scope;
                 StsData.ScopeKey = ScopeKey;
                 self._StsCache.push(StsData);
                 calcAuthByTmpKey();
-            } else {
-                cb(AuthData);
             }
         });
     } else if (self.options.getSTS) { // 外部获取临时密钥
@@ -3130,8 +3126,10 @@ function getAuthorizationAsync(params, callback) {
             StsData = data || {};
             StsData.Scope = Scope;
             StsData.ScopeKey = ScopeKey;
-            StsData.TmpSecretId = StsData.SecretId;
-            StsData.TmpSecretKey = StsData.SecretKey;
+            if (!StsData.TmpSecretId) StsData.TmpSecretId = StsData.SecretId;
+            if (!StsData.TmpSecretKey) StsData.TmpSecretKey = StsData.SecretKey;
+            var AuthError = checkAuthError(StsData);
+            if (AuthError) return cb(AuthError);
             self._StsCache.push(StsData);
             calcAuthByTmpKey();
         });
@@ -3150,9 +3148,9 @@ function getAuthorizationAsync(params, callback) {
             });
             var AuthData = {
                 Authorization: Authorization,
-                XCosSecurityToken: self.options.XCosSecurityToken,
+                SecurityToken: self.options.SecurityToken || self.options.XCosSecurityToken,
             };
-            cb(AuthData);
+            cb(null, AuthData);
             return AuthData;
         })();
     }
@@ -3285,7 +3283,7 @@ function _submitRequest(params, callback) {
     params.AuthData.Token && (opt.headers['token'] = params.AuthData.Token);
     params.AuthData.ClientIP && (opt.headers['clientIP'] = params.AuthData.ClientIP);
     params.AuthData.ClientUA && (opt.headers['clientUA'] = params.AuthData.ClientUA);
-    params.AuthData.XCosSecurityToken && (opt.headers['x-cos-security-token'] = params.AuthData.XCosSecurityToken);
+    params.AuthData.SecurityToken && (opt.headers['x-cos-security-token'] = params.AuthData.SecurityToken);
 
     // 清理 undefined 和 null 字段
     opt.headers && (opt.headers = util.clearKey(opt.headers));
@@ -3308,13 +3306,6 @@ function _submitRequest(params, callback) {
     }
     if (this.options.Timeout) {
         opt.timeout = this.options.Timeout;
-    }
-
-    // 整理 cosInterface 用于 before-send 使用
-    if (params.Interface) {
-        opt.cosInterface = params.Interface;
-    } else if (params.Action) {
-        opt.cosInterface = params.Action.replace(/^name\/cos:/, '');
     }
 
     self.options.ForcePathStyle && (opt.pathStyle = self.options.ForcePathStyle);
@@ -3349,37 +3340,34 @@ function _submitRequest(params, callback) {
         };
 
         // 请求错误，发生网络错误
-        if (err) {
-            cb({error: err});
-            return;
-        }
-
-        // 不对 body 进行转换，body 直接挂载返回
-        var jsonRes;
-        if (rawBody) {
-            jsonRes = {};
-            jsonRes.body = body;
-        } else {
-            try {
-                jsonRes = body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body) || {};
-            } catch (e) {
-                jsonRes = body || {};
-            }
-        }
+        if (err) return cb(util.error(err));
 
         // 请求返回码不为 200
         var statusCode = response.statusCode;
         var statusSuccess = Math.floor(statusCode / 100) === 2; // 200 202 204 206
-        if (!statusSuccess) {
-            cb({error: jsonRes.Error || jsonRes});
-            return;
+
+        // 不对 body 进行转换，body 直接挂载返回
+        if (rawBody && statusSuccess) return cb(null, {body: body});
+
+        // 解析 xml body
+        var json;
+        try {
+            json = body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body) || {};
+        } catch (e) {
+            json = {};
         }
 
-        if (jsonRes.Error) {
-            cb({error: jsonRes.Error});
-            return;
+        // 处理返回值
+        var xmlError = json && json.Error;
+        if (statusSuccess) { // 正确返回，状态码 2xx 时，body 不会有 Error
+            cb(null, json);
+        } else if (xmlError) { // 正常返回了 xml body，且有 Error 节点
+            cb(util.error(new Error(xmlError.Message), {code: xmlError.Code, error: xmlError}));
+        } else if (statusCode) { // 有错误的状态码
+            cb(util.error(new Error(response.statusMessage), {code: '' + statusCode}));
+        } else if (statusCode) { // 无状态码，或者获取不到状态码
+            cb(util.error(new Error('statusCode error')));
         }
-        cb(null, jsonRes);
     });
 
     // kill task
