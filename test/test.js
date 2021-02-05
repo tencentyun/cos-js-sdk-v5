@@ -867,9 +867,11 @@ group('putObject()', function () {
                 Bucket: config.Bucket,
                 Region: config.Region,
                 Key: Key,
+                BodyType: 'arraybuffer',
             }, function (err, data) {
-                var isSame = unescape(encodeURIComponent(data.Body)).split(0).every(function (v, i) {
-                    return v.charCodeAt(0) === arr[i]
+                var arr = new Uint8Array(data.Body);
+                var isSame = arr.every(function (v, i) {
+                    return v === arr[i];
                 });
                 assert.ok(isSame && (data.headers && data.headers.etag) === ETag);
                 done();
@@ -896,9 +898,11 @@ group('putObject()', function () {
                 Bucket: config.Bucket,
                 Region: config.Region,
                 Key: Key,
+                BodyType: 'arraybuffer',
             }, function (err, data) {
-                var isSame = unescape(encodeURIComponent(data.Body)).split(0).every(function (v, i) {
-                    return v.charCodeAt(0) === arr[i];
+                var arr = new Uint8Array(data.Body);
+                var isSame = arr.every(function (v, i) {
+                    return v === arr[i];
                 });
                 assert.ok(isSame && (data.headers && data.headers.etag) === ETag);
                 done();
