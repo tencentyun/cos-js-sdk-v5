@@ -2248,7 +2248,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.2.0';
+COS.version = '1.2.1';
 
 module.exports = COS;
 
@@ -2463,26 +2463,7 @@ module.exports = COS;
         if (this.finalized) {
             return;
         }
-        if (typeof message === 'string' && isBinStr) message = decodeURIComponent(escape(message));
 
-        var notString,
-            type = typeof message;
-        if (type !== 'string') {
-            if (type === 'object') {
-                if (message === null) {
-                    throw ERROR;
-                } else if (ARRAY_BUFFER && message.constructor === ArrayBuffer) {
-                    message = new Uint8Array(message);
-                } else if (!Array.isArray(message)) {
-                    if (!ARRAY_BUFFER || !ArrayBuffer.isView(message)) {
-                        throw ERROR;
-                    }
-                }
-            } else {
-                throw ERROR;
-            }
-            notString = true;
-        }
         var code,
             index = 0,
             i,
@@ -2497,56 +2478,44 @@ module.exports = COS;
                 blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
             }
 
-            if (notString) {
-                if (ARRAY_BUFFER) {
-                    for (i = this.start; index < length && i < 64; ++index) {
-                        buffer8[i++] = message[index];
-                    }
-                } else {
-                    for (i = this.start; index < length && i < 64; ++index) {
-                        blocks[i >> 2] |= message[index] << SHIFT[i++ & 3];
+            if (ARRAY_BUFFER) {
+                for (i = this.start; index < length && i < 64; ++index) {
+                    code = message.charCodeAt(index);
+                    if (isBinStr || code < 0x80) {
+                        buffer8[i++] = code;
+                    } else if (code < 0x800) {
+                        buffer8[i++] = 0xc0 | code >> 6;
+                        buffer8[i++] = 0x80 | code & 0x3f;
+                    } else if (code < 0xd800 || code >= 0xe000) {
+                        buffer8[i++] = 0xe0 | code >> 12;
+                        buffer8[i++] = 0x80 | code >> 6 & 0x3f;
+                        buffer8[i++] = 0x80 | code & 0x3f;
+                    } else {
+                        code = 0x10000 + ((code & 0x3ff) << 10 | message.charCodeAt(++index) & 0x3ff);
+                        buffer8[i++] = 0xf0 | code >> 18;
+                        buffer8[i++] = 0x80 | code >> 12 & 0x3f;
+                        buffer8[i++] = 0x80 | code >> 6 & 0x3f;
+                        buffer8[i++] = 0x80 | code & 0x3f;
                     }
                 }
             } else {
-                if (ARRAY_BUFFER) {
-                    for (i = this.start; index < length && i < 64; ++index) {
-                        code = message.charCodeAt(index);
-                        if (code < 0x80) {
-                            buffer8[i++] = code;
-                        } else if (code < 0x800) {
-                            buffer8[i++] = 0xc0 | code >> 6;
-                            buffer8[i++] = 0x80 | code & 0x3f;
-                        } else if (code < 0xd800 || code >= 0xe000) {
-                            buffer8[i++] = 0xe0 | code >> 12;
-                            buffer8[i++] = 0x80 | code >> 6 & 0x3f;
-                            buffer8[i++] = 0x80 | code & 0x3f;
-                        } else {
-                            code = 0x10000 + ((code & 0x3ff) << 10 | message.charCodeAt(++index) & 0x3ff);
-                            buffer8[i++] = 0xf0 | code >> 18;
-                            buffer8[i++] = 0x80 | code >> 12 & 0x3f;
-                            buffer8[i++] = 0x80 | code >> 6 & 0x3f;
-                            buffer8[i++] = 0x80 | code & 0x3f;
-                        }
-                    }
-                } else {
-                    for (i = this.start; index < length && i < 64; ++index) {
-                        code = message.charCodeAt(index);
-                        if (code < 0x80) {
-                            blocks[i >> 2] |= code << SHIFT[i++ & 3];
-                        } else if (code < 0x800) {
-                            blocks[i >> 2] |= (0xc0 | code >> 6) << SHIFT[i++ & 3];
-                            blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
-                        } else if (code < 0xd800 || code >= 0xe000) {
-                            blocks[i >> 2] |= (0xe0 | code >> 12) << SHIFT[i++ & 3];
-                            blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT[i++ & 3];
-                            blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
-                        } else {
-                            code = 0x10000 + ((code & 0x3ff) << 10 | message.charCodeAt(++index) & 0x3ff);
-                            blocks[i >> 2] |= (0xf0 | code >> 18) << SHIFT[i++ & 3];
-                            blocks[i >> 2] |= (0x80 | code >> 12 & 0x3f) << SHIFT[i++ & 3];
-                            blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT[i++ & 3];
-                            blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
-                        }
+                for (i = this.start; index < length && i < 64; ++index) {
+                    code = message.charCodeAt(index);
+                    if (isBinStr || code < 0x80) {
+                        blocks[i >> 2] |= code << SHIFT[i++ & 3];
+                    } else if (code < 0x800) {
+                        blocks[i >> 2] |= (0xc0 | code >> 6) << SHIFT[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
+                    } else if (code < 0xd800 || code >= 0xe000) {
+                        blocks[i >> 2] |= (0xe0 | code >> 12) << SHIFT[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
+                    } else {
+                        code = 0x10000 + ((code & 0x3ff) << 10 | message.charCodeAt(++index) & 0x3ff);
+                        blocks[i >> 2] |= (0xf0 | code >> 18) << SHIFT[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code >> 12 & 0x3f) << SHIFT[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT[i++ & 3];
+                        blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
                     }
                 }
             }

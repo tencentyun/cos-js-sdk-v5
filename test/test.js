@@ -758,7 +758,7 @@ group('headBucket()', function () {
 group('putObject()', function () {
     var buf = new ArrayBuffer(8);
     var arr = new Uint8Array(buf);
-    [0xe8,0xaf,0xb4,0x2e,0x70,0x72,0x70,0x72].forEach(function (v, i) {
+    [0x89, 0xe8,0xaf,0xb4,0x2e,0x70,0x72,0x70,0x72].forEach(function (v, i) {
         arr[i] = v;
     });
     test('putObject()', function (done, assert) {
