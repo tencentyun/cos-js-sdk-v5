@@ -115,6 +115,8 @@ declare namespace COS {
     /** 固定密钥的 SecretKey  @see https://console.cloud.tencent.com/cam/capi */
     SecretKey?: string,
     /** 如果传入 SecretId、SecretKey 是临时密钥，需要再传入一个临时密钥的 sessionToken */
+    SecurityToken?: string,
+    /** 同 SecurityToken，推荐用 SecurityToken */
     XCosSecurityToken?: string,
     /** 分块上传及分块复制时，出错重试次数，默认值3（加第一次，请求共4次） */
     ChunkRetryTimes?: number,
@@ -188,10 +190,12 @@ declare namespace COS {
     Query?: Query,
     /** 要参与签名计算的 Header 参数，可选 */
     Headers?: Headers,
+    /** 签名几秒后失效，默认为900秒，如果传入了 KeyTime，以 KeyTime 为准，可选 */
+    Expires?: number,
+    /** 签名有效时间戳区间，如果传入了该参数，会赋值给在签名里的 q-key-time 和 q-sign-time 字段，格式如：1611915436;1611916336 */
+    KeyTime?: string,
     /** 校正时间的偏移值，单位 ms(毫秒)，计算签名时会用设备当前时间戳加上该偏移值，在设备时间有误时可用于校正签名用的时间参数。 */
     SystemClockOffset?: number,
-    /** 签名有效时间戳区间，如果传入了该参数，会赋值给在签名里的 q-key-time 和 q-sign-time 字段，格式如：1611915436;1611916336 */
-    KeyTime: string,
   }
   /** 计算签名或获取临时密钥可能需要的参数列表 */
   interface GetAuthorizationOptions {
@@ -221,7 +225,9 @@ declare namespace COS {
     /** 临时密钥 tmpSecretKey */
     TmpSecretKey: string,
     /** 临时密钥 sessonToken */
-    XCosSecurityToken: string,
+    SecurityToken?: string,
+    /** 同 SecurityToken，推荐用 SecurityToken */
+    XCosSecurityToken?: string,
     /** 获取临时密钥时，服务端的时间，该时间用于计算签名，可以避免设备时间有偏差导致请求错误 */
     StartTime: number,
     /** 获取临时密钥的过期时间戳 */
@@ -1155,7 +1161,7 @@ declare namespace COS {
     /** 包括用户自定义元数据头部后缀和用户自定义元数据信息，将作为对象元数据保存，大小限制为2KB，注意：用户自定义元数据信息支持下划线（_），但用户自定义元数据头部后缀不支持下划线，仅支持减号（-） */
     'x-cos-meta-*'?: string,
     /** 任务开始上传的回调方法 */
-    onTaskReady?: () => void,
+    onTaskReady?: (TaskId: COS.TaskId) => void,
     /** 上传的进度回调方法 */
     onProgress?: onProgress,
   }
@@ -1616,7 +1622,7 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     /** 包括用户自定义元数据头部后缀和用户自定义元数据信息，将作为对象元数据保存，大小限制为2KB，注意：用户自定义元数据信息支持下划线（_），但用户自定义元数据头部后缀不支持下划线，仅支持减号（-） */
     'x-cos-meta-*'?: string,
     /** 任务开始上传的回调方法 */
-    onTaskReady?: () => void,
+    onTaskReady?: (TaskId: COS.TaskId) => void,
     /** 上传的进度回调方法 */
     onProgress?: onProgress,
     /** 续传校验的进度回调方法 */
