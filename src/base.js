@@ -3067,7 +3067,7 @@ function getAuthorizationAsync(params, callback) {
                     formatAllow = true;
                 } else {
                     try {
-                        auth = Buffer.from(auth, 'base64').toString();
+                        auth = atob(auth);
                         if (auth.indexOf('a=') > -1 &&
                             auth.indexOf('k=') > -1 &&
                             auth.indexOf('t=') > -1 &&
