@@ -64,7 +64,7 @@
                         } catch (e) {}
                         if (credentials) {
                             callback(null, {
-                                XCosSecurityToken: credentials.sessionToken,
+                                SecurityToken: credentials.sessionToken,
                                 Authorization: CosAuth({
                                     SecretId: credentials.tmpSecretId,
                                     SecretKey: credentials.tmpSecretKey,
@@ -123,7 +123,7 @@
                 document.getElementById('success_action_redirect').value = location.href.substr(0, location.href.lastIndexOf('/') + 1) + 'empty.html';
                 document.getElementById('key').value = Key;
                 document.getElementById('signature').value = AuthData.Authorization;
-                document.getElementById('x-cos-security-token').value = AuthData.XCosSecurityToken || '';
+                document.getElementById('x-cos-security-token').value = AuthData.SecurityToken || '';
                 form.submit();
             });
         };

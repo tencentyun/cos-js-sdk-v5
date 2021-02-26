@@ -2221,7 +2221,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.2.3';
+COS.version = '1.2.4';
 
 module.exports = COS;
 
@@ -7772,6 +7772,11 @@ function getAuthorizationAsync(params, callback) {
     var cb = function (err, AuthData) {
         if (cbDone) return;
         cbDone = true;
+        if (AuthData.XCosSecurityToken && !AuthData.SecurityToken) {
+            AuthData = util.clone(AuthData);
+            AuthData.SecurityToken = AuthData.XCosSecurityToken;
+            delete AuthData.XCosSecurityToken;
+        }
         callback && callback(err, AuthData);
     };
 

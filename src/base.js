@@ -2981,6 +2981,11 @@ function getAuthorizationAsync(params, callback) {
     var cb = function (err, AuthData) {
         if (cbDone) return;
         cbDone = true;
+        if (AuthData.XCosSecurityToken && !AuthData.SecurityToken) {
+            AuthData = util.clone(AuthData);
+            AuthData.SecurityToken = AuthData.XCosSecurityToken;
+            delete AuthData.XCosSecurityToken;
+        }
         callback && callback(err, AuthData);
     };
 

@@ -56,7 +56,7 @@
                         } catch (e) {}
                         if (credentials) {
                             callback(null, {
-                                XCosSecurityToken: credentials.sessionToken,
+                                SecurityToken: credentials.sessionToken,
                                 Authorization: CosAuth({
                                     SecretId: credentials.tmpSecretId,
                                     SecretKey: credentials.tmpSecretKey,
@@ -84,7 +84,7 @@
                 fd.append('key', Key);
                 fd.append('signature', info.Authorization);
                 fd.append('Content-Type', '');
-                info.XCosSecurityToken && fd.append('x-cos-security-token', info.XCosSecurityToken);
+                info.SecurityToken && fd.append('x-cos-security-token', info.SecurityToken);
                 fd.append('file', file); // file 字段放在表单最后，避免文件内容过长影响签名判断和鉴权
                 var url = prefix;
                 var xhr = new XMLHttpRequest();

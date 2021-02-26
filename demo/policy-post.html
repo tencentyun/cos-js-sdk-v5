@@ -83,7 +83,7 @@
 
                 // // 使用普通签名格式
                 // fd.append('Signature', credentials.Authorization);
-                // fd.append('x-cos-security-token', credentials.XCosSecurityToken || '');
+                // fd.append('x-cos-security-token', credentials.SecurityToken || '');
 
                 // 使用 policy 签名保护格式
                 credentials.securityToken && fd.append('x-cos-security-token', credentials.securityToken);
