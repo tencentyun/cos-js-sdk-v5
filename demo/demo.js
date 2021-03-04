@@ -857,6 +857,40 @@ function listBucketInventory() {
     });
 }
 
+function putBucketEncryption() {
+cos.putBucketEncryption({
+    Bucket: config.Bucket,
+    Region: config.Region,
+    ServerSideEncryptionConfiguration: {
+        Rule: [{
+            ApplySideEncryptionConfiguration: {
+                SSEAlgorithm: 'AES256',
+            },
+        }],
+    },
+}, function(err, data) {
+    logger.log(err || JSON.stringify(data));
+});
+}
+
+function getBucketEncryption() {
+    cos.getBucketEncryption({
+        Bucket: config.Bucket,
+        Region: config.Region
+    }, function(err, data) {
+        logger.log(err || JSON.stringify(data));
+    });
+}
+
+function deleteBucketEncryption() {
+    cos.deleteBucketEncryption({
+        Bucket: config.Bucket,
+        Region: config.Region
+    }, function(err, data) {
+        logger.log(err || JSON.stringify(data));
+    });
+}
+
 function putObject() {
     // 创建测试文件
     var filename = '1mb.zip';
@@ -1392,6 +1426,9 @@ function deleteFolder() {
         'getBucketInventory',
         'deleteBucketInventory',
         'listBucketInventory',
+        'putBucketEncryption',
+        'getBucketEncryption',
+        'deleteBucketEncryption',
         'deleteBucket',
         'putObjectCopy',
         'getObject',

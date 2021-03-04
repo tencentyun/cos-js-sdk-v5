@@ -871,9 +871,7 @@ function getBucketReplication(params, callback) {
             }
             return;
         }
-        if (!err) {
-            !data.ReplicationConfiguration && (data.ReplicationConfiguration = {});
-        }
+        !data.ReplicationConfiguration && (data.ReplicationConfiguration = {});
         if (data.ReplicationConfiguration.Rule) {
             data.ReplicationConfiguration.Rules = util.makeArray(data.ReplicationConfiguration.Rule);
             delete data.ReplicationConfiguration.Rule;
@@ -1669,6 +1667,86 @@ function getBucketAccelerate(params, callback) {
             !data.AccelerateConfiguration && (data.AccelerateConfiguration = {});
         }
         callback(err, data);
+    });
+}
+
+
+function putBucketEncryption(params, callback) {
+    var conf = params.ServerSideEncryptionConfiguration || {};
+    var Rules = conf.Rule || conf.Rules || [];
+    var xml = util.json2xml({ServerSideEncryptionConfiguration: {Rule:Rules}});
+
+    var headers = params.Headers;
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+    submitRequest.call(this, {
+        Action: 'name/cos:PutBucketEncryption',
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        body: xml,
+        action: 'encryption',
+        headers: headers,
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
+    });
+}
+
+function getBucketEncryption(params, callback) {
+    submitRequest.call(this, {
+        Action: 'name/cos:GetBucketEncryption',
+        method: 'GET',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'encryption',
+    }, function (err, data) {
+        if (err) {
+            if (err.statusCode === 404 && err.code === 'NoSuchEncryptionConfiguration') {
+                var result = {
+                    EncryptionConfiguration: {Rules: []},
+                    statusCode: err.statusCode,
+                };
+                err.headers && (result.headers = err.headers);
+                callback(null, result);
+            } else {
+                callback(err);
+            }
+            return;
+        }
+        var Rules = util.makeArray(data.EncryptionConfiguration && data.EncryptionConfiguration.Rule || []);
+        data.EncryptionConfiguration = {Rules: Rules};
+        callback(err, data);
+    });
+}
+
+function deleteBucketEncryption(params, callback) {
+    submitRequest.call(this, {
+        Action: 'name/cos:DeleteBucketReplication',
+        method: 'DELETE',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        headers: params.Headers,
+        action: 'encryption',
+    }, function (err, data) {
+        if (err && err.statusCode === 204) {
+            return callback(null, {statusCode: err.statusCode});
+        } else if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers,
+        });
     });
 }
 
@@ -3433,6 +3511,9 @@ var API_MAP = {
     deleteBucketInventory: deleteBucketInventory,
     putBucketAccelerate: putBucketAccelerate,
     getBucketAccelerate: getBucketAccelerate,
+    putBucketEncryption: putBucketEncryption,
+    getBucketEncryption: getBucketEncryption,
+    deleteBucketEncryption: deleteBucketEncryption,
 
     // Object 相关方法
     getObject: getObject,
