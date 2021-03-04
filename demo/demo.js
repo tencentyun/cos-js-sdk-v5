@@ -858,19 +858,19 @@ function listBucketInventory() {
 }
 
 function putBucketEncryption() {
-cos.putBucketEncryption({
-    Bucket: config.Bucket,
-    Region: config.Region,
-    ServerSideEncryptionConfiguration: {
-        Rule: [{
-            ApplySideEncryptionConfiguration: {
-                SSEAlgorithm: 'AES256',
-            },
-        }],
-    },
-}, function(err, data) {
-    logger.log(err || JSON.stringify(data));
-});
+    cos.putBucketEncryption({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        ServerSideEncryptionConfiguration: {
+            Rule: [{
+                ApplySideEncryptionConfiguration: {
+                    SSEAlgorithm: 'AES256',
+                },
+            }],
+        },
+    }, function(err, data) {
+        logger.log(err || JSON.stringify(data));
+    });
 }
 
 function getBucketEncryption() {

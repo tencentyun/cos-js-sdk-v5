@@ -1670,7 +1670,6 @@ function getBucketAccelerate(params, callback) {
     });
 }
 
-
 function putBucketEncryption(params, callback) {
     var conf = params.ServerSideEncryptionConfiguration || {};
     var Rules = conf.Rule || conf.Rules || [];
