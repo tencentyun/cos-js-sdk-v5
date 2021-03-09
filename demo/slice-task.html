@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>自定义的分片上传</title>
+    <style>
+        h1, h2 {
+            font-weight: normal;
+        }
+
+        #msg {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>自定义的分片上传</h1>
+
+<input id="fileSelector" type="file">
+<input id="submitBtn" type="button" value="上传文件">
+<input id="cancelBtn" type="button" value="取消最后一个上传文件">
+
+<div id="msg"></div>
+
+<script src="../dist/cos-js-sdk-v5.js"></script>
+<script src="./common/async.js"></script>
+<script>
+    (function () {
+        // 请求用到的参数
+        var Bucket = 'test-1250000000';
+        var Region = 'ap-guangzhou';
+        var ChunkSize = 1024 * 1024 * 8;
+
+        // 初始化 SDK
+        var cos = new COS({
+            getAuthorization: function (options, callback) {
+                var url = '/sts'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.onload = function (e) {
+                    try {
+                        var data = JSON.parse(e.target.responseText);
+                        var credentials = data.credentials;
+                    } catch (e) {
+                    }
+                    if (!data || !credentials) return console.error('credentials invalid');
+                    callback({
+                        TmpSecretId: credentials.tmpSecretId,
+                        TmpSecretKey: credentials.tmpSecretKey,
+                        SecurityToken: credentials.sessionToken,
+                        StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+                        ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000900
+                    });
+                };
+                xhr.send();
+            },
+        });
+        var uuid = function () {
+            var S4 = function () {
+                return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+            };
+            return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
+        };
+
+        // 外部维护上传任务状态
+        var lastTaskId;
+        var taskStateMap = {};
+        cos._isRunningTask = function (tid) {
+            return taskStateMap[tid] === 'uploading';
+        };
+
+        // 上传文件
+        var uploadFile = function (file, callback) {
+            var TaskId = lastTaskId = uuid();
+            taskStateMap[TaskId] = 'uploading';
+            var fileSize = file.size;
+            var Key = 'dir/' + file.name; // 这里指定上传目录和文件名
+            console.log('上传任务已开始：' + lastTaskId, TaskId, Key);
+            // 创建 UploadId
+            cos.multipartInit({
+                Bucket: Bucket,
+                Region: Region,
+                Key: Key,
+            }, function (err, data) {
+                if (!cos._isRunningTask(TaskId)) return;
+                if (err) {
+                    taskStateMap[TaskId] = 'error';
+                    return console.error('UploadId 创建出错：', err);
+                }
+                var UploadId = data.UploadId;
+                console.log('UploadId 已创建：', UploadId);
+                var Parts = new Array(Math.ceil(fileSize / ChunkSize)).fill(0).map(function (item, index) {
+                    return {PartNumber: index + 1};
+                });
+                Async.eachLimit(Parts, 3, function (partItem, nextPart) {
+                    if (!cos._isRunningTask(TaskId)) return;
+                    var PartNumber = partItem.PartNumber;
+                    var start = (PartNumber - 1) * ChunkSize;
+                    var end = Math.min(start + ChunkSize);
+                    var blob = file.slice(start, end);
+                    // 上传每个分片
+                    cos.multipartUpload({
+                        Task: lastTaskId,
+                        Bucket: Bucket,
+                        Region: Region,
+                        Key: Key,
+                        UploadId: UploadId,
+                        PartNumber: PartNumber,
+                        Body: blob,
+                    }, function (err, data) {
+                        if (!cos._isRunningTask(TaskId)) return;
+                        if (err) return nextPart(err);
+                        if (!data.headers.etag) return nextPart('浏览器获取不到 ETag Header，需要存储桶配置 CORS ExposeHeaders 允许当前域名跨域读取 ETag 字段。');
+                        partItem.ETag = data.headers.etag || '';
+                        console.log('分片上传完成：', partItem.PartNumber, partItem.ETag);
+                        nextPart();
+                    });
+                }, function (err) {
+                    if (!cos._isRunningTask(TaskId)) return;
+                    if (err) {
+                        taskStateMap[TaskId] = 'error';
+                        return console.error('上传分片出错：', err);
+                    }
+                    // 完成分片上传
+                    cos.multipartComplete({
+                        Bucket: Bucket,
+                        Region: Region,
+                        Key: Key,
+                        UploadId: UploadId,
+                        Parts: Parts,
+                    }, function (err, data) {
+                        if (err) {
+                            taskStateMap[TaskId] = 'error';
+                            return console.error('文件完成出错：', err);
+                        }
+                        console.log('文件上传成功：', data.Location);
+                        taskStateMap[TaskId] = 'success';
+                        callback(err, data);
+                    });
+                });
+            });
+        };
+
+        // 监听表单提交
+        document.getElementById('submitBtn').onclick = function (e) {
+            var file = document.getElementById('fileSelector').files[0];
+            if (!file) {
+                document.getElementById('msg').innerText = '未选择上传文件';
+                return;
+            }
+            file && uploadFile(file, function (err, data) {
+                console.log(err || data);
+                document.getElementById('msg').innerText = err ? err : ('上传成功，ETag=' + data.ETag);
+            });
+        };
+
+        // 监听取消上传
+        document.getElementById('cancelBtn').onclick = function (e) {
+            // 标记任务取消，让 SDK 外部的上传流程停止
+            taskStateMap[lastTaskId] = 'canceled';
+            // 取消 SDK 正在执行的 xhr 上传请求，触发 xhr.abort()
+            cos.cancelTask(lastTaskId);
+            console.log('上传任务已取消：' + lastTaskId);
+        };
+    })();
+</script>
+
+</body>
+</html>
