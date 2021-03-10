@@ -2221,7 +2221,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.2.5';
+COS.version = '1.2.6';
 
 module.exports = COS;
 
@@ -7841,7 +7841,7 @@ function getAuthorizationAsync(params, callback) {
 
     var headers = util.clone(params.Headers);
     util.each(headers, function (v, k) {
-        (v === '' || ['content-type', 'cache-control', 'expires'].indexOf(k.toLowerCase())) && delete headers[k];
+        (v === '' || ['content-type', 'cache-control', 'expires'].indexOf(k.toLowerCase()) > -1) && delete headers[k];
     });
 
     // 获取凭证的回调，避免用户 callback 多次
