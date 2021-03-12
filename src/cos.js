@@ -59,6 +59,6 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.2.6';
+COS.version = '1.2.7';
 
 module.exports = COS;
