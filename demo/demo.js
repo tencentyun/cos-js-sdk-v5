@@ -1382,10 +1382,27 @@ function deleteFolder() {
     });
 }
 
+function request() {
+    cos.request({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '1.txt',
+        Method: 'GET',
+        Action: 'acl',
+        Headers: {},
+        Query: {},
+        Body: '',
+    }, function (err, data) {
+        console.log('err:', err);
+        console.log('data:', data);
+    });
+}
+
 (function () {
     var list = [
         //'getService', // 不支持，正常场景会跨域
         //'putBucket', // 不支持，正常场景会跨域
+        'request',
         'getObjectUrl',
         'getAuth',
         'getBucket',

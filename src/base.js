@@ -2849,6 +2849,37 @@ function multipartAbort(params, callback) {
 }
 
 /**
+ * 抛弃分块上传
+ * @param  {Object}  params                 参数对象，必须
+ *     @param  {String}  params.Bucket      Bucket名称，必须
+ *     @param  {String}  params.Region      地域名称，必须
+ *     @param  {String}  params.Key         object名称，必须
+ *     @param  {String}  params.UploadId    标示本次分块上传的ID，必须
+ * @param  {Function}  callback             回调函数，必须
+ *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ *     @return  {Object}    data            返回的数据
+ */
+function request(params, callback) {
+    submitRequest.call(this, {
+        method: params.Method,
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        action: params.Action,
+        headers: params.Headers,
+        qs: params.Query,
+        body: params.Body,
+    }, function (err, data) {
+        if (err) return callback(err);
+        if (data && data.body) {
+            data.Body = data.body;
+            delete data.body;
+        }
+        callback(err, data);
+    });
+}
+
+/**
  * 获取签名
  * @param  {Object}  params             参数对象，必须
  *     @param  {String}  params.Method  请求方法，必须
@@ -3541,6 +3572,7 @@ var API_MAP = {
     multipartAbort: multipartAbort,
 
     // 工具方法
+    request: request,
     getObjectUrl: getObjectUrl,
     getAuth: getAuth,
 };
