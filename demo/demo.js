@@ -913,7 +913,7 @@ function putObject() {
         },
         Headers: {
             // 万象持久化接口，上传时持久化
-            'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "test.jpg", "rule": "imageMogr2/thumbnail/!50p"}]}'
+            // 'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "test.jpg", "rule": "imageMogr2/thumbnail/!50p"}]}'
         },
     }, function (err, data) {
         logger.log(err || data);

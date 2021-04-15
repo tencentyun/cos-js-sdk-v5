@@ -2221,7 +2221,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.2.8';
+COS.version = '1.2.9';
 
 module.exports = COS;
 
@@ -6985,6 +6985,7 @@ function optionsObject(params, callback) {
 function putObjectCopy(params, callback) {
 
     // 特殊处理 Cache-Control
+    var self = this;
     var headers = params.Headers;
     if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
 
@@ -7020,7 +7021,17 @@ function putObjectCopy(params, callback) {
     }, function (err, data) {
         if (err) return callback(err);
         var result = util.clone(data.CopyObjectResult || {});
+        var url = getUrl({
+            ForcePathStyle: self.options.ForcePathStyle,
+            protocol: self.options.Protocol,
+            domain: self.options.Domain,
+            bucket: params.Bucket,
+            region: params.Region,
+            object: params.Key,
+            isLocation: true
+        });
         util.extend(result, {
+            Location: url,
             statusCode: data.statusCode,
             headers: data.headers
         });
