@@ -34,6 +34,7 @@ var defaultOptions = {
     UploadQueueSize: 10000,
     UploadAddMetaMd5: false,
     UploadIdCacheLimit: 50,
+    UseAccelerate: false,
 };
 
 // 对外暴露的类

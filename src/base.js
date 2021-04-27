@@ -1852,6 +1852,7 @@ function listObjectVersions(params, callback) {
  */
 function getObject(params, callback) {
     var reqParams = params.Query || {};
+    var reqParamsStr = params.QueryString || '';
     var onProgress = util.throttleOnProgress.call(this, 0, params.onProgress);
 
     reqParams['response-content-type'] = params['ResponseContentType'];
@@ -1872,6 +1873,7 @@ function getObject(params, callback) {
         DataType: params.DataType,
         headers: params.Headers,
         qs: reqParams,
+        qsStr: reqParamsStr,
         rawBody: true,
         onDownloadProgress: onProgress,
     }, function (err, data) {
@@ -1963,7 +1965,7 @@ function putObject(params, callback) {
                 protocol: self.options.Protocol,
                 domain: self.options.Domain,
                 bucket: params.Bucket,
-                region: params.Region,
+                region: !self.options.UseAccelerate ? params.Region : 'accelerate',
                 object: params.Key,
             });
             url = url.substr(url.indexOf('://') + 3);
@@ -2935,10 +2937,22 @@ function getObjectUrl(params, callback) {
         region: params.Region,
         object: params.Key,
     });
-    if (params.Sign !== undefined && !params.Sign) {
-        callback(null, {Url: url});
-        return url;
+
+    var queryParamsStr = '';
+    if(params.Query){
+      queryParamsStr += util.obj2str(params.Query);
     }
+    if(params.QueryString){
+      queryParamsStr += (queryParamsStr ? '&' : '') + params.QueryString;
+    }
+
+    var syncUrl = url;
+    if (params.Sign !== undefined && !params.Sign) {
+        queryParamsStr && (syncUrl += '?' + queryParamsStr);
+        callback(null, {Url: syncUrl});
+        return syncUrl;
+    }
+
     var AuthData = getAuthorizationAsync.call(this, {
         Action: ((params.Method || '').toUpperCase() === 'PUT' ? 'name/cos:PutObject' : 'name/cos:GetObject'),
         Bucket: params.Bucket || '',
@@ -2959,16 +2973,20 @@ function getObjectUrl(params, callback) {
         AuthData.ClientIP && (signUrl += '&clientIP=' + AuthData.ClientIP);
         AuthData.ClientUA && (signUrl += '&clientUA=' + AuthData.ClientUA);
         AuthData.Token && (signUrl += '&token=' + AuthData.Token);
+        queryParamsStr && (signUrl += '&' + queryParamsStr);
         setTimeout(function () {
             callback(null, {Url: signUrl});
         });
     });
+
     if (AuthData) {
-        return url + '?' + AuthData.Authorization +
+        syncUrl += '?' + AuthData.Authorization +
             (AuthData.SecurityToken ? '&x-cos-security-token=' + AuthData.SecurityToken : '');
-    } else {
-        return url;
+        queryParamsStr && (syncUrl += '&' + queryParamsStr);
+    } else{
+        queryParamsStr && (syncUrl += '?' + queryParamsStr);
     }
+    return syncUrl;
 }
 
 
@@ -3382,6 +3400,9 @@ function _submitRequest(params, callback) {
     var rawBody = params.rawBody;
 
     // url
+    if (self.options.UseAccelerate) {
+        region = 'accelerate';
+    }
     url = url || getUrl({
         ForcePathStyle: self.options.ForcePathStyle,
         protocol: self.options.Protocol,
@@ -3392,6 +3413,13 @@ function _submitRequest(params, callback) {
     });
     if (params.action) {
         url = url + '?' + params.action;
+    }
+    if (params.qsStr) {
+        if(url.indexOf('?') > -1){
+          url = url + '&' + params.qsStr;
+        }else{
+          url = url + '?' + params.qsStr;
+        }
     }
 
     var opt = {

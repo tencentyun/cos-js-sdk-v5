@@ -296,8 +296,7 @@ function putBucketAcl() {
         // },
         // "Grants": [{
         //     "Grantee": {
-        //         "ID": "qcs::cam::uin/1001:uin/1001", // 10002 是 QQ 号
-        //         "DisplayName": "qcs::cam::uin/1001:uin/1001" // 10002 是 QQ 号
+        //         "URI": "http://cam.qcloud.com/groups/global/AllUsers", // 允许匿名用户组访问
         //     },
         //     "Permission": "READ"
         // }, {
@@ -785,7 +784,7 @@ function deleteBucketLogging() {
     cos.putBucketLogging({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
-        BucketLoggingStatus: ''
+        BucketLoggingStatus: {}
     }, function (err, data) {
         logger.log(err || data);
     });
