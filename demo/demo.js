@@ -939,6 +939,7 @@ function getObject() {
     cos.getObject({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
+        Key: '1mb.zip',
         onProgress: function (progressData) {
             logger.log(JSON.stringify(progressData));
         }
@@ -1394,12 +1395,13 @@ function request() {
     cos.request({
         Bucket: config.Bucket,
         Region: config.Region,
-        Key: '1.txt',
-        Method: 'GET',
-        Action: 'acl',
-        Headers: {},
-        Query: {},
-        Body: '',
+        Key: '1.png',
+        Method: 'POST',
+        Action: 'image_process',
+        Headers: {
+        // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
+            'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}'
+        },
     }, function (err, data) {
         logger.log(err || data);
     });
