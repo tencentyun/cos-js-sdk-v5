@@ -220,7 +220,7 @@ function getAuth() {
         Key: key
     }, function (AuthData) {
         if (typeof AuthData === 'string') {
-            AuthData = {Authorization: AuthData.Authorization};
+            AuthData = {Authorization: AuthData};
         }
         var url = 'http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' +
             camSafeUrlEncode(key).replace(/%2F/g, '/') +
