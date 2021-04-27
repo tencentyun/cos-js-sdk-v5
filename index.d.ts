@@ -33,6 +33,8 @@ declare namespace COS {
   type Query = Record<string, any>;
   /** 请求里的 Header 参数 */
   type Headers = Record<string, any>;
+  /** 请求里的 URL 中对象存储 API 接口名，如 acl、tagging 等 */
+  type Action = string;
   /** 一个字符的分隔符，常用 / 字符，用于对对象键进行分组。所有对象键中从 prefix 或从头（如未指定 prefix）到首个 delimiter 之间相同的部分将作为 CommonPrefixes 下的一个 Prefix 节点。被分组的对象键不再出现在后续对象列表中 */
   type Delimiter = '/' | string;
   /** 规定返回值的编码方式，可选值：url，代表返回的对象键为 URL 编码（百分号编码）后的值，例如“腾讯云”将被编码为%E8%85%BE%E8%AE%AF%E4%BA%91 */
@@ -55,8 +57,11 @@ declare namespace COS {
   type Owner = {
     /** 存储桶持有者的完整 ID，格式为 qcs::cam::uin/[OwnerUin]:uin/[OwnerUin]，如 qcs::cam::uin/100000000001:uin/100000000001 */
     ID: string,
-    /** 存储桶持有者的名字 */
-    DisplayName: string
+  };
+  /** 所有者的信息 */
+  type GroupOwner = {
+    /** 预设用户组，格式为 http://cam.qcloud.com/groups/global/AllUsers (匿名用户组) 或 http://cam.qcloud.com/groups/global/AuthenticatedUsers (认证用户组) 。参见 {@link https://cloud.tencent.com/document/product/436/30752#.E8.BA.AB.E4.BB.BD-grantee| ACL 概述} */
+    URI: string,
   };
   /** 上传发起者的信息 */
   type Initiator = Owner;
@@ -65,7 +70,7 @@ declare namespace COS {
   /** 被授权者信息与权限信息 */
   interface Grants {
     /** 所有者的信息 */
-    Grantee: Owner,
+    Grantee: Owner | GroupOwner,
     /** 权限信息，枚举值：READ | WRITE | READ_ACP | WRITE_ACP | FULL_CONTROL 腾讯云对象存储 COS 在资源 ACL 上支持的操作实际上是一系列的操作集合，对于存储桶和对象 ACL 来说分别代表不同的含义。 */
     Permission: Permission,
   }
@@ -110,9 +115,9 @@ declare namespace COS {
 
   // 实例参数
   interface COSOptions {
-    /** 固定密钥的 SecretId @see https://console.cloud.tencent.com/cam/capi */
+    /** 固定密钥的 SecretId，可从{@link https://console.cloud.tencent.com/cam/capi|API密钥管理}获取 */
     SecretId?: string,
-    /** 固定密钥的 SecretKey  @see https://console.cloud.tencent.com/cam/capi */
+    /** 固定密钥的 SecretKey，可从{@link https://console.cloud.tencent.com/cam/capi|API密钥管理}获取 */
     SecretKey?: string,
     /** 如果传入 SecretId、SecretKey 是临时密钥，需要再传入一个临时密钥的 sessionToken */
     SecurityToken?: string,
@@ -164,6 +169,8 @@ declare namespace COS {
     UploadAddMetaMd5?: boolean,
     /** 分片上传缓存的 UploadId 列表大小限制，nodejs-sdk 默认 500 个，js-sdk、小程序 SDK 默认 50 */
     UploadIdCacheLimit?: number,
+    /** 是否使用全球加速域名。开启该配置后仅以下接口支持操作：putObject、getObject、headObject、optionsObject、multipartInit、multipartListPart、multipartUpload、multipartAbort、multipartComplete、multipartList、sliceUploadFile、uploadFiles */
+    UseAccelerate?: boolean,
     /** 获取签名的回调方法，如果没有 SecretId、SecretKey 时，必选 */
     getAuthorization?: (
       options: GetAuthorizationOptions,
@@ -472,7 +479,7 @@ declare namespace COS {
       /** 所有者的信息 */
       Owner: Owner,
       /** 被授权者信息与权限信息 */
-      Grants: Grants
+      Grants: Grants[]
     }
   }
   /** putBucketAcl 接口返回值 */
@@ -498,7 +505,7 @@ declare namespace COS {
     /** 存储桶持有者信息 */
     Owner: Owner,
     /** 被授权者信息与权限信息 */
-    Grants: Grants,
+    Grants: Grants[],
   }
 
   // putBucketCors
@@ -1051,8 +1058,6 @@ declare namespace COS {
   interface AccelerateConfiguration {
     /** 说明全球加速功能是否开启，枚举值：Suspended、Enabled	 */
     Status: 'Enabled' | 'Suspended',
-    /** 指定全球加速功能的类型，枚举值：COS */
-    Type: 'COS'
   }
   /** putBucketAccelerate 接口参数 */
   interface PutBucketAccelerateParams extends BucketParams {
@@ -1070,6 +1075,43 @@ declare namespace COS {
     /** 全球加速的具体信息 */
     InventoryConfiguration: AccelerateConfiguration,
   }
+
+  // putBucketEncryption
+  /** 默认的服务端加密配置规则 */
+  interface EncryptionRule {
+    /** 服务端加密的默认配置信息 */
+    ApplySideEncryptionConfiguration: {
+      /** 要使用的服务端加密算法，枚举值：AES256 */
+       SSEAlgorithm: 'AES256'
+    },
+  }
+  /** 包含默认加密的配置参数 */
+  interface ServerSideEncryptionConfiguration {
+    /** 默认的服务端加密配置规则 */
+    Rule: EncryptionRule[],
+  }
+  /** putBucketEncryption 接口参数 */
+  interface PutBucketEncryptionParams extends BucketParams {
+    /** 包含默认加密的配置参数 */
+    ServerSideEncryptionConfiguration: ServerSideEncryptionConfiguration,
+  }
+  /** putBucketEncryption 接口返回值 */
+  interface PutBucketEncryptionResult extends GeneralResult {}
+
+  // getBucketAccelerate
+  /** getBucketEncryption 接口参数 */
+  interface GetBucketEncryptionParams extends BucketParams {}
+  /** getBucketEncryption 接口返回值 */
+  interface GetBucketEncryptionResult extends GeneralResult {
+    /** 默认加密的配置参数 */
+    ServerSideEncryptionConfiguration: ServerSideEncryptionConfiguration,
+  }
+
+  // deleteBucketEncryption
+  /** deleteBucketEncryption 接口参数 */
+  interface DeleteBucketEncryptionParams extends BucketParams {}
+  /** deleteBucketEncryption 接口返回值 */
+  interface DeleteBucketEncryptionResult extends GeneralResult {}
 
   // headObject
   /** headObject 接口参数 */

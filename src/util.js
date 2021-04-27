@@ -518,7 +518,11 @@ var apiWrapper = function (apiName, apiFn) {
                         return 'Region format error.';
                     }
                     // 判断 region 格式
-                    if (!self.options.CompatibilityMode && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default') {
+                    if (!self.options.CompatibilityMode
+                        && params.Region.indexOf('-') === -1
+                        && params.Region !== 'yfb'
+                        && params.Region !== 'default'
+                        && params.Region !== 'accelerate' ) {
                         console.warn('warning: param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
                     }
                 }
