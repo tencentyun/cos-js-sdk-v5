@@ -58,7 +58,9 @@ var getAuthorization = function (options, callback) {
             var credentials = data.credentials;
         } catch (e) {
         }
-        if (!data || !credentials) return console.error('credentials invalid');
+        if (!data || !credentials) {
+          return logger.error('credentials invalid:\n' + JSON.stringify(data, null, 2))
+        };
         var authorization = COS.getAuthorization({
             SecretId: credentials.tmpSecretId, // 可传固定密钥或者临时密钥
             SecretKey: credentials.tmpSecretKey, // 可传固定密钥或者临时密钥
@@ -89,7 +91,9 @@ var getAuthorization = function (options, callback) {
     //         var credentials = data.credentials;
     //     } catch (e) {
     //     }
-    //     if (!data || !credentials) return console.error('credentials invalid');
+    //     if (!data || !credentials) {
+    //         return logger.error('credentials invalid:\n' + JSON.stringify(data, null, 2))
+    //     };
     //     callback({
     //         TmpSecretId: credentials.tmpSecretId,
     //         TmpSecretKey: credentials.tmpSecretKey,
@@ -216,7 +220,7 @@ function getAuth() {
         Key: key
     }, function (AuthData) {
         if (typeof AuthData === 'string') {
-            AuthData = {Authorization: AuthData.Authorization};
+            AuthData = {Authorization: AuthData};
         }
         var url = 'http://' + config.Bucket + '.cos.' + config.Region + '.myqcloud.com' + '/' +
             camSafeUrlEncode(key).replace(/%2F/g, '/') +
@@ -935,8 +939,9 @@ function getObject() {
     cos.getObject({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
+        Key: '1mb.zip',
         onProgress: function (progressData) {
-            console.log(JSON.stringify(progressData));
+            logger.log(JSON.stringify(progressData));
         }
     }, function (err, data) {
         logger.log(err || data);
@@ -1390,15 +1395,15 @@ function request() {
     cos.request({
         Bucket: config.Bucket,
         Region: config.Region,
-        Key: '1.txt',
-        Method: 'GET',
-        Action: 'acl',
-        Headers: {},
-        Query: {},
-        Body: '',
+        Key: '1.png',
+        Method: 'POST',
+        Action: 'image_process',
+        Headers: {
+        // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
+            'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}'
+        },
     }, function (err, data) {
-        console.log('err:', err);
-        console.log('data:', data);
+        logger.log(err || data);
     });
 }
 
