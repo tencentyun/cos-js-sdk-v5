@@ -58,7 +58,9 @@ var getAuthorization = function (options, callback) {
             var credentials = data.credentials;
         } catch (e) {
         }
-        if (!data || !credentials) return console.error('credentials invalid');
+        if (!data || !credentials) {
+          return logger.error('credentials invalid:\n' + JSON.stringify(data, null, 2))
+        };
         var authorization = COS.getAuthorization({
             SecretId: credentials.tmpSecretId, // 可传固定密钥或者临时密钥
             SecretKey: credentials.tmpSecretKey, // 可传固定密钥或者临时密钥
@@ -89,7 +91,9 @@ var getAuthorization = function (options, callback) {
     //         var credentials = data.credentials;
     //     } catch (e) {
     //     }
-    //     if (!data || !credentials) return console.error('credentials invalid');
+    //     if (!data || !credentials) {
+    //         return logger.error('credentials invalid:\n' + JSON.stringify(data, null, 2))
+    //     };
     //     callback({
     //         TmpSecretId: credentials.tmpSecretId,
     //         TmpSecretKey: credentials.tmpSecretKey,
@@ -936,7 +940,7 @@ function getObject() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
         onProgress: function (progressData) {
-            console.log(JSON.stringify(progressData));
+            logger.log(JSON.stringify(progressData));
         }
     }, function (err, data) {
         logger.log(err || data);
@@ -1397,8 +1401,7 @@ function request() {
         Query: {},
         Body: '',
     }, function (err, data) {
-        console.log('err:', err);
-        console.log('data:', data);
+        logger.log(err || data);
     });
 }
 
