@@ -1522,13 +1522,13 @@ function CIExample4(){
 
 (function () {
     var list = [
-        'text-工具函数',
+        'header-工具函数',
         'request',
         'getObjectUrl',
         'getAuth',
 
         //'getService', // 不支持，正常场景会跨域
-        'text-存储桶操作',
+        'header-存储桶操作',
         //'putBucket', // 不支持，正常场景会跨域
         'headBucket',
         'putBucketAcl',
@@ -1571,7 +1571,7 @@ function CIExample4(){
         'deleteBucketEncryption',
         'deleteBucket',
 
-        'text-对象操作',
+        'header-对象操作',
         'getBucket',
         'listObjectVersions',
         'putObjectCopy',
@@ -1586,7 +1586,7 @@ function CIExample4(){
         'selectObjectContent',
         'putObject',
 
-        'text-高级操作',
+        'header-高级操作',
         'sliceUploadFile',
         'selectFileToUpload',
         'sliceCopyFile',
@@ -1598,7 +1598,7 @@ function CIExample4(){
         'pauseTask',
         'restartTask',
 
-        'text-数据万象示例',
+        'header-数据万象示例',
         'CIExample1',
         'CIExample2',
         'CIExample3',
@@ -1623,7 +1623,7 @@ function CIExample4(){
     list.forEach(function (name) {
         if (name === '-') {
             html.push('<hr/>');
-        } else if(name.indexOf('text') > -1){
+        } else if(name.indexOf('header') > -1){
             html.push('<h4>'+ name.split('-')[1] +'</h4>')
         } else {
             html.push('<a href="javascript:void(0)" data-method="' + name + '">' + name + (labelMap[name] ? ' (' + labelMap[name] + ')' : '') + '</a>');
