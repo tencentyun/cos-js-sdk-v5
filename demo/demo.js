@@ -182,7 +182,7 @@ var logger = {
     log: function (text) {
         console.log.apply(console, arguments);
         var args = [].map.call(arguments, function (v) {
-            return typeof v === 'object' ? JSON.stringify(v) : v;
+            return typeof v === 'object' ? JSON.stringify(v, null, 2) : v;
         });
 
         var logStr = args.join(' ');
@@ -207,9 +207,9 @@ function getObjectUrl() {
         Expires: 60,
         Sign: true,
     }, function (err, data) {
-        logger.log(err || data && data.Url);
+        logger.log('getObjectUrl:', err || data && data.Url);
     });
-    logger.log(url);
+    logger.log('getObjectUrl:', url);
 }
 
 function getAuth() {
@@ -226,14 +226,14 @@ function getAuth() {
             camSafeUrlEncode(key).replace(/%2F/g, '/') +
             '?' + AuthData +
             (AuthData.SecurityToken ? '&' + AuthData.SecurityToken : '');
-        logger.log(url);
+        logger.log('getAuth:', url);
     });
 }
 
 // getService、putBucket 接口会跨域，不支持浏览器使用，只在场景下可调用，比如改了 ServiceDomain 到代理地址
 function getService() {
     cos.getService(function (err, data) {
-        logger.log(err || data);
+        logger.log('getService:', err || data);
     });
 }
 
@@ -245,7 +245,7 @@ function putBucket() {
         // Prefix: 'dir/'
         // Delimiter: '/'
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('putBucket:', err || data);
     });
 }
 
@@ -256,7 +256,7 @@ function getBucket() {
         // Prefix: 'dir/'
         // Delimiter: '/'
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('getBucket:', err || data);
     });
 }
 
@@ -265,7 +265,7 @@ function headBucket() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('headBucket:', err || data);
     });
 }
 
@@ -274,7 +274,7 @@ function deleteBucket() {
         Bucket: 'testnew-' + config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1),
         Region: 'ap-guangzhou'
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('deleteBucket:', err || data);
     });
 }
 
@@ -317,7 +317,7 @@ function putBucketAcl() {
         // }]
         // }
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('putBucketAcl:', err || data);
     });
 }
 
@@ -326,7 +326,7 @@ function getBucketAcl() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('getBucketAcl:', err || data);
     });
 }
 
@@ -342,7 +342,7 @@ function putBucketCors() {
             "MaxAgeSeconds": "5"
         }]
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('putBucketCors:', err || data);
     });
 }
 
@@ -351,7 +351,7 @@ function getBucketCors() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('getBucketCors:', err || data);
     });
 }
 
@@ -360,7 +360,7 @@ function deleteBucketCors() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('deleteBucketCors:', err || data);
     });
 }
 
@@ -375,7 +375,7 @@ function putBucketTagging() {
             ]
         }
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('putBucketTagging:', err || data);
     });
 }
 
@@ -384,7 +384,7 @@ function getBucketTagging() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('getBucketTagging:', err || data);
     });
 }
 
@@ -393,7 +393,7 @@ function deleteBucketTagging() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('deleteBucketTagging:', err || data);
     });
 }
 
@@ -462,7 +462,7 @@ function putBucketPolicy() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('putBucketPolicy:', err || data);
     });
 }
 
@@ -471,7 +471,7 @@ function getBucketPolicy() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('getBucketPolicy:', err || data);
     });
 }
 
@@ -480,7 +480,7 @@ function deleteBucketPolicy() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('deleteBucketPolicy:', err || data);
     });
 }
 
@@ -489,7 +489,7 @@ function getBucketLocation() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('getBucketLocation:', err || data);
     });
 }
 
@@ -533,7 +533,7 @@ function putBucketLifecycle() {
             }],
         }
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('putBucketLifecycle:', err || data);
     });
 }
 
@@ -542,7 +542,7 @@ function getBucketLifecycle() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('getBucketLifecycle:', err || data);
     });
 }
 
@@ -551,7 +551,7 @@ function deleteBucketLifecycle() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('deleteBucketLifecycle:', err || data);
     });
 }
 
@@ -563,7 +563,7 @@ function putBucketVersioning() {
             Status: "Enabled"
         }
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('putBucketVersioning:', err || data);
     });
 }
 
@@ -572,7 +572,7 @@ function getBucketVersioning() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('getBucketVersioning:', err || data);
     });
 }
 
@@ -583,7 +583,7 @@ function listObjectVersions() {
         // Prefix: "",
         // Delimiter: '/'
     }, function (err, data) {
-        logger.log(err || JSON.stringify(data, null, '    '));
+        logger.log('listObjectVersions:', err || JSON.stringify(data, null, '    '));
     });
 }
 
@@ -605,7 +605,7 @@ function putBucketReplication() {
             }]
         }
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('putBucketReplication:', err || data);
     });
 }
 
@@ -614,7 +614,7 @@ function getBucketReplication() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('getBucketReplication:', err || data);
     });
 }
 
@@ -623,7 +623,7 @@ function deleteBucketReplication() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('deleteBucketReplication:', err || data);
     });
 }
 
@@ -668,7 +668,7 @@ function putBucketWebsite() {
             // }]
         }
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('putBucketWebsite:', err || data);
     });
 }
 
@@ -677,7 +677,7 @@ function getBucketWebsite() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     },function(err, data){
-        logger.log(err || data);
+        logger.log('getBucketWebsite:', err || data);
     });
 }
 
@@ -686,7 +686,7 @@ function deleteBucketWebsite() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     },function(err, data){
-        logger.log(err || data);
+        logger.log('deleteBucketWebsite:', err || data);
     });
 }
 
@@ -706,7 +706,7 @@ function putBucketReferer() {
             EmptyReferConfiguration: 'Allow',
         }
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('putBucketReferer:', err || data);
     });
 }
 
@@ -715,7 +715,7 @@ function getBucketReferer() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     },function(err, data){
-        logger.log(err || JSON.stringify(data, null, '    '));
+        logger.log('getBucketReferer:', err || JSON.stringify(data, null, '    '));
     });
 }
 
@@ -733,7 +733,7 @@ function putBucketDomain() {
             Type: "WEBSITE"
         }]
     },function(err, data){
-        logger.log(err || data);
+        logger.log('putBucketDomain:', err || data);
     });
 }
 
@@ -742,7 +742,7 @@ function getBucketDomain() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     },function(err, data){
-        logger.log(err || data);
+        logger.log('getBucketDomain:', err || data);
     });
 }
 
@@ -751,7 +751,7 @@ function deleteBucketDomain() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     },function(err, data){
-        logger.log(err || data);
+        logger.log('deleteBucketDomain:', err || data);
     });
 }
 
@@ -767,7 +767,7 @@ function putBucketLogging() {
             }
         }
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('putBucketLogging:', err || data);
     });
 }
 
@@ -776,7 +776,7 @@ function getBucketLogging() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('getBucketLogging:', err || data);
     });
 }
 
@@ -786,7 +786,7 @@ function deleteBucketLogging() {
         Region: config.Region,
         BucketLoggingStatus: {}
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('deleteBucketLogging:', err || data);
     });
 }
 
@@ -827,7 +827,7 @@ function putBucketInventory() {
             ]
         }
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('putBucketInventory:', err || data);
     });
 }
 
@@ -837,7 +837,7 @@ function getBucketInventory() {
         Region: config.Region,
         Id: 'inventory_test'
     }, function(err, data) {
-        logger.log(err || JSON.stringify(data));
+        logger.log('getBucketInventory:', err || JSON.stringify(data));
     });
 }
 
@@ -847,7 +847,7 @@ function deleteBucketInventory() {
         Region: config.Region,
         Id: 'inventory_test'
     }, function(err, data) {
-        logger.log(err || JSON.stringify(data));
+        logger.log('deleteBucketInventory:', err || JSON.stringify(data));
     });
 }
 
@@ -856,7 +856,7 @@ function listBucketInventory() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function(err, data) {
-        logger.log(err || JSON.stringify(data));
+        logger.log('listBucketInventory:', err || JSON.stringify(data));
     });
 }
 
@@ -872,7 +872,7 @@ function putBucketEncryption() {
             }],
         },
     }, function(err, data) {
-        logger.log(err || JSON.stringify(data));
+        logger.log('putBucketEncryption:', err || JSON.stringify(data));
     });
 }
 
@@ -881,7 +881,7 @@ function getBucketEncryption() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function(err, data) {
-        logger.log(err || JSON.stringify(data));
+        logger.log('getBucketEncryption:', err || JSON.stringify(data));
     });
 }
 
@@ -890,7 +890,7 @@ function deleteBucketEncryption() {
         Bucket: config.Bucket,
         Region: config.Region
     }, function(err, data) {
-        logger.log(err || JSON.stringify(data));
+        logger.log('deleteBucketEncryption:', err || JSON.stringify(data));
     });
 }
 
@@ -919,7 +919,7 @@ function putObject() {
             // 'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "test.jpg", "rule": "imageMogr2/thumbnail/!50p"}]}'
         },
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('putObject:', err || data);
     });
 }
 
@@ -930,7 +930,7 @@ function putObjectCopy() {
         Key: '1mb.copy.zip',
         CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + camSafeUrlEncode('1mb.zip').replace(/%2F/g, '/'), // Bucket 格式：test-1250000000
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('putObjectCopy:', err || data);
     });
 }
 
@@ -943,7 +943,7 @@ function getObject() {
             logger.log(JSON.stringify(progressData));
         }
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('getObject:', err || data);
     });
 }
 
@@ -953,7 +953,7 @@ function headObject() {
         Region: config.Region,
         Key: '1mb.zip'
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('headObject:', err || data);
     });
 }
 
@@ -981,7 +981,7 @@ function putObjectAcl() {
         //     }]
         // }
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('putObjectAcl:', err || data);
     });
 }
 
@@ -991,7 +991,7 @@ function getObjectAcl() {
         Region: config.Region,
         Key: '1mb.zip'
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('getObjectAcl:', err || data);
     });
 }
 
@@ -1001,7 +1001,7 @@ function deleteObject() {
         Region: config.Region,
         Key: '1mb.zip'
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('deleteObject:', err || data);
     });
 }
 
@@ -1014,7 +1014,7 @@ function deleteMultipleObject() {
             {Key: '中文/中文.zip',VersionId: 'MTg0NDY3NDI1MzM4NzM0ODA2MTI'},
         ]
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('deleteMultipleObject:', err || data);
     });
 }
 
@@ -1030,7 +1030,7 @@ function restoreObject() {
             }
         }
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('restoreObject:', err || data);
     });
 }
 
@@ -1069,7 +1069,7 @@ function selectObjectContent() {
             }
         },
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('selectObjectContent:', err || data);
     });
     // 查询 JSON
     cos.selectObjectContent({
@@ -1095,7 +1095,7 @@ function selectObjectContent() {
             }
         },
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('selectObjectContent:', err || data);
     });
 }
 
@@ -1113,7 +1113,7 @@ function abortUploadTask() {
         // 格式3，删除 Bucket 下所有未完成上传任务
         // Level: 'bucket',
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('abortUploadTask:', err || data);
     });
 }
 
@@ -1138,7 +1138,7 @@ function sliceUploadFile() {
             logger.log('onProgress', JSON.stringify(progressData));
         },
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('sliceUploadFile:', err || data);
     });
 }
 
@@ -1162,7 +1162,7 @@ function selectFileToUpload() {
                     logger.log('onProgress', JSON.stringify(progressData));
                 },
             }, function (err, data) {
-                logger.log(err || data);
+                logger.log('selectFileToUpload:', err || data);
             });
         } else {
             cos.putObject({
@@ -1180,7 +1180,7 @@ function selectFileToUpload() {
                     logger.log(JSON.stringify(progressData));
                 },
             }, function (err, data) {
-                logger.log(err || data);
+                logger.log('selectFileToUpload:', err || data);
             });
         }
     });
@@ -1231,7 +1231,7 @@ function uploadFiles() {
             logger.log(options.Key + ' 上传' + (err ? '失败' : '完成'));
         },
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('uploadFiles:', err || data);
     });
 }
 
@@ -1255,9 +1255,9 @@ function sliceCopyFile() {
         }
     },function (err,data) {
         if(err){
-            logger.log(err);
+            logger.log('sliceCopyFile:', err);
         }else{
-            logger.log(data);
+            logger.log('sliceCopyFile:', data);
         }
     });
 }
@@ -1293,7 +1293,7 @@ function uploadFolder() {
                 logger.log(options.Key + ' 上传' + (err ? '失败' : '完成'));
             },
         }, function (err, data) {
-            logger.log(err || data);
+            logger.log('uploadFolder:', err || data);
         });
     };
     input.click();
@@ -1333,7 +1333,7 @@ function listFolder() {
         Delimiter: '/', // 如果按目录列出文件传入该分隔符，如果要深度列出文件不传改参数
         Prefix: 'folder/', // 要列出的目录前缀
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('listFolder:', err || data);
     });
 }
 
@@ -1386,7 +1386,7 @@ function deleteFolder() {
         Region: config.Region,
         Prefix: 'folder/', // 要列出的目录前缀
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('deleteFolder:', err || data);
     });
 }
 
@@ -1402,18 +1402,134 @@ function request() {
             'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}'
         },
     }, function (err, data) {
-        logger.log(err || data);
+        logger.log('request:', err || data);
     });
+}
+
+function CIExample1(){
+    util.selectLocalFile(function (files) {
+        var file = files && files[0];
+        if (!file) return;
+        if(file.type.indexOf('image') < 0){
+            logger.error('Please select a photo to upload!');
+            return;
+        }
+        if (file.size > 1024 * 1024) {
+            cos.sliceUploadFile({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: file.name,
+                Body: file,
+                Headers: {
+                  // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
+                  'Pic-Operations':
+                    '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}',
+                },
+                onTaskReady: function (tid) {
+                    TaskId = tid;
+                },
+                onHashProgress: function (progressData) {
+                    logger.log('onHashProgress', JSON.stringify(progressData));
+                },
+                onProgress: function (progressData) {
+                    logger.log('onProgress', JSON.stringify(progressData));
+                },
+            }, function (err, data) {
+                logger.log('CIExample1:', err || data);
+            });
+        } else {
+            cos.putObject({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: file.name,
+                Body: file,
+                Headers: {
+                  // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
+                  'Pic-Operations':
+                    '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}',
+                },
+                onTaskReady: function (tid) {
+                    TaskId = tid;
+                },
+                onHashProgress: function (progressData) {
+                    logger.log('onHashProgress', JSON.stringify(progressData));
+                },
+                onProgress: function (progressData) {
+                    logger.log('onProgress', JSON.stringify(progressData));
+                },
+            }, function (err, data) {
+                logger.log('CIExample1:', err || data);
+            });
+        }
+    });
+}
+function CIExample2(){
+    cos.request({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: 'photo.png',
+        Method: 'POST',
+        Action: 'image_process',
+        Headers: {
+        // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
+            'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}'
+        },
+    }, function (err, data) {
+        logger.log('CIExample2:', err || data);
+    });
+}
+function CIExample3(){
+    cos.getObject({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: 'photo.png',
+            QueryString: `imageMogr2/thumbnail/200x/`,
+        },
+        function (err, data) {
+            logger.log('CIExample3:', err || data);
+        },
+    );
+}
+function CIExample4(){
+
+    // 生成带图片处理参数的文件签名URL，过期时间设置为 30 分钟。
+    cos.getObjectUrl({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: 'photo.png',
+            QueryString: `imageMogr2/thumbnail/200x/`,
+            Expires: 1800,
+            Sign: true,
+        },
+        function (err, data) {
+            logger.log('getObjectUrl with sign: ', err || data && data.Url);
+        },
+    );
+
+  // 生成带图片处理参数的文件URL，不带签名。
+  cos.getObjectUrl({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: 'photo.png',
+        QueryString: `imageMogr2/thumbnail/200x/`,
+        Sign: false,
+    },
+    function (err, data) {
+        logger.log('getObjectUrl without sign: ', err || data && data.Url);
+    },
+  );
 }
 
 (function () {
     var list = [
-        //'getService', // 不支持，正常场景会跨域
-        //'putBucket', // 不支持，正常场景会跨域
+        'text-工具函数',
         'request',
         'getObjectUrl',
         'getAuth',
-        'getBucket',
+
+        //'getService', // 不支持，正常场景会跨域
+        'text-存储桶操作',
+        //'putBucket', // 不支持，正常场景会跨域
         'headBucket',
         'putBucketAcl',
         'getBucketAcl',
@@ -1432,7 +1548,6 @@ function request() {
         'deleteBucketLifecycle',
         'putBucketVersioning',
         'getBucketVersioning',
-        'listObjectVersions',
         'getBucketReplication',
         'putBucketReplication',
         'deleteBucketReplication',
@@ -1455,6 +1570,10 @@ function request() {
         'getBucketEncryption',
         'deleteBucketEncryption',
         'deleteBucket',
+
+        'text-对象操作',
+        'getBucket',
+        'listObjectVersions',
         'putObjectCopy',
         'getObject',
         'headObject',
@@ -1466,17 +1585,24 @@ function request() {
         'abortUploadTask',
         'selectObjectContent',
         'putObject',
+
+        'text-高级操作',
         'sliceUploadFile',
         'selectFileToUpload',
         'sliceCopyFile',
         'uploadFiles',
-        'cancelTask',
-        'pauseTask',
-        'restartTask',
-        '-',
         'uploadFolder',
         'listFolder',
         'deleteFolder',
+        'cancelTask',
+        'pauseTask',
+        'restartTask',
+
+        'text-数据万象示例',
+        'CIExample1',
+        'CIExample2',
+        'CIExample3',
+        'CIExample4',
     ];
     var labelMap = {
         putObject: '简单上传',
@@ -1487,12 +1613,18 @@ function request() {
         uploadFolder: '上传文件夹',
         listFolder: '列出文件夹',
         deleteFolder: '删除文件夹',
+        CIExample1: '上传时使用图片处理',
+        CIExample2: '对云上数据进行图片处理',
+        CIExample3: '下载时使用图片处理',
+        CIExample4: '生成带图片处理参数的签名 URL',
     };
     var container = document.querySelector('.main');
     var html = [];
     list.forEach(function (name) {
         if (name === '-') {
             html.push('<hr/>');
+        } else if(name.indexOf('text') > -1){
+            html.push('<h4>'+ name.split('-')[1] +'</h4>')
         } else {
             html.push('<a href="javascript:void(0)" data-method="' + name + '">' + name + (labelMap[name] ? ' (' + labelMap[name] + ')' : '') + '</a>');
         }
@@ -1504,4 +1636,16 @@ function request() {
             window[name]();
         }
     };
+
+    // 设置结果面板跟随窗口自适应高
+    var mainPanel = document.querySelector('.main');
+    var resultPanel = document.querySelector('.result');
+    resultPanel.style.height = getPanelHeight();
+    window.onresize = function(e){
+        resultPanel.style.height = getPanelHeight();
+    }
+
+    function getPanelHeight(){
+        return (mainPanel.getBoundingClientRect().height - 80) + 'px';
+    }
 })();
