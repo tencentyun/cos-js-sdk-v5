@@ -1262,6 +1262,50 @@ function sliceCopyFile() {
     });
 }
 
+/* 移动对象*/
+function moveObject() {
+    // COS 没有对象重命名或移动的接口，移动对象可以通过复制/删除对象实现
+    var source = 'source.txt';
+    var target = 'target.txt';
+    var copySource = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + camSafeUrlEncode(source).replace(/%2F/g, '/');
+    cos.putObject({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: source,
+        Body: 'hello!',
+    }, function (err, data) {
+        if (err) return logger.log(err);
+        cos.putObjectCopy({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: target,
+            CopySource: copySource,
+        }, function (err, data) {
+            if (err) return logger.log(err);
+            cos.deleteObject({
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: source,
+            }, function (err, data) {
+                logger.log(err || data);
+            });
+        });
+    });
+}
+
+/* 创建文件夹 */
+function createFolder() {
+    cos.getBucket({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: 'folder/', // 对象存储没有实际的文件夹，可以创建一个路径以 / 结尾的空对象表示，能在部分场景中满足文件夹使用需要
+        Body: '',
+    }, function(err, data) {
+        logger.log(err || data);
+    });
+}
+
+/* 上传本地文件夹 */
 function uploadFolder() {
     // <input type='file' name="file" webkitdirectory >
     var input = document.createElement('input');
@@ -1299,6 +1343,7 @@ function uploadFolder() {
     input.click();
 }
 
+/* 列出文件夹下的文件 */
 function listFolder() {
     var _listFolder = function(params, callback) {
         var Contents = [];
@@ -1337,6 +1382,7 @@ function listFolder() {
     });
 }
 
+/* 删除指定文件夹下的所有对象（删除存储桶里指定前缀所有对象） */
 function deleteFolder() {
     var _deleteFolder = function(params, callback) {
         var deletedList = [];
@@ -1592,6 +1638,8 @@ function CIExample4(){
         'sliceCopyFile',
         'uploadFiles',
         'uploadFolder',
+        'moveObject',
+        'createFolder',
         'listFolder',
         'deleteFolder',
         'cancelTask',
@@ -1611,6 +1659,7 @@ function CIExample4(){
         uploadFiles: '批量上传文件',
         selectFileToUpload: '上传本地文件',
         uploadFolder: '上传文件夹',
+        request: '通用请求接口',
         listFolder: '列出文件夹',
         deleteFolder: '删除文件夹',
         CIExample1: '上传时使用图片处理',
