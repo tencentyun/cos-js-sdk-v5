@@ -1679,7 +1679,7 @@ function CIExample4(){
         uploadToFolder: '上传到指定文件夹',
         request: '通用请求接口',
         listFolder: '列出文件夹',
-        deleteFolder: '删除文件夹',
+        deleteFolder: '删除文件夹(按前缀批量删除)',
         CIExample1: '上传时使用图片处理',
         CIExample2: '对云上数据进行图片处理',
         CIExample3: '下载时使用图片处理',
