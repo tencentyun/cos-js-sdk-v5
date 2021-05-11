@@ -1293,9 +1293,25 @@ function moveObject() {
     });
 }
 
+/* 上传到指定文件夹/目录 */
+function uploadToFolder() {
+    util.selectLocalFile(function (files) {
+        var file = files && files[0];
+        if (!file) return;
+        cos.putObject({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            Key: 'folder/' + file.name,
+            Body: file,
+        }, function (err, data) {
+            logger.log(err || data);
+        });
+    });
+}
+
 /* 创建文件夹 */
 function createFolder() {
-    cos.getBucket({
+    cos.putObject({
         Bucket: config.Bucket,
         Region: config.Region,
         Key: 'folder/', // 对象存储没有实际的文件夹，可以创建一个路径以 / 结尾的空对象表示，能在部分场景中满足文件夹使用需要
@@ -1638,6 +1654,7 @@ function CIExample4(){
         'sliceCopyFile',
         'uploadFiles',
         'uploadFolder',
+        'uploadToFolder',
         'moveObject',
         'createFolder',
         'listFolder',
@@ -1659,6 +1676,7 @@ function CIExample4(){
         uploadFiles: '批量上传文件',
         selectFileToUpload: '上传本地文件',
         uploadFolder: '上传文件夹',
+        uploadToFolder: '上传到指定文件夹',
         request: '通用请求接口',
         listFolder: '列出文件夹',
         deleteFolder: '删除文件夹',
