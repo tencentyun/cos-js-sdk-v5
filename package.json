@@ -3,7 +3,7 @@
   "version": "1.2.10",
   "description": "JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)",
   "main": "index.js",
-  "types": "types",
+  "types": "index.d.ts",
   "scripts": {
     "server": "node server/sts.js",
     "dev": "cross-env NODE_ENV=development webpack -w",
