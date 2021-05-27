@@ -659,6 +659,10 @@ var error = function (err, opt) {
     return err;
 }
 
+var isNode = function () {
+  return typeof window !== 'object' && typeof process === 'object' && typeof require === 'function';
+}
+
 var util = {
     noop: noop,
     formatParams: formatParams,
@@ -689,6 +693,7 @@ var util = {
     getAuth: getAuth,
     parseSelectPayload: parseSelectPayload,
     isBrowser: true,
+    isNode: isNode,
 };
 
 module.exports = util;

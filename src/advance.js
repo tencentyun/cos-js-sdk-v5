@@ -537,7 +537,7 @@ function uploadSliceList(params, cb) {
             },
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
-            if (!err && !data.ETag) err = 'get ETag error, please add "ETag" to CORS ExposeHeader setting.';
+            if (!err && !data.ETag) err = 'get ETag error, please add "ETag" to CORS ExposeHeader setting.( 获取ETag失败，请在CORS ExposeHeader设置中添加ETag，请参考文档：https://cloud.tencent.com/document/product/436/13318 )';
             if (err) {
                 FinishSize -= preAddSize;
             } else {
@@ -1031,7 +1031,7 @@ function sliceCopyFile(params, callback) {
 
         FileSize = params.FileSize = data.headers['content-length'];
         if (FileSize === undefined || !FileSize) {
-            callback(util.error(new Error('get Content-Length error, please add "Content-Length" to CORS ExposeHeader setting.')));
+            callback(util.error(new Error('get Content-Length error, please add "Content-Length" to CORS ExposeHeader setting.（ 获取Content-Length失败，请在CORS ExposeHeader设置中添加Content-Length，请参考文档：https://cloud.tencent.com/document/product/436/13318 ）')));
             return;
         }
 
