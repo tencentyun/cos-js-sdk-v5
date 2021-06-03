@@ -617,7 +617,7 @@ var throttleOnProgress = function (total, onProgress, uploadId) {
 var getFileSize = function (api, params, callback) {
     var size;
     if (typeof params.Body === 'string') {
-      params.Body = new Blob([params.Body], {type: 'text/plain'});
+        params.Body = new Blob([params.Body], {type: 'text/plain'});
     } else if (params.Body instanceof ArrayBuffer) {
         params.Body = new Blob([params.Body]);
     }
