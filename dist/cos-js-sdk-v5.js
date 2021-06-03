@@ -8590,7 +8590,7 @@ function sliceUploadFile(params, callback) {
     ep.on('error', function (err) {
         if (!self._isRunningTask(TaskId)) return;
         var _err = util.extend({
-            UploadId: params.uploadId || ''
+            UploadId: params.UploadData.uploadId || ''
         }, err);
         return callback(_err);
     });
