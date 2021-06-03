@@ -589,7 +589,7 @@ var throttleOnProgress = function (total, onProgress) {
             time0 = time1;
             size0 = size1;
             try {
-                onProgress({ loaded: size1, total: total, speed: speed, percent: percent });
+                onProgress({loaded: size1, total: total, speed: speed, percent: percent});
             } catch (e) {
             }
         }
