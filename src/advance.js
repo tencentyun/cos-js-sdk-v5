@@ -25,7 +25,7 @@ function sliceUploadFile(params, callback) {
     ep.on('error', function (err) {
         if (!self._isRunningTask(TaskId)) return;
         var _err = util.extend({
-          UploadId: params.UploadData.uploadId || ''
+          UploadId: params.UploadData.UploadId || ''
         }, err);
         return callback(_err);
     });

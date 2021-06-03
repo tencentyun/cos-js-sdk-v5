@@ -2422,7 +2422,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.2.11';
+COS.version = '1.2.12';
 
 module.exports = COS;
 
@@ -8590,7 +8590,7 @@ function sliceUploadFile(params, callback) {
     ep.on('error', function (err) {
         if (!self._isRunningTask(TaskId)) return;
         var _err = util.extend({
-            UploadId: params.UploadData.uploadId || ''
+            UploadId: params.UploadData.UploadId || ''
         }, err);
         return callback(_err);
     });
