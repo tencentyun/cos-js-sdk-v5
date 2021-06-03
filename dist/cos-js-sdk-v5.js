@@ -2422,7 +2422,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.2.10';
+COS.version = '1.2.11';
 
 module.exports = COS;
 
@@ -8589,12 +8589,18 @@ function sliceUploadFile(params, callback) {
     // 上传过程中出现错误，返回错误
     ep.on('error', function (err) {
         if (!self._isRunningTask(TaskId)) return;
-        return callback(err);
+        var _err = util.extend({
+            UploadId: params.UploadData.uploadId || ''
+        }, err);
+        return callback(_err);
     });
 
     // 上传分块完成，开始 uploadSliceComplete 操作
     ep.on('upload_complete', function (UploadCompleteData) {
-        callback(null, UploadCompleteData);
+        var _UploadCompleteData = util.extend({
+            UploadId: params.UploadData.UploadId || ''
+        }, UploadCompleteData);
+        callback(null, _UploadCompleteData);
     });
 
     // 上传分块完成，开始 uploadSliceComplete 操作
