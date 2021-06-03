@@ -567,7 +567,7 @@ var apiWrapper = function (apiName, apiFn) {
     }
 };
 
-var throttleOnProgress = function (total, onProgress) {
+var throttleOnProgress = function (total, onProgress, uploadId) {
     var self = this;
     var size0 = 0;
     var size1 = 0;
@@ -589,7 +589,11 @@ var throttleOnProgress = function (total, onProgress) {
             time0 = time1;
             size0 = size1;
             try {
-                onProgress({loaded: size1, total: total, speed: speed, percent: percent});
+                var info = { loaded: size1, total: total, speed: speed, percent: percent };
+                if (uploadId) {
+                  info.uploadId = uploadId;
+                }
+                onProgress(info);
             } catch (e) {
             }
         }
@@ -613,7 +617,7 @@ var throttleOnProgress = function (total, onProgress) {
 var getFileSize = function (api, params, callback) {
     var size;
     if (typeof params.Body === 'string') {
-        params.Body = new Blob([params.Body], {type: 'text/plain'});
+      params.Body = new Blob([params.Body], {type: 'text/plain'});
     } else if (params.Body instanceof ArrayBuffer) {
         params.Body = new Blob([params.Body]);
     }

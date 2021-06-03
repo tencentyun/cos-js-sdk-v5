@@ -629,7 +629,7 @@ var apiWrapper = function (apiName, apiFn) {
     };
 };
 
-var throttleOnProgress = function (total, onProgress) {
+var throttleOnProgress = function (total, onProgress, uploadId) {
     var self = this;
     var size0 = 0;
     var size1 = 0;
@@ -651,7 +651,11 @@ var throttleOnProgress = function (total, onProgress) {
             time0 = time1;
             size0 = size1;
             try {
-                onProgress({ loaded: size1, total: total, speed: speed, percent: percent });
+                var info = { loaded: size1, total: total, speed: speed, percent: percent };
+                if (uploadId) {
+                    info.uploadId = uploadId;
+                }
+                onProgress(info);
             } catch (e) {}
         }
     }
@@ -8632,6 +8636,8 @@ function sliceUploadFile(params, callback) {
         uuid && session.saveUploadId.call(self, uuid, UploadData.UploadId, self.options.UploadIdCacheLimit); // 缓存 UploadId
         session.setUsing(UploadData.UploadId); // 标记 UploadId 为正在使用
 
+        onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress, UploadData.UploadId);
+
         // 获取 UploadId
         onProgress(null, true); // 任务状态开始 uploading
         uploadSliceList.call(self, {
@@ -8658,8 +8664,6 @@ function sliceUploadFile(params, callback) {
 
     // 开始获取文件 UploadId，里面会视情况计算 ETag，并比对，保证文件一致性，也优化上传
     ep.on('get_file_size_finish', function () {
-
-        onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
         if (params.UploadData.UploadId) {
             ep.emit('get_upload_data_finish', params.UploadData);
