@@ -567,7 +567,7 @@ var apiWrapper = function (apiName, apiFn) {
     }
 };
 
-var throttleOnProgress = function (total, onProgress, uploadId) {
+var throttleOnProgress = function (total, onProgress) {
     var self = this;
     var size0 = 0;
     var size1 = 0;
@@ -589,11 +589,7 @@ var throttleOnProgress = function (total, onProgress, uploadId) {
             time0 = time1;
             size0 = size1;
             try {
-                var info = { loaded: size1, total: total, speed: speed, percent: percent };
-                if (uploadId) {
-                  info.uploadId = uploadId;
-                }
-                onProgress(info);
+                onProgress({ loaded: size1, total: total, speed: speed, percent: percent });
             } catch (e) {
             }
         }

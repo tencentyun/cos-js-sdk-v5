@@ -24,12 +24,18 @@ function sliceUploadFile(params, callback) {
     // 上传过程中出现错误，返回错误
     ep.on('error', function (err) {
         if (!self._isRunningTask(TaskId)) return;
-        return callback(err);
+        var _err = util.extend({
+          UploadId: params.uploadId || ''
+        }, err);
+        return callback(_err);
     });
 
     // 上传分块完成，开始 uploadSliceComplete 操作
     ep.on('upload_complete', function (UploadCompleteData) {
-        callback(null, UploadCompleteData);
+        var _UploadCompleteData = util.extend({
+          UploadId: params.UploadData.UploadId || ''
+        }, UploadCompleteData);
+        callback(null, _UploadCompleteData);
     });
 
     // 上传分块完成，开始 uploadSliceComplete 操作
@@ -67,8 +73,6 @@ function sliceUploadFile(params, callback) {
         uuid && session.saveUploadId.call(self, uuid, UploadData.UploadId, self.options.UploadIdCacheLimit); // 缓存 UploadId
         session.setUsing(UploadData.UploadId); // 标记 UploadId 为正在使用
 
-        onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress, UploadData.UploadId);
-
         // 获取 UploadId
         onProgress(null, true); // 任务状态开始 uploading
         uploadSliceList.call(self, {
@@ -95,6 +99,8 @@ function sliceUploadFile(params, callback) {
 
     // 开始获取文件 UploadId，里面会视情况计算 ETag，并比对，保证文件一致性，也优化上传
     ep.on('get_file_size_finish', function () {
+
+        onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
         if (params.UploadData.UploadId) {
             ep.emit('get_upload_data_finish', params.UploadData);
