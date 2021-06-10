@@ -1733,7 +1733,6 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
   }
 
   // uploadFile 高级上传
-
   interface FileFinishInfo {
     err: Error;
     data: UploadFileItemResult;
@@ -1753,10 +1752,12 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
   }
 
   interface UploadFileResult extends GeneralResult {
-    /** 文件上传错误信息 */
-    error: Error,
-    /** 文件上传成功信息 */
-    data: UploadFileItemResult,
+     /** 对象的实体标签（Entity Tag），是对象被创建时标识对象内容的信息标签，可用于检查对象的内容是否发生变化，例如"8e0b617ca298a564c3331da28dcb50df"。此头部并不一定返回对象的 MD5 值，而是根据对象上传和加密方式而有所不同 */
+     ETag: ETag,
+     /** 创建的存储桶访问地址，不带 https:// 前缀，例如 examplebucket-1250000000.cos.ap-guangzhou.myqcloud.com/images/1.jpg */
+     Location: string,
+     /** 对象的版本 ID */
+     VersionId?: VersionId,
   }
 
   // sliceCopyFile
