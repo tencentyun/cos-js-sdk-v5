@@ -1155,6 +1155,27 @@ function abortUploadTask() {
     });
 }
 
+function uploadFile() {
+    var filename = '10mb.zip';
+    var blob = util.createFile({size: 1024 * 1024 * 10});
+    cos.uploadFile({
+        Bucket: config.Bucket, // Bucket 格式：test-1250000000
+        Region: config.Region,
+        Key: filename,
+        Body: blob,
+        onProgress: function (info) {
+            var percent = Math.floor(info.percent * 10000) / 100;
+            var speed = Math.floor(info.speed / 1024 / 1024 * 100) / 100;
+            logger.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
+        },
+        onFileFinish: function (err, data, options) {
+            logger.log(options.Key + ' 上传' + (err ? '失败' : '完成'));
+        },
+    }, function (err, data) {
+        logger.log('uploadFile:', err || data);
+    });
+}
+
 function sliceUploadFile() {
     var blob = util.createFile({size: 1024 * 1024 * 3});
     cos.sliceUploadFile({
@@ -1688,6 +1709,7 @@ function CIExample4(){
         'putObject_base64ToBlob',
 
         'header-高级操作',
+        'uploadFile',
         'sliceUploadFile',
         'selectFileToUpload',
         'sliceCopyFile',
@@ -1711,6 +1733,7 @@ function CIExample4(){
     var labelMap = {
         putObject: '简单上传',
         putObject_base64ToBlob: '简单上传：base64转blob',
+        uploadFile: '高级上传',
         sliceUploadFile: '分片上传',
         sliceCopyFile: '分片复制',
         uploadFiles: '批量上传文件',

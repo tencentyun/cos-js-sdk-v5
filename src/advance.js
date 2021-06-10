@@ -778,6 +778,51 @@ function abortUploadTaskArray(params, callback) {
     });
 }
 
+// 高级上传
+function uploadFile(params, callback) {
+    var self = this;
+
+    // 判断多大的文件使用分片上传
+    var SliceSize = params.SliceSize === undefined ? self.options.SliceSize : params.SliceSize;
+
+    var taskList = [];
+
+    var Body = params.Body;
+    var FileSize = Body.size || Body.length || 0;
+    var fileInfo = {TaskId: ''};
+
+    // 整理 option，用于返回给回调
+    util.each(params, function (v, k) {
+        if (typeof v !== 'object' && typeof v !== 'function') {
+            fileInfo[k] = v;
+        }
+    });
+
+    // 处理文件 TaskReady
+    var _onTaskReady = params.onTaskReady;
+    var onTaskReady = function (tid) {
+        fileInfo.TaskId = tid;
+        _onTaskReady && _onTaskReady(tid);
+    };
+    params.onTaskReady = onTaskReady;
+
+    // 处理文件完成
+    var _onFileFinish = params.onFileFinish;
+    var onFileFinish = function (err, data) {
+        _onFileFinish && _onFileFinish(err, data, fileInfo);
+        callback && callback(err, data);
+    };
+
+    // 添加上传任务,超过阈值使用分块上传，小于等于则简单上传
+    var api = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
+    taskList.push({
+        api: api,
+        params: params,
+        callback: onFileFinish,
+    });
+
+    self._addTasks(taskList);
+}
 
 // 批量上传文件
 function uploadFiles(params, callback) {
@@ -1113,6 +1158,7 @@ function copySliceItem(params, callback) {
 var API_MAP = {
     sliceUploadFile: sliceUploadFile,
     abortUploadTask: abortUploadTask,
+    uploadFile: uploadFile,
     uploadFiles: uploadFiles,
     sliceCopyFile: sliceCopyFile,
 };
