@@ -1163,6 +1163,7 @@ function uploadFile() {
         Region: config.Region,
         Key: filename,
         Body: blob,
+        SliceSize: 1024 * 1024 * 5, // 大于5mb才进行分块上传
         onProgress: function (info) {
             var percent = Math.floor(info.percent * 10000) / 100;
             var speed = Math.floor(info.speed / 1024 / 1024 * 100) / 100;
