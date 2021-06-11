@@ -1,0 +1,53 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>CRC64</title>
+    <style>
+        h1 {
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+
+<div>
+    <h1>JS 计算 CRC64</h1>
+    <form id="form">
+        <label>选择文件，计算 crc64：</label>
+        <input id="file" type="file">
+    </form>
+    <div id="msg"></div>
+</div>
+
+<script src="./crc64.js"></script>
+<script>
+    var el = function (id) {
+        return document.getElementById(id);
+    };
+    var calc = function (file) {
+        var time0 = Date.now();
+        CRC64.file_crc64(file, function (err, hash) {
+            if (err) return console.log('crc64 error:', err);
+            var time1 = Date.now();
+            el('msg').innerHTML = 'cost ' + (time1 - time0) + 'ms, crc64=' + hash;
+            el('form').reset();
+        }, function (percent) {
+            el('msg').innerHTML = (percent * 100).toFixed(2) + '%';
+        });
+    };
+    el('file').onchange = function () {
+        var file = this.files[0];
+        calc(file);
+    };
+
+    // calc string crc64
+    console.log(CRC64.crc64('123456789'));
+</script>
+
+</body>
+</html>
