@@ -1732,6 +1732,34 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     }[],
   }
 
+  // uploadFile 高级上传
+  interface FileFinishInfo {
+    err: Error;
+    data: UploadFileItemResult;
+    options: UploadFileItemParams;
+  }
+  type onFileFinish = (params: FileFinishInfo) => void;
+
+  type UploadFileParams = (PutObjectParams | SliceUploadFileParams) & {
+    /** 要上传的本地文件路径 */
+    Body: UploadBody,
+    /** 使用 uploadFile 高级上传时，文件大小大于该数值将使用按分块上传，否则将调用简单上传，单位 Byte，默认值1048576（1MB） */
+    SliceSize?: number,
+    /** 上传的进度回调方法 */
+    onProgress?: onProgress,
+    /** 上传完成回调方法 */
+    onFileFinish?: onFileFinish,
+  }
+
+  interface UploadFileResult extends GeneralResult {
+     /** 对象的实体标签（Entity Tag），是对象被创建时标识对象内容的信息标签，可用于检查对象的内容是否发生变化，例如"8e0b617ca298a564c3331da28dcb50df"。此头部并不一定返回对象的 MD5 值，而是根据对象上传和加密方式而有所不同 */
+     ETag: ETag,
+     /** 创建的存储桶访问地址，不带 https:// 前缀，例如 examplebucket-1250000000.cos.ap-guangzhou.myqcloud.com/images/1.jpg */
+     Location: string,
+     /** 对象的版本 ID */
+     VersionId?: VersionId,
+  }
+
   // sliceCopyFile
   /** sliceCopyFile 接口参数 */
   interface SliceCopyFileParams extends ObjectParams {
@@ -2119,7 +2147,11 @@ declare class COS {
   abortUploadTask(params: COS.AbortUploadTaskParams, callback: (err: COS.CosError, data: COS.AbortUploadTaskResult) => void): void;
   abortUploadTask(params: COS.AbortUploadTaskParams): Promise<COS.AbortUploadTaskResult>;
 
-  /** 分片复制文件 */
+  /** 高级上传文件 */
+  uploadFile(params: COS.UploadFileParams, callback: (err: COS.CosError, data: COS.UploadFileResult) => void): void;
+  uploadFile(params: COS.UploadFileParams): Promise<COS.UploadFileResult>;
+
+  /** 批量上传文件 */
   uploadFiles(params: COS.UploadFilesParams, callback: (err: COS.CosError, data: COS.UploadFilesResult) => void): void;
   uploadFiles(params: COS.UploadFilesParams): Promise<COS.UploadFilesResult>;
 

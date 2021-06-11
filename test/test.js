@@ -3629,6 +3629,51 @@ group('restoreObject()', function () {
     });
 });
 
+group('uploadFile()', function () {
+    // 高级上传
+    test('uploadFile() 高级上传', function (done, assert) {
+        var filename = '3m.zip';
+        var blob = util.createFile({size: 1024 * 1024 * 3});
+        cos.uploadFile({
+          Bucket: config.Bucket,
+          Region: config.Region,
+          Key: filename,
+          Body: blob,
+        }, function (err, data) {
+            console.log(data);
+            assert.ok(!err);
+            done();
+        });
+    });
+    test('uploadFile() 高级上传内容为空', function (done, assert) {
+        var filename = '3m.zip';
+        cos.uploadFile({
+          Bucket: config.Bucket,
+          Region: config.Region,
+          Key: filename,
+          Body: '',
+        }, function (err, data) {
+            assert.ok(!err);
+            done();
+        });
+    });
+    test('uploadFile() 高级上传 大于5mb则分块上传', function (done, assert) {
+        var filename = '3m.zip';
+        var blob = util.createFile({size: 1024 * 1024 * 3});
+        cos.uploadFile({
+          Bucket: config.Bucket,
+          Region: config.Region,
+          Key: filename,
+          Body: blob,
+          SliceSize: 1024 * 1024 * 5,
+        }, function (err, data) {
+            assert.ok(!err);
+            done();
+        });
+    });
+});
+
+
 group('uploadFiles()', function () {
     test('uploadFiles()', function (done, assert) {
         var filename = '1.zip';
