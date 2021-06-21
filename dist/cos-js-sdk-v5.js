@@ -613,7 +613,7 @@ var apiWrapper = function (apiName, apiFn) {
 
         var errMsg = checkParams();
         var isSync = apiName === 'getAuth' || apiName === 'getObjectUrl';
-        if (Promise && !isSync && !callback) {
+        if (window.Promise && !isSync && !callback) {
             return new Promise(function (resolve, reject) {
                 callback = function (err, data) {
                     err ? reject(err) : resolve(data);
@@ -2422,7 +2422,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.2.13';
+COS.version = '1.2.14';
 
 module.exports = COS;
 
