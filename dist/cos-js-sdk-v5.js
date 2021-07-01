@@ -7771,7 +7771,9 @@ function getObjectUrl(params, callback) {
         Region: params.Region || '',
         Method: params.Method || 'get',
         Key: params.Key,
-        Expires: params.Expires
+        Expires: params.Expires,
+        Headers: params.Headers,
+        Query: params.Query
     }, function (err, AuthData) {
         if (!callback) return;
         if (err) {
