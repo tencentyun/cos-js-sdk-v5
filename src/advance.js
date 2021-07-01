@@ -24,9 +24,10 @@ function sliceUploadFile(params, callback) {
     // 上传过程中出现错误，返回错误
     ep.on('error', function (err) {
         if (!self._isRunningTask(TaskId)) return;
-        var _err = util.extend({
-          UploadId: params.UploadData.UploadId || ''
-        }, err);
+        var _err = {
+          UploadId: params.UploadData.UploadId || '',
+          err: err,
+        };
         return callback(_err);
     });
 
@@ -86,6 +87,7 @@ function sliceUploadFile(params, callback) {
             AsyncLimit: AsyncLimit,
             ServerSideEncryption: ServerSideEncryption,
             UploadData: UploadData,
+            Headers: params.Headers,
             onProgress: onProgress
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
@@ -512,6 +514,7 @@ function uploadSliceList(params, cb) {
     var SliceCount = Math.ceil(FileSize / SliceSize);
     var FinishSize = 0;
     var ServerSideEncryption = params.ServerSideEncryption;
+    var Headers = params.Headers;
     var needUploadSlices = util.filter(UploadData.PartList, function (SliceItem) {
         if (SliceItem['Uploaded']) {
             FinishSize += SliceItem['PartNumber'] >= SliceCount ? (FileSize % SliceSize || SliceSize) : SliceSize;
@@ -536,6 +539,7 @@ function uploadSliceList(params, cb) {
             ServerSideEncryption: ServerSideEncryption,
             Body: Body,
             UploadData: UploadData,
+            Headers: Headers,
             onProgress: function (data) {
                 FinishSize += data.loaded - preAddSize;
                 preAddSize = data.loaded;
@@ -576,6 +580,7 @@ function uploadSliceItem(params, callback) {
     var SliceSize = params.SliceSize;
     var ServerSideEncryption = params.ServerSideEncryption;
     var UploadData = params.UploadData;
+    var Headers = params.Headers || {};
     var ChunkRetryTimes = self.options.ChunkRetryTimes + 1;
 
     var start = SliceSize * (PartNumber - 1);
@@ -588,6 +593,14 @@ function uploadSliceItem(params, callback) {
         end = FileSize;
         ContentLength = end - start;
     }
+
+    var headersWhiteList = ['x-cos-traffic-limit', 'x-cos-mime-limit'];
+    var headers = {};
+    util.each(Headers, function(v, k) {
+      if (headersWhiteList.indexOf(k) > -1) {
+        headers[k] = v;
+      }
+    });
 
     var PartItem = UploadData.PartList[PartNumber - 1];
     Async.retry(ChunkRetryTimes, function (tryCallback) {
@@ -603,6 +616,7 @@ function uploadSliceItem(params, callback) {
                 UploadId: UploadData.UploadId,
                 ServerSideEncryption: ServerSideEncryption,
                 Body: Body,
+                Headers: headers,
                 onProgress: params.onProgress,
             }, function (err, data) {
                 if (!self._isRunningTask(TaskId)) return;
