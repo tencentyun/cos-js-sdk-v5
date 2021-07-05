@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COS-SDK-Vue-demo</title>
+  <script src="./vue.min.js"></script>
+  <!-- 使用时替换为当前最新版sdk -->
+  <script src="./cos-js-sdk-v5.js"></script>
+  <script src="index.js"></script>
+  <style>
+    table {width: 100%; border: solid 1px #ddd;}
+    table td {padding: 0 10px;}
+    .more-btn {display: block; margin: 10px auto 0;}
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="nav">
+      <span v-for="(item, index) in navList" :key="index" style="margin-right: 5px;">
+        <a href="javascript:void(0)" @click="navClick(item)">{{item.name}}</a>
+        <span v-if="index !== navList.length - 1">/</span>
+      </span>
+    </div>
+    <div style="margin: 10px 0;">
+      <button @click="uploadFileClick" style="margin: 0 10px 0 0;">上传文件</button>
+      <button @click="uploadFolderClick">上传文件夹</button>
+      <input type="file" style="display: none;" @change="uploadChange" class="file-select">
+      <input type="file" style="display: none;" @change="uploadChange" class="folder-select" webkitdirectory multiple>
+    </div>
+    <div class="file-list">
+      <table border="1" cellpadding="0" cellspacing="0">
+        <thead>
+          <th v-for="(item, index) in columns" :key="index">{{item.label}}</th>
+        </thead>
+        <tbody>
+          <tr v-for="(item, index) in list" :key="index">
+            <td>
+              <a v-if="item.isDir" href="javascript:void(0)" @click="openFolder(item.Prefix)">{{item.name}}</a>
+              <span v-else>{{item.name}}</span>
+            </td>
+            <td>{{item.Size || '-'}}</td>
+            <td>{{item.LastModified || '-'}}</td>
+            <td>
+              <a v-if="!item.isDir" href="javascript:void(0)" @click="downloadFile(item)">下载</a>
+              <a v-if="!item.isDir" href="javascript:void(0)" @click="deleteFile(item)">删除</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <button v-if="hasMore === 'true'" class="more-btn" @click="loadMore">加载更多</button>
+    </div>
+  </div>
+</body>
+</html>
