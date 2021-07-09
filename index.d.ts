@@ -1128,6 +1128,8 @@ declare namespace COS {
   /** getObject 接口参数 */
   interface GetObjectParams extends ObjectParams {
     BodyType?: 'text' | 'blob' | 'arraybuffer',
+    /** 请求里的 QueryString 参数 */
+    QueryString?: string,
     /** 请求里的 Url Query 参数 */
     Query?: Query,
     /** 当对象在指定时间后被修改，则返回对象，否则返回 HTTP 状态码为304（Not Modified） */
@@ -1811,6 +1813,8 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     Sign?: boolean,
     /** 请求方法 */
     Method?: Method,
+    /** 请求里的 QueryString 参数 */
+    QueryString?: string,
     /** 请求里的 Url Query 参数 */
     Query?: Query,
     /** 签名几秒后失效，默认为900秒 */
