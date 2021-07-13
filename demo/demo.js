@@ -961,6 +961,35 @@ function putObject_base64ToBlob() {
     });
 }
 
+function appendObject() {
+    // 追加
+    cos.headObject({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '1.txt',
+    }, function(err, data) {
+      if (err) {
+        return;
+      }
+      var headers = data.headers;
+      var type = headers['x-cos-object-type'];
+      var position = 0;
+      if (type && type === 'appendable') {
+          position = headers['content-length'];
+          cos.appendObject({
+              Bucket: config.Bucket, // Bucket 格式：test-1250000000
+              Region: config.Region,
+              Key: '1.txt', /* 必须 */
+              Body: new Blob(['11111'], {type: 'text/plain'}),
+              position: position,
+              ContentLength: '5',
+          }, function(err, data) {
+              logger.log('appendObject:', err || data);
+          });
+      }
+    });
+}
+
 function putObjectCopy() {
     cos.putObjectCopy({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
