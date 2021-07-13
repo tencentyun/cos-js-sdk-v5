@@ -6791,6 +6791,31 @@ function putObject(params, callback) {
     }, params.onHashProgress);
 }
 
+// 追加上传
+function appendObject(params, callback) {
+    submitRequest.call(this, {
+        Action: 'name/cos:AppendObject',
+        method: 'POST',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        action: 'append',
+        Key: params.Key,
+        body: params.Body,
+        qs: {
+            position: params.position
+        },
+        headers: params.Headers
+    }, function (err, data) {
+        if (err) {
+            return callback(err);
+        }
+        callback(null, {
+            statusCode: data.statusCode,
+            headers: data.headers
+        });
+    });
+}
+
 /**
  * 删除 object
  * @param  {Object}  params                     参数对象，必须
@@ -7911,7 +7936,6 @@ function getUrl(params) {
 
 // 异步获取签名
 function getAuthorizationAsync(params, callback) {
-
     var headers = util.clone(params.Headers);
     util.each(headers, function (v, k) {
         (v === '' || ['content-type', 'cache-control', 'expires'].indexOf(k.toLowerCase()) > -1) && delete headers[k];
@@ -8388,6 +8412,7 @@ var API_MAP = {
     headObject: headObject,
     listObjectVersions: listObjectVersions,
     putObject: putObject,
+    appendObject: appendObject,
     deleteObject: deleteObject,
     getObjectAcl: getObjectAcl,
     putObjectAcl: putObjectAcl,

@@ -1708,6 +1708,7 @@ function CIExample4(){
         'selectObjectContent',
         'putObject',
         'putObject_base64ToBlob',
+        'appendObject',
 
         'header-高级操作',
         'uploadFile',
