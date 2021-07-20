@@ -1169,10 +1169,8 @@ function uploadFile() {
             var speed = Math.floor(info.speed / 1024 / 1024 * 100) / 100;
             logger.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
         },
-        onFileFinish: function (err, data, options) {
-            logger.log(options.Key + ' 上传' + (err ? '失败' : '完成'));
-        },
     }, function (err, data) {
+        logger.log('上传' + (err ? '失败' : '完成'));
         logger.log('uploadFile:', err || data);
     });
 }
