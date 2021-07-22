@@ -1,0 +1,16 @@
+{
+    "extends": ["plugin:prettier/recommended"],
+    "parserOptions": {
+      "ecmaVersion": 6,
+      "sourceType": "module",
+      "ecmaFeatures": {
+        "jsx": true
+      }
+    },
+    "plugins": ["prettier"],
+    "rules": {
+      "semi": [1, "never"],
+      "indent": ["error", 2], 
+      "prettier/prettier": "error"
+    }
+  }

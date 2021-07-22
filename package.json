@@ -9,7 +9,9 @@
     "dev": "cross-env NODE_ENV=development webpack -w",
     "build": "cross-env NODE_ENV=production webpack",
     "cos-auth.min.js": "uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m",
-    "nyc": "node test/watcher.js && nyc report --reporter=clover --reporter=cobertura"
+    "nyc": "node test/watcher.js && nyc report --reporter=clover --reporter=cobertura",
+    "prettier:check": "prettier --check **/*.{js,ts} ",
+    "prettier:write": "prettier --write **/*.{js,ts}"
   },
   "repository": {
     "type": "git",
@@ -30,8 +32,10 @@
     "babel-loader": "^7.1.2",
     "body-parser": "^1.18.3",
     "cross-env": "^5.2.0",
+    "eslint-config-prettier": "^8.3.0",
     "express": "^4.16.4",
     "nyc": "^15.1.0",
+    "prettier": "^2.3.2",
     "puppeteer": "^5.3.1",
     "puppeteer-to-istanbul": "^1.4.0",
     "qcloud-cos-sts": "^3.0.2",
