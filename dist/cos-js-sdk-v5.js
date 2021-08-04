@@ -2422,7 +2422,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.2.15';
+COS.version = '1.2.16';
 
 module.exports = COS;
 
@@ -8532,6 +8532,13 @@ var request = function (opt, callback) {
     // onprogress
     if (opt.onProgress && xhr.upload) xhr.upload.onprogress = opt.onProgress;
     if (opt.onDownloadProgress) xhr.onprogress = opt.onDownloadProgress;
+
+    // timeout
+    if (opt.timeout) xhr.timeout = opt.timeout;
+    xhr.ontimeout = function (event) {
+        var error = new Error('timeout');
+        callback(xhrRes(error, xhr));
+    };
 
     // success 2xx/3xx/4xx
     xhr.onload = function () {
