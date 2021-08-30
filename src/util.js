@@ -395,12 +395,15 @@ var hasMissingParams = function (apiName, params) {
     var Bucket = params.Bucket;
     var Region = params.Region;
     var Key = params.Key;
+    var Domain = this.options.Domain;
+    var checkBucket = !Domain || Domain.indexOf('{Bucket}') > -1;
+    var checkRegion = !Domain || Domain.indexOf('{Region}') > -1;
     if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList' || apiName === 'listObjectVersions') {
-        if (!Bucket) return 'Bucket';
-        if (!Region) return 'Region';
+        if (checkBucket && !Bucket) return 'Bucket';
+        if (checkRegion && !Region) return 'Region';
     } else if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask') {
-        if (!Bucket) return 'Bucket';
-        if (!Region) return 'Region';
+        if (checkBucket && !Bucket) return 'Bucket';
+        if (checkRegion && !Region) return 'Region';
         if (!Key) return 'Key';
     }
     return false;
@@ -506,7 +509,7 @@ var apiWrapper = function (apiName, apiFn) {
         var checkParams = function () {
             if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
                 // 判断参数是否完整
-                var missingResult = hasMissingParams(apiName, params)
+                var missingResult = hasMissingParams.call(self, apiName, params)
                 if (missingResult) {
                     return 'missing param ' + missingResult;
                 }

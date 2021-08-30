@@ -3057,11 +3057,11 @@ function uniqGrant(str) {
 
 // 生成操作 url
 function getUrl(params) {
-    var longBucket = params.bucket;
+    var region = params.region || '';
+    var longBucket = params.bucket || '';
     var shortBucket = longBucket.substr(0, longBucket.lastIndexOf('-'));
     var appId = longBucket.substr(longBucket.lastIndexOf('-') + 1);
     var domain = params.domain;
-    var region = params.region;
     var object = params.object;
     var protocol = params.protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
     if (!domain) {

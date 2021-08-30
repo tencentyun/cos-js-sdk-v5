@@ -158,6 +158,7 @@ var getAuthorization = function (options, callback) {
 var cos = new COS({
     getAuthorization: getAuthorization,
     UploadCheckContentMd5: true,
+    Domain: 'carsonxu.com'
 });
 
 var TaskId;
@@ -251,8 +252,8 @@ function putBucket() {
 
 function getBucket() {
     cos.getBucket({
-        Bucket: config.Bucket, // Bucket 格式：test-1250000000
-        Region: config.Region,
+        // Bucket: config.Bucket, // Bucket 格式：test-1250000000
+        // Region: config.Region,
         // Prefix: 'dir/'
         // Delimiter: '/'
     }, function (err, data) {

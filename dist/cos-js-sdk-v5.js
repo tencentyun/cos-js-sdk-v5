@@ -461,12 +461,15 @@ var hasMissingParams = function (apiName, params) {
     var Bucket = params.Bucket;
     var Region = params.Region;
     var Key = params.Key;
+    var Domain = this.options.Domain;
+    var checkBucket = !Domain || Domain.indexOf('{Bucket}') > -1;
+    var checkRegion = !Domain || Domain.indexOf('{Region}') > -1;
     if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList' || apiName === 'listObjectVersions') {
-        if (!Bucket) return 'Bucket';
-        if (!Region) return 'Region';
+        if (checkBucket && !Bucket) return 'Bucket';
+        if (checkRegion && !Region) return 'Region';
     } else if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask') {
-        if (!Bucket) return 'Bucket';
-        if (!Region) return 'Region';
+        if (checkBucket && !Bucket) return 'Bucket';
+        if (checkRegion && !Region) return 'Region';
         if (!Key) return 'Key';
     }
     return false;
@@ -572,7 +575,7 @@ var apiWrapper = function (apiName, apiFn) {
         var checkParams = function () {
             if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
                 // 判断参数是否完整
-                var missingResult = hasMissingParams(apiName, params);
+                var missingResult = hasMissingParams.call(self, apiName, params);
                 if (missingResult) {
                     return 'missing param ' + missingResult;
                 }
@@ -7866,11 +7869,11 @@ function uniqGrant(str) {
 
 // 生成操作 url
 function getUrl(params) {
-    var longBucket = params.bucket;
+    var region = params.region || '';
+    var longBucket = params.bucket || '';
     var shortBucket = longBucket.substr(0, longBucket.lastIndexOf('-'));
     var appId = longBucket.substr(longBucket.lastIndexOf('-') + 1);
     var domain = params.domain;
-    var region = params.region;
     var object = params.object;
     var protocol = params.protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
     if (!domain) {
