@@ -2665,7 +2665,7 @@ function multipartComplete(params, callback) {
     var Parts = params['Parts'];
 
     for (var i = 0, len = Parts.length; i < len; i++) {
-        if (Parts[i]['ETag'].indexOf('"') === 0) {
+        if (Parts[i]['ETag'] && Parts[i]['ETag'].indexOf('"') === 0) {
             continue;
         }
         Parts[i]['ETag'] = '"' + Parts[i]['ETag'] + '"';
@@ -3466,6 +3466,21 @@ function _submitRequest(params, callback) {
     self.emit('before-send', opt);
     var sender = (self.options.Request || REQUEST)(opt, function (r) {
         if (r.error === 'abort') return;
+
+        var receive = {
+            options: opt,
+            error: err,
+            statusCode: response && response.statusCode || 0,
+            headers: response && response.headers || {},
+            body: body,
+        };
+        self.emit('after-receive', receive);
+        err = receive.error;
+        body = receive.body;
+        response = {
+            statusCode: receive.statusCode,
+            headers: receive.headers,
+        };
 
         // 抛出事件，允许修改返回值的 error、statusCode、statusMessage、body
         self.emit('after-receive', r);
