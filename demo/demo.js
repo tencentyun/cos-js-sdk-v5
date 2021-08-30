@@ -158,7 +158,6 @@ var getAuthorization = function (options, callback) {
 var cos = new COS({
     getAuthorization: getAuthorization,
     UploadCheckContentMd5: true,
-    Domain: 'carsonxu.com'
 });
 
 var TaskId;
