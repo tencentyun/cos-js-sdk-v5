@@ -171,6 +171,87 @@ app.all('/sts', function (req, res, next) {
 //     });
 // });
 //
+// // 上传限制 Content-Type 示例，对应示例 demo/mime-limit.html
+// var COS = require('cos-nodejs-sdk-v5');
+// var cos = new COS({
+//     SecretId: config.secretId,
+//     SecretKey: config.secretKey,
+// });
+// app.post('/uploadSign', function (req, res, next) {
+//
+//     var T = function (x, n) {
+//         return ('0000' + x).slice(-(n || 2));
+//     }
+//     var guid = function () {
+//         var S4 = () => (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+//         return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
+//     }
+//
+//     // 后端来决定文件名，安全性更高
+//     var filename = req.query.filename; // 前端传文件原名，后端来决定上传路径
+//     var ext = pathLib.extname(filename);
+//     var d = new Date();
+//     var key = `images/${d.getFullYear()}/${T(d.getMonth() + 1)}/${T(d.getDate())}/${guid()}${ext}`;
+//
+//     // 计算前端可能会用到的多个签名，x-cos-mime-limit: text/plain;img/jpg;img/*
+//     var signMap = {};
+//     var expires = 7200;
+//     var mimeLimit = 'image/*';
+//     var host = `${config.bucket}.cos.${config.region}.myqcloud.com`;
+//     // 1. ListMultipartUploads 签名
+//     signMap.ListMultipartUploads = cos.getAuth({
+//         Method: 'GET',
+//         Key: '',
+//         Expires: expires,
+//         Query: { uploads: '', prefix: key },
+//         Headers: { host: host },
+//     });
+//     // 2. ListParts 签名
+//     signMap.ListParts = cos.getAuth({
+//         Method: 'GET',
+//         Key: key,
+//         Expires: expires,
+//         Headers: { host: host },
+//     });
+//     // 3. InitiateMultipartUpload 签名
+//     signMap.InitiateMultipartUpload = cos.getAuth({
+//         Method: 'POST',
+//         Key: key,
+//         Expires: expires,
+//         Query: { uploads: '' },
+//         Headers: { host: host },
+//     });
+//     // 4. UploadPart 签名
+//     signMap.UploadPart = cos.getAuth({
+//         Method: 'PUT',
+//         Key: key,
+//         Expires: expires,
+//         Headers: { host: host, 'x-cos-mime-limit': mimeLimit },
+//     });
+//     // 5. CompleteMultipartUpload 签名
+//     signMap.CompleteMultipartUpload = cos.getAuth({
+//         Method: 'POST',
+//         Key: key,
+//         Expires: expires,
+//         Headers: { host: host },
+//     });
+//     // 6. PutObject 签名
+//     signMap.PutObject = cos.getAuth({
+//         Method: 'PUT',
+//         Key: key,
+//         Expires: expires,
+//         Headers: { host: host, 'x-cos-mime-limit': mimeLimit },
+//     });
+//     res.send({
+//         code: 0,
+//         host,
+//         signMap,
+//         bucket: config.bucket,
+//         region: config.region,
+//         key,
+//         mimeLimit,
+//     });
+// });
 
 app.all('*', function (req, res, next) {
     res.send({code: -1, message: '404 Not Found'});

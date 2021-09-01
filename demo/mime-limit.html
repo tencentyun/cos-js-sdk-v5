@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>上传限制 Content-Type</title>
+    <style>
+        h1, h2 {
+            font-weight: normal;
+        }
+
+        #msg {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>上传限制 Content-Type</h1>
+
+<input id="fileSelector" type="file">
+<input id="submitBtn" type="submit">
+
+<div id="msg"></div>
+
+<script src="../dist/cos-js-sdk-v5.js"></script>
+<script>
+    (function () {
+        // 计算签名
+        var getUploadSign = function (options, callback) {
+            var url = '/uploadSign?filename=' + encodeURIComponent(options.filename) + '&_=' + Date.now();
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', url, true);
+            xhr.onload = function (e) {
+                var token;
+                try {
+                    token = (new Function('return ' + xhr.responseText))();
+                } catch (e) {}
+                if (token) {
+                    callback(null, token);
+                } else {
+                    console.error(xhr.responseText);
+                    callback('获取签名出错');
+                }
+            };
+            xhr.onerror = function (e) {
+                callback('获取签名出错');
+            };
+            xhr.send();
+        };
+
+        // 上传文件
+        var uploadFile = function (file, callback) {
+            getUploadSign({ filename: file.name }, function (err, info) {
+                if (err) {
+                    alert(err);
+                    return;
+                }
+                var signMap = info.signMap;
+                var mimeLimit = info.mimeLimit;
+                var allowActions = ['ListMultipartUploads', 'ListParts', 'InitiateMultipartUpload', 'UploadPart', 'CompleteMultipartUpload', 'PutObject'];
+                var cos = new COS({
+                    getAuthorization: function (opt, cb) {
+                        var action = opt.Scope[0].action.split(':')[1];
+                        if (allowActions.indexOf(action) === -1) return console.error('action not allow');
+                        var auth = signMap[action];
+                        cb({ Authorization: auth });
+                    },
+                });
+                cos.uploadFile({
+                    Bucket: info.bucket,
+                    Region: info.region,
+                    Key: info.key,
+                    Body: file,
+                    SliceSize: 1024 * 1024 * 8,
+                    ChunkSize: 1024 * 1024 * 8,
+                    Headers: {
+                        'x-cos-mime-limit': mimeLimit,
+                    },
+                }, function (err, data) {
+                    callback(err, data);
+                });
+            });
+        };
+
+        // 监听表单提交
+        document.getElementById('submitBtn').onclick = function (e) {
+            var file = document.getElementById('fileSelector').files[0];
+            if (!file) {
+                document.getElementById('msg').innerText = '未选择上传文件';
+                return;
+            }
+            file && uploadFile(file, function (err, data) {
+                console.log(err || data);
+                document.getElementById('msg').innerText = err ? '上传失败：' + err.code + '(' + err.message + ')' : ('上传成功，ETag=' + data.ETag);
+            });
+        };
+    })();
+</script>
+
+</body>
+</html>

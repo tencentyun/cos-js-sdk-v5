@@ -2425,7 +2425,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.2.17';
+COS.version = '1.2.18';
 
 module.exports = COS;
 
@@ -8616,11 +8616,8 @@ function sliceUploadFile(params, callback) {
     // 上传过程中出现错误，返回错误
     ep.on('error', function (err) {
         if (!self._isRunningTask(TaskId)) return;
-        var _err = {
-            UploadId: params.UploadData.UploadId || '',
-            err: err
-        };
-        return callback(_err);
+        err.UploadId = params.UploadData.UploadId || '';
+        return callback(err);
     });
 
     // 上传分块完成，开始 uploadSliceComplete 操作
@@ -8875,11 +8872,13 @@ function getUploadIdAndPartList(params, callback) {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
-            Headers: util.clone(params.Headers),
             Query: util.clone(params.Query),
             StorageClass: StorageClass,
             Body: params.Body
         }, params);
+        var headers = util.clone(params.Headers);
+        delete headers['x-cos-mime-limit'];
+        _params.Headers = headers;
         self.multipartInit(_params, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (err) return ep.emit('error', err);
