@@ -2051,15 +2051,15 @@ declare class COS {
   deleteBucketInventory(params: COS.DeleteBucketInventoryParams, callback: (err: COS.CosError, data: COS.DeleteBucketInventoryResult) => void): void;
   deleteBucketInventory(params: COS.DeleteBucketInventoryParams): Promise<COS.DeleteBucketInventoryResult>;
 
-  /** 启用或者暂停存储桶的全球加速功能 */
+  /** 启用或者暂停存储桶的全球加速功能 @see https://cloud.tencent.com/document/product/436/38869 */
   putBucketAccelerate(params: COS.PutBucketAccelerateParams, callback: (err: COS.CosError, data: COS.PutBucketAccelerateResult) => void): void;
   putBucketAccelerate(params: COS.PutBucketAccelerateParams): Promise<COS.PutBucketAccelerateResult>;
 
-  /** 查询存储桶的全球加速功能配置 @see https://cloud.tencent.com/document/product/436/38869 */
+  /** 查询存储桶的全球加速功能配置 @see https://cloud.tencent.com/document/product/436/38868 */
   getBucketAccelerate(params: COS.GetBucketAccelerateParams, callback: (err: COS.CosError, data: COS.GetBucketAccelerateResult) => void): void;
   getBucketAccelerate(params: COS.GetBucketAccelerateParams): Promise<COS.GetBucketAccelerateResult>;
 
-  /** 取回对应对象（Object）的元数据，Head的权限与Get的权限一致 @see https://cloud.tencent.com/document/product/436/38868 */
+  /** 取回对应对象（Object）的元数据，Head的权限与Get的权限一致 @see https://cloud.tencent.com/document/product/436/7745 */
   headObject(params: COS.HeadObjectParams, callback: (err: COS.CosError, data: COS.HeadObjectResult) => void): void;
   headObject(params: COS.HeadObjectParams): Promise<COS.HeadObjectResult>;
 
@@ -2147,7 +2147,7 @@ declare class COS {
   sliceUploadFile(params: COS.SliceUploadFileParams, callback: (err: COS.CosError, data: COS.SliceUploadFileResult) => void): void;
   sliceUploadFile(params: COS.SliceUploadFileParams): Promise<COS.SliceUploadFileResult>;
 
-  /** 分片上传文件，封装好分片上传的多个步骤的上传方法。 @see https://cloud.tencent.com/document/product/436/7740 */
+  /** 清理分片上传 UploadId，封装好的清理单个文件或存储桶所有文件未完成的 UploadId。 */
   abortUploadTask(params: COS.AbortUploadTaskParams, callback: (err: COS.CosError, data: COS.AbortUploadTaskResult) => void): void;
   abortUploadTask(params: COS.AbortUploadTaskParams): Promise<COS.AbortUploadTaskResult>;
 
