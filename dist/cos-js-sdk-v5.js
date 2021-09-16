@@ -237,6 +237,14 @@ var parseSelectPayload = function (chunk) {
     };
 };
 
+var getSourceParams = function (source) {
+    var parser = this.options.CopySourceParser;
+    if (parser) return parser(source);
+    var m = source.match(/^([^.]+-\d+)\.cos(v6|-cdc)?\.([^.]+)\.myqcloud\.com\/(.+)$/);
+    if (!m) return null;
+    return { Bucket: m[1], Region: m[3], Key: m[4] };
+};
+
 var noop = function () {};
 
 // 清除对象里值为的 undefined 或 null 的属性
@@ -581,10 +589,16 @@ var apiWrapper = function (apiName, apiFn) {
                 }
                 // 判断 region 格式
                 if (params.Region) {
-                    if (params.Region.indexOf('cos.') > -1) {
-                        return 'param Region should not be start with "cos."';
-                    } else if (!/^([a-z\d-]+)$/.test(params.Region)) {
-                        return 'Region format error.';
+                    if (self.options.CompatibilityMode) {
+                        if (!/^([a-z\d-.]+)$/.test(params.Region)) {
+                            return 'Region format error.';
+                        }
+                    } else {
+                        if (params.Region.indexOf('cos.') > -1) {
+                            return 'param Region should not be start with "cos."';
+                        } else if (!/^([a-z\d-]+)$/.test(params.Region)) {
+                            return 'Region format error.';
+                        }
                     }
                     // 判断 region 格式
                     if (!self.options.CompatibilityMode && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default' && params.Region !== 'accelerate') {
@@ -755,6 +769,7 @@ var util = {
     error: error,
     getAuth: getAuth,
     parseSelectPayload: parseSelectPayload,
+    getSourceParams: getSourceParams,
     isBrowser: true,
     isNode: isNode
 };
@@ -2425,7 +2440,7 @@ base.init(COS, task);
 advance.init(COS, task);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.2.18';
+COS.version = '1.2.20';
 
 module.exports = COS;
 
@@ -6812,7 +6827,8 @@ function deleteObject(params, callback) {
         Region: params.Region,
         Key: params.Key,
         headers: params.Headers,
-        VersionId: params.VersionId
+        VersionId: params.VersionId,
+        action: params.Recursive ? 'recursive' : ''
     }, function (err, data) {
         if (err) {
             var statusCode = err.statusCode;
@@ -7006,7 +7022,7 @@ function putObjectCopy(params, callback) {
     if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
 
     var CopySource = params.CopySource || '';
-    var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
+    var m = util.getSourceParams.call(this, CopySource);
     if (!m) {
         callback(util.error(new Error('CopySource format error')));
         return;
@@ -7058,7 +7074,7 @@ function putObjectCopy(params, callback) {
 function uploadPartCopy(params, callback) {
 
     var CopySource = params.CopySource || '';
-    var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
+    var m = util.getSourceParams.call(this, CopySource);
     if (!m) {
         callback(util.error(new Error('CopySource format error')));
         return;
@@ -9531,15 +9547,15 @@ function sliceCopyFile(params, callback) {
     var Region = params.Region;
     var Key = params.Key;
     var CopySource = params.CopySource;
-    var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
+    var m = util.getSourceParams.call(this, CopySource);
     if (!m) {
         callback(util.error(new Error('CopySource format error')));
         return;
     }
 
-    var SourceBucket = m[1];
-    var SourceRegion = m[3];
-    var SourceKey = decodeURIComponent(m[4]);
+    var SourceBucket = m.Bucket;
+    var SourceRegion = m.Region;
+    var SourceKey = decodeURIComponent(m.Key);
     var CopySliceSize = params.CopySliceSize === undefined ? self.options.CopySliceSize : params.CopySliceSize;
     CopySliceSize = Math.max(0, CopySliceSize);
 

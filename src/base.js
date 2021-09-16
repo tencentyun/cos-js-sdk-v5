@@ -1995,6 +1995,7 @@ function deleteObject(params, callback) {
         Key: params.Key,
         headers: params.Headers,
         VersionId: params.VersionId,
+        action: params.Recursive ? 'recursive' : '',
     }, function (err, data) {
         if (err) {
             var statusCode = err.statusCode;
@@ -2188,7 +2189,7 @@ function putObjectCopy(params, callback) {
     if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
 
     var CopySource = params.CopySource || '';
-    var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
+    var m = util.getSourceParams.call(this, CopySource);
     if (!m) {
         callback(util.error(new Error('CopySource format error')));
         return;
@@ -2240,7 +2241,7 @@ function putObjectCopy(params, callback) {
 function uploadPartCopy(params, callback) {
 
     var CopySource = params.CopySource || '';
-    var m = CopySource.match(/^([^.]+-\d+)\.cos(v6)?\.([^.]+)\.[^/]+\/(.+)$/);
+    var m = util.getSourceParams.call(this, CopySource);
     if (!m) {
         callback(util.error(new Error('CopySource format error')));
         return;
@@ -3063,6 +3064,9 @@ function getUrl(params) {
     var appId = longBucket.substr(longBucket.lastIndexOf('-') + 1);
     var domain = params.domain;
     var object = params.object;
+    if (typeof domain === 'function') {
+        domain = domain({Bucket: longBucket, Region: region});
+    }
     var protocol = params.protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
     if (!domain) {
         if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
