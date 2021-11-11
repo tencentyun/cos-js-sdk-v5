@@ -596,9 +596,9 @@ function uploadSliceItem(params, callback) {
     var headersWhiteList = ['x-cos-traffic-limit', 'x-cos-mime-limit'];
     var headers = {};
     util.each(Headers, function(v, k) {
-      if (headersWhiteList.indexOf(k) > -1) {
-        headers[k] = v;
-      }
+        if (headersWhiteList.indexOf(k) > -1) {
+            headers[k] = v;
+        }
     });
 
     var PartItem = UploadData.PartList[PartNumber - 1];

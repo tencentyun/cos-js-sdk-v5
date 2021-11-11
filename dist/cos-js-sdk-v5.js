@@ -5956,8 +5956,7 @@ function getBucketReferer(params, callback) {
 
         var RefererConfiguration = data.RefererConfiguration || {};
         if (RefererConfiguration['DomainList']) {
-            var Domains = util.clone(RefererConfiguration['DomainList'].Domain || []);
-            Domains = util.makeArray(Domains);
+            var Domains = util.makeArray(RefererConfiguration['DomainList'].Domain || []);
             RefererConfiguration.DomainList = { Domains: Domains };
         }
 
