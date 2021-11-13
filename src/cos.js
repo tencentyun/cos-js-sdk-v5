@@ -5,6 +5,7 @@ var event = require('./event');
 var task = require('./task');
 var base = require('./base');
 var advance = require('./advance');
+var ci = require('./ci');
 
 var defaultOptions = {
     AppId: '', // AppId 已废弃，请拼接到 Bucket 后传入，例如：test-1250000000
@@ -62,8 +63,9 @@ var COS = function (options) {
 
 base.init(COS, task);
 advance.init(COS, task);
+ci.init(COS);
 
 COS.getAuthorization = util.getAuth;
-COS.version = '1.2.21';
+COS.version = '1.3.0';
 
 module.exports = COS;

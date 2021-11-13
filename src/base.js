@@ -2881,6 +2881,8 @@ function request(params, callback) {
         headers: params.Headers,
         qs: params.Query,
         body: params.Body,
+        Url: params.Url,
+        rawBody: params.RawBody,
     }, function (err, data) {
         if (err) return callback(err);
         if (data && data.body) {
@@ -2888,6 +2890,37 @@ function request(params, callback) {
             delete data.body;
         }
         callback(err, data);
+    });
+}
+
+/**
+ * 追加上传
+ * @param  {Object}  params                                 参数对象，必须
+ *     @param  {String}  params.Bucket                      Bucket名称，必须
+ *     @param  {String}  params.Region                      地域名称，必须
+ *     @param  {String}  params.Key                         object名称，必须
+ *     @param  {File || Blob || String}  params.Body        上传文件对象或字符串
+ *     @param  {Number}  params.Position                    追加操作的起始点，单位为字节，必须
+ * @param  {Function}  callback                             回调函数，必须
+ *     @return  {Object}    err                             请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ *     @return  {Object}    data                            返回的数据
+ */
+function appendObject(params, callback) {
+    submitRequest.call(this, {
+        Action: 'name/cos:AppendObject',
+        method: 'POST',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        action: 'append',
+        Key: params.Key,
+        body: params.Body,
+        qs: {
+          position: params.Position
+        },
+        headers: params.Headers,
+    }, function (err, data) {
+        if (err) return callback(err);
+        callback(null, data);
     });
 }
 
@@ -3396,7 +3429,7 @@ function _submitRequest(params, callback) {
     var region = params.Region;
     var object = params.Key;
     var method = params.method || 'GET';
-    var url = params.url;
+    var url = params.Url || params.url;
     var body = params.body;
     var rawBody = params.rawBody;
 
@@ -3616,6 +3649,7 @@ var API_MAP = {
     getObjectTagging: getObjectTagging,
     deleteObjectTagging: deleteObjectTagging,
     selectObjectContent: selectObjectContent,
+    appendObject: appendObject,
 
     // 分块上传相关方法
     uploadPartCopy: uploadPartCopy,

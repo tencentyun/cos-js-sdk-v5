@@ -1,3 +1,4 @@
+// config 替换成自己的桶信息
 var config = {
     Bucket: 'test-1250000000',
     Region: 'ap-guangzhou',
@@ -3754,4 +3755,65 @@ group('sliceUploadFile() 续传', function () {
             });
         });
     });
+});
+
+group('appendObject', function () {
+    test('describeMediaBuckets()', function (done, assert) {
+        cos.headObject({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            Key: 'append.txt', /* 必须 */
+        }, function(err, data) {
+            assert.ok(!err);
+            if (err) return console.log(err);
+            // 首先取到要追加的文件当前长度，即需要上送的Position
+            var position = data.headers['content-length'];
+            cos.appendObject({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: 'append.txt', /* 必须 */
+                Body: '66666',
+                Position: position,
+            },
+            function(err, data) {
+                assert.ok(!err);
+                done();
+            })
+        });
+    });
+});
+
+group('数据万象', function () {
+  test('describeMediaBuckets()', function (done, assert) {
+      cos.describeMediaBuckets({
+          Bucket: config.Bucket,
+          Region: config.Region,
+      },
+      function(err, data){
+          assert.ok(!err);
+          done();
+      });
+  });
+  test('getMediaInfo()', function (done, assert) {
+      cos.getMediaInfo({
+          Bucket: config.Bucket,
+          Region: config.Region,
+          Key: '1.mp4',
+      },
+      function(err, data){
+          assert.ok(!err);
+          done();
+      });
+  });
+  test('describeMediaBuckets()', function (done, assert) {
+      cos.getSnapshot({
+          Bucket: config.Bucket,
+          Region: config.Region,
+          Key: '1.mp4',
+      },
+      function(err, data){
+          assert.ok(!err);
+          done();
+      });
+  });
 });
