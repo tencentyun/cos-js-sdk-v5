@@ -3758,7 +3758,7 @@ group('sliceUploadFile() 续传', function () {
 });
 
 group('appendObject', function () {
-    test('describeMediaBuckets()', function (done, assert) {
+    test('appendObject()', function (done, assert) {
         cos.headObject({
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: config.Region,
@@ -3798,7 +3798,7 @@ group('数据万象', function () {
       cos.getMediaInfo({
           Bucket: config.Bucket,
           Region: config.Region,
-          Key: '1.mp4',
+          Key: 'test.mp4',
       },
       function(err, data){
           assert.ok(!err);
@@ -3809,7 +3809,7 @@ group('数据万象', function () {
       cos.getSnapshot({
           Bucket: config.Bucket,
           Region: config.Region,
-          Key: '1.mp4',
+          Key: 'test.mp4',
       },
       function(err, data){
           assert.ok(!err);
