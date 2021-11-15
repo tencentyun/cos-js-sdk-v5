@@ -2895,17 +2895,37 @@ function request(params, callback) {
 
 /**
  * 追加上传
- * @param  {Object}  params                                 参数对象，必须
- *     @param  {String}  params.Bucket                      Bucket名称，必须
- *     @param  {String}  params.Region                      地域名称，必须
- *     @param  {String}  params.Key                         object名称，必须
- *     @param  {File || Blob || String}  params.Body        上传文件对象或字符串
- *     @param  {Number}  params.Position                    追加操作的起始点，单位为字节，必须
- * @param  {Function}  callback                             回调函数，必须
- *     @return  {Object}    err                             请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
- *     @return  {Object}    data                            返回的数据
+ * @param  {Object}  params                                         参数对象，必须
+ *     @param  {String}  params.Bucket                              Bucket名称，必须
+ *     @param  {String}  params.Region                              地域名称，必须
+ *     @param  {String}  params.Key                                 object名称，必须
+ *     @param  {File || Blob || String}  params.Body                上传文件对象或字符串
+ *     @param  {Number}  params.Position                            追加操作的起始点，单位为字节，必须
+ *     @param  {String}  params.CacheControl                        RFC 2616 中定义的缓存策略，将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.ContentDisposition                  RFC 2616 中定义的文件名称，将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.ContentEncoding                     RFC 2616 中定义的编码格式，将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.ContentLength                       RFC 2616 中定义的 HTTP 请求内容长度（字节），必须
+ *     @param  {String}  params.ContentType                         RFC 2616 中定义的内容类型（MIME），将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.Expect                              当使用 Expect: 100-continue 时，在收到服务端确认后，才会发送请求内容，非必须
+ *     @param  {String}  params.Expires                             RFC 2616 中定义的过期时间，将作为 Object 元数据保存，非必须
+ *     @param  {String}  params.ACL                                 允许用户自定义文件权限，有效值：private | public-read，非必须
+ *     @param  {String}  params.GrantRead                           赋予被授权者读取对象的权限，格式：id="[OwnerUin]"，可使用半角逗号（,）分隔多组被授权者，非必须
+ *     @param  {String}  params.GrantReadAcp                        赋予被授权者读取对象的访问控制列表（ACL）的权限，格式：id="[OwnerUin]"，可使用半角逗号（,）分隔多组被授权者，非必须
+ *     @param  {String}  params.GrantWriteAcp                       赋予被授权者写入对象的访问控制列表（ACL）的权限，格式：id="[OwnerUin]"，可使用半角逗号（,）分隔多组被授权者，非必须
+ *     @param  {String}  params.GrantFullControl                    赋予被授权者操作对象的所有权限，格式：id="[OwnerUin]"，可使用半角逗号（,）分隔多组被授权者，非必须
+ *     @param  {String}  params.StorageClass                        设置对象的存储级别，枚举值：STANDARD、STANDARD_IA、ARCHIVE，默认值：STANDARD，非必须
+ *     @param  {String}  params.x-cos-meta-*                        允许用户自定义的头部信息，将作为对象的元数据保存。大小限制2KB，非必须
+ *     @param  {String}  params.ContentSha1                         RFC 3174 中定义的 160-bit 内容 SHA-1 算法校验，非必须
+ *     @param  {String}  params.ServerSideEncryption                支持按照指定的加密算法进行服务端数据加密，格式 x-cos-server-side-encryption: "AES256"，非必须
+ * @param  {Function}  callback                                     回调函数，必须
+ *     @return  {Object}    err                                     请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
+ *     @return  {Object}    data                                    返回的数据
  */
 function appendObject(params, callback) {
+    // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
+    var headers = params.Headers;
+    if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
+    if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
     submitRequest.call(this, {
         Action: 'name/cos:AppendObject',
         method: 'POST',
@@ -3406,7 +3426,8 @@ function submitRequest(params, callback) {
                         delete params.headers['token'];
                         delete params.headers['clientIP'];
                         delete params.headers['clientUA'];
-                        delete params.headers['x-cos-security-token'];
+                        params.headers['x-cos-security-token'] && (delete params.headers['x-cos-security-token']);
+                        params.headers['x-ci-security-token'] && (delete params.headers['x-ci-security-token']);
                     }
                     next(tryTimes + 1);
                 } else {
@@ -3464,12 +3485,18 @@ function _submitRequest(params, callback) {
         body: body,
     };
 
+    // 兼容ci接口
+    var token = 'x-cos-security-token';
+    if (util.isCIHost(url)) {
+        token = 'x-ci-security-token';
+    }
+
     // 获取签名
     opt.headers.Authorization = params.AuthData.Authorization;
     params.AuthData.Token && (opt.headers['token'] = params.AuthData.Token);
     params.AuthData.ClientIP && (opt.headers['clientIP'] = params.AuthData.ClientIP);
     params.AuthData.ClientUA && (opt.headers['clientUA'] = params.AuthData.ClientUA);
-    params.AuthData.SecurityToken && (opt.headers['x-cos-security-token'] = params.AuthData.SecurityToken);
+    params.AuthData.SecurityToken && (opt.headers[token] = params.AuthData.SecurityToken);
 
     // 清理 undefined 和 null 字段
     opt.headers && (opt.headers = util.clearKey(opt.headers));
