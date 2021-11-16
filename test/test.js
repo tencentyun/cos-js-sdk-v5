@@ -3819,10 +3819,11 @@ group('数据万象', function () {
           done();
       });
   });
-  test('describeMediaBuckets()', function (done, assert) {
+  test('getSnapshot()', function (done, assert) {
       cos.request({
           Bucket: config.Bucket,
           Region: config.Region,
+          Method: 'GET',
           Key: 'test.mp4',
           Query: {
               'ci-process': 'snapshot', /** 固定值，必须 */
