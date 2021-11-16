@@ -1824,7 +1824,7 @@ function getSnapshot() {
         CIExample2: '对云上数据进行图片处理',
         CIExample3: '下载时使用图片处理',
         CIExample4: '生成带图片处理参数的签名 URL',
-        describeMediaBuckets: '查询媒体处理开通情况	',
+        describeMediaBuckets: '查询媒体处理开通情况',
         getMediaInfo: '获取媒体文件信息',
         getSnapshot: '获取媒体文件某个时间的截图',
     };
