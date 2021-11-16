@@ -2250,8 +2250,8 @@ declare class COS {
   /** 获取 COS XMl API (v5) 签名 @see https://cloud.tencent.com/document/product/436/7778 */
   getAuth(params: COS.GetAuthParams): COS.Authorization;
 
-  on(action: string, callback: () => void): void;
-  off(action: string, callback: () => void): void;
+  on(action: string, callback: (params?: any) => void): void;
+  off(action: string, callback: (params?: any) => void): void;
   emit(action: string, data?: any): void;
 
 }
