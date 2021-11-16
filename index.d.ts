@@ -1858,35 +1858,6 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     Url: string
   }
 
-   /********  媒体处理相关 ********/
-  /** 查询已经开通数据万象功能的存储桶 */
-  interface DescribeMediaBucketsParams extends BucketParams {
-    PageNumber?: string;
-    PageSize?: string;
-    Regions?: string;
-    BucketNames?: string;
-    BucketName?: string;
-  }
-  
-  interface DescribeMediaBucketsResult extends GeneralResult {
-    CIStatus: boolean;
-  }
-
-  /** 获取媒体文件信息 */
-  interface GetMediaInfoResult extends GeneralResult {
-    Response: any;
-  }
-
-  /** 获取媒体文件某个时间的截图 */
-  interface GetSnapshotParams extends ObjectParams {
-    Time?: number;
-    Width?: number;
-    Height?: number;
-    format?: string;
-    rotate?: string;
-    mode?: string;
-  }
-
   // getV4Auth
   interface GetV4AuthParams {
     /** 计算签名用的密钥 SecretId，如果不传会用实例本身的凭证，可选 */
@@ -2249,20 +2220,6 @@ declare class COS {
   /** 追加上传 @see https://cloud.tencent.com/document/product/436/7741 */
   appendObject(params: COS.AppendObjectParams, callback: (err: COS.CosError, data: COS.GeneralResult) => void): void;
   appendObject(params: COS.AppendObjectParams): Promise<COS.GeneralResult>;
-
-  /*********** 媒体处理相关 start *******/
-  /** 查询已经开通数据万象功能的存储桶 */
-  describeMediaBuckets(params: COS.DescribeMediaBucketsParams, callback: (err: COS.CosError, data: COS.DescribeMediaBucketsResult) => void): void;
-  describeMediaBuckets(params: COS.DescribeMediaBucketsParams): Promise<COS.DescribeMediaBucketsResult>;
-
-  /** 获取媒体文件信息 */
-  getMediaInfo(params: COS.ObjectParams, callback: (err: COS.CosError, data: COS.GetMediaInfoResult) => void): void;
-  getMediaInfo(params: COS.ObjectParams): Promise<COS.GetMediaInfoResult>;
-
-  /** 获取媒体文件某个时间的截图 */
-  getSnapshot(params: COS.GetSnapshotParams, callback: (err: COS.CosError, data: COS.RequestResult) => void): void;
-  getSnapshot(params: COS.GetSnapshotParams): Promise<COS.RequestResult>;
-  /*********** 媒体处理相关 end *******/
 
   /** 获取 COS JSON API (v4) 签名 @see https://cloud.tencent.com/document/product/436/6054 */
   getV4Auth(params: COS.GetV4AuthParams): COS.Authorization;
