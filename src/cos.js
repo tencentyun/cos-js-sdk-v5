@@ -63,6 +63,11 @@ var COS = function (options) {
 base.init(COS, task);
 advance.init(COS, task);
 
+COS.util = {
+    md5: util.md5,
+    xml2json: util.xml2json,
+    json2xml: util.json2xml,
+};
 COS.getAuthorization = util.getAuth;
 COS.version = '1.2.21';
 

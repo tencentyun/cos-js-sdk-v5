@@ -182,6 +182,12 @@ declare namespace COS {
     ) => void,
   }
 
+  interface Util {
+    md5: (str: String, encoding?: string) => string,
+    xml2json: (bodyStr: string) => any,
+    json2xml: (json: any) => string,
+  }
+
   interface StaticGetAuthorizationOptions {
     /** 计算签名用的密钥 SecretId，必选 */
     SecretId: string,
@@ -744,7 +750,7 @@ declare namespace COS {
       /** 指定通用错误文档的对象键，当发生错误且未命中重定向规则中的错误码重定向时，将返回该对象键的内容 */
       Key: Key,
       /** 用于配置命中错误文档的 HTTP 状态码，可选值为 Enabled 或 Disabled，默认为 Enabled */
-      OriginalHttpStatus?: 'Enabled' | 'Disabled，默认为'
+      OriginalHttpStatus?: 'Enabled' | 'Disabled'
     },
     /** 重定向规则配置，最多设置100条 RoutingRule */
     RoutingRules?: {
@@ -1128,10 +1134,10 @@ declare namespace COS {
   /** getObject 接口参数 */
   interface GetObjectParams extends ObjectParams {
     BodyType?: 'text' | 'blob' | 'arraybuffer',
-    /** 请求里的 QueryString 参数 */
-    QueryString?: string,
-    /** 请求里的 Url Query 参数 */
+    /** 请求里的 Url Query 参数，传入该值中的 key/value 将会被 URLEncode */
     Query?: Query,
+    /** 请求里的 Url Query 参数。传入该值将直接拼接在 Url 上，不会对其进行 URLEncode */
+    QueryString?: string,
     /** 当对象在指定时间后被修改，则返回对象，否则返回 HTTP 状态码为304（Not Modified） */
     IfModifiedSince?: string,
     /** 当对象在指定时间后未被修改，则返回对象，否则返回 HTTP 状态码为412（Precondition Failed） */
@@ -1280,7 +1286,7 @@ declare namespace COS {
     /** 存储桶持有者信息 */
     Owner: Owner,
     /** 被授权者信息与权限信息 */
-    Grants: Grants,
+    Grants: Grants[],
   }
 
   // putObjectAcl
@@ -1755,8 +1761,9 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     onProgress?: onProgress,
     /** 上传完成回调方法 */
     onFileFinish?: onFileFinish,
-  }
+  };
 
+  /** uploadFiles 接口返回值 */
   interface UploadFileResult extends GeneralResult {
      /** 对象的实体标签（Entity Tag），是对象被创建时标识对象内容的信息标签，可用于检查对象的内容是否发生变化，例如"8e0b617ca298a564c3331da28dcb50df"。此头部并不一定返回对象的 MD5 值，而是根据对象上传和加密方式而有所不同 */
      ETag: ETag,
@@ -1810,6 +1817,25 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
   /** 上传任务列表 */
   type TaskList = Task[]
 
+  // request
+  /** request 接口参数 */
+  interface RequestParams extends BucketParams {
+    /** 操作方法，如 get，post，delete， head 等 HTTP 方法 */
+    Method: string,
+    /** 请求的对象键，最前面不带 / */
+    Key?: Key,
+    /** 请求里的 Url Query 参数 */
+    Query?: Query,
+    /** 请求里的 Body 参数 */
+    Body?: Body,
+    /** 请求的 API 动作接口(可理解为不带 = 的 Query 参数)，如 acl、tagging、image_process 等 */
+    Action: Action
+  }
+  /** Request 接口返回值 */
+  interface RequestResult extends GeneralResult {
+    Body?: Buffer,
+  }
+
   // getObjectUrl
   /** getObjectUrl 接口参数 */
   interface GetObjectUrlParams extends ObjectParams {
@@ -1817,10 +1843,10 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     Sign?: boolean,
     /** 请求方法 */
     Method?: Method,
-    /** 请求里的 QueryString 参数 */
-    QueryString?: string,
-    /** 请求里的 Url Query 参数 */
+    /** 请求里的 Url Query 参数，传入该值中的 key/value 将会被 URLEncode */
     Query?: Query,
+    /** 请求里的 Url Query 参数。传入该值将直接拼接在 Url 上，不会对其进行 URLEncode */
+    QueryString?: string,
     /** 签名几秒后失效，默认为900秒 */
     Expires?: number,
   }
@@ -1880,6 +1906,9 @@ declare class COS {
   // 静态方法
   /** 计算签名 */
   static getAuthorization: (options: COS.StaticGetAuthorizationOptions) => string;
+
+  /** 工具 */
+  static util: COS.Util;
 
   // 实例方法
   /** 获取用户的 bucket 列表 @see https://cloud.tencent.com/document/product/436/8291 */
@@ -2063,6 +2092,18 @@ declare class COS {
   getBucketAccelerate(params: COS.GetBucketAccelerateParams, callback: (err: COS.CosError, data: COS.GetBucketAccelerateResult) => void): void;
   getBucketAccelerate(params: COS.GetBucketAccelerateParams): Promise<COS.GetBucketAccelerateResult>;
 
+  /** 设置指定存储桶下的默认加密配置 @see https://cloud.tencent.com/document/product/436/40136 */
+  putBucketEncryption(params: COS.PutBucketEncryptionParams, callback: (err: COS.CosError, data: COS.PutBucketEncryptionResult) => void): void;
+  putBucketEncryption(params: COS.PutBucketEncryptionParams): Promise<COS.PutBucketEncryptionResult>;
+
+  /** 查询指定存储桶下的默认加密配置 @see https://cloud.tencent.com/document/product/436/40137 */
+  getBucketEncryption(params: COS.GetBucketEncryptionParams, callback: (err: COS.CosError, data: COS.GetBucketEncryptionResult) => void): void;
+  getBucketEncryption(params: COS.GetBucketEncryptionParams): Promise<COS.GetBucketEncryptionResult>;
+
+  /** 删除指定存储桶下的默认加密配置 @see https://cloud.tencent.com/document/product/436/40138 */
+  deleteBucketEncryption(params: COS.DeleteBucketEncryptionParams, callback: (err: COS.CosError, data: COS.DeleteBucketEncryptionResult) => void): void;
+  deleteBucketEncryption(params: COS.DeleteBucketEncryptionParams): Promise<COS.DeleteBucketEncryptionResult>;
+
   /** 取回对应对象（Object）的元数据，Head的权限与Get的权限一致 @see https://cloud.tencent.com/document/product/436/7745 */
   headObject(params: COS.HeadObjectParams, callback: (err: COS.CosError, data: COS.HeadObjectResult) => void): void;
   headObject(params: COS.HeadObjectParams): Promise<COS.HeadObjectResult>;
@@ -2181,6 +2222,10 @@ declare class COS {
 
   /** 判断上传队列是否有未完成的任务 */
   isUploadRunning(): boolean;
+
+  /** 分片复制文件 */
+  request(params: COS.RequestParams, callback: (err: COS.CosError, data: COS.RequestResult) => void): void;
+  request(params: COS.RequestParams): Promise<COS.RequestResult>;
 
   /** 获取文件下载链接 @see https://cloud.tencent.com/document/product/436/35651 */
   getObjectUrl(params: COS.GetObjectUrlParams, callback: (err: COS.CosError, data: COS.GetObjectUrlResult) => void): string;
