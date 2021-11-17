@@ -1,7 +1,9 @@
 // @ts-check
+// config 替换成自己的存储桶和账号信息
 var config = {
     Bucket: 'test-1250000000',
-    Region: 'ap-guangzhou'
+    Region: 'ap-guangzhou',
+    Uin: '10001',
 };
 
 var util = {
@@ -803,7 +805,7 @@ function putBucketInventory() {
                 COSBucketDestination: {
                     Format: 'CSV',
                     AccountId: config.Uin,
-                    Bucket: 'qcs::cos:ap-guangzhou::bucket-logging-' + AppId,
+                    Bucket: 'qcs::cos:' + config.Region + '::' + config.Bucket,
                     Prefix: 'inventory',
                     Encryption: {
                         SSECOS: ''
@@ -958,6 +960,43 @@ function putObject_base64ToBlob() {
         },
     }, function (err, data) {
         logger.log('putObject:', err || data);
+    });
+}
+
+function appendObject() {
+    cos.appendObject({
+        Bucket: config.Bucket, // Bucket 格式：test-1250000000
+        Region: config.Region,
+        Key: 'append.txt', /* 必须 */
+        Body: '12345',
+        Position: 0,
+    },
+    function(err, data) {
+        logger.log('putObject:', err || data);
+    })
+}
+
+function appendObject_continue() {
+    cos.headObject({
+        Bucket: config.Bucket, // Bucket 格式：test-1250000000
+        Region: config.Region,
+        Key: 'append.txt', /* 必须 */
+    }, function(err, data) {
+        if (err) return console.log(err);
+        // 首先取到要追加的文件当前长度，即需要上送的Position
+        var position = data.headers['content-length'];
+        cos.appendObject({
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            Key: 'append.txt', /* 必须 */
+            Body: '66666',
+            Position: position,
+        },
+        function(err, data) {
+            // 也可以取到下一次上传的position继续追加上传
+            // var nextPosition = data.headers['x-cos-next-append-position'];
+            logger.log('putObject:', err || data);
+        })
     });
 }
 
@@ -1640,6 +1679,67 @@ function CIExample4(){
   );
 }
 
+// 查询已经开通数据万象功能的存储桶
+function describeMediaBuckets() {
+    var host = 'ci.' + config.Region + '.myqcloud.com';
+    var url = 'https://' + host + '/mediabucket';
+    cos.request({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'GET',
+        Key: 'mediabucket', /** 固定值，必须 */
+        Url: url,
+        Query: {
+            pageNumber: '1', /** 第几页，非必须 */
+            pageSize: '10', /** 每页个数，非必须 */
+            // regions: 'ap-chengdu', /** 地域信息，例如'ap-beijing'，支持多个值用逗号分隔如'ap-shanghai,ap-beijing'，非必须 */
+            // bucketNames: 'test-1250000000', /** 存储桶名称，精确搜索，例如'test-1250000000'，支持多个值用逗号分隔如'test1-1250000000,test2-1250000000'，非必须 */
+            // bucketName: 'test', /** 存储桶名称前缀，前缀搜索，例如'test'，支持多个值用逗号分隔如'test1,test2'，非必须 */
+        }
+    }, function (err, data) {
+        logger.log(err || data);
+    });
+}
+
+
+// 获取媒体文件信息
+function getMediaInfo() {
+    cos.request({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'GET',
+        Key: 'test.mp4',
+        Query: {
+            'ci-process': 'videoinfo' /** 固定值，必须 */
+        }
+    }, function (err, data) {
+        logger.log(err || data);
+    });
+}
+
+// 获取媒体文件某个时间的截图
+function getSnapshot() {
+    cos.request({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'GET',
+        Key: 'test.mp4',
+        Query: {
+            'ci-process': 'snapshot', /** 固定值，必须 */
+            time: 1, /** 截图的时间点，单位为秒，必须 */
+            // width: 0, /** 截图的宽，非必须 */
+            // height: 0, /** 截图的高，非必须 */
+            // format: 'jpg', /** 截图的格式，支持 jpg 和 png，默认 jpg，非必须 */
+            // rotate: 'auto', /** 图片旋转方式，默认为'auto'，非必须 */
+            // mode: 'exactframe', /** 截帧方式，默认为'exactframe'，非必须 */
+        },
+        RawBody: true,
+    },
+    function(err, data){
+        logger.log(err || data);
+    });
+}
+
 (function () {
     var list = [
         'header-工具函数',
@@ -1706,6 +1806,8 @@ function CIExample4(){
         'selectObjectContent',
         'putObject',
         'putObject_base64ToBlob',
+        'appendObject',
+        'appendObject_continue',
 
         'header-高级操作',
         'uploadFile',
@@ -1728,10 +1830,15 @@ function CIExample4(){
         'CIExample2',
         'CIExample3',
         'CIExample4',
+        'describeMediaBuckets',
+        'getMediaInfo',
+        'getSnapshot',
     ];
     var labelMap = {
         putObject: '简单上传',
         putObject_base64ToBlob: '简单上传：base64转blob',
+        appendObject: '追加上传',
+        appendObject_continue: '查询position并追加上传',
         uploadFile: '高级上传',
         sliceUploadFile: '分片上传',
         sliceCopyFile: '分片复制',
@@ -1746,6 +1853,9 @@ function CIExample4(){
         CIExample2: '对云上数据进行图片处理',
         CIExample3: '下载时使用图片处理',
         CIExample4: '生成带图片处理参数的签名 URL',
+        describeMediaBuckets: '查询媒体处理开通情况',
+        getMediaInfo: '获取媒体文件信息',
+        getSnapshot: '获取媒体文件某个时间的截图',
     };
     var container = document.querySelector('.main');
     var html = [];

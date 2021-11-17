@@ -465,6 +465,7 @@ var formatParams = function (apiName, params) {
                 'x-cos-grant-write-acp': 'GrantWriteAcp',
                 'x-cos-storage-class': 'StorageClass',
                 'x-cos-traffic-limit': 'TrafficLimit',
+                'x-cos-mime-limit': 'MimeLimit',
                 // SSE-C
                 'x-cos-server-side-encryption-customer-algorithm': 'SSECustomerAlgorithm',
                 'x-cos-server-side-encryption-customer-key': 'SSECustomerKey',
@@ -680,6 +681,13 @@ var isNode = function () {
   return typeof window !== 'object' && typeof process === 'object' && typeof require === 'function';
 }
 
+var isCIHost = function(url) {
+    if (url && url.split('?')[0].match(/(.ci.|ci.|.ci)/g)) {
+        return true;
+    }
+    return false;
+}
+
 var util = {
     noop: noop,
     formatParams: formatParams,
@@ -713,6 +721,7 @@ var util = {
     getSourceParams: getSourceParams,
     isBrowser: true,
     isNode: isNode,
+    isCIHost: isCIHost,
 };
 
 module.exports = util;

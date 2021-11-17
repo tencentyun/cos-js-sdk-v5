@@ -1227,6 +1227,12 @@ declare namespace COS {
     VersionId?: VersionId,
   }
 
+  /** appendObject 接口参数 */
+  interface AppendObjectParams extends PutObjectParams {
+    /** 追加操作的起始点 */
+    Position: number;
+  }
+
   // deleteObject
   /** deleteObject 接口参数 */
   interface DeleteObjectParams extends ObjectParams {}
@@ -1750,7 +1756,7 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     data: UploadFileItemResult;
     options: UploadFileItemParams;
   }
-  type onFileFinish = (params: FileFinishInfo) => void;
+  type onFileFinish = (err: Error, data: UploadFileItemResult, options: UploadFileItemParams) => void;
 
   type UploadFileParams = (PutObjectParams | SliceUploadFileParams) & {
     /** 要上传的本地文件路径 */
@@ -1850,6 +1856,30 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     /** 签名几秒后失效，默认为900秒 */
     Expires?: number,
   }
+
+  // request
+  /** request 接口参数 */
+  interface RequestParams extends BucketParams {
+    /** 操作方法，如 get，post，delete， head 等 HTTP 方法 */
+    Method: string,
+    /** 请求的对象键，最前面不带 / */
+    Key?: Key,
+    /** 请求里的 Url Query 参数 */
+    Query?: Query,
+    /** 请求里的 Body 参数 */
+    Body?: Body | string,
+    /** 请求的 API 动作接口(可理解为不带 = 的 Query 参数)，如 acl、tagging、image_process 等 */
+    Action?: Action,
+    /** 请求url */
+    Url?: string,
+    /** 返回值body是否不需要解析 */
+    RawBody?: boolean,
+  }
+  /** Request 接口返回值 */
+  interface RequestResult extends GeneralResult {
+    Body?: Buffer,
+  }
+  
   /** getObjectUrl 接口返回值 */
   interface GetObjectUrlResult {
     /** 返回对象 Url */
@@ -2230,11 +2260,23 @@ declare class COS {
   /** 获取文件下载链接 @see https://cloud.tencent.com/document/product/436/35651 */
   getObjectUrl(params: COS.GetObjectUrlParams, callback: (err: COS.CosError, data: COS.GetObjectUrlResult) => void): string;
 
+  /** cos.request */
+  request(params: COS.RequestParams, callback: (err: COS.CosError, data: COS.RequestResult) => void): void;
+  request(params: COS.RequestParams): Promise<COS.RequestResult>;
+
+  /** 追加上传 @see https://cloud.tencent.com/document/product/436/7741 */
+  appendObject(params: COS.AppendObjectParams, callback: (err: COS.CosError, data: COS.GeneralResult) => void): void;
+  appendObject(params: COS.AppendObjectParams): Promise<COS.GeneralResult>;
+
   /** 获取 COS JSON API (v4) 签名 @see https://cloud.tencent.com/document/product/436/6054 */
   getV4Auth(params: COS.GetV4AuthParams): COS.Authorization;
 
   /** 获取 COS XMl API (v5) 签名 @see https://cloud.tencent.com/document/product/436/7778 */
   getAuth(params: COS.GetAuthParams): COS.Authorization;
+
+  on(action: string, callback: (params?: any) => void): void;
+  off(action: string, callback: (params?: any) => void): void;
+  emit(action: string, data?: any): void;
 
 }
 

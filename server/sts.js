@@ -66,6 +66,7 @@ app.all('/sts', function (req, res, next) {
     var LongBucketName = config.bucket;
     var ShortBucketName = LongBucketName.substr(0, LongBucketName.lastIndexOf('-'));
     var AppId = LongBucketName.substr(LongBucketName.lastIndexOf('-') + 1);
+    // 数据万象DescribeMediaBuckets接口需要resource为*,参考 https://cloud.tencent.com/document/product/460/41741
     var policy = {
         'version': '2.0',
         'statement': [{
