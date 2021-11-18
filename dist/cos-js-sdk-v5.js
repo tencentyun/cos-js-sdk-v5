@@ -742,10 +742,8 @@ var isNode = function () {
 };
 
 var isCIHost = function (url) {
-    if (url && url.split('?')[0].match(/(.ci.|ci.|.ci)/g)) {
-        return true;
-    }
-    return false;
+    return (/^https?:\/\/([^/]+\.)?ci\.[^/]+/.test(url)
+    );
 };
 
 var util = {
@@ -2449,8 +2447,13 @@ var COS = function (options) {
 base.init(COS, task);
 advance.init(COS, task);
 
+COS.util = {
+    md5: util.md5,
+    xml2json: util.xml2json,
+    json2xml: util.json2xml
+};
 COS.getAuthorization = util.getAuth;
-COS.version = '1.3.0';
+COS.version = '1.3.1';
 
 module.exports = COS;
 
@@ -7953,6 +7956,9 @@ function getUrl(params) {
     var appId = longBucket.substr(longBucket.lastIndexOf('-') + 1);
     var domain = params.domain;
     var object = params.object;
+    if (typeof domain === 'function') {
+        domain = domain({ Bucket: longBucket, Region: region });
+    }
     var protocol = params.protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
     if (!domain) {
         if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
