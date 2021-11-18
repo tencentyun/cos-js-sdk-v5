@@ -678,14 +678,11 @@ var error = function (err, opt) {
 }
 
 var isNode = function () {
-  return typeof window !== 'object' && typeof process === 'object' && typeof require === 'function';
+    return typeof window !== 'object' && typeof process === 'object' && typeof require === 'function';
 }
 
 var isCIHost = function(url) {
-    if (url && url.split('?')[0].match(/(.ci.|ci.|.ci)/g)) {
-        return true;
-    }
-    return false;
+    return /^https?:\/\/([^/]+\.)?ci\.[^/]+/.test(url);
 }
 
 var util = {
