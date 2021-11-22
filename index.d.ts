@@ -193,6 +193,10 @@ declare namespace COS {
     SecretId: string,
     /** 计算签名用的密钥 SecretKey，必选 */
     SecretKey: string,
+    /** 请求的存储桶，如果传入了 Bucket、Region，签名会默认加上 Host 字段，可选 */
+    Bucket?: Bucket,
+    /** 请求的地域，如果传入了 Bucket、Region，签名会默认加上 Host 字段，可选 */
+    Region?: Region,
     /** 请求方法，可选 */
     Method?: Method,
     /** 请求路径，最前面带 /，例如 /images/1.jpg，可选 */
@@ -1906,6 +1910,10 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     SecretId?: string,
     /** 计算签名用的密钥 SecretKey，如果不传会用实例本身的凭证，可选 */
     SecretKey?: string,
+    /** 请求的存储桶，如果传入了 Bucket、Region，签名会默认加上 Host 字段，可选 */
+    Bucket?: Bucket,
+    /** 请求的地域，如果传入了 Bucket、Region，签名会默认加上 Host 字段，可选 */
+    Region?: Region,
     /** 请求方法 */
     Method?: Method,
     /** 请求的对象键，最前面不带 /，例如 images/1.jpg */
