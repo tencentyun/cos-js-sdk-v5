@@ -28,14 +28,20 @@ function getObjectKeys(obj, forKey) {
   });
 };
 
-var obj2str = function (obj) {
+/**
+ * obj转为string
+ * @param  {Object}  obj                需要转的对象，必须
+ * @param  {Object}  stayCase           保留原始大小写，默认false，非必须
+ * @return  {String}  data              返回字符串
+ */
+var obj2str = function (obj, stayCase) {
   var i, key, val;
   var list = [];
   var keyList = getObjectKeys(obj);
   for (i = 0; i < keyList.length; i++) {
       key = keyList[i];
       val = (obj[key] === undefined || obj[key] === null) ? '' : ('' + obj[key]);
-      key = camSafeUrlEncode(key).toLowerCase();
+      key = stayCase? camSafeUrlEncode(key) : camSafeUrlEncode(key).toLowerCase();
       val = camSafeUrlEncode(val) || '';
       list.push(key + '=' + val)
   }

@@ -3001,7 +3001,7 @@ function getObjectUrl(params, callback) {
 
     var queryParamsStr = '';
     if(params.Query){
-      queryParamsStr += util.obj2str(params.Query);
+      queryParamsStr += util.obj2str(params.Query, true);
     }
     if(params.QueryString){
       queryParamsStr += (queryParamsStr ? '&' : '') + params.QueryString;
@@ -3038,9 +3038,19 @@ function getObjectUrl(params, callback) {
             callback(err);
             return;
         }
+
+        // 兼容万象url需要encode两次
+        var replaceUrlParamList = function(url) {
+            var urlParams = url.match(/q-url-param-list.*?(?=&)/g)[0];
+            var encodedParams = 'q-url-param-list=' + encodeURIComponent(encodeURIComponent(urlParams.replace(/q-url-param-list=/, '').toLowerCase())).toLowerCase();
+            var reg = new RegExp(urlParams, 'g');
+            var replacedUrl = url.replace(reg, encodedParams);
+            return replacedUrl;
+        }
+
         var signUrl = url;
         signUrl += '?' + (AuthData.Authorization.indexOf('q-signature') > -1 ?
-            AuthData.Authorization : 'sign=' + encodeURIComponent(AuthData.Authorization));
+          replaceUrlParamList(AuthData.Authorization) : 'sign=' + encodeURIComponent(AuthData.Authorization));
         AuthData.SecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.SecurityToken);
         AuthData.ClientIP && (signUrl += '&clientIP=' + AuthData.ClientIP);
         AuthData.ClientUA && (signUrl += '&clientUA=' + AuthData.ClientUA);

@@ -103,14 +103,20 @@ function getObjectKeys(obj, forKey) {
     });
 };
 
-var obj2str = function (obj) {
+/**
+ * obj转为string
+ * @param  {Object}  obj                需要转的对象，必须
+ * @param  {Object}  stayCase           保留原始大小写，默认false，非必须
+ * @return  {String}  data              返回字符串
+ */
+var obj2str = function (obj, stayCase) {
     var i, key, val;
     var list = [];
     var keyList = getObjectKeys(obj);
     for (i = 0; i < keyList.length; i++) {
         key = keyList[i];
         val = obj[key] === undefined || obj[key] === null ? '' : '' + obj[key];
-        key = camSafeUrlEncode(key).toLowerCase();
+        key = stayCase ? camSafeUrlEncode(key) : camSafeUrlEncode(key).toLowerCase();
         val = camSafeUrlEncode(val) || '';
         list.push(key + '=' + val);
     }
@@ -136,6 +142,9 @@ var getAuth = function (opt) {
         pathname = opt.Pathname || opt.pathname || Key;
         pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
     }
+
+    // 如果有传入存储桶，那么签名默认加 Host 参与计算，避免跨桶访问
+    if (!headers.Host && !headers.host && opt.Bucket && opt.Region) headers.Host = opt.Bucket + '.cos.' + opt.Region + '.myqcloud.com';
 
     if (!SecretId) throw new Error('missing param SecretId');
     if (!SecretKey) throw new Error('missing param SecretKey');
@@ -2436,6 +2445,14 @@ var COS = function (options) {
     if (this.options.AppId) {
         console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").');
     }
+    if (this.options.SecretId && this.options.SecretId.indexOf(' ') > -1) {
+        console.error('error: SecretId格式错误，请检查');
+        console.error('error: SecretId format is incorrect. Please check');
+    }
+    if (this.options.SecretKey && this.options.SecretKey.indexOf(' ') > -1) {
+        console.error('error: SecretKey格式错误，请检查');
+        console.error('error: SecretKey format is incorrect. Please check');
+    }
     if (util.isNode()) {
         console.warn('warning: cos-js-sdk-v5 不支持 nodejs 环境使用，请改用 cos-nodejs-sdk-v5，参考文档： https://cloud.tencent.com/document/product/436/8629');
         console.warn('warning: cos-js-sdk-v5 does not support nodejs environment. Please use cos-nodejs-sdk-v5 instead. See: https://cloud.tencent.com/document/product/436/8629');
@@ -2453,7 +2470,7 @@ COS.util = {
     json2xml: util.json2xml
 };
 COS.getAuthorization = util.getAuth;
-COS.version = '1.3.1';
+COS.version = '1.3.2';
 
 module.exports = COS;
 
@@ -4899,11 +4916,17 @@ function getService(params, callback) {
         domain = protocol + '//service.cos.myqcloud.com';
     }
 
+    var SignHost = '';
+    var standardHost = region ? 'cos.' + region + '.myqcloud.com' : 'service.cos.myqcloud.com';
+    var urlHost = domain.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
+    if (standardHost === urlHost) SignHost = standardHost;
+
     submitRequest.call(this, {
         Action: 'name/cos:GetService',
         url: domain,
         method: 'GET',
-        headers: params.Headers
+        headers: params.Headers,
+        SignHost: SignHost
     }, function (err, data) {
         if (err) return callback(err);
         var buckets = data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Buckets && data.ListAllMyBucketsResult.Buckets.Bucket || [];
@@ -7801,6 +7824,8 @@ function getAuth(params) {
     return util.getAuth({
         SecretId: params.SecretId || this.options.SecretId || '',
         SecretKey: params.SecretKey || this.options.SecretKey || '',
+        Bucket: params.Bucket,
+        Region: params.Region,
         Method: params.Method,
         Key: params.Key,
         Query: params.Query,
@@ -7836,11 +7861,18 @@ function getObjectUrl(params, callback) {
 
     var queryParamsStr = '';
     if (params.Query) {
-        queryParamsStr += util.obj2str(params.Query);
+        queryParamsStr += util.obj2str(params.Query, true);
     }
     if (params.QueryString) {
         queryParamsStr += (queryParamsStr ? '&' : '') + params.QueryString;
     }
+
+    // 签名加上 Host，避免跨桶访问
+    var SignHost = '';
+    var standardHost = 'cos.' + params.Region + '.myqcloud.com';
+    if (!self.options.ForcePathStyle) standardHost = params.Bucket + '.' + standardHost;
+    var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
+    if (standardHost === urlHost) SignHost = standardHost;
 
     var syncUrl = url;
     if (params.Sign !== undefined && !params.Sign) {
@@ -7849,6 +7881,7 @@ function getObjectUrl(params, callback) {
         return syncUrl;
     }
 
+    var SignHost = getSignHost.call(this, { Bucket: params.Bucket, Region: params.Region, Url: url });
     var AuthData = getAuthorizationAsync.call(this, {
         Action: (params.Method || '').toUpperCase() === 'PUT' ? 'name/cos:PutObject' : 'name/cos:GetObject',
         Bucket: params.Bucket || '',
@@ -7857,15 +7890,26 @@ function getObjectUrl(params, callback) {
         Key: params.Key,
         Expires: params.Expires,
         Headers: params.Headers,
-        Query: params.Query
+        Query: params.Query,
+        SignHost: SignHost
     }, function (err, AuthData) {
         if (!callback) return;
         if (err) {
             callback(err);
             return;
         }
+
+        // 兼容万象url需要encode两次
+        var replaceUrlParamList = function (url) {
+            var urlParams = url.match(/q-url-param-list.*?(?=&)/g)[0];
+            var encodedParams = 'q-url-param-list=' + encodeURIComponent(encodeURIComponent(urlParams.replace(/q-url-param-list=/, '').toLowerCase())).toLowerCase();
+            var reg = new RegExp(urlParams, 'g');
+            var replacedUrl = url.replace(reg, encodedParams);
+            return replacedUrl;
+        };
+
         var signUrl = url;
-        signUrl += '?' + (AuthData.Authorization.indexOf('q-signature') > -1 ? AuthData.Authorization : 'sign=' + encodeURIComponent(AuthData.Authorization));
+        signUrl += '?' + (AuthData.Authorization.indexOf('q-signature') > -1 ? replaceUrlParamList(AuthData.Authorization) : 'sign=' + encodeURIComponent(AuthData.Authorization));
         AuthData.SecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.SecurityToken);
         AuthData.ClientIP && (signUrl += '&clientIP=' + AuthData.ClientIP);
         AuthData.ClientUA && (signUrl += '&clientUA=' + AuthData.ClientUA);
@@ -7875,7 +7919,6 @@ function getObjectUrl(params, callback) {
             callback(null, { Url: signUrl });
         });
     });
-
     if (AuthData) {
         syncUrl += '?' + AuthData.Authorization + (AuthData.SecurityToken ? '&x-cos-security-token=' + AuthData.SecurityToken : '');
         queryParamsStr && (syncUrl += '&' + queryParamsStr);
@@ -7996,13 +8039,33 @@ function getUrl(params) {
     return url;
 }
 
+var getSignHost = function (opt) {
+    if (!opt.Bucket || !opt.Bucket) return '';
+    var url = opt.Url || getUrl({
+        ForcePathStyle: this.options.ForcePathStyle,
+        protocol: this.options.Protocol,
+        domain: this.options.Domain,
+        bucket: opt.Bucket,
+        region: opt.Region
+    });
+    var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
+    var standardHostReg = new RegExp('^([a-z\\d-]+-\\d+\\.)?(cos|cosv6|ci|pic)\\.([a-z\\d-]+)\\.myqcloud\\.com$');
+    if (standardHostReg.test(urlHost)) return urlHost;
+    return '';
+};
+
 // 异步获取签名
 function getAuthorizationAsync(params, callback) {
 
     var headers = util.clone(params.Headers);
+    var headerHost = '';
     util.each(headers, function (v, k) {
         (v === '' || ['content-type', 'cache-control', 'expires'].indexOf(k.toLowerCase()) > -1) && delete headers[k];
+        if (k.toLowerCase() === 'host') headerHost = v;
     });
+
+    // Host 加入签名计算
+    if (!headerHost && params.SignHost) headers.Host = params.SignHost;
 
     // 获取凭证的回调，避免用户 callback 多次
     var cbDone = false;
@@ -8232,6 +8295,8 @@ function submitRequest(params, callback) {
     var Query = util.clone(params.qs);
     params.action && (Query[params.action] = '');
 
+    var paramsUrl = params.url || params.Url;
+    var SignHost = params.SignHost || getSignHost.call(this, { Bucket: params.Bucket, Region: params.Region, Url: paramsUrl });
     var next = function (tryTimes) {
         var oldClockOffset = self.options.SystemClockOffset;
         getAuthorizationAsync.call(self, {
@@ -8241,6 +8306,7 @@ function submitRequest(params, callback) {
             Key: params.Key,
             Query: Query,
             Headers: params.headers,
+            SignHost: SignHost,
             Action: params.Action,
             ResourceKey: params.ResourceKey,
             Scope: params.Scope
