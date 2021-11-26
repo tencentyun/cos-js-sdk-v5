@@ -3007,13 +3007,6 @@ function getObjectUrl(params, callback) {
       queryParamsStr += (queryParamsStr ? '&' : '') + params.QueryString;
     }
 
-    // 签名加上 Host，避免跨桶访问
-    var SignHost = '';
-    var standardHost = 'cos.' + params.Region + '.myqcloud.com';
-    if (!self.options.ForcePathStyle) standardHost = params.Bucket + '.' + standardHost;
-    var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
-    if (standardHost === urlHost) SignHost = standardHost;
-
     var syncUrl = url;
     if (params.Sign !== undefined && !params.Sign) {
         queryParamsStr && (syncUrl += '?' + queryParamsStr);
@@ -3021,6 +3014,7 @@ function getObjectUrl(params, callback) {
         return syncUrl;
     }
     
+    // 签名加上 Host，避免跨桶访问
     var SignHost = getSignHost.call(this, {Bucket: params.Bucket, Region: params.Region, Url: url});
     var AuthData = getAuthorizationAsync.call(this, {
         Action: ((params.Method || '').toUpperCase() === 'PUT' ? 'name/cos:PutObject' : 'name/cos:GetObject'),

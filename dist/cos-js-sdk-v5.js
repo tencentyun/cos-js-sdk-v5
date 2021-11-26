@@ -106,8 +106,8 @@ function getObjectKeys(obj, forKey) {
 /**
  * obj转为string
  * @param  {Object}  obj                需要转的对象，必须
- * @param  {Object}  stayCase           保留原始大小写，默认false，非必须
- * @return  {String}  data              返回字符串
+ * @param  {Boolean} stayCase           保留原始大小写，默认false，非必须
+ * @return {String}  data               返回字符串
  */
 var obj2str = function (obj, stayCase) {
     var i, key, val;
@@ -7881,13 +7881,6 @@ function getObjectUrl(params, callback) {
         queryParamsStr += (queryParamsStr ? '&' : '') + params.QueryString;
     }
 
-    // 签名加上 Host，避免跨桶访问
-    var SignHost = '';
-    var standardHost = 'cos.' + params.Region + '.myqcloud.com';
-    if (!self.options.ForcePathStyle) standardHost = params.Bucket + '.' + standardHost;
-    var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
-    if (standardHost === urlHost) SignHost = standardHost;
-
     var syncUrl = url;
     if (params.Sign !== undefined && !params.Sign) {
         queryParamsStr && (syncUrl += '?' + queryParamsStr);
@@ -7895,6 +7888,7 @@ function getObjectUrl(params, callback) {
         return syncUrl;
     }
 
+    // 签名加上 Host，避免跨桶访问
     var SignHost = getSignHost.call(this, { Bucket: params.Bucket, Region: params.Region, Url: url });
     var AuthData = getAuthorizationAsync.call(this, {
         Action: (params.Method || '').toUpperCase() === 'PUT' ? 'name/cos:PutObject' : 'name/cos:GetObject',
