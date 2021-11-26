@@ -31,8 +31,8 @@ function getObjectKeys(obj, forKey) {
 /**
  * obj转为string
  * @param  {Object}  obj                需要转的对象，必须
- * @param  {Object}  stayCase           保留原始大小写，默认false，非必须
- * @return  {String}  data              返回字符串
+ * @param  {Boolean} stayCase           保留原始大小写，默认false，非必须
+ * @return {String}  data               返回字符串
  */
 var obj2str = function (obj, stayCase) {
   var i, key, val;
