@@ -1835,7 +1835,11 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     /** 请求里的 Body 参数 */
     Body?: Body,
     /** 请求的 API 动作接口(可理解为不带 = 的 Query 参数)，如 acl、tagging、image_process 等 */
-    Action: Action
+    Action?: Action,
+    /** 请求url */
+    Url?: string,
+    /** 返回值body是否不需要解析 */
+    RawBody?: boolean,
   }
   /** Request 接口返回值 */
   interface RequestResult extends GeneralResult {
@@ -1857,29 +1861,6 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     Expires?: number,
   }
 
-  // request
-  /** request 接口参数 */
-  interface RequestParams extends BucketParams {
-    /** 操作方法，如 get，post，delete， head 等 HTTP 方法 */
-    Method: string,
-    /** 请求的对象键，最前面不带 / */
-    Key?: Key,
-    /** 请求里的 Url Query 参数 */
-    Query?: Query,
-    /** 请求里的 Body 参数 */
-    Body?: Body | string,
-    /** 请求的 API 动作接口(可理解为不带 = 的 Query 参数)，如 acl、tagging、image_process 等 */
-    Action?: Action,
-    /** 请求url */
-    Url?: string,
-    /** 返回值body是否不需要解析 */
-    RawBody?: boolean,
-  }
-  /** Request 接口返回值 */
-  interface RequestResult extends GeneralResult {
-    Body?: Buffer,
-  }
-  
   /** getObjectUrl 接口返回值 */
   interface GetObjectUrlResult {
     /** 返回对象 Url */
