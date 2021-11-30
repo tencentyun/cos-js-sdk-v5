@@ -300,13 +300,14 @@ var fileSliceNeedCopy = function () {
         return 0;
     };
     var check = function (ua) {
+        if (!ua) return false;
         var ChromeVersion = (ua.match(/Chrome\/([.\d]+)/) || [])[1];
         var QBCoreVersion = (ua.match(/QBCore\/([.\d]+)/) || [])[1];
         var QQBrowserVersion = (ua.match(/QQBrowser\/([.\d]+)/) || [])[1];
         var need = ChromeVersion && compareVersion(ChromeVersion, '53.0.2785.116') < 0 && QBCoreVersion && compareVersion(QBCoreVersion, '3.53.991.400') < 0 && QQBrowserVersion && compareVersion(QQBrowserVersion, '9.0.2524.400') <= 0 || false;
         return need;
     };
-    return check(navigator && navigator.userAgent);
+    return check(typeof navigator !== 'undefined' && navigator.userAgent);
 }();
 
 // 获取文件分片
@@ -2453,7 +2454,7 @@ COS.util = {
     json2xml: util.json2xml
 };
 COS.getAuthorization = util.getAuth;
-COS.version = '1.3.1';
+COS.version = '1.3.2';
 
 module.exports = COS;
 
