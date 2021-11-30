@@ -235,6 +235,7 @@ var fileSliceNeedCopy = (function () {
         return 0;
     };
     var check = function (ua) {
+        if (!ua) return false;
         var ChromeVersion = (ua.match(/Chrome\/([.\d]+)/) || [])[1];
         var QBCoreVersion = (ua.match(/QBCore\/([.\d]+)/) || [])[1];
         var QQBrowserVersion = (ua.match(/QQBrowser\/([.\d]+)/) || [])[1];
@@ -243,7 +244,7 @@ var fileSliceNeedCopy = (function () {
             && QQBrowserVersion && compareVersion(QQBrowserVersion, '9.0.2524.400') <= 0 || false;
         return need;
     };
-    return check(navigator && navigator.userAgent);
+    return check(typeof navigator !== 'undefined' && navigator.userAgent);
 })();
 
 // 获取文件分片
