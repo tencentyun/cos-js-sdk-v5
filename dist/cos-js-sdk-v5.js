@@ -106,17 +106,17 @@ function getObjectKeys(obj, forKey) {
 /**
  * obj转为string
  * @param  {Object}  obj                需要转的对象，必须
- * @param  {Boolean} stayCase           保留原始大小写，默认false，非必须
+ * @param  {Boolean} lowerCaseKey       key是否转为小写，默认false，非必须
  * @return {String}  data               返回字符串
  */
-var obj2str = function (obj, stayCase) {
+var obj2str = function (obj, lowerCaseKey) {
     var i, key, val;
     var list = [];
     var keyList = getObjectKeys(obj);
     for (i = 0; i < keyList.length; i++) {
         key = keyList[i];
         val = obj[key] === undefined || obj[key] === null ? '' : '' + obj[key];
-        key = stayCase ? camSafeUrlEncode(key) : camSafeUrlEncode(key).toLowerCase();
+        key = lowerCaseKey ? camSafeUrlEncode(key).toLowerCase() : camSafeUrlEncode(key);
         val = camSafeUrlEncode(val) || '';
         list.push(key + '=' + val);
     }
@@ -187,7 +187,7 @@ var getAuth = function (opt) {
     var signKey = CryptoJS.HmacSHA1(qKeyTime, SecretKey).toString();
 
     // 步骤二：构成 FormatString
-    var formatString = [method, pathname, util.obj2str(queryParams), util.obj2str(headers), ''].join('\n');
+    var formatString = [method, pathname, util.obj2str(queryParams, true), util.obj2str(headers, true), ''].join('\n');
 
     // 步骤三：计算 StringToSign
     var stringToSign = ['sha1', qSignTime, CryptoJS.SHA1(formatString).toString(), ''].join('\n');
@@ -323,13 +323,14 @@ var fileSliceNeedCopy = function () {
         return 0;
     };
     var check = function (ua) {
+        if (!ua) return false;
         var ChromeVersion = (ua.match(/Chrome\/([.\d]+)/) || [])[1];
         var QBCoreVersion = (ua.match(/QBCore\/([.\d]+)/) || [])[1];
         var QQBrowserVersion = (ua.match(/QQBrowser\/([.\d]+)/) || [])[1];
         var need = ChromeVersion && compareVersion(ChromeVersion, '53.0.2785.116') < 0 && QBCoreVersion && compareVersion(QBCoreVersion, '3.53.991.400') < 0 && QQBrowserVersion && compareVersion(QQBrowserVersion, '9.0.2524.400') <= 0 || false;
         return need;
     };
-    return check(navigator && navigator.userAgent);
+    return check(typeof navigator !== 'undefined' && navigator.userAgent);
 }();
 
 // 获取文件分片
@@ -2484,7 +2485,7 @@ COS.util = {
     json2xml: util.json2xml
 };
 COS.getAuthorization = util.getAuth;
-COS.version = '1.3.2';
+COS.version = '1.3.3';
 
 module.exports = COS;
 
@@ -7875,7 +7876,7 @@ function getObjectUrl(params, callback) {
 
     var queryParamsStr = '';
     if (params.Query) {
-        queryParamsStr += util.obj2str(params.Query, true);
+        queryParamsStr += util.obj2str(params.Query);
     }
     if (params.QueryString) {
         queryParamsStr += (queryParamsStr ? '&' : '') + params.QueryString;

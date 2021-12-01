@@ -92,15 +92,14 @@
             });
         };
 
-        var obj2str = function (obj) {
+        var obj2str = function (obj, lowerCaseKey) {
             var i, key, val;
             var list = [];
             var keyList = getObjectKeys(obj);
             for (i = 0; i < keyList.length; i++) {
                 key = keyList[i];
                 val = (obj[key] === undefined || obj[key] === null) ? '' : ('' + obj[key]);
-                key = key.toLowerCase();
-                key = camSafeUrlEncode(key);
+                key = lowerCaseKey? camSafeUrlEncode(key).toLowerCase() : camSafeUrlEncode(key);
                 val = camSafeUrlEncode(val) || '';
                 list.push(key + '=' + val)
             }
@@ -124,7 +123,7 @@
         var signKey = CryptoJS.HmacSHA1(qKeyTime, SecretKey).toString();
 
         // 步骤二：构成 FormatString
-        var formatString = [method, pathname, obj2str(query), obj2str(headers), ''].join('\n');
+        var formatString = [method, pathname, obj2str(query, true), obj2str(headers, true), ''].join('\n');
 
         // 步骤三：计算 StringToSign
         var stringToSign = ['sha1', qSignTime, CryptoJS.SHA1(formatString).toString(), ''].join('\n');
