@@ -9,7 +9,7 @@
 ### 一、前期准备
 
 1. 首先，JS SDK 需要浏览器支持基本的 HTML5 特性，以便支持 ajax 上传文件和计算文件 md5 值。
-2. 到 [COS对象存储控制台](https://console.cloud.tencent.com/cos) 创建存储桶，得到 Bucket（存储桶名称） 和 [Region（地域名称）](https://cloud.tencent.com/document/product/436/6224)
+2. 到 [COS对象存储控制台](https://console.cloud.tencent.com/cos) 创建存储桶，得到 Bucket（由bucketname-appid 组成，appid必须填入） 和 [Region（地域名称）](https://cloud.tencent.com/document/product/436/6224)
 3. 到 [控制台密钥管理](https://console.cloud.tencent.com/capi) 获取您的项目 SecretId 和 SecretKey
 4. 配置 CORS 规则，配置例子如下图：
 
@@ -31,7 +31,11 @@
 <input id="file-selector" type="file">
 <script src="dist/cos-js-sdk-v5.min.js"></script>
 <script>
+  
+// 存储桶名称，由bucketname-appid 组成，appid必须填入，可以在COS控制台查看存储桶名称。 https://console.cloud.tencent.com/cos5/bucket
 var Bucket = 'test-1250000000';
+// 存储桶Region可以在COS控制台指定存储桶的概览页查看 https://console.cloud.tencent.com/cos5/bucket/ 
+// 关于地域的详情见 https://cloud.tencent.com/document/product/436/6224
 var Region = 'ap-guangzhou';
 
 // 初始化实例

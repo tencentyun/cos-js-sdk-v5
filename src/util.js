@@ -15,32 +15,56 @@ function camSafeUrlEncode(str) {
 }
 
 function getObjectKeys(obj, forKey) {
-  var list = [];
-  for (var key in obj) {
-      if (obj.hasOwnProperty(key)) {
-          list.push(forKey ? camSafeUrlEncode(key).toLowerCase() : key);
-      }
-  }
-  return list.sort(function (a, b) {
-      a = a.toLowerCase();
-      b = b.toLowerCase();
-      return a === b ? 0 : (a > b ? 1 : -1);
-  });
+    var list = [];
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            list.push(forKey ? camSafeUrlEncode(key).toLowerCase() : key);
+        }
+    }
+    return list.sort(function (a, b) {
+        a = a.toLowerCase();
+        b = b.toLowerCase();
+        return a === b ? 0 : (a > b ? 1 : -1);
+    });
 };
 
-var obj2str = function (obj) {
-  var i, key, val;
-  var list = [];
-  var keyList = getObjectKeys(obj);
-  for (i = 0; i < keyList.length; i++) {
-      key = keyList[i];
-      val = (obj[key] === undefined || obj[key] === null) ? '' : ('' + obj[key]);
-      key = camSafeUrlEncode(key).toLowerCase();
-      val = camSafeUrlEncode(val) || '';
-      list.push(key + '=' + val)
-  }
-  return list.join('&');
+/**
+ * obj转为string
+ * @param  {Object}  obj                需要转的对象，必须
+ * @param  {Boolean} lowerCaseKey       key是否转为小写，默认false，非必须
+ * @return {String}  data               返回字符串
+ */
+var obj2str = function (obj, lowerCaseKey) {
+    var i, key, val;
+    var list = [];
+    var keyList = getObjectKeys(obj);
+    for (i = 0; i < keyList.length; i++) {
+        key = keyList[i];
+        val = (obj[key] === undefined || obj[key] === null) ? '' : ('' + obj[key]);
+        key = lowerCaseKey? camSafeUrlEncode(key).toLowerCase() : camSafeUrlEncode(key);
+        val = camSafeUrlEncode(val) || '';
+        list.push(key + '=' + val)
+    }
+    return list.join('&');
 };
+
+
+// 可以签入签名的headers
+var signHeaders = ['content-disposition', 'content-encoding', 'content-length', 'content-md5',
+    'expect', 'host', 'if-match', 'if-modified-since', 'if-none-match', 'if-unmodified-since',
+    'origin', 'range', 'response-cache-control', 'response-content-disposition', 'response-content-encoding',
+    'response-content-language', 'response-content-type', 'response-expires', 'transfer-encoding', 'versionid'];
+
+var getSignHeaderObj = function (headers) {
+    var signHeaderObj = {};
+    for (var i in headers) {
+        var key = i.toLowerCase();
+        if (key.indexOf('x-cos-') > -1 || signHeaders.indexOf(key) > -1) {
+            signHeaderObj[i] = headers[i];
+        }
+    }
+    return signHeaderObj;
+}
 
 //测试用的key后面可以去掉
 var getAuth = function (opt) {
@@ -51,7 +75,7 @@ var getAuth = function (opt) {
     var KeyTime = opt.KeyTime;
     var method = (opt.method || opt.Method || 'get').toLowerCase();
     var queryParams = clone(opt.Query || opt.params || {});
-    var headers = clone(opt.Headers || opt.headers || {});
+    var headers = getSignHeaderObj(clone(opt.Headers || opt.headers || {}));
 
     var Key = opt.Key || '';
     var pathname;
@@ -61,6 +85,9 @@ var getAuth = function (opt) {
         pathname = opt.Pathname || opt.pathname || Key;
         pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
     }
+
+    // 如果有传入存储桶，那么签名默认加 Host 参与计算，避免跨桶访问
+    if (!headers.Host && !headers.host && opt.Bucket && opt.Region) headers.Host = opt.Bucket + '.cos.' + opt.Region + '.myqcloud.com';
 
     if (!SecretId) throw new Error('missing param SecretId');
     if (!SecretKey) throw new Error('missing param SecretKey');
@@ -81,15 +108,15 @@ var getAuth = function (opt) {
     var qAk = SecretId;
     var qSignTime = KeyTime || now + ';' + exp;
     var qKeyTime = KeyTime || now + ';' + exp;
-    var qHeaderList = getObjectKeys(headers).join(';').toLowerCase();
-    var qUrlParamList = getObjectKeys(queryParams).join(';').toLowerCase();
+    var qHeaderList = getObjectKeys(headers, true).join(';').toLowerCase();
+    var qUrlParamList = getObjectKeys(queryParams, true).join(';').toLowerCase();
 
     // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
     // 步骤一：计算 SignKey
     var signKey = CryptoJS.HmacSHA1(qKeyTime, SecretKey).toString();
 
     // 步骤二：构成 FormatString
-    var formatString = [method, pathname, util.obj2str(queryParams), util.obj2str(headers), ''].join('\n');
+    var formatString = [method, pathname, util.obj2str(queryParams, true), util.obj2str(headers, true), ''].join('\n');
 
     // 步骤三：计算 StringToSign
     var stringToSign = ['sha1', qSignTime, CryptoJS.SHA1(formatString).toString(), ''].join('\n');
