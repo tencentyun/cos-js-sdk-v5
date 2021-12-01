@@ -108,8 +108,8 @@ var getAuth = function (opt) {
     var qAk = SecretId;
     var qSignTime = KeyTime || now + ';' + exp;
     var qKeyTime = KeyTime || now + ';' + exp;
-    var qHeaderList = getObjectKeys(headers).join(';').toLowerCase();
-    var qUrlParamList = getObjectKeys(queryParams).join(';').toLowerCase();
+    var qHeaderList = getObjectKeys(headers, true).join(';').toLowerCase();
+    var qUrlParamList = getObjectKeys(queryParams, true).join(';').toLowerCase();
 
     // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
     // 步骤一：计算 SignKey

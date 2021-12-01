@@ -179,8 +179,8 @@ var getAuth = function (opt) {
     var qAk = SecretId;
     var qSignTime = KeyTime || now + ';' + exp;
     var qKeyTime = KeyTime || now + ';' + exp;
-    var qHeaderList = getObjectKeys(headers).join(';').toLowerCase();
-    var qUrlParamList = getObjectKeys(queryParams).join(';').toLowerCase();
+    var qHeaderList = getObjectKeys(headers, true).join(';').toLowerCase();
+    var qUrlParamList = getObjectKeys(queryParams, true).join(';').toLowerCase();
 
     // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
     // 步骤一：计算 SignKey
@@ -7908,10 +7908,10 @@ function getObjectUrl(params, callback) {
             return;
         }
 
-        // 兼容万象url需要encode两次
+        // 兼容万象url qUrlParamList需要再encode一次
         var replaceUrlParamList = function (url) {
             var urlParams = url.match(/q-url-param-list.*?(?=&)/g)[0];
-            var encodedParams = 'q-url-param-list=' + encodeURIComponent(encodeURIComponent(urlParams.replace(/q-url-param-list=/, '').toLowerCase())).toLowerCase();
+            var encodedParams = 'q-url-param-list=' + encodeURIComponent(urlParams.replace(/q-url-param-list=/, '')).toLowerCase();
             var reg = new RegExp(urlParams, 'g');
             var replacedUrl = url.replace(reg, encodedParams);
             return replacedUrl;

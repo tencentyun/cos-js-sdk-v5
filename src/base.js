@@ -3033,10 +3033,10 @@ function getObjectUrl(params, callback) {
             return;
         }
 
-        // 兼容万象url需要encode两次
+        // 兼容万象url qUrlParamList需要再encode一次
         var replaceUrlParamList = function(url) {
             var urlParams = url.match(/q-url-param-list.*?(?=&)/g)[0];
-            var encodedParams = 'q-url-param-list=' + encodeURIComponent(encodeURIComponent(urlParams.replace(/q-url-param-list=/, '').toLowerCase())).toLowerCase();
+            var encodedParams = 'q-url-param-list=' + encodeURIComponent(urlParams.replace(/q-url-param-list=/, '')).toLowerCase();
             var reg = new RegExp(urlParams, 'g');
             var replacedUrl = url.replace(reg, encodedParams);
             return replacedUrl;
