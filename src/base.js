@@ -3183,13 +3183,17 @@ function getUrl(params) {
 }
 
 var getSignHost = function (opt) {
-    if (!opt.Bucket || !opt.Bucket) return '';
+    if (!opt.Bucket || !opt.Region) return '';
+    var region = opt.Region;
+    if (this.options.UseAccelerate) {
+      region = 'accelerate';
+    }
     var url = opt.Url || getUrl({
         ForcePathStyle: this.options.ForcePathStyle,
         protocol: this.options.Protocol,
         domain: this.options.Domain,
         bucket: opt.Bucket,
-        region: opt.Region,
+        region: region,
     });
     var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
     var standardHostReg = new RegExp('^([a-z\\d-]+-\\d+\\.)?(cos|cosv6|ci|pic)\\.([a-z\\d-]+)\\.myqcloud\\.com$');
@@ -3200,7 +3204,6 @@ var getSignHost = function (opt) {
 
 // 异步获取签名
 function getAuthorizationAsync(params, callback) {
-
     var headers = util.clone(params.Headers);
     var headerHost = '';
     util.each(headers, function (v, k) {
