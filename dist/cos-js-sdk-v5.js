@@ -2485,7 +2485,7 @@ COS.util = {
     json2xml: util.json2xml
 };
 COS.getAuthorization = util.getAuth;
-COS.version = '1.3.4';
+COS.version = '1.3.5';
 
 module.exports = COS;
 
@@ -7764,7 +7764,8 @@ function request(params, callback) {
         qs: params.Query,
         body: params.Body,
         Url: params.Url,
-        rawBody: params.RawBody
+        rawBody: params.RawBody,
+        DataType: params.DataType
     }, function (err, data) {
         if (err) return callback(err);
         if (data && data.body) {

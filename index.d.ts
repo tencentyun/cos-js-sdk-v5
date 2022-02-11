@@ -1844,6 +1844,8 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     Url?: string,
     /** 返回值body是否不需要解析 */
     RawBody?: boolean,
+    /** 返回文件内容格式，如string、blob、arraybuffer */
+    DataType?: string,
   }
   /** Request 接口返回值 */
   interface RequestResult extends GeneralResult {
