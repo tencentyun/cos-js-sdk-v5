@@ -3133,34 +3133,48 @@ function getUrl(params) {
     var longBucket = params.bucket || '';
     var shortBucket = longBucket.substr(0, longBucket.lastIndexOf('-'));
     var appId = longBucket.substr(longBucket.lastIndexOf('-') + 1);
+    var endpoint = params.Endpoint || '';
     var domain = params.domain;
     var object = params.object;
-    if (typeof domain === 'function') {
-        domain = domain({Bucket: longBucket, Region: region});
+    var paramsProtocol = params.protocol;
+
+    // Protocol兼容不带冒号
+    if (paramsProtocol === 'http' || paramsProtocol === 'https') {
+      paramsProtocol += ':';
     }
-    var protocol = params.protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
-    if (!domain) {
-        if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
-            domain = '{Region}.myqcloud.com';
-        } else {
-            domain = 'cos.{Region}.myqcloud.com';
+    var protocol = paramsProtocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
+    if (endpoint) {
+        domain = protocol + '//' + longBucket + '.' + endpoint;
+    } else {
+        // 使用cn域名还是老com域名
+        var ext = params.EnableOldDomain ? '.myqcloud.com' : '.tencentcos.cn';
+        if (typeof domain === 'function') {
+            domain = domain({Bucket: longBucket, Region: region});
         }
-        if (!params.ForcePathStyle) {
-            domain = '{Bucket}.' + domain;
+        if (!domain) {
+            if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
+                domain = '{Region}' + ext;
+            } else {
+                domain = 'cos.{Region}' + ext;
+            }
+            if (!params.ForcePathStyle) {
+                domain = '{Bucket}.' + domain;
+            }
+        }
+        domain = domain.replace(/\{\{AppId\}\}/ig, appId)
+            .replace(/\{\{Bucket\}\}/ig, shortBucket)
+            .replace(/\{\{Region\}\}/ig, region)
+            .replace(/\{\{.*?\}\}/ig, '');
+        domain = domain.replace(/\{AppId\}/ig, appId)
+            .replace(/\{BucketName\}/ig, shortBucket)
+            .replace(/\{Bucket\}/ig, longBucket)
+            .replace(/\{Region\}/ig, region)
+            .replace(/\{.*?\}/ig, '');
+        if (!/^[a-zA-Z]+:\/\//.test(domain)) {
+            domain = protocol + '//' + domain;
         }
     }
-    domain = domain.replace(/\{\{AppId\}\}/ig, appId)
-        .replace(/\{\{Bucket\}\}/ig, shortBucket)
-        .replace(/\{\{Region\}\}/ig, region)
-        .replace(/\{\{.*?\}\}/ig, '');
-    domain = domain.replace(/\{AppId\}/ig, appId)
-        .replace(/\{BucketName\}/ig, shortBucket)
-        .replace(/\{Bucket\}/ig, longBucket)
-        .replace(/\{Region\}/ig, region)
-        .replace(/\{.*?\}/ig, '');
-    if (!/^[a-zA-Z]+:\/\//.test(domain)) {
-        domain = protocol + '//' + domain;
-    }
+    
 
     // 去掉域名最后的斜杆
     if (domain.slice(-1) === '/') {
@@ -3508,6 +3522,8 @@ function _submitRequest(params, callback) {
         ForcePathStyle: self.options.ForcePathStyle,
         protocol: self.options.Protocol,
         domain: self.options.Domain,
+        EnableOldDomain: self.options.EnableOldDomain,
+        Endpoint: self.options.Endpoint,
         bucket: bucket,
         region: region,
         object: object,

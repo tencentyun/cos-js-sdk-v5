@@ -21,7 +21,7 @@ var defaultOptions = {
     CopySliceSize: 1024 * 1024 * 10,
     MaxPartNumber: 10000,
     ProgressInterval: 1000,
-    Domain: '',
+    Domain: '', // 优先级低于EndPoint
     ServiceDomain: '',
     Protocol: '',
     CompatibilityMode: false,
@@ -34,7 +34,10 @@ var defaultOptions = {
     UploadQueueSize: 10000,
     UploadAddMetaMd5: false,
     UploadIdCacheLimit: 50,
-    UseAccelerate: false,
+    UseAccelerate: false, // 使用全球加速
+    EnableOldDomain: false, // 是否默认使用原myqcloud.com域名，默认不使用
+    EnableInternalDomain: false, // 是否使用内网域名，js默认使用外网域名
+    Endpoint: '' // 指定endPoint,比如cos.ap-guangzhou.tencentcos.cn
 };
 
 // 对外暴露的类
