@@ -1734,6 +1734,8 @@ function getSnapshot() {
             // mode: 'exactframe', /** 截帧方式，默认为'exactframe'，非必须 */
         },
         RawBody: true,
+        // 可选返回文件格式为blob
+        DataType: 'blob',
     },
     function(err, data){
         logger.log(err || data);

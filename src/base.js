@@ -2890,6 +2890,7 @@ function request(params, callback) {
         body: params.Body,
         Url: params.Url,
         rawBody: params.RawBody,
+        DataType: params.DataType,
     }, function (err, data) {
         if (err) return callback(err);
         if (data && data.body) {
