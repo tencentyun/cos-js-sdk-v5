@@ -3140,7 +3140,7 @@ function getUrl(params) {
 
     // Protocol兼容不带冒号
     if (paramsProtocol === 'http' || paramsProtocol === 'https') {
-      paramsProtocol += ':';
+        paramsProtocol += ':';
     }
     var protocol = paramsProtocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
     if (endpoint) {
