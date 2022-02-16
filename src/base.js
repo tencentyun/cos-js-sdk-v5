@@ -2991,12 +2991,13 @@ function getAuth(params) {
  */
 function getObjectUrl(params, callback) {
     var self = this;
+    var useAccelerate = params.UseAccelerate === undefined ? self.options.UseAccelerate : params.UseAccelerate;
     var url = getUrl({
         ForcePathStyle: self.options.ForcePathStyle,
         protocol: params.Protocol || self.options.Protocol,
         domain: params.Domain || self.options.Domain,
         bucket: params.Bucket,
-        region: params.Region,
+        region: useAccelerate ? 'accelerate' : params.Region,
         object: params.Key,
     });
 
@@ -3016,7 +3017,7 @@ function getObjectUrl(params, callback) {
     }
     
     // 签名加上 Host，避免跨桶访问
-    var SignHost = getSignHost.call(this, {Bucket: params.Bucket, Region: params.Region, Url: url});
+    var SignHost = getSignHost.call(this, {Bucket: params.Bucket, Region: params.Region, UseAccelerate: params.UseAccelerate, Url: url});
     var AuthData = getAuthorizationAsync.call(this, {
         Action: ((params.Method || '').toUpperCase() === 'PUT' ? 'name/cos:PutObject' : 'name/cos:GetObject'),
         Bucket: params.Bucket || '',
@@ -3185,12 +3186,13 @@ function getUrl(params) {
 
 var getSignHost = function (opt) {
     if (!opt.Bucket || !opt.Region) return '';
+    var useAccelerate = opt.UseAccelerate === undefined ? this.options.UseAccelerate : opt.UseAccelerate;
     var url = opt.Url || getUrl({
         ForcePathStyle: this.options.ForcePathStyle,
         protocol: this.options.Protocol,
         domain: this.options.Domain,
         bucket: opt.Bucket,
-        region: this.options.UseAccelerate ? 'accelerate' : opt.Region,
+        region: useAccelerate ? 'accelerate' : opt.Region,
     });
     var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
     var standardHostReg = new RegExp('^([a-z\\d-]+-\\d+\\.)?(cos|cosv6|ci|pic)\\.([a-z\\d-]+)\\.myqcloud\\.com$');
