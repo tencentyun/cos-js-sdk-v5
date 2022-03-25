@@ -1137,7 +1137,7 @@ declare namespace COS {
   // getObject
   /** getObject 接口参数 */
   interface GetObjectParams extends ObjectParams {
-    BodyType?: 'text' | 'blob' | 'arraybuffer',
+    DataType?: 'text' | 'blob' | 'arraybuffer',
     /** 请求里的 Url Query 参数，传入该值中的 key/value 将会被 URLEncode */
     Query?: Query,
     /** 请求里的 Url Query 参数。传入该值将直接拼接在 Url 上，不会对其进行 URLEncode */
