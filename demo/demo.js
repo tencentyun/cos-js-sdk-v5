@@ -1,9 +1,9 @@
 // @ts-check
 // config 替换成自己的存储桶和账号信息
 var config = {
-    Bucket: 'test-1250000000',
-    Region: 'ap-guangzhou',
-    Uin: '10001',
+  Bucket: 'az-test-1300555317',
+  Region: 'ap-shanghai',
+  Uin: '100011913628',
 };
 
 var util = {
@@ -253,10 +253,10 @@ function putBucket() {
 
 function getBucket() {
     cos.getBucket({
-        // Bucket: config.Bucket, // Bucket 格式：test-1250000000
-        // Region: config.Region,
-        // Prefix: 'dir/'
-        // Delimiter: '/'
+        Bucket: config.Bucket, // Bucket 格式：test-1250000000
+        Region: config.Region,
+        Prefix: '',
+        Delimiter: '/'
     }, function (err, data) {
         logger.log('getBucket:', err || data);
     });
@@ -284,7 +284,7 @@ function putBucketAcl() {
     cos.putBucketAcl({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
-        // GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
+        GrantFullControl: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1001:uin/1001"',
         // GrantWrite: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
         // GrantRead: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
         // GrantReadAcp: 'id="qcs::cam::uin/1001:uin/1001",id="qcs::cam::uin/1002:uin/1002"',
@@ -1742,6 +1742,312 @@ function getSnapshot() {
     });
 }
 
+// 图片同步审核
+function getImageAuditing() {
+  cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET',
+      Key: '1.png',
+      Query: {
+          'ci-process': 'sensitive-content-recognition', /** 固定值，必须 */
+          'biz-type': '', /** 审核类型，非必须 */
+          'detect-type': 'porn,ads', /** 审核策略，不填写则使用默认策略，非必须 */
+          'detect-url': '', /** 审核任意公网可访问的图片链接，非必须 */
+          'interval': 5, /** 审核 GIF 动图时，每隔interval帧截取一帧，非必须 */
+          'max-frames': 5,  /** 审核 GIF 动图时，最大截帧数，非必须 */
+          'large-image-detect': '0', /** 是否需要压缩图片后再审核，非必须 */
+      },
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 图片批量审核
+function postImagesAuditing() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+  var url = 'https://' + host + '/image/auditing';
+  var body = COS.util.json2xml({
+    Request: {
+      Input: [{
+        Object: '1.png',
+      }, {
+        Object: '6.png',
+      }],
+      Conf: {
+        BizType: '',
+        DetectType: 'Porn'
+      }
+    }
+  });
+  cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'POST',
+      Url: url,
+      Key: '/image/auditing',
+      ContentType: 'application/xml',
+      Body: body
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 查询图片审核任务结果
+function getImageAuditingResult() {
+  var jobId = 'si8263213daf3711eca0d1525400d88560'; // jobId可以通过图片批量审核返回
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+  var url = 'https://' + host + '/image/auditing/' + jobId;
+  cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET',
+      Key: '/image/auditing/' + jobId,
+      Url: url,
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 提交视频审核任务
+function postVideoAuditing() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+  var url = 'https://' + host + '/video/auditing';
+  var body = COS.util.json2xml({
+    Request: {
+      Input: {
+        Object: '1.mp4',
+      },
+      Conf: {
+        BizType: '',
+        DetectType: 'Porn',
+        Snapshot: {
+          Count: 1000, // 视频截帧数量
+        },
+        DetectContent: 1, // 是否审核视频声音,0-只审核视频不审核声音；1-审核视频+声音
+      }
+    }
+  });
+  cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'POST',
+      Url: url,
+      Key: '/video/auditing',
+      ContentType: 'application/xml',
+      Body: body
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 查询视频审核任务结果
+function getVideoAuditingResult() {
+  var jobId = 'av14d9ca15af3a11eca0d6525400d88560'; // jobId可以通过提交视频审核任务返回
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+  var url = 'https://' + host + '/video/auditing/' + jobId;
+  cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET',
+      Key: '/video/auditing/' + jobId,
+      Url: url,
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 提交音频审核任务
+function postAudioAuditing() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+  var url = 'https://' + host + '/audio/auditing';
+  var body = COS.util.json2xml({
+    Request: {
+      Input: {
+        Object: '1.mp3',
+      },
+      Conf: {
+        BizType: '',
+        DetectType: 'Porn',
+      }
+    }
+  });
+  cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'POST',
+      Url: url,
+      Key: '/audio/auditing',
+      ContentType: 'application/xml',
+      Body: body
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 查询音频审核任务结果
+function getAudioAuditingResult() {
+  var jobId = 'sa0c28d41daff411ecb23352540078ca25'; // jobId可以通过提交音频审核任务返回
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+  var url = 'https://' + host + '/audio/auditing/' + jobId;
+  cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET',
+      Key: '/audio/auditing/' + jobId,
+      Url: url,
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 提交文本审核任务
+function postTextAuditing() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+  var url = 'https://' + host + '/text/auditing';
+  var body = COS.util.json2xml({
+    Request: {
+      Input: {
+        // Object: 'hello.txt', // 存在cos里的资源，审核结果异步返回，可以调用查询文本审核结果api查询
+        Content: '5Lmz5rKf', // 经过base64编码过的文本”乳沟“，查询结果同步返回
+      },
+      Conf: {
+        BizType: '',
+        DetectType: 'Porn',
+      }
+    }
+  });
+  cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'POST',
+      Url: url,
+      Key: '/text/auditing',
+      ContentType: 'application/xml',
+      Body: body
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 查询文本审核任务结果
+function getTextAuditingResult() {
+  var jobId = 'st8d88c664aff511ecb23352540078ca25'; // jobId可以通过提交文本审核任务返回（Input传入Object）
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+  var url = 'https://' + host + '/text/auditing/' + jobId;
+  cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET',
+      Key: '/text/auditing/' + jobId,
+      Url: url,
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 提交文档审核任务
+function postDocumentAuditing() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+  var url = 'https://' + host + '/document/auditing';
+  var body = COS.util.json2xml({
+    Request: {
+      Input: {
+        Object: 'test.xlsx', // 存在cos里的资源，审核结果异步返回，可以调用查询文本审核结果api查询
+      },
+      Conf: {
+        BizType: '',
+        DetectType: 'Porn',
+      }
+    }
+  });
+  cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'POST',
+      Url: url,
+      Key: '/document/auditing',
+      ContentType: 'application/xml',
+      Body: body
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 查询文档审核任务结果
+function getDocumentAuditingResult() {
+  var jobId = 'sd7815c21caff611eca12f525400d88560'; // jobId可以通过提交文档审核任务返回
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+  var url = 'https://' + host + '/document/auditing/' + jobId;
+  cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET',
+      Key: '/document/auditing/' + jobId,
+      Url: url,
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 提交网页审核任务
+function postWebpageAuditing() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+  var url = 'https://' + host + '/webpage/auditing';
+  var body = COS.util.json2xml({
+    Request: {
+      Input: {
+        Url: 'https://cloud.tencent.com/', // 存在cos里的资源，审核结果异步返回，可以调用查询文本审核结果api查询
+      },
+      Conf: {
+        BizType: '',
+        DetectType: 'Porn,Ads',
+      }
+    }
+  });
+  cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'POST',
+      Url: url,
+      Key: '/webpage/auditing',
+      ContentType: 'application/xml',
+      Body: body
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 查询网页审核任务结果
+function getWebpageAuditingResult() {
+  var jobId = 'shce868019aff611ecb1155254009a49da'; // jobId可以通过提交网页审核任务返回
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+  var url = 'https://' + host + '/webpage/auditing/' + jobId;
+  cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET',
+      Key: '/webpage/auditing/' + jobId,
+      Url: url,
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+
 (function () {
     var list = [
         'header-工具函数',
@@ -1835,6 +2141,19 @@ function getSnapshot() {
         'describeMediaBuckets',
         'getMediaInfo',
         'getSnapshot',
+        'getImageAuditing',
+        'postImagesAuditing',
+        'getImageAuditingResult',
+        'postVideoAuditing',
+        'getVideoAuditingResult',
+        'postAudioAuditing',
+        'getAudioAuditingResult',
+        'postTextAuditing',
+        'getTextAuditingResult',
+        'postDocumentAuditing',
+        'getDocumentAuditingResult',
+        'postWebpageAuditing',
+        'getWebpageAuditingResult',
     ];
     var labelMap = {
         putObject: '简单上传',
@@ -1858,6 +2177,19 @@ function getSnapshot() {
         describeMediaBuckets: '查询媒体处理开通情况',
         getMediaInfo: '获取媒体文件信息',
         getSnapshot: '获取媒体文件某个时间的截图',
+        getImageAuditing: '图片同步审核',
+        postImagesAuditing: '图片批量审核',
+        getImageAuditingResult: '查询图片审核任务结果',
+        postVideoAuditing: '提交视频审核任务',
+        getVideoAuditingResult: '查询视频审核任务结果',
+        postAudioAuditing: '提交音频审核任务',
+        getAudioAuditingResult: '查询音频审核任务结果',
+        postTextAuditing: '提交文本审核任务',
+        getTextAuditingResult: '查询文本审核任务结果',
+        postDocumentAuditing: '提交文档审核任务',
+        getDocumentAuditingResult: '查询文档审核任务结果',
+        postWebpageAuditing: '提交网页审核任务',
+        getWebpageAuditingResult: '查询网页审核任务结果',
     };
     var container = document.querySelector('.main');
     var html = [];
