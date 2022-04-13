@@ -70,6 +70,7 @@ var getAuthorization = function (options, callback) {
             Pathname: options.Pathname,
             Query: options.Query,
             Headers: options.Headers,
+            ForceSignHost: options.ForceSignHost,
             Expires: 900,
         });
         callback({
