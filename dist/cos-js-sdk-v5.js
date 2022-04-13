@@ -157,8 +157,11 @@ var getAuth = function (opt) {
         pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
     }
 
-    // 如果有传入存储桶，那么签名默认加 Host 参与计算，避免跨桶访问
-    if (!headers.Host && !headers.host && opt.Bucket && opt.Region) headers.Host = opt.Bucket + '.cos.' + opt.Region + '.myqcloud.com';
+    // ForceSignHost明确传入false才不加入host签名
+    var forceSignHost = opt.ForceSignHost === false ? false : true;
+
+    // 如果有传入存储桶且需要强制签名，那么签名默认加 Host 参与计算，避免跨桶访问
+    if (!headers.Host && !headers.host && opt.Bucket && opt.Region && forceSignHost) headers.Host = opt.Bucket + '.cos.' + opt.Region + '.myqcloud.com';
 
     if (!SecretId) throw new Error('missing param SecretId');
     if (!SecretKey) throw new Error('missing param SecretKey');
@@ -596,6 +599,7 @@ var apiWrapper = function (apiName, apiFn) {
         var formatResult = function (result) {
             if (result && result.headers) {
                 result.headers['x-cos-request-id'] && (result.RequestId = result.headers['x-cos-request-id']);
+                result.headers['x-ci-request-id'] && (result.RequestId = result.headers['x-ci-request-id']);
                 result.headers['x-cos-version-id'] && (result.VersionId = result.headers['x-cos-version-id']);
                 result.headers['x-cos-delete-marker'] && (result.DeleteMarker = result.headers['x-cos-delete-marker']);
             }
@@ -2442,7 +2446,8 @@ var defaultOptions = {
     UploadQueueSize: 10000,
     UploadAddMetaMd5: false,
     UploadIdCacheLimit: 50,
-    UseAccelerate: false
+    UseAccelerate: false,
+    ForceSignHost: true // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
 };
 
 // 对外暴露的类
@@ -2485,7 +2490,7 @@ COS.util = {
     json2xml: util.json2xml
 };
 COS.getAuthorization = util.getAuth;
-COS.version = '2.0.0';
+COS.version = '1.3.6';
 
 module.exports = COS;
 
@@ -7866,12 +7871,13 @@ function getAuth(params) {
  */
 function getObjectUrl(params, callback) {
     var self = this;
+    var useAccelerate = params.UseAccelerate === undefined ? self.options.UseAccelerate : params.UseAccelerate;
     var url = getUrl({
         ForcePathStyle: self.options.ForcePathStyle,
         protocol: params.Protocol || self.options.Protocol,
         domain: params.Domain || self.options.Domain,
         bucket: params.Bucket,
-        region: params.Region,
+        region: useAccelerate ? 'accelerate' : params.Region,
         object: params.Key
     });
 
@@ -7891,7 +7897,7 @@ function getObjectUrl(params, callback) {
     }
 
     // 签名加上 Host，避免跨桶访问
-    var SignHost = getSignHost.call(this, { Bucket: params.Bucket, Region: params.Region, Url: url });
+    var SignHost = getSignHost.call(this, { Bucket: params.Bucket, Region: params.Region, UseAccelerate: params.UseAccelerate, Url: url });
     var AuthData = getAuthorizationAsync.call(this, {
         Action: (params.Method || '').toUpperCase() === 'PUT' ? 'name/cos:PutObject' : 'name/cos:GetObject',
         Bucket: params.Bucket || '',
@@ -7901,7 +7907,8 @@ function getObjectUrl(params, callback) {
         Expires: params.Expires,
         Headers: params.Headers,
         Query: params.Query,
-        SignHost: SignHost
+        SignHost: SignHost,
+        ForceSignHost: params.ForceSignHost === false ? false : self.options.ForceSignHost // getObjectUrl支持传参ForceSignHost
     }, function (err, AuthData) {
         if (!callback) return;
         if (err) {
@@ -8051,12 +8058,13 @@ function getUrl(params) {
 
 var getSignHost = function (opt) {
     if (!opt.Bucket || !opt.Region) return '';
+    var useAccelerate = opt.UseAccelerate === undefined ? this.options.UseAccelerate : opt.UseAccelerate;
     var url = opt.Url || getUrl({
         ForcePathStyle: this.options.ForcePathStyle,
         protocol: this.options.Protocol,
         domain: this.options.Domain,
         bucket: opt.Bucket,
-        region: this.options.UseAccelerate ? 'accelerate' : opt.Region
+        region: useAccelerate ? 'accelerate' : opt.Region
     });
     var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
     var standardHostReg = new RegExp('^([a-z\\d-]+-\\d+\\.)?(cos|cosv6|ci|pic)\\.([a-z\\d-]+)\\.myqcloud\\.com$');
@@ -8072,9 +8080,11 @@ function getAuthorizationAsync(params, callback) {
         (v === '' || ['content-type', 'cache-control', 'expires'].indexOf(k.toLowerCase()) > -1) && delete headers[k];
         if (k.toLowerCase() === 'host') headerHost = v;
     });
+    // ForceSignHost明确传入false才不加入host签名
+    var forceSignHost = params.ForceSignHost === false ? false : true;
 
     // Host 加入签名计算
-    if (!headerHost && params.SignHost) headers.Host = params.SignHost;
+    if (!headerHost && params.SignHost && forceSignHost) headers.Host = params.SignHost;
 
     // 获取凭证的回调，避免用户 callback 多次
     var cbDone = false;
@@ -8145,7 +8155,8 @@ function getAuthorizationAsync(params, callback) {
             Expires: params.Expires,
             UseRawKey: self.options.UseRawKey,
             SystemClockOffset: self.options.SystemClockOffset,
-            KeyTime: KeyTime
+            KeyTime: KeyTime,
+            ForceSignHost: self.options.ForceSignHost
         });
         var AuthData = {
             Authorization: Authorization,
@@ -8202,7 +8213,8 @@ function getAuthorizationAsync(params, callback) {
             Query: params.Query,
             Headers: headers,
             Scope: Scope,
-            SystemClockOffset: self.options.SystemClockOffset
+            SystemClockOffset: self.options.SystemClockOffset,
+            ForceSignHost: self.options.ForceSignHost
         }, function (AuthData) {
             if (typeof AuthData === 'string') AuthData = { Authorization: AuthData };
             var AuthError = checkAuthError(AuthData);
@@ -8245,7 +8257,8 @@ function getAuthorizationAsync(params, callback) {
                 Headers: headers,
                 Expires: params.Expires,
                 UseRawKey: self.options.UseRawKey,
-                SystemClockOffset: self.options.SystemClockOffset
+                SystemClockOffset: self.options.SystemClockOffset,
+                ForceSignHost: self.options.ForceSignHost
             });
             var AuthData = {
                 Authorization: Authorization,
@@ -8318,7 +8331,8 @@ function submitRequest(params, callback) {
             SignHost: SignHost,
             Action: params.Action,
             ResourceKey: params.ResourceKey,
-            Scope: params.Scope
+            Scope: params.Scope,
+            ForceSignHost: self.options.ForceSignHost
         }, function (err, AuthData) {
             if (err) {
                 callback(err);

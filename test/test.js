@@ -66,6 +66,7 @@ var getAuthorization = function (options, callback) {
             TmpSecretKey: credentials.tmpSecretKey,
             SecurityToken: credentials.sessionToken,
             ExpiredTime: data.expiredTime, // SDK 在 ExpiredTime 时间前，不会再次调用 getAuthorization
+            ForceSignHost: options.ForceSignHost,
         });
     };
     xhr.send();

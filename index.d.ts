@@ -145,11 +145,11 @@ declare namespace COS {
     ProgressInterval?: number,
     /** 上传队列最长大小，超出的任务如果状态不是 waiting、checking、uploading 会被清理，默认10000 */
     UploadQueueSize?: number,
-    /** 上传队列最长大小，超出的任务如果状态不是 waiting、checking、uploading 会被清理，默认10000 */
+    /** 调用操作存储桶和对象的 API 时自定义请求域名。可以使用模板，如"{Bucket}.cos.{Region}.myqcloud.com"，即在调用 API 时会使用参数中传入的 Bucket 和 Region 进行替换。 */
     Domain?: string,
-    /** 强制使用后缀式模式发请求。后缀式模式中 Bucket 会放在域名后的 pathname 里，并且 Bucket 会加入签名 pathname 计算，默认 false */
+    /** getService方法可以使用的自定义域名 */
     ServiceDomain?: string,
-    /** 强制使用后缀式模式发请求。后缀式模式中 Bucket 会放在域名后的 pathname 里，并且 Bucket 会加入签名 pathname 计算，默认 false */
+    /** http协议，枚举值'http:','https:'冒号必须 */
     Protocol?: string,
     /** 开启兼容模式，默认 false 不开启，兼容模式下不校验 Region 是否格式有误，在用于私有化 COS 时使用 */
     CompatibilityMode?: boolean,
@@ -1137,7 +1137,7 @@ declare namespace COS {
   // getObject
   /** getObject 接口参数 */
   interface GetObjectParams extends ObjectParams {
-    BodyType?: 'text' | 'blob' | 'arraybuffer',
+    DataType?: 'text' | 'blob' | 'arraybuffer',
     /** 请求里的 Url Query 参数，传入该值中的 key/value 将会被 URLEncode */
     Query?: Query,
     /** 请求里的 Url Query 参数。传入该值将直接拼接在 Url 上，不会对其进行 URLEncode */
