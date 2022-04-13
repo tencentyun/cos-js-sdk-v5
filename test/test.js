@@ -210,7 +210,6 @@ var cos = new COS({
     ProgressInterval: 1,  // 控制 onProgress 回调的间隔
     ChunkRetryTimes: 3,   // 控制文件切片后单片上传失败后重试次数
     UploadCheckContentMd5: true,   // 上传过程计算 Content-MD5
-    ForceSignHost: false,
 });
 
 var AppId = config.AppId;
