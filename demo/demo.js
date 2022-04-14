@@ -177,6 +177,7 @@ var showLogText = function (text, color) {
 
 var logger = {
     log: function (text) {
+      return;
         console.log.apply(console, arguments);
         var args = [].map.call(arguments, function (v) {
             return typeof v === 'object' ? JSON.stringify(v, null, 2) : v;
@@ -910,7 +911,7 @@ function putObject() {
             logger.log('onTaskStart', info);
         },
         onProgress: function (progressData) {
-            logger.log(JSON.stringify(progressData));
+            logger.log(JSON.stringify(progressData), new Date().getTime());
         },
         Headers: {
             // 万象持久化接口，上传时持久化

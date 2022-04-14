@@ -4,6 +4,7 @@ var md5 = require('../lib/md5');
 var CryptoJS = require('../lib/crypto');
 var xml2json = require('../lib/xml2json');
 var json2xml = require('../lib/json2xml');
+var Reporter = require('./reporter');
 
 function camSafeUrlEncode(str) {
     return encodeURIComponent(str)
@@ -521,7 +522,7 @@ var formatParams = function (apiName, params) {
 
 var apiWrapper = function (apiName, apiFn) {
     return function (params, callback) {
-
+        
         var self = this;
 
         // 处理参数
@@ -532,6 +533,15 @@ var apiWrapper = function (apiName, apiFn) {
 
         // 整理参数格式
         params = formatParams(apiName, params);
+console.log(apiName, params);
+        // 通用上报
+        var commonReporter = new Reporter({
+          buctet: params.Bucket,
+          region: params.Reigon,
+          apiName: apiName,
+          fileKey: params.Key,
+          fileSize: params.Body ? params.Body.size : -1,
+        });
 
         // 代理回调函数
         var formatResult = function (result) {
@@ -544,6 +554,10 @@ var apiWrapper = function (apiName, apiFn) {
             return result;
         };
         var _callback = function (err, data) {
+            // 格式化上报参数并上报
+            commonReporter.formatParams(err, data);
+            commonReporter.sendEvents('common_api');
+            
             callback && callback(formatResult(err), formatResult(data));
         };
 

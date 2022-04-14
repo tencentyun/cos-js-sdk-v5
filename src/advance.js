@@ -2,6 +2,7 @@ var session = require('./session');
 var Async = require('./async');
 var EventProxy = require('./event').EventProxy;
 var util = require('./util');
+var Reporter = require('./reporter');
 
 // 文件分块上传全过程，暴露的分块上传接口
 function sliceUploadFile(params, callback) {

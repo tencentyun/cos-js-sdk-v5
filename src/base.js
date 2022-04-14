@@ -2571,7 +2571,7 @@ function selectObjectContent(params, callback) {
  * @return  {Object}  data                                      返回的数据
  */
 function multipartInit(params, callback) {
-
+  console.log('multipartInit start', new Date().getTime());
     var self = this;
     // 特殊处理 Cache-Control
     var headers = params.Headers;
@@ -2592,6 +2592,7 @@ function multipartInit(params, callback) {
             headers: params.Headers,
             qs: params.Query,
         }, function (err, data) {
+          console.log('multipartInit end', new Date().getTime());
             if (err) return callback(err);
             data = util.clone(data || {});
             if (data && data.InitiateMultipartUploadResult) {
