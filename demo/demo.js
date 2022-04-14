@@ -901,7 +901,7 @@ function putObject() {
     cos.putObject({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
-        Key: filename, /* 必须 */
+        Key: '/OrderPic/e4742a95-2f85-2ff9-6312-fbe7b3e07bb3.jpg', /* 必须 */
         Body: blob,
         onTaskReady: function (tid) {
             TaskId = tid;

@@ -36,7 +36,7 @@ class Reporter {
     }
   }
 
-  // 延时上报
+  // 使用灯塔延时上报
   sendEvents(eventCode) {
     this.endTime = new Date().getTime();
     this.avgTime = this.endTime - this.startTime;
