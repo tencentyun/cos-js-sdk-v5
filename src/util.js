@@ -543,6 +543,9 @@ console.log(apiName, params);
           fileSize: params.Body ? params.Body.size : -1,
         });
 
+        // reporter注入方法内部
+        params.reporter = commonReporter;
+
         // 代理回调函数
         var formatResult = function (result) {
             if (result && result.headers) {

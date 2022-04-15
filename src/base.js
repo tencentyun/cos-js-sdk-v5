@@ -1946,8 +1946,13 @@ function putObject(params, callback) {
     if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
     if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
     var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
+    
+    var reporter = params.reporter;
+    needCalcMd5 && reporter && reporter.setParams({ md5StartTime: new Date().getTime() });
+
     util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
         if (md5) {
+            reporter && reporter.setParams({ md5EndTime: new Date().getTime() });
             if (self.options.UploadCheckContentMd5) headers['Content-MD5'] = util.binaryBase64(md5);
             if (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5) headers['x-cos-meta-md5'] = md5;
         }
@@ -1964,6 +1969,7 @@ function putObject(params, callback) {
             qs: params.Query,
             body: params.Body,
             onProgress: onProgress,
+            reporter: reporter,
         }, function (err, data) {
             if (err) {
                 onProgress(null, true);
@@ -3463,8 +3469,10 @@ function submitRequest(params, callback) {
 
     var paramsUrl = params.url || params.Url;
     var SignHost = params.SignHost || getSignHost.call(this, {Bucket: params.Bucket, Region: params.Region, Url: paramsUrl});
+    var reporter = params.reporter;
     var next = function (tryTimes) {
         var oldClockOffset = self.options.SystemClockOffset;
+        reporter.setParams({ signStartTime: new Date().getTime(), retryTimes: tryTimes });
         getAuthorizationAsync.call(self, {
             Bucket: params.Bucket || '',
             Region: params.Region || '',
@@ -3482,8 +3490,10 @@ function submitRequest(params, callback) {
                 callback(err);
                 return;
             }
+            reporter.setParams({ signEndTime: new Date().getTime(), httpStartTime: new Date().getTime() });
             params.AuthData = AuthData;
             _submitRequest.call(self, params, function (err, data) {
+              reporter.setParams({ httpEndTime: new Date().getTime() });
                 if (err && tryTimes < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
                     if (params.headers) {
                         delete params.headers.Authorization;

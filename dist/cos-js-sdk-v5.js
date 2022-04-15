@@ -619,6 +619,9 @@ var apiWrapper = function (apiName, apiFn) {
             fileSize: params.Body ? params.Body.size : -1
         });
 
+        // reporter注入方法内部
+        params.reporter = commonReporter;
+
         // 代理回调函数
         var formatResult = function (result) {
             if (result && result.headers) {
@@ -2809,44 +2812,91 @@ const beacon = new BeaconAction({
   // onReportBeforeSend: beforeSend, // 上报前回调，选填
 });
 
+// 观察者的选项（观察哪些突变）
+const config = {
+  entryTypes: ['resource', 'mark', 'measure']
+};
+
+const observer = new PerformanceObserver(list => {
+  list.getEntries().forEach(entry => {
+    // 在控制台上显示每个报告的测量
+    console.log(`Name: ${entry.name}`, `Type: ${entry.entryType}`, `Start: ${entry.startTime}`, `Duration: ${entry.duration}`);
+  });
+});
+
+// 开始观察
+observer.observe(config);
+performance.mark('registered-observer');
+
 class Reporter {
   constructor({ bucket, region, apiName, fileKey, fileSize }) {
     this.ins = beacon;
-    this.startTime = new Date().getTime();
-    this.bucket = bucket;
-    this.region = region;
-    this.apiName = apiName;
-    this.fileKey = fileKey;
-    this.fileSize = fileSize;
+    this.params = {
+      bucket,
+      region,
+      apiName,
+      fileKey,
+      fileSize: -1, // 默认给-1，可能真实值是0
+      md5StartTime: 0, // md5计算开始时间
+      md5EndTime: 0, // md5计算结束时间
+      signStartTime: 0, // 计算签名开始时间
+      signEndTime: 0, // 计算签名结束时间
+      httpStartTime: 0, // 发起网络请求开始时间
+      httpEndTime: 0, // 网路请求结束时间
+      startTime: new Date().getTime(), // sdk api调用起始时间，不是纯网络耗时
+      endTime: 0, //  sdk api调用结束时间，不是纯网络耗时
+      retryTimes: 0, // 当前请求的重试次数，sdk内部发起的重试
+      result: '', // sdk api调用结果
+      statusCode: 0,
+      errorMessage: '',
+      requestId: ''
+    };
   }
 
   // 格式化sdk回调
   formatParams(err, data) {
-    this.reult = err ? 'fail' : 'success';
-    this.statusCode = err ? err.code : data.statusCode;
-    this.errorMessage = err ? err.message : '';
-    this.requestId = err ? err.headers['x-cos-request-id'] : data.headers['x-cos-request-id'];
-    if (this.apiName === 'getObject') {
-      this.fileSize = data ? data.headers['content-length'] : -1;
+    Object.assign(this.params, {
+      reult: err ? 'fail' : 'success',
+      statusCode: err ? err.code : data.statusCode,
+      errorMessage: err ? err.message : '',
+      requestId: err ? err.headers['x-cos-request-id'] : data.headers['x-cos-request-id']
+    });
+    if (this.params.apiName === 'getObject') {
+      this.params.fileSize = data ? data.headers['content-length'] : -1;
+    }
+  }
+
+  // 设置当前链路的参数
+  setParams(params) {
+    for (let i in params) {
+      this.params[i] = params[i];
     }
   }
 
   // 使用灯塔延时上报
   sendEvents(eventCode) {
-    this.endTime = new Date().getTime();
-    this.avgTime = this.endTime - this.startTime;
-    this.speed = this.fileSize !== -1 ? (this.fileSize / (this.avgTime / 1000)).toFixed(2) : -1;
+    const now = new Date().getTime();
+    Object.assign(this.params, {
+      endTime: now,
+      avgTime: now - this.params.startTime,
+      speed: this.params.fileSize !== -1 ? (this.params.fileSize / (avgTime / 1000)).toFixed(2) : -1
+    });
     const uploadOrDownloadAPI = ['getObject', 'putObject', 'postObject', 'sliceUploadFile', 'multipartList', 'multipartInit', 'multipartUpload', 'multipartComplete', 'multipartAbort'];
+    const { apiName, startTime, endTime, avgTime, speed,
+      md5StartTime, md5EndTime, signStartTime, signEndTime, httpStartTime, httpEndTime,
+      fileSize, fileKey, reult, statusCode, errorMessage, requestId } = this.params;
     // 上传、下载操作
     if (uploadOrDownloadAPI.includes(this.apiName)) {
-      console.log(`%c ${this.apiName}`, 'background: #006eff;color: #fff;font-size: 16px;', `【开始时间:${this.startTime}】,【结束时间:${this.endTime}】【耗时:${this.avgTime} ms】,
-      【文件大小:${this.fileSize} B】【文件Key:${this.fileKey}】【速度:${this.speed} B/s】
-      【调用结果:${this.reult}】【statusCode:${this.statusCode}】【message:${this.errorMessage}】,
-      【requestId:${this.requestId}】`);
+      console.log(`%c ${apiName}`, 'background: #006eff;color: #fff;font-size: 16px;', `【开始时间:${startTime}】,【结束时间:${endTime}】【耗时:${avgTime} ms】,
+      【MD5计算耗时:${md5EndTime - md5StartTime} ms】,【签名计算耗时:${signEndTime - signStartTime} ms】,【http请求耗时:${httpEndTime - httpStartTime} ms】,
+      【文件大小:${fileSize} B】【文件Key:${fileKey}】【速度:${speed} B/s】
+      【调用结果:${reult}】【statusCode:${statusCode}】【message:${errorMessage}】,
+      【requestId:${requestId}】`);
     } else {
-      console.log(`%c ${this.apiName}`, 'background: green;color: #fff;font-size: 16px;', `【开始时间:${this.startTime}】,【结束时间:${this.endTime}】【耗时:${this.avgTime} ms】,
-      【调用结果:${this.reult}】【statusCode:${this.statusCode}】【message:${this.errorMessage}】,
-      【requestId:${this.requestId}】`);
+      console.log(`%c ${apiName}`, 'background: green;color: #fff;font-size: 16px;', `【开始时间:${startTime}】,【结束时间:${endTime}】【耗时:${avgTime} ms】,
+      【MD5计算耗时:${md5EndTime - md5StartTime} ms】,【签名计算耗时:${signEndTime - signStartTime} ms】,【http请求耗时:${httpEndTime - httpStartTime} ms】,
+      【调用结果:${reult}】【statusCode:${statusCode}】【message:${errorMessage}】,
+      【requestId:${requestId}】`);
     }
     // beacon.onUserAction(eventCode, params);
   }
@@ -10373,8 +10423,13 @@ function putObject(params, callback) {
     if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
     if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
     var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
+
+    var reporter = params.reporter;
+    needCalcMd5 && reporter && reporter.setParams({ md5StartTime: new Date().getTime() });
+
     util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
         if (md5) {
+            reporter && reporter.setParams({ md5EndTime: new Date().getTime() });
             if (self.options.UploadCheckContentMd5) headers['Content-MD5'] = util.binaryBase64(md5);
             if (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5) headers['x-cos-meta-md5'] = md5;
         }
@@ -10390,7 +10445,8 @@ function putObject(params, callback) {
             headers: params.Headers,
             qs: params.Query,
             body: params.Body,
-            onProgress: onProgress
+            onProgress: onProgress,
+            reporter: reporter
         }, function (err, data) {
             if (err) {
                 onProgress(null, true);
@@ -11910,8 +11966,10 @@ function submitRequest(params, callback) {
 
     var paramsUrl = params.url || params.Url;
     var SignHost = params.SignHost || getSignHost.call(this, { Bucket: params.Bucket, Region: params.Region, Url: paramsUrl });
+    var reporter = params.reporter;
     var next = function (tryTimes) {
         var oldClockOffset = self.options.SystemClockOffset;
+        reporter.setParams({ signStartTime: new Date().getTime(), retryTimes: tryTimes });
         getAuthorizationAsync.call(self, {
             Bucket: params.Bucket || '',
             Region: params.Region || '',
@@ -11929,8 +11987,10 @@ function submitRequest(params, callback) {
                 callback(err);
                 return;
             }
+            reporter.setParams({ signEndTime: new Date().getTime(), httpStartTime: new Date().getTime() });
             params.AuthData = AuthData;
             _submitRequest.call(self, params, function (err, data) {
+                reporter.setParams({ httpEndTime: new Date().getTime() });
                 if (err && tryTimes < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
                     if (params.headers) {
                         delete params.headers.Authorization;
