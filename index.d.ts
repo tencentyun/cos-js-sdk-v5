@@ -171,6 +171,8 @@ declare namespace COS {
     UploadIdCacheLimit?: number,
     /** 是否使用全球加速域名。开启该配置后仅以下接口支持操作：putObject、getObject、headObject、optionsObject、multipartInit、multipartListPart、multipartUpload、multipartAbort、multipartComplete、multipartList、sliceUploadFile、uploadFiles */
     UseAccelerate?: boolean,
+    /** 默认为true，将host加入签名计算，关闭后可能导致越权风险，建议保持为true */
+    ForceSignHost?: boolean,
     /** 获取签名的回调方法，如果没有 SecretId、SecretKey 时，必选 */
     getAuthorization?: (
       options: GetAuthorizationOptions,
@@ -1907,6 +1909,8 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     Query?: Query,
     /** 请求里的 Header 参数 */
     Headers?: Headers,
+    /** 默认为true，将host加入签名计算，关闭后可能导致越权风险，建议保持为true */
+    ForceSignHost?: boolean,
   }
 
 }
