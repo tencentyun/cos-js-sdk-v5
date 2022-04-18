@@ -4,7 +4,7 @@ var md5 = require('../lib/md5');
 var CryptoJS = require('../lib/crypto');
 var xml2json = require('../lib/xml2json');
 var json2xml = require('../lib/json2xml');
-var Reporter = require('./reporter');
+var Tracker = require('./tracker');
 
 function camSafeUrlEncode(str) {
     return encodeURIComponent(str)
@@ -522,7 +522,7 @@ var formatParams = function (apiName, params) {
 
 var apiWrapper = function (apiName, apiFn) {
     return function (params, callback) {
-        
+
         var self = this;
 
         // 处理参数
@@ -533,18 +533,30 @@ var apiWrapper = function (apiName, apiFn) {
 
         // 整理参数格式
         params = formatParams(apiName, params);
-console.log(apiName, params);
-        // 通用上报
-        var commonReporter = new Reporter({
-          buctet: params.Bucket,
-          region: params.Reigon,
-          apiName: apiName,
-          fileKey: params.Key,
-          fileSize: params.Body ? params.Body.size : -1,
-        });
 
-        // reporter注入方法内部
-        params.reporter = commonReporter;
+         // tracker传递
+        var tracker;
+        if (params.calledBySdk === 'sliceUploadFile' && self.options.deepTracker) {
+          console.log(apiName, params);
+          // 分块上传内部方法使用sliceUploadFile的子链路
+          tracker = params.tracker.generateSubTracker({ apiName: apiName });
+        } else if (['uploadFile', 'uploadFiles'].includes(apiName)) {
+          // uploadFile、uploadFiles方法在内部处理，此处不处理
+          tracker = null;
+        } else {
+          var fileSize = typeof params.Body === 'string' ? params.Body.length : params.Body.size || -1;
+          tracker = new Tracker({
+            bucket: params.Bucket, 
+            region: params.Region,
+            apiName: apiName,
+            originApiName: apiName,
+            fileKey: params.Key,
+            fileSize: fileSize,
+            useAccelerate: self.options.UseAccelerate,
+          });
+        }
+
+        params.tracker = tracker;
 
         // 代理回调函数
         var formatResult = function (result) {
@@ -558,8 +570,8 @@ console.log(apiName, params);
         };
         var _callback = function (err, data) {
             // 格式化上报参数并上报
-            commonReporter.formatParams(err, data);
-            commonReporter.sendEvents('common_api');
+            tracker && tracker.formatResult(err, data);
+            tracker && tracker.sendEvents();
             
             callback && callback(formatResult(err), formatResult(data));
         };

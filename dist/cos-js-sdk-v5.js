@@ -97,8 +97,12 @@ var md5 = __webpack_require__(9);
 var CryptoJS = __webpack_require__(11);
 var xml2json = __webpack_require__(12);
 var json2xml = __webpack_require__(15);
+<<<<<<< HEAD
 var Reporter = __webpack_require__(4);
 >>>>>>> upd 暂存
+=======
+var Tracker = __webpack_require__(22);
+>>>>>>> upd
 
 function camSafeUrlEncode(str) {
     return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/\*/g, '%2A');
@@ -609,18 +613,30 @@ var apiWrapper = function (apiName, apiFn) {
 
         // 整理参数格式
         params = formatParams(apiName, params);
-        console.log(apiName, params);
-        // 通用上报
-        var commonReporter = new Reporter({
-            buctet: params.Bucket,
-            region: params.Reigon,
-            apiName: apiName,
-            fileKey: params.Key,
-            fileSize: params.Body ? params.Body.size : -1
-        });
 
-        // reporter注入方法内部
-        params.reporter = commonReporter;
+        // tracker传递
+        var tracker;
+        if (params.calledBySdk === 'sliceUploadFile' && self.options.deepTracker) {
+            console.log(apiName, params);
+            // 分块上传内部方法使用sliceUploadFile的子链路
+            tracker = params.tracker.generateSubTracker({ apiName: apiName });
+        } else if (['uploadFile', 'uploadFiles'].includes(apiName)) {
+            // uploadFile、uploadFiles方法在内部处理，此处不处理
+            tracker = null;
+        } else {
+            var fileSize = typeof params.Body === 'string' ? params.Body.length : params.Body.size || -1;
+            tracker = new Tracker({
+                bucket: params.Bucket,
+                region: params.Region,
+                apiName: apiName,
+                originApiName: apiName,
+                fileKey: params.Key,
+                fileSize: fileSize,
+                useAccelerate: self.options.UseAccelerate
+            });
+        }
+
+        params.tracker = tracker;
 
         // 代理回调函数
         var formatResult = function (result) {
@@ -634,8 +650,8 @@ var apiWrapper = function (apiName, apiFn) {
         };
         var _callback = function (err, data) {
             // 格式化上报参数并上报
-            commonReporter.formatParams(err, data);
-            commonReporter.sendEvents('common_api');
+            tracker && tracker.formatResult(err, data);
+            tracker && tracker.sendEvents();
 
             callback && callback(formatResult(err), formatResult(data));
         };
@@ -2793,128 +2809,7 @@ try{
 
 
 /***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
-
-const BeaconAction = __webpack_require__(16);
-const beacon = new BeaconAction({
-  appkey: "0M000A1RC72MXXRH", // 系统或项目id, 必填
-  versionCode: '0.0.1', //项目版本,选填
-  channelID: 'channel', //渠道,选填
-  openid: 'openid', // 用户id, 选填
-  unionid: 'unid', //用户unionid , 类似idfv,选填
-  strictMode: false, //严苛模式开关, 打开严苛模式会主动抛出异常, 上线请务必关闭!!!
-  delay: 1000, // 普通事件延迟上报时间(单位毫秒), 默认1000(1秒),选填
-  sessionDuration: 60 * 1000 // session变更的时间间隔, 一个用户持续30分钟(默认值)没有任何上报则算另一次 session,每变更一次session上报一次启动事件(rqd_applaunched),使用毫秒(ms),最小值30秒,选填
-  // onReportSuccess: success, // 上报成功回调,选填
-  // onReportFail: fail, // 上报失败回调,选填,
-  // onReportBeforeSend: beforeSend, // 上报前回调，选填
-});
-
-// 观察者的选项（观察哪些突变）
-const config = {
-  entryTypes: ['resource', 'mark', 'measure']
-};
-
-const observer = new PerformanceObserver(list => {
-  list.getEntries().forEach(entry => {
-    // 在控制台上显示每个报告的测量
-    console.log(`Name: ${entry.name}`, `Type: ${entry.entryType}`, `Start: ${entry.startTime}`, `Duration: ${entry.duration}`);
-  });
-});
-
-// 开始观察
-observer.observe(config);
-performance.mark('registered-observer');
-
-class Reporter {
-  constructor({ bucket, region, apiName, fileKey, fileSize }) {
-    this.ins = beacon;
-    this.params = {
-      bucket,
-      region,
-      apiName,
-      fileKey,
-      fileSize: -1, // 默认给-1，可能真实值是0
-      md5StartTime: 0, // md5计算开始时间
-      md5EndTime: 0, // md5计算结束时间
-      signStartTime: 0, // 计算签名开始时间
-      signEndTime: 0, // 计算签名结束时间
-      httpStartTime: 0, // 发起网络请求开始时间
-      httpEndTime: 0, // 网路请求结束时间
-      startTime: new Date().getTime(), // sdk api调用起始时间，不是纯网络耗时
-      endTime: 0, //  sdk api调用结束时间，不是纯网络耗时
-      retryTimes: 0, // 当前请求的重试次数，sdk内部发起的重试
-      result: '', // sdk api调用结果
-      statusCode: 0,
-      errorMessage: '',
-      requestId: ''
-    };
-  }
-
-  // 格式化sdk回调
-  formatParams(err, data) {
-    Object.assign(this.params, {
-      reult: err ? 'fail' : 'success',
-      statusCode: err ? err.code : data.statusCode,
-      errorMessage: err ? err.message : '',
-      requestId: err ? err.headers['x-cos-request-id'] : data.headers['x-cos-request-id']
-    });
-    if (this.params.apiName === 'getObject') {
-      this.params.fileSize = data ? data.headers['content-length'] : -1;
-    }
-  }
-
-  // 设置当前链路的参数
-  setParams(params) {
-    for (let i in params) {
-      this.params[i] = params[i];
-    }
-  }
-
-  // 使用灯塔延时上报
-  sendEvents(eventCode) {
-    const now = new Date().getTime();
-    Object.assign(this.params, {
-      endTime: now,
-      avgTime: now - this.params.startTime,
-      speed: this.params.fileSize !== -1 ? (this.params.fileSize / (avgTime / 1000)).toFixed(2) : -1
-    });
-    const uploadOrDownloadAPI = ['getObject', 'putObject', 'postObject', 'sliceUploadFile', 'multipartList', 'multipartInit', 'multipartUpload', 'multipartComplete', 'multipartAbort'];
-    const { apiName, startTime, endTime, avgTime, speed,
-      md5StartTime, md5EndTime, signStartTime, signEndTime, httpStartTime, httpEndTime,
-      fileSize, fileKey, reult, statusCode, errorMessage, requestId } = this.params;
-    // 上传、下载操作
-    if (uploadOrDownloadAPI.includes(this.apiName)) {
-      console.log(`%c ${apiName}`, 'background: #006eff;color: #fff;font-size: 16px;', `【开始时间:${startTime}】,【结束时间:${endTime}】【耗时:${avgTime} ms】,
-      【MD5计算耗时:${md5EndTime - md5StartTime} ms】,【签名计算耗时:${signEndTime - signStartTime} ms】,【http请求耗时:${httpEndTime - httpStartTime} ms】,
-      【文件大小:${fileSize} B】【文件Key:${fileKey}】【速度:${speed} B/s】
-      【调用结果:${reult}】【statusCode:${statusCode}】【message:${errorMessage}】,
-      【requestId:${requestId}】`);
-    } else {
-      console.log(`%c ${apiName}`, 'background: green;color: #fff;font-size: 16px;', `【开始时间:${startTime}】,【结束时间:${endTime}】【耗时:${avgTime} ms】,
-      【MD5计算耗时:${md5EndTime - md5StartTime} ms】,【签名计算耗时:${signEndTime - signStartTime} ms】,【http请求耗时:${httpEndTime - httpStartTime} ms】,
-      【调用结果:${reult}】【statusCode:${statusCode}】【message:${errorMessage}】,
-      【requestId:${requestId}】`);
-    }
-    // beacon.onUserAction(eventCode, params);
-  }
-
-  // 重新搞一个实例，可用于分块上传内部流程上报单个分块操作
-  renew() {
-    return new Reporter();
-  }
-
-  // 销毁实例
-  destroy() {
-    this.ins = null;
-  }
-}
-
-module.exports = Reporter;
-
-/***/ }),
+/* 4 */,
 /* 5 */
 /***/ (function(module, exports) {
 
@@ -3121,7 +3016,8 @@ var defaultOptions = {
     UploadAddMetaMd5: false,
     UploadIdCacheLimit: 50,
     UseAccelerate: false,
-    ForceSignHost: true // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
+    ForceSignHost: true, // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
+    deepTracker: true
 };
 
 // 对外暴露的类
@@ -10342,6 +10238,8 @@ function getObject(params, callback) {
     var reqParams = params.Query || {};
     var reqParamsStr = params.QueryString || '';
     var onProgress = util.throttleOnProgress.call(this, 0, params.onProgress);
+    var tracker = params.tracker;
+    tracker.setParams({ signStartTime: new Date().getTime() });
 
     reqParams['response-content-type'] = params['ResponseContentType'];
     reqParams['response-content-language'] = params['ResponseContentLanguage'];
@@ -10363,7 +10261,8 @@ function getObject(params, callback) {
         qs: reqParams,
         qsStr: reqParamsStr,
         rawBody: true,
-        onDownloadProgress: onProgress
+        onDownloadProgress: onProgress,
+        tracker: tracker
     }, function (err, data) {
         onProgress(null, true);
         if (err) {
@@ -10424,12 +10323,12 @@ function putObject(params, callback) {
     if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
     var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
 
-    var reporter = params.reporter;
-    needCalcMd5 && reporter && reporter.setParams({ md5StartTime: new Date().getTime() });
+    var tracker = params.tracker;
+    needCalcMd5 && tracker && tracker.setParams({ md5StartTime: new Date().getTime() });
 
     util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
         if (md5) {
-            reporter && reporter.setParams({ md5EndTime: new Date().getTime() });
+            tracker && tracker.setParams({ md5EndTime: new Date().getTime() });
             if (self.options.UploadCheckContentMd5) headers['Content-MD5'] = util.binaryBase64(md5);
             if (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5) headers['x-cos-meta-md5'] = md5;
         }
@@ -10446,7 +10345,7 @@ function putObject(params, callback) {
             qs: params.Query,
             body: params.Body,
             onProgress: onProgress,
-            reporter: reporter
+            tracker: tracker
         }, function (err, data) {
             if (err) {
                 onProgress(null, true);
@@ -11095,17 +10994,21 @@ function selectObjectContent(params, callback) {
  * @return  {Object}  data                                      返回的数据
  */
 function multipartInit(params, callback) {
-    console.log('multipartInit start', new Date().getTime());
     var self = this;
     // 特殊处理 Cache-Control
     var headers = params.Headers;
+    var tracker = params.tracker;
 
     // 特殊处理 Cache-Control、Content-Type
     if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
     if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
 
-    util.getBodyMd5(params.Body && (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5), params.Body, function (md5) {
+    var needCalcMd5 = params.Body && (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5);
+    needCalcMd5 && tracker && tracker.setParams({ md5StartTime: new Date().getTime() });
+
+    util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
         if (md5) params.Headers['x-cos-meta-md5'] = md5;
+        needCalcMd5 && tracker && tracker.setParams({ md5EndTime: new Date().getTime() });
         submitRequest.call(self, {
             Action: 'name/cos:InitiateMultipartUpload',
             method: 'POST',
@@ -11114,9 +11017,9 @@ function multipartInit(params, callback) {
             Key: params.Key,
             action: 'uploads',
             headers: params.Headers,
-            qs: params.Query
+            qs: params.Query,
+            tracker: tracker
         }, function (err, data) {
-            console.log('multipartInit end', new Date().getTime());
             if (err) return callback(err);
             data = util.clone(data || {});
             if (data && data.InitiateMultipartUploadResult) {
@@ -11150,8 +11053,12 @@ function multipartUpload(params, callback) {
 
     var self = this;
     util.getFileSize('multipartUpload', params, function () {
-        util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
+        var tracker = params.tracker;
+        var needCalcMd5 = self.options.UploadCheckContentMd5;
+        needCalcMd5 && tracker && tracker.setParams({ md5StartTime: new Date().getTime() });
+        util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
             if (md5) params.Headers['Content-MD5'] = util.binaryBase64(md5);
+            needCalcMd5 && tracker && tracker.setParams({ md5EndTime: new Date().getTime(), partNumber: params['PartNumber'] });
             submitRequest.call(self, {
                 Action: 'name/cos:UploadPart',
                 TaskId: params.TaskId,
@@ -11165,7 +11072,8 @@ function multipartUpload(params, callback) {
                 },
                 headers: params.Headers,
                 onProgress: params.onProgress,
-                body: params.Body || null
+                body: params.Body || null,
+                tracker: tracker
             }, function (err, data) {
                 if (err) return callback(err);
                 callback(null, {
@@ -11199,6 +11107,8 @@ function multipartComplete(params, callback) {
 
     var Parts = params['Parts'];
 
+    var tracker = params.tracker;
+
     for (var i = 0, len = Parts.length; i < len; i++) {
         if (Parts[i]['ETag'] && Parts[i]['ETag'].indexOf('"') === 0) {
             continue;
@@ -11224,7 +11134,8 @@ function multipartComplete(params, callback) {
             uploadId: UploadId
         },
         body: xml,
-        headers: headers
+        headers: headers,
+        tracker: tracker
     }, function (err, data) {
         if (err) return callback(err);
         var url = getUrl({
@@ -11291,6 +11202,9 @@ function multipartList(params, callback) {
 
     reqParams = util.clearKey(reqParams);
 
+    var tracker = params.tracker;
+    tracker && tracker.setParams({ signStartTime: new Date().getTime() });
+
     submitRequest.call(this, {
         Action: 'name/cos:ListMultipartUploads',
         ResourceKey: reqParams['prefix'],
@@ -11299,7 +11213,8 @@ function multipartList(params, callback) {
         Region: params.Region,
         headers: params.Headers,
         qs: reqParams,
-        action: 'uploads'
+        action: 'uploads',
+        tracker: tracker
     }, function (err, data) {
         if (err) return callback(err);
 
@@ -11966,10 +11881,10 @@ function submitRequest(params, callback) {
 
     var paramsUrl = params.url || params.Url;
     var SignHost = params.SignHost || getSignHost.call(this, { Bucket: params.Bucket, Region: params.Region, Url: paramsUrl });
-    var reporter = params.reporter;
+    var tracker = params.tracker;
     var next = function (tryTimes) {
         var oldClockOffset = self.options.SystemClockOffset;
-        reporter.setParams({ signStartTime: new Date().getTime(), retryTimes: tryTimes });
+        tracker && tracker.setParams({ signStartTime: new Date().getTime(), retryTimes: tryTimes - 1 });
         getAuthorizationAsync.call(self, {
             Bucket: params.Bucket || '',
             Region: params.Region || '',
@@ -11987,10 +11902,10 @@ function submitRequest(params, callback) {
                 callback(err);
                 return;
             }
-            reporter.setParams({ signEndTime: new Date().getTime(), httpStartTime: new Date().getTime() });
+            tracker && tracker.setParams({ signEndTime: new Date().getTime(), httpStartTime: new Date().getTime() });
             params.AuthData = AuthData;
             _submitRequest.call(self, params, function (err, data) {
-                reporter.setParams({ httpEndTime: new Date().getTime() });
+                tracker && tracker.setParams({ httpEndTime: new Date().getTime() });
                 if (err && tryTimes < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
                     if (params.headers) {
                         delete params.headers.Authorization;
@@ -12093,6 +12008,7 @@ function _submitRequest(params, callback) {
 
     self.options.ForcePathStyle && (opt.pathStyle = self.options.ForcePathStyle);
     self.emit('before-send', opt);
+    params.tracker && params.tracker.setParams({ reqUrl: opt.url });
     var sender = (self.options.Request || REQUEST)(opt, function (r) {
         if (r.error === 'abort') return;
 
@@ -12433,7 +12349,7 @@ var session = __webpack_require__(6);
 var Async = __webpack_require__(21);
 var EventProxy = __webpack_require__(5).EventProxy;
 var util = __webpack_require__(0);
-var Reporter = __webpack_require__(4);
+var Tracker = __webpack_require__(22);
 
 // 文件分块上传全过程，暴露的分块上传接口
 function sliceUploadFile(params, callback) {
@@ -12452,6 +12368,8 @@ function sliceUploadFile(params, callback) {
 
     var onProgress;
     var onHashProgress = params.onHashProgress;
+
+    var tracker = params.tracker;
 
     // 上传过程中出现错误，返回错误
     ep.on('error', function (err) {
@@ -12481,7 +12399,8 @@ function sliceUploadFile(params, callback) {
             Key: Key,
             UploadId: UploadData.UploadId,
             SliceList: UploadData.SliceList,
-            Headers: metaHeaders
+            Headers: metaHeaders,
+            tracker: tracker
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             session.removeUsing(UploadData.UploadId);
@@ -12517,7 +12436,8 @@ function sliceUploadFile(params, callback) {
             ServerSideEncryption: ServerSideEncryption,
             UploadData: UploadData,
             Headers: params.Headers,
-            onProgress: onProgress
+            onProgress: onProgress,
+            tracker: tracker
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (err) {
@@ -12546,7 +12466,8 @@ function sliceUploadFile(params, callback) {
                 Body: Body,
                 FileSize: FileSize,
                 SliceSize: ChunkSize,
-                onHashProgress: onHashProgress
+                onHashProgress: onHashProgress,
+                tracker: tracker
             }, params);
             getUploadIdAndPartList.call(self, _params, function (err, UploadData) {
                 if (!self._isRunningTask(TaskId)) return;
@@ -12592,6 +12513,7 @@ function sliceUploadFile(params, callback) {
 
 // 获取上传任务的 UploadId
 function getUploadIdAndPartList(params, callback) {
+
     var TaskId = params.TaskId;
     var Bucket = params.Bucket;
     var Region = params.Region;
@@ -12714,7 +12636,9 @@ function getUploadIdAndPartList(params, callback) {
             Key: Key,
             Query: util.clone(params.Query),
             StorageClass: StorageClass,
-            Body: params.Body
+            Body: params.Body,
+            calledBySdk: 'sliceUploadFile',
+            tracker: params.tracker
         }, params);
         var headers = util.clone(params.Headers);
         delete headers['x-cos-mime-limit'];
@@ -12746,7 +12670,8 @@ function getUploadIdAndPartList(params, callback) {
                 Bucket: Bucket,
                 Region: Region,
                 Key: Key,
-                UploadId: UploadId
+                UploadId: UploadId,
+                tracker: params.tracker
             }, function (err, PartListData) {
                 if (!self._isRunningTask(TaskId)) return;
                 if (err) {
@@ -12815,7 +12740,8 @@ function getUploadIdAndPartList(params, callback) {
                 Bucket: Bucket,
                 Region: Region,
                 Key: Key,
-                UploadId: UploadId
+                UploadId: UploadId,
+                tracker: params.tracker
             }, function (err, PartListData) {
                 if (!self._isRunningTask(TaskId)) return;
                 if (err) {
@@ -12840,7 +12766,8 @@ function getUploadIdAndPartList(params, callback) {
         wholeMultipartList.call(self, {
             Bucket: Bucket,
             Region: Region,
-            Key: Key
+            Key: Key,
+            tracker: params.tracker
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (err) return ep.emit('error', err);
@@ -12872,12 +12799,15 @@ function getUploadIdAndPartList(params, callback) {
 
 // 获取符合条件的全部上传任务 (条件包括 Bucket, Region, Prefix)
 function wholeMultipartList(params, callback) {
+
     var self = this;
     var UploadList = [];
     var sendParams = {
         Bucket: params.Bucket,
         Region: params.Region,
-        Prefix: params.Key
+        Prefix: params.Key,
+        calledBySdk: params.calledBySdk || 'sliceUploadFile',
+        tracker: params.tracker
     };
     var next = function () {
         self.multipartList(sendParams, function (err, data) {
@@ -12904,7 +12834,9 @@ function wholeMultipartListPart(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         Key: params.Key,
-        UploadId: params.UploadId
+        UploadId: params.UploadId,
+        calledBySdk: 'sliceUploadFile',
+        tracker: params.tracker
     };
     var next = function () {
         self.multipartListPart(sendParams, function (err, data) {
@@ -12976,7 +12908,8 @@ function uploadSliceList(params, cb) {
                 FinishSize += data.loaded - preAddSize;
                 preAddSize = data.loaded;
                 onProgress({ loaded: FinishSize, total: FileSize });
-            }
+            },
+            tracker: params.tracker
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (!err && !data.ETag) err = 'get ETag error, please add "ETag" to CORS ExposeHeader setting.( 获取ETag失败，请在CORS ExposeHeader设置中添加ETag，请参考文档：https://cloud.tencent.com/document/product/436/13318 )';
@@ -13049,7 +12982,9 @@ function uploadSliceItem(params, callback) {
                 ServerSideEncryption: ServerSideEncryption,
                 Body: Body,
                 Headers: headers,
-                onProgress: params.onProgress
+                onProgress: params.onProgress,
+                calledBySdk: 'sliceUploadFile',
+                tracker: params.tracker
             }, function (err, data) {
                 if (!self._isRunningTask(TaskId)) return;
                 if (err) return tryCallback(err);
@@ -13087,7 +13022,9 @@ function uploadSliceComplete(params, callback) {
             Key: Key,
             UploadId: UploadId,
             Parts: Parts,
-            Headers: Headers
+            Headers: Headers,
+            calledBySdk: 'sliceUploadFile',
+            tracker: params.tracker
         }, tryCallback);
     }, function (err, data) {
         callback(err, data);
@@ -13131,7 +13068,8 @@ function abortUploadTask(params, callback) {
         // Bucket 级别的任务抛弃，抛弃该 Bucket 下的全部上传任务
         wholeMultipartList.call(self, {
             Bucket: Bucket,
-            Region: Region
+            Region: Region,
+            calledBySdk: 'abortUploadTask'
         }, function (err, data) {
             if (err) return callback(err);
             ep.emit('get_abort_array', data.UploadList || []);
@@ -13142,7 +13080,8 @@ function abortUploadTask(params, callback) {
         wholeMultipartList.call(self, {
             Bucket: Bucket,
             Region: Region,
-            Key: Key
+            Key: Key,
+            calledBySdk: 'abortUploadTask'
         }, function (err, data) {
             if (err) return callback(err);
             ep.emit('get_abort_array', data.UploadList || []);
@@ -13250,15 +13189,29 @@ function uploadFile(params, callback) {
     };
     params.onTaskReady = onTaskReady;
 
+    // 添加上传任务,超过阈值使用分块上传，小于等于则简单上传
+    var api = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
+
+    // 上传链路
+    params.tracker = new Tracker({
+        buctet: params.Bucket,
+        region: params.Reigon,
+        apiName: api,
+        originApiName: 'uploadFile',
+        fileKey: params.Key,
+        fileSize: FileSize
+    });
+
     // 处理文件完成
     var _onFileFinish = params.onFileFinish;
     var onFileFinish = function (err, data) {
+        // 格式化上报参数并上报
+        params.tracker && params.tracker.formatResult(err, data);
+        params.tracker && params.tracker.sendEvents();
         _onFileFinish && _onFileFinish(err, data, fileInfo);
         callback && callback(err, data);
     };
 
-    // 添加上传任务,超过阈值使用分块上传，小于等于则简单上传
-    var api = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
     taskList.push({
         api: api,
         params: params,
@@ -13270,6 +13223,7 @@ function uploadFile(params, callback) {
 
 // 批量上传文件
 function uploadFiles(params, callback) {
+
     var self = this;
 
     // 判断多大的文件使用分片上传
@@ -13336,15 +13290,29 @@ function uploadFiles(params, callback) {
             };
             fileParams.onProgress = onProgress;
 
+            // 添加上传任务
+            var api = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
+
+            // 单个文件上传链路
+            fileParams.tracker = new Tracker({
+                bucket: fileParams.Bucket,
+                region: fileParams.Region,
+                apiName: api,
+                originApiName: 'uploadFiles',
+                fileKey: fileParams.Key,
+                fileSize: FileSize
+            });
+
             // 处理单个文件完成
             var _onFileFinish = fileParams.onFileFinish;
             var onFileFinish = function (err, data) {
+                // 格式化上报参数并上报
+                fileParams.tracker && fileParams.tracker.formatResult(err, data);
+                fileParams.tracker && fileParams.tracker.sendEvents();
                 _onFileFinish && _onFileFinish(err, data);
                 onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
             };
 
-            // 添加上传任务
-            var api = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
             taskList.push({
                 api: api,
                 params: fileParams,
@@ -13400,7 +13368,8 @@ function sliceCopyFile(params, callback) {
             Region: Region,
             Key: Key,
             UploadId: UploadData.UploadId,
-            Parts: Parts
+            Parts: Parts,
+            calledBySdk: 'sliceCopyFile'
         }, function (err, data) {
             if (err) {
                 onProgress(null, true);
@@ -13502,7 +13471,8 @@ function sliceCopyFile(params, callback) {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
-            Headers: TargetHeader
+            Headers: TargetHeader,
+            calledBySdk: 'sliceCopyFile'
         }, function (err, data) {
             if (err) return callback(err);
             params.UploadId = data.UploadId;
@@ -13678,6 +13648,175 @@ var async = {
 };
 
 module.exports = async;
+
+/***/ }),
+/* 22 */
+/***/ (function(module, exports, __webpack_require__) {
+
+
+const BeaconAction = __webpack_require__(16);
+const beacon = new BeaconAction({
+  appkey: "0WEB0H6CDU46LPPI", // 系统或项目id, 必填
+  versionCode: '0.0.1', //项目版本,选填
+  channelID: 'channel', //渠道,选填
+  openid: 'openid', // 用户id, 选填
+  unionid: 'unid', //用户unionid , 类似idfv,选填
+  strictMode: false, //严苛模式开关, 打开严苛模式会主动抛出异常, 上线请务必关闭!!!
+  delay: 1000, // 普通事件延迟上报时间(单位毫秒), 默认1000(1秒),选填
+  sessionDuration: 60 * 1000 // session变更的时间间隔, 一个用户持续30分钟(默认值)没有任何上报则算另一次 session,每变更一次session上报一次启动事件(rqd_applaunched),使用毫秒(ms),最小值30秒,选填
+  // onReportSuccess: success, // 上报成功回调,选填
+  // onReportFail: fail, // 上报失败回调,选填,
+  // onReportBeforeSend: beforeSend, // 上报前回调，选填
+});
+
+var uuid = function () {
+  var S4 = function () {
+    return ((1 + Math.random()) * 0x10000 | 0).toString(16).substring(1);
+  };
+  return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
+};
+
+// 观察者的选项（观察哪些突变）
+// const config = {
+//   entryTypes: ['resource', 'mark', 'measure']
+// };
+
+// const observer = new PerformanceObserver(list => {
+//   list.getEntries().forEach(entry => {
+//     // 在控制台上显示每个报告的测量
+//     console.log(
+//       `Name: ${entry.name}`,
+//       `Type: ${entry.entryType}`,
+//       `Start: ${entry.startTime}`,
+//       `Duration: ${entry.duration}`,
+//     );
+//   });
+// });
+
+// // 开始观察
+// observer.observe(config);
+// performance.mark('registered-observer');
+
+const uploadApi = ['putObject', 'postObject', 'appendObject', 'multipartInit', 'multipartUpload', 'multipartComplete', 'multipartList', 'multipartListPart', 'multipartAbort', 'sliceUploadFile', 'uploadFile', 'uploadFiles'];
+const downloadApi = ['getObject'];
+
+function getEventCode(apiName) {
+  if (uploadApi.includes(apiName)) {
+    return 'cos_upload';
+  }
+  if (downloadApi.includes(apiName)) {
+    return 'cos_download';
+  }
+  return 'cos_common';
+}
+
+// 上报参数驼峰改下划线
+function hump2underline(key) {
+  return key.replace(/([A-Z])/g, "_$1").toLowerCase();
+}
+function formatParams(params) {
+  const formattedParams = {};
+  for (let key in params) {
+    const formattedKey = hump2underline(key);
+    formattedParams[formattedKey] = params[key];
+  }
+  return formattedParams;
+}
+
+// 链路追踪器
+class Tracker {
+  constructor({ traceId, bucket, region, apiName, originApiName, fileKey, fileSize, useAccelerate }) {
+    const appid = bucket && bucket.substr(bucket.lastIndexOf('-') + 1) || '';
+    this.beacon = beacon; // 共用一个beacon实例
+    this.params = {
+      traceId: traceId || uuid(), // 每条上报唯一标识
+      bucket,
+      region,
+      appid,
+      apiName, // 调用sdk最原子的api名称，比如multipartInit
+      originApiName, // 分块上传可能有uploadFile、uploadFiles内部触发
+      fileKey, // cos端文件路径
+      fileSize, // 文件大小，上传时已知，下载时成功返回后取到。默认给-1，可能真实值是0
+      useAccelerate: useAccelerate ? '1' : '0', // 使用全球加速
+      md5StartTime: 0, // md5计算开始时间
+      md5EndTime: 0, // md5计算结束时间
+      md5AvgTime: 0, // MD5平均耗时
+      signStartTime: 0, // 计算签名开始时间
+      signEndTime: 0, // 计算签名结束时间
+      signAvgTime: 0, // 计算签名平均耗时
+      httpStartTime: 0, // 发起网络请求开始时间
+      httpEndTime: 0, // 网路请求结束时间
+      httpAvgTime: 0, // 网络请求平均耗时
+      startTime: new Date().getTime(), // sdk api调用起始时间，不是纯网络耗时
+      endTime: 0, //  sdk api调用结束时间，不是纯网络耗时
+      speed: -1, // 平均速度
+      partNumber: 0, // 分块上传编号
+      retryTimes: 0, // sdk内部发起的请求重试
+      result: '', // sdk api调用结果success、fail
+      statusCode: 0,
+      errorMessage: '',
+      requestId: '',
+      reqUrl: '' // 请求url
+    };
+  }
+
+  // 格式化sdk回调
+  formatResult(err, data) {
+    const now = new Date().getTime();
+    var avgTime = now - this.params.startTime;
+    Object.assign(this.params, {
+      endTime: now,
+      avgTime,
+      speed: this.params.fileSize !== -1 ? (this.params.fileSize / (avgTime / 1000)).toFixed(2) : -1,
+      md5AvgTime: this.params.md5EndTime - this.params.md5StartTime,
+      signAvgTime: this.params.signEndTime - this.params.signStartTime,
+      httpAvgTime: this.params.httpEndTime - this.params.httpStartTime,
+      result: err ? 'fail' : 'success',
+      statusCode: err ? err.code : data.statusCode,
+      errorMessage: err ? err.message : '',
+      requestId: err ? err.headers && err.headers['x-cos-request-id'] : data.headers && data.headers['x-cos-request-id']
+    });
+    if (this.params.apiName === 'getObject') {
+      this.params.fileSize = data ? data.headers['content-length'] : -1;
+    }
+    this.params.speed = this.params.fileSize !== -1 ? (this.params.fileSize / (avgTime / 1000)).toFixed(2) : -1;
+  }
+
+  // 设置当前链路的参数
+  setParams(params) {
+    Object.assign(this.params, params);
+  }
+
+  // 使用灯塔延时上报
+  sendEvents() {
+    const eventCode = getEventCode(this.params.apiName);
+    const formattedParams = formatParams(this.params);
+    console.log(eventCode, formattedParams);
+    this.beacon.onUserAction(eventCode, formattedParams);
+  }
+
+  // 生成子实例，与父所属一个链路，可用于分块上传内部流程上报单个分块操作
+  generateSubTracker(subParams) {
+    Object.assign(subParams, {
+      traceId: this.params.traceId,
+      originApiName: this.params.originApiName,
+      bucket: this.params.bucket,
+      region: this.params.region,
+      fileKey: this.params.fileKey,
+      fileSize: this.params.fileSize,
+      useAccelerate: this.params.useAccelerate
+    });
+    return new Tracker(subParams);
+  }
+
+  // 销毁实例
+  destroy() {
+    this.ins = null;
+    this.params = {};
+  }
+}
+
+module.exports = Tracker;
 
 /***/ })
 /******/ ]);

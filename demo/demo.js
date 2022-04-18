@@ -902,7 +902,7 @@ function putObject() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
         Key: filename, /* 必须 */
-        Body: blob,
+        Body: 'qweqeqee',
         onTaskReady: function (tid) {
             TaskId = tid;
             logger.log('onTaskReady', tid);
@@ -1012,7 +1012,7 @@ function getObject() {
     cos.getObject({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
-        Key: '1mb.zip',
+        Key: '1.mp3',
         onProgress: function (progressData) {
             logger.log(JSON.stringify(progressData));
         }
@@ -1212,11 +1212,11 @@ function uploadFile() {
 }
 
 function sliceUploadFile() {
-    var blob = util.createFile({size: 1024 * 1024 * 3});
+    var blob = util.createFile({size: 1024 * 1024 * 10});
     cos.sliceUploadFile({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
-        Key: '3mb.zip', /* 必须 */
+        Key: '10mb.zip', /* 必须 */
         Body: blob,
         Headers: {
             // 万象持久化接口，上传时持久化

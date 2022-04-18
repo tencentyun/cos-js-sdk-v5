@@ -1864,6 +1864,8 @@ function getObject(params, callback) {
     var reqParams = params.Query || {};
     var reqParamsStr = params.QueryString || '';
     var onProgress = util.throttleOnProgress.call(this, 0, params.onProgress);
+    var tracker = params.tracker;
+    tracker.setParams({ signStartTime: new Date().getTime() });
 
     reqParams['response-content-type'] = params['ResponseContentType'];
     reqParams['response-content-language'] = params['ResponseContentLanguage'];
@@ -1886,6 +1888,7 @@ function getObject(params, callback) {
         qsStr: reqParamsStr,
         rawBody: true,
         onDownloadProgress: onProgress,
+        tracker: tracker,
     }, function (err, data) {
         onProgress(null, true);
         if (err) {
@@ -1947,12 +1950,12 @@ function putObject(params, callback) {
     if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
     var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
     
-    var reporter = params.reporter;
-    needCalcMd5 && reporter && reporter.setParams({ md5StartTime: new Date().getTime() });
+    var tracker = params.tracker;
+    needCalcMd5 && tracker && tracker.setParams({ md5StartTime: new Date().getTime() });
 
     util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
         if (md5) {
-            reporter && reporter.setParams({ md5EndTime: new Date().getTime() });
+            tracker && tracker.setParams({ md5EndTime: new Date().getTime() });
             if (self.options.UploadCheckContentMd5) headers['Content-MD5'] = util.binaryBase64(md5);
             if (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5) headers['x-cos-meta-md5'] = md5;
         }
@@ -1969,7 +1972,7 @@ function putObject(params, callback) {
             qs: params.Query,
             body: params.Body,
             onProgress: onProgress,
-            reporter: reporter,
+            tracker: tracker,
         }, function (err, data) {
             if (err) {
                 onProgress(null, true);
@@ -2577,17 +2580,22 @@ function selectObjectContent(params, callback) {
  * @return  {Object}  data                                      返回的数据
  */
 function multipartInit(params, callback) {
-  console.log('multipartInit start', new Date().getTime());
     var self = this;
     // 特殊处理 Cache-Control
     var headers = params.Headers;
+    var tracker = params.tracker;
+    
 
     // 特殊处理 Cache-Control、Content-Type
     if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
     if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
 
-    util.getBodyMd5(params.Body && (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5), params.Body, function (md5) {
+    var needCalcMd5 = params.Body && (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5);
+    needCalcMd5 && tracker && tracker.setParams({ md5StartTime: new Date().getTime() });
+
+    util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
         if (md5) params.Headers['x-cos-meta-md5'] = md5;
+        needCalcMd5 && tracker && tracker.setParams({ md5EndTime: new Date().getTime() });
         submitRequest.call(self, {
             Action: 'name/cos:InitiateMultipartUpload',
             method: 'POST',
@@ -2597,8 +2605,8 @@ function multipartInit(params, callback) {
             action: 'uploads',
             headers: params.Headers,
             qs: params.Query,
+            tracker: tracker,
         }, function (err, data) {
-          console.log('multipartInit end', new Date().getTime());
             if (err) return callback(err);
             data = util.clone(data || {});
             if (data && data.InitiateMultipartUploadResult) {
@@ -2632,8 +2640,12 @@ function multipartUpload(params, callback) {
 
     var self = this;
     util.getFileSize('multipartUpload', params, function () {
-        util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
+        var tracker = params.tracker;
+        var needCalcMd5 = self.options.UploadCheckContentMd5
+        needCalcMd5 && tracker && tracker.setParams({ md5StartTime: new Date().getTime() });
+        util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
             if (md5) params.Headers['Content-MD5'] = util.binaryBase64(md5);
+            needCalcMd5 && tracker && tracker.setParams({ md5EndTime: new Date().getTime(), partNumber: params['PartNumber'] });
             submitRequest.call(self, {
                 Action: 'name/cos:UploadPart',
                 TaskId: params.TaskId,
@@ -2647,7 +2659,8 @@ function multipartUpload(params, callback) {
                 },
                 headers: params.Headers,
                 onProgress: params.onProgress,
-                body: params.Body || null
+                body: params.Body || null,
+                tracker: tracker,
             }, function (err, data) {
                 if (err) return callback(err);
                 callback(null, {
@@ -2682,6 +2695,8 @@ function multipartComplete(params, callback) {
 
     var Parts = params['Parts'];
 
+    var tracker = params.tracker;
+
     for (var i = 0, len = Parts.length; i < len; i++) {
         if (Parts[i]['ETag'] && Parts[i]['ETag'].indexOf('"') === 0) {
             continue;
@@ -2708,6 +2723,7 @@ function multipartComplete(params, callback) {
         },
         body: xml,
         headers: headers,
+        tracker: tracker,
     }, function (err, data) {
         if (err) return callback(err);
         var url = getUrl({
@@ -2774,6 +2790,9 @@ function multipartList(params, callback) {
 
     reqParams = util.clearKey(reqParams);
 
+    var tracker = params.tracker;
+    tracker && tracker.setParams({ signStartTime: new Date().getTime() });
+
     submitRequest.call(this, {
         Action: 'name/cos:ListMultipartUploads',
         ResourceKey: reqParams['prefix'],
@@ -2783,6 +2802,7 @@ function multipartList(params, callback) {
         headers: params.Headers,
         qs: reqParams,
         action: 'uploads',
+        tracker: tracker,
     }, function (err, data) {
         if (err) return callback(err);
 
@@ -3469,10 +3489,10 @@ function submitRequest(params, callback) {
 
     var paramsUrl = params.url || params.Url;
     var SignHost = params.SignHost || getSignHost.call(this, {Bucket: params.Bucket, Region: params.Region, Url: paramsUrl});
-    var reporter = params.reporter;
+    var tracker = params.tracker;
     var next = function (tryTimes) {
         var oldClockOffset = self.options.SystemClockOffset;
-        reporter.setParams({ signStartTime: new Date().getTime(), retryTimes: tryTimes });
+        tracker && tracker.setParams({ signStartTime: new Date().getTime(), retryTimes: tryTimes - 1 });
         getAuthorizationAsync.call(self, {
             Bucket: params.Bucket || '',
             Region: params.Region || '',
@@ -3490,10 +3510,10 @@ function submitRequest(params, callback) {
                 callback(err);
                 return;
             }
-            reporter.setParams({ signEndTime: new Date().getTime(), httpStartTime: new Date().getTime() });
+            tracker && tracker.setParams({ signEndTime: new Date().getTime(), httpStartTime: new Date().getTime() });
             params.AuthData = AuthData;
             _submitRequest.call(self, params, function (err, data) {
-              reporter.setParams({ httpEndTime: new Date().getTime() });
+              tracker && tracker.setParams({ httpEndTime: new Date().getTime() });
                 if (err && tryTimes < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
                     if (params.headers) {
                         delete params.headers.Authorization;
@@ -3597,6 +3617,7 @@ function _submitRequest(params, callback) {
 
     self.options.ForcePathStyle && (opt.pathStyle = self.options.ForcePathStyle);
     self.emit('before-send', opt);
+    params.tracker && params.tracker.setParams({ reqUrl: opt.url });
     var sender = (self.options.Request || REQUEST)(opt, function (r) {
         if (r.error === 'abort') return;
 
