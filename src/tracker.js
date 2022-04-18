@@ -7,7 +7,7 @@ const beacon = new BeaconAction({
   openid: 'openid', // 用户id, 选填
   unionid: 'unid',//用户unionid , 类似idfv,选填
   strictMode: false,//严苛模式开关, 打开严苛模式会主动抛出异常, 上线请务必关闭!!!
-  delay: 1000, // 普通事件延迟上报时间(单位毫秒), 默认1000(1秒),选填
+  delay: 5000, // 普通事件延迟上报时间(单位毫秒), 默认1000(1秒),选填
   sessionDuration: 60 * 1000,// session变更的时间间隔, 一个用户持续30分钟(默认值)没有任何上报则算另一次 session,每变更一次session上报一次启动事件(rqd_applaunched),使用毫秒(ms),最小值30秒,选填
   // onReportSuccess: success, // 上报成功回调,选填
   // onReportFail: fail, // 上报失败回调,选填,
