@@ -536,15 +536,17 @@ var apiWrapper = function (apiName, apiFn) {
 
          // tracker传递
         var tracker;
-        if (params.calledBySdk === 'sliceUploadFile' && self.options.deepTracker) {
-          console.log(apiName, params);
+        if (params.calledBySdk === 'sliceUploadFile' && self.options.DeepTracker) {
           // 分块上传内部方法使用sliceUploadFile的子链路
           tracker = params.tracker.generateSubTracker({ apiName: apiName });
         } else if (['uploadFile', 'uploadFiles'].includes(apiName)) {
           // uploadFile、uploadFiles方法在内部处理，此处不处理
           tracker = null;
         } else {
-          var fileSize = typeof params.Body === 'string' ? params.Body.length : params.Body.size || -1;
+          var fileSize = -1;
+          if (params.Body) {
+            fileSize = typeof params.Body === 'string' ? params.Body.length : params.Body.size || -1;
+          }
           tracker = new Tracker({
             bucket: params.Bucket, 
             region: params.Region,

@@ -88,17 +88,11 @@ if (process.env.NODE_ENV === 'production') {
                 NODE_ENV: '"production"'
             }
         }),
-        new webpack.optimize.UglifyJsPlugin({
-            sourceMap: false,
-            output: {
-                ascii_only: true,
-            },
-            compress: {
-                warnings: false,
-            },
-        }),
         new webpack.LoaderOptionsPlugin({
             minimize: true
         }),
     ]);
+    module.exports.optimization = {
+      minimize: true
+    };
 }

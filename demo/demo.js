@@ -177,7 +177,6 @@ var showLogText = function (text, color) {
 
 var logger = {
     log: function (text) {
-      return;
         console.log.apply(console, arguments);
         var args = [].map.call(arguments, function (v) {
             return typeof v === 'object' ? JSON.stringify(v, null, 2) : v;

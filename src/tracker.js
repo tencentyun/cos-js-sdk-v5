@@ -136,7 +136,6 @@ class Tracker {
   sendEvents() {
     const eventCode = getEventCode(this.params.apiName);
     const formattedParams = formatParams(this.params);
-    console.log(eventCode, formattedParams);
     this.beacon.onUserAction(eventCode, formattedParams);
   }
 
