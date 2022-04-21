@@ -538,7 +538,7 @@ var apiWrapper = function (apiName, apiFn) {
         var tracker;
         if (params.calledBySdk === 'sliceUploadFile' && self.options.DeepTracker) {
           // 分块上传内部方法使用sliceUploadFile的子链路
-          tracker = params.tracker.generateSubTracker({ apiName: apiName });
+          tracker = params.tracker && params.tracker.generateSubTracker({ apiName: apiName });
         } else if (['uploadFile', 'uploadFiles'].includes(apiName)) {
           // uploadFile、uploadFiles方法在内部处理，此处不处理
           tracker = null;

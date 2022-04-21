@@ -23,6 +23,7 @@ function sliceUploadFile(params, callback) {
     var onHashProgress = params.onHashProgress;
     
     var tracker = params.tracker;
+    tracker && tracker.setParams({ chunkSize: ChunkSize });
 
     // 上传过程中出现错误，返回错误
     ep.on('error', function (err) {

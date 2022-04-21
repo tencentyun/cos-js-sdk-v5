@@ -1865,7 +1865,7 @@ function getObject(params, callback) {
     var reqParamsStr = params.QueryString || '';
     var onProgress = util.throttleOnProgress.call(this, 0, params.onProgress);
     var tracker = params.tracker;
-    tracker.setParams({ signStartTime: new Date().getTime() });
+    tracker && tracker.setParams({ signStartTime: new Date().getTime() });
 
     reqParams['response-content-type'] = params['ResponseContentType'];
     reqParams['response-content-language'] = params['ResponseContentLanguage'];

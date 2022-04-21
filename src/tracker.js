@@ -14,13 +14,6 @@ const beacon = new BeaconAction({
   // onReportBeforeSend: beforeSend, // 上报前回调，选填
 });
 
-var uuid = function () {
-  var S4 = function () {
-      return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-  };
-  return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
-};
-
 // 观察者的选项（观察哪些突变）
 // const config = {
 //   entryTypes: ['resource', 'mark', 'measure']
@@ -29,16 +22,19 @@ var uuid = function () {
 // const observer = new PerformanceObserver(list => {
 //   list.getEntries().forEach(entry => {
 //     // 在控制台上显示每个报告的测量
-//     console.log(
-//       `Name: ${entry.name}`,
-//       `Type: ${entry.entryType}`,
-//       `Start: ${entry.startTime}`,
-//       `Duration: ${entry.duration}`,
-//     );
+//     console.log(entry);
+//     // console.log(
+//     //   `Name: ${entry.name}`,
+//     //   `Type: ${entry.entryType}`,
+//     //   `Start: ${entry.startTime}`,
+//     //   `Duration: ${entry.duration}`,
+//     //   `domainLookupStart: ${entry.domainLookupStart ? entry.domainLookupStart : 0}`,
+//     //   `domainLookupEnd: ${entry.domainLookupEnd ? entry.domainLookupEnd : 0}`,
+//     // );
 //   });
 // });
  
-// // 开始观察
+// 开始观察
 // observer.observe(config);
 // performance.mark('registered-observer');
 
@@ -70,11 +66,12 @@ function formatParams(params) {
 
 // 链路追踪器
 class Tracker {
-  constructor({ traceId, bucket, region, apiName, originApiName, fileKey, fileSize, useAccelerate }) {
+  constructor(opt) {
+    const { traceId, bucket, region, apiName, originApiName, fileKey, fileSize, chunkSize, useAccelerate } = opt;
     const appid = bucket && bucket.substr(bucket.lastIndexOf('-') + 1) || '';
     this.beacon = beacon; // 共用一个beacon实例
     this.params = {
-      traceId: traceId || uuid(), // 每条上报唯一标识
+      traceId: traceId || this.getUid(), // 每条上报唯一标识
       bucket,
       region,
       appid,
@@ -82,6 +79,7 @@ class Tracker {
       originApiName, // 分块上传可能有uploadFile、uploadFiles内部触发
       fileKey,  // cos端文件路径
       fileSize, // 文件大小，上传时已知，下载时成功返回后取到。默认给-1，可能真实值是0
+      chunkSize: chunkSize || 0, // 分开上传设置的每个分块大小
       useAccelerate: useAccelerate ? '1' : '0', // 使用全球加速
       md5StartTime: 0, // md5计算开始时间
       md5EndTime: 0, // md5计算结束时间
@@ -105,6 +103,13 @@ class Tracker {
     };
   }
 
+  getUid() {
+    var S4 = function () {
+        return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+    };
+    return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
+  };
+
   // 格式化sdk回调
   formatResult(err, data) {
     const now = new Date().getTime();
@@ -122,7 +127,7 @@ class Tracker {
       requestId:  err ? (err.headers && err.headers['x-cos-request-id']) : (data.headers && data.headers['x-cos-request-id']),
     });
     if (this.params.apiName === 'getObject') {
-      this.params.fileSize = data ? data.headers['content-length'] : -1;
+      this.params.fileSize = data ? (data.headers && data.headers['content-length']) : -1;
     }
     this.params.speed = this.params.fileSize !== -1 ? (this.params.fileSize/(avgTime/1000)).toFixed(2) : -1;
   }
@@ -137,6 +142,7 @@ class Tracker {
     const eventCode = getEventCode(this.params.apiName);
     const formattedParams = formatParams(this.params);
     this.beacon.onUserAction(eventCode, formattedParams);
+    this.destroy();
   }
 
   // 生成子实例，与父所属一个链路，可用于分块上传内部流程上报单个分块操作
@@ -148,14 +154,15 @@ class Tracker {
       region: this.params.region,
       fileKey: this.params.fileKey,
       fileSize: this.params.fileSize,
+      chunkSize: this.params.chunkSize, 
       useAccelerate: this.params.useAccelerate,
     });
     return new Tracker(subParams);
   }
 
-  // 销毁实例
+  // 链路结束后销毁实例
   destroy() {
-    this.ins = null;
+    this.beacon = null;
     this.params = {};
   }
 }
