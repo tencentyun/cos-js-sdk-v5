@@ -3286,7 +3286,7 @@ function getAuthorizationAsync(params, callback) {
             UseRawKey: self.options.UseRawKey,
             SystemClockOffset: self.options.SystemClockOffset,
             KeyTime: KeyTime,
-            ForceSignHost: self.options.ForceSignHost,
+            ForceSignHost: forceSignHost,
         });
         var AuthData = {
             Authorization: Authorization,
@@ -3350,7 +3350,7 @@ function getAuthorizationAsync(params, callback) {
             Headers: headers,
             Scope: Scope,
             SystemClockOffset: self.options.SystemClockOffset,
-            ForceSignHost: self.options.ForceSignHost,
+            ForceSignHost: forceSignHost,
         }, function (AuthData) {
             if (typeof AuthData === 'string') AuthData = {Authorization: AuthData};
             var AuthError = checkAuthError(AuthData);
@@ -3392,7 +3392,7 @@ function getAuthorizationAsync(params, callback) {
                 Expires: params.Expires,
                 UseRawKey: self.options.UseRawKey,
                 SystemClockOffset: self.options.SystemClockOffset,
-                ForceSignHost: self.options.ForceSignHost,
+                ForceSignHost: forceSignHost,
             });
             var AuthData = {
                 Authorization: Authorization,

@@ -1,9 +1,9 @@
 // config 替换成自己的桶信息
 var config = {
-    Bucket: 'test-1250000000',
-    Region: 'ap-guangzhou',
+  Bucket: 'test-1250000000',
+  Region: 'ap-guangzhou',
+  Uin: '10001',
 };
-config.Uin = '10001';
 
 QUnit.log(function(details) {
     console.log("[test-log]" + JSON.stringify(details));
@@ -66,7 +66,6 @@ var getAuthorization = function (options, callback) {
             TmpSecretKey: credentials.tmpSecretKey,
             SecurityToken: credentials.sessionToken,
             ExpiredTime: data.expiredTime, // SDK 在 ExpiredTime 时间前，不会再次调用 getAuthorization
-            ForceSignHost: options.ForceSignHost,
         });
     };
     xhr.send();
@@ -210,6 +209,7 @@ var cos = new COS({
     ProgressInterval: 1,  // 控制 onProgress 回调的间隔
     ChunkRetryTimes: 3,   // 控制文件切片后单片上传失败后重试次数
     UploadCheckContentMd5: true,   // 上传过程计算 Content-MD5
+    ForceSignHost: false,
 });
 
 var AppId = config.AppId;
