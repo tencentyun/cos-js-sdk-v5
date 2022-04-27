@@ -555,6 +555,7 @@ var apiWrapper = function (apiName, apiFn) {
             fileKey: params.Key,
             fileSize: fileSize,
             useAccelerate: self.options.UseAccelerate,
+            userId: params.UserId || '',
           });
         }
 

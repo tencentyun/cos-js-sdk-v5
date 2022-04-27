@@ -2641,11 +2641,12 @@ function multipartUpload(params, callback) {
     var self = this;
     util.getFileSize('multipartUpload', params, function () {
         var tracker = params.tracker;
-        var needCalcMd5 = self.options.UploadCheckContentMd5
+        var needCalcMd5 = self.options.UploadCheckContentMd5;
         needCalcMd5 && tracker && tracker.setParams({ md5StartTime: new Date().getTime() });
         util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
             if (md5) params.Headers['Content-MD5'] = util.binaryBase64(md5);
-            needCalcMd5 && tracker && tracker.setParams({ md5EndTime: new Date().getTime(), partNumber: params['PartNumber'] });
+            needCalcMd5 && tracker && tracker.setParams({ md5EndTime: new Date().getTime() });
+            tracker && tracker.setParams({ partNumber: params.PartNumber });
             submitRequest.call(self, {
                 Action: 'name/cos:UploadPart',
                 TaskId: params.TaskId,

@@ -67,7 +67,7 @@ function formatParams(params) {
 // 链路追踪器
 class Tracker {
   constructor(opt) {
-    const { traceId, bucket, region, apiName, originApiName, fileKey, fileSize, chunkSize, useAccelerate } = opt;
+    const { traceId, bucket, region, apiName, originApiName, fileKey, fileSize, chunkSize, useAccelerate, userId } = opt;
     const appid = bucket && bucket.substr(bucket.lastIndexOf('-') + 1) || '';
     this.beacon = beacon; // 共用一个beacon实例
     this.params = {
@@ -100,6 +100,8 @@ class Tracker {
       errorMessage: '',
       requestId: '',
       reqUrl: '', // 请求url
+      userId: userId || '',
+      cosTraceSdkVersion: '0.0.3',
     };
   }
 
@@ -156,6 +158,7 @@ class Tracker {
       fileSize: this.params.fileSize,
       chunkSize: this.params.chunkSize, 
       useAccelerate: this.params.useAccelerate,
+      userId: this.params.userId,
     });
     return new Tracker(subParams);
   }
