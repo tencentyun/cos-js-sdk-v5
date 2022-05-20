@@ -86,8 +86,11 @@ var getAuth = function (opt) {
         pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
     }
 
-    // 如果有传入存储桶，那么签名默认加 Host 参与计算，避免跨桶访问
-    if (!headers.Host && !headers.host && opt.Bucket && opt.Region) headers.Host = opt.Bucket + '.cos.' + opt.Region + '.myqcloud.com';
+    // ForceSignHost明确传入false才不加入host签名
+    var forceSignHost = opt.ForceSignHost === false ? false : true;
+
+    // 如果有传入存储桶且需要强制签名，那么签名默认加 Host 参与计算，避免跨桶访问
+    if (!headers.Host && !headers.host && opt.Bucket && opt.Region && forceSignHost) headers.Host = opt.Bucket + '.cos.' + opt.Region + '.myqcloud.com';
 
     if (!SecretId) throw new Error('missing param SecretId');
     if (!SecretKey) throw new Error('missing param SecretKey');
@@ -534,6 +537,7 @@ var apiWrapper = function (apiName, apiFn) {
         var formatResult = function (result) {
             if (result && result.headers) {
                 result.headers['x-cos-request-id'] && (result.RequestId = result.headers['x-cos-request-id']);
+                result.headers['x-ci-request-id'] && (result.RequestId = result.headers['x-ci-request-id']);
                 result.headers['x-cos-version-id'] && (result.VersionId = result.headers['x-cos-version-id']);
                 result.headers['x-cos-delete-marker'] && (result.DeleteMarker = result.headers['x-cos-delete-marker']);
             }
@@ -597,7 +601,7 @@ var apiWrapper = function (apiName, apiFn) {
 
         var errMsg = checkParams();
         var isSync = apiName === 'getAuth' || apiName === 'getObjectUrl';
-        if (window.Promise && !isSync && !callback) {
+        if (typeof Promise === 'function' && !isSync && !callback) {
             return new Promise(function (resolve, reject) {
                 callback = function (err, data) {
                     err ? reject(err) : resolve(data);

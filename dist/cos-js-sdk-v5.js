@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "/dist/";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 5);
+/******/ 	return __webpack_require__(__webpack_require__.s = 6);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -80,10 +80,10 @@ return /******/ (function(modules) { // webpackBootstrap
 "use strict";
 /* WEBPACK VAR INJECTION */(function(process) {
 
-var md5 = __webpack_require__(7);
-var CryptoJS = __webpack_require__(10);
-var xml2json = __webpack_require__(11);
-var json2xml = __webpack_require__(15);
+var md5 = __webpack_require__(8);
+var CryptoJS = __webpack_require__(11);
+var xml2json = __webpack_require__(12);
+var json2xml = __webpack_require__(17);
 
 function camSafeUrlEncode(str) {
     return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/\*/g, '%2A');
@@ -157,8 +157,11 @@ var getAuth = function (opt) {
         pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
     }
 
-    // 如果有传入存储桶，那么签名默认加 Host 参与计算，避免跨桶访问
-    if (!headers.Host && !headers.host && opt.Bucket && opt.Region) headers.Host = opt.Bucket + '.cos.' + opt.Region + '.myqcloud.com';
+    // ForceSignHost明确传入false才不加入host签名
+    var forceSignHost = opt.ForceSignHost === false ? false : true;
+
+    // 如果有传入存储桶且需要强制签名，那么签名默认加 Host 参与计算，避免跨桶访问
+    if (!headers.Host && !headers.host && opt.Bucket && opt.Region && forceSignHost) headers.Host = opt.Bucket + '.cos.' + opt.Region + '.myqcloud.com';
 
     if (!SecretId) throw new Error('missing param SecretId');
     if (!SecretKey) throw new Error('missing param SecretKey');
@@ -494,8 +497,8 @@ var hasMissingParams = function (apiName, params) {
     var Region = params.Region;
     var Key = params.Key;
     var Domain = this.options.Domain;
-    var checkBucket = !Domain || typeof Domain === 'string' && Domain.indexOf('{Bucket}') > -1;
-    var checkRegion = !Domain || typeof Domain === 'string' && Domain.indexOf('{Region}') > -1;
+    var checkBucket = !Domain || Domain.indexOf('{Bucket}') > -1;
+    var checkRegion = !Domain || Domain.indexOf('{Region}') > -1;
     if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList' || apiName === 'listObjectVersions') {
         if (checkBucket && !Bucket) return 'Bucket';
         if (checkRegion && !Region) return 'Region';
@@ -596,6 +599,7 @@ var apiWrapper = function (apiName, apiFn) {
         var formatResult = function (result) {
             if (result && result.headers) {
                 result.headers['x-cos-request-id'] && (result.RequestId = result.headers['x-cos-request-id']);
+                result.headers['x-ci-request-id'] && (result.RequestId = result.headers['x-ci-request-id']);
                 result.headers['x-cos-version-id'] && (result.VersionId = result.headers['x-cos-version-id']);
                 result.headers['x-cos-delete-marker'] && (result.DeleteMarker = result.headers['x-cos-delete-marker']);
             }
@@ -655,7 +659,7 @@ var apiWrapper = function (apiName, apiFn) {
 
         var errMsg = checkParams();
         var isSync = apiName === 'getAuth' || apiName === 'getObjectUrl';
-        if (window.Promise && !isSync && !callback) {
+        if (typeof Promise === 'function' && !isSync && !callback) {
             return new Promise(function (resolve, reject) {
                 callback = function (err, data) {
                     err ? reject(err) : resolve(data);
@@ -807,10 +811,187 @@ var util = {
 };
 
 module.exports = util;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)))
 
 /***/ }),
 /* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+/**
+ * "Shallow freezes" an object to render it immutable.
+ * Uses `Object.freeze` if available,
+ * otherwise the immutability is only in the type.
+ *
+ * Is used to create "enum like" objects.
+ *
+ * @template T
+ * @param {T} object the object to freeze
+ * @param {Pick<ObjectConstructor, 'freeze'> = Object} oc `Object` by default,
+ * 				allows to inject custom object constructor for tests
+ * @returns {Readonly<T>}
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze
+ */
+function freeze(object, oc) {
+	if (oc === undefined) {
+		oc = Object
+	}
+	return oc && typeof oc.freeze === 'function' ? oc.freeze(object) : object
+}
+
+/**
+ * Since we can not rely on `Object.assign` we provide a simplified version
+ * that is sufficient for our needs.
+ *
+ * @param {Object} target
+ * @param {Object | null | undefined} source
+ *
+ * @returns {Object} target
+ * @throws TypeError if target is not an object
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign
+ * @see https://tc39.es/ecma262/multipage/fundamental-objects.html#sec-object.assign
+ */
+function assign(target, source) {
+	if (target === null || typeof target !== 'object') {
+		throw new TypeError('target is not an object')
+	}
+	for (var key in source) {
+		if (Object.prototype.hasOwnProperty.call(source, key)) {
+			target[key] = source[key]
+		}
+	}
+	return target
+}
+
+/**
+ * All mime types that are allowed as input to `DOMParser.parseFromString`
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMParser/parseFromString#Argument02 MDN
+ * @see https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#domparsersupportedtype WHATWG HTML Spec
+ * @see DOMParser.prototype.parseFromString
+ */
+var MIME_TYPE = freeze({
+	/**
+	 * `text/html`, the only mime type that triggers treating an XML document as HTML.
+	 *
+	 * @see DOMParser.SupportedType.isHTML
+	 * @see https://www.iana.org/assignments/media-types/text/html IANA MimeType registration
+	 * @see https://en.wikipedia.org/wiki/HTML Wikipedia
+	 * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMParser/parseFromString MDN
+	 * @see https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#dom-domparser-parsefromstring WHATWG HTML Spec
+	 */
+	HTML: 'text/html',
+
+	/**
+	 * Helper method to check a mime type if it indicates an HTML document
+	 *
+	 * @param {string} [value]
+	 * @returns {boolean}
+	 *
+	 * @see https://www.iana.org/assignments/media-types/text/html IANA MimeType registration
+	 * @see https://en.wikipedia.org/wiki/HTML Wikipedia
+	 * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMParser/parseFromString MDN
+	 * @see https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#dom-domparser-parsefromstring 	 */
+	isHTML: function (value) {
+		return value === MIME_TYPE.HTML
+	},
+
+	/**
+	 * `application/xml`, the standard mime type for XML documents.
+	 *
+	 * @see https://www.iana.org/assignments/media-types/application/xml IANA MimeType registration
+	 * @see https://tools.ietf.org/html/rfc7303#section-9.1 RFC 7303
+	 * @see https://en.wikipedia.org/wiki/XML_and_MIME Wikipedia
+	 */
+	XML_APPLICATION: 'application/xml',
+
+	/**
+	 * `text/html`, an alias for `application/xml`.
+	 *
+	 * @see https://tools.ietf.org/html/rfc7303#section-9.2 RFC 7303
+	 * @see https://www.iana.org/assignments/media-types/text/xml IANA MimeType registration
+	 * @see https://en.wikipedia.org/wiki/XML_and_MIME Wikipedia
+	 */
+	XML_TEXT: 'text/xml',
+
+	/**
+	 * `application/xhtml+xml`, indicates an XML document that has the default HTML namespace,
+	 * but is parsed as an XML document.
+	 *
+	 * @see https://www.iana.org/assignments/media-types/application/xhtml+xml IANA MimeType registration
+	 * @see https://dom.spec.whatwg.org/#dom-domimplementation-createdocument WHATWG DOM Spec
+	 * @see https://en.wikipedia.org/wiki/XHTML Wikipedia
+	 */
+	XML_XHTML_APPLICATION: 'application/xhtml+xml',
+
+	/**
+	 * `image/svg+xml`,
+	 *
+	 * @see https://www.iana.org/assignments/media-types/image/svg+xml IANA MimeType registration
+	 * @see https://www.w3.org/TR/SVG11/ W3C SVG 1.1
+	 * @see https://en.wikipedia.org/wiki/Scalable_Vector_Graphics Wikipedia
+	 */
+	XML_SVG_IMAGE: 'image/svg+xml',
+})
+
+/**
+ * Namespaces that are used in this code base.
+ *
+ * @see http://www.w3.org/TR/REC-xml-names
+ */
+var NAMESPACE = freeze({
+	/**
+	 * The XHTML namespace.
+	 *
+	 * @see http://www.w3.org/1999/xhtml
+	 */
+	HTML: 'http://www.w3.org/1999/xhtml',
+
+	/**
+	 * Checks if `uri` equals `NAMESPACE.HTML`.
+	 *
+	 * @param {string} [uri]
+	 *
+	 * @see NAMESPACE.HTML
+	 */
+	isHTML: function (uri) {
+		return uri === NAMESPACE.HTML
+	},
+
+	/**
+	 * The SVG namespace.
+	 *
+	 * @see http://www.w3.org/2000/svg
+	 */
+	SVG: 'http://www.w3.org/2000/svg',
+
+	/**
+	 * The `xml:` namespace.
+	 *
+	 * @see http://www.w3.org/XML/1998/namespace
+	 */
+	XML: 'http://www.w3.org/XML/1998/namespace',
+
+	/**
+	 * The `xmlns:` namespace
+	 *
+	 * @see https://www.w3.org/2000/xmlns/
+	 */
+	XMLNS: 'http://www.w3.org/2000/xmlns/',
+})
+
+exports.assign = assign;
+exports.freeze = freeze;
+exports.MIME_TYPE = MIME_TYPE;
+exports.NAMESPACE = NAMESPACE;
+
+
+/***/ }),
+/* 2 */
 /***/ (function(module, exports) {
 
 // shim for using process in browser
@@ -1000,14 +1181,77 @@ process.umask = function() { return 0; };
 
 
 /***/ }),
-/* 2 */
-/***/ (function(module, exports) {
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var conventions = __webpack_require__(1);
+
+var NAMESPACE = conventions.NAMESPACE;
+
+/**
+ * A prerequisite for `[].filter`, to drop elements that are empty
+ * @param {string} input
+ * @returns {boolean}
+ */
+function notEmptyString (input) {
+	return input !== ''
+}
+/**
+ * @see https://infra.spec.whatwg.org/#split-on-ascii-whitespace
+ * @see https://infra.spec.whatwg.org/#ascii-whitespace
+ *
+ * @param {string} input
+ * @returns {string[]} (can be empty)
+ */
+function splitOnASCIIWhitespace(input) {
+	// U+0009 TAB, U+000A LF, U+000C FF, U+000D CR, U+0020 SPACE
+	return input ? input.split(/[\t\n\f\r ]+/).filter(notEmptyString) : []
+}
+
+/**
+ * Adds element as a key to current if it is not already present.
+ *
+ * @param {Record<string, boolean | undefined>} current
+ * @param {string} element
+ * @returns {Record<string, boolean | undefined>}
+ */
+function orderedSetReducer (current, element) {
+	if (!current.hasOwnProperty(element)) {
+		current[element] = true;
+	}
+	return current;
+}
+
+/**
+ * @see https://infra.spec.whatwg.org/#ordered-set
+ * @param {string} input
+ * @returns {string[]}
+ */
+function toOrderedSet(input) {
+	if (!input) return [];
+	var list = splitOnASCIIWhitespace(input);
+	return Object.keys(list.reduce(orderedSetReducer, {}))
+}
+
+/**
+ * Uses `list.indexOf` to implement something like `Array.prototype.includes`,
+ * which we can not rely on being available.
+ *
+ * @param {any[]} list
+ * @returns {function(any): boolean}
+ */
+function arrayIncludes (list) {
+	return function(element) {
+		return list && list.indexOf(element) !== -1;
+	}
+}
 
 function copy(src,dest){
 	for(var p in src){
 		dest[p] = src[p];
 	}
 }
+
 /**
 ^\w+\.prototype\.([_\w]+)\s*=\s*((?:.*\{\s*?[\r\n][\s\S]*?^})|\S.*?(?=[;\r\n]));?
 ^\w+\.prototype\.([_\w]+)\s*=\s*(\S.*?(?=[;\r\n]));?
@@ -1023,12 +1267,12 @@ function _extends(Class,Super){
 	}
 	if(pt.constructor != Class){
 		if(typeof Class != 'function'){
-			console.error("unknow Class:"+Class)
+			console.error("unknown Class:"+Class)
 		}
 		pt.constructor = Class
 	}
 }
-var htmlns = 'http://www.w3.org/1999/xhtml' ;
+
 // Node Types
 var NodeType = {}
 var ELEMENT_NODE                = NodeType.ELEMENT_NODE                = 1;
@@ -1085,6 +1329,7 @@ function DOMException(code, message) {
 };
 DOMException.prototype = Error.prototype;
 copy(ExceptionCode,DOMException)
+
 /**
  * @see http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/core.html#ID-536297177
  * The NodeList interface provides the abstraction of an ordered collection of nodes, without defining or constraining how this collection is implemented. NodeList objects in the DOM are live.
@@ -1116,6 +1361,7 @@ NodeList.prototype = {
 		return buf.join('');
 	}
 };
+
 function LiveNodeList(node,refresh){
 	this._node = node;
 	this._refresh = refresh
@@ -1137,9 +1383,15 @@ LiveNodeList.prototype.item = function(i){
 }
 
 _extends(LiveNodeList,NodeList);
+
 /**
- * 
- * Objects implementing the NamedNodeMap interface are used to represent collections of nodes that can be accessed by name. Note that NamedNodeMap does not inherit from NodeList; NamedNodeMaps are not maintained in any particular order. Objects contained in an object implementing NamedNodeMap may also be accessed by an ordinal index, but this is simply to allow convenient enumeration of the contents of a NamedNodeMap, and does not imply that the DOM specifies an order to these Nodes.
+ * Objects implementing the NamedNodeMap interface are used
+ * to represent collections of nodes that can be accessed by name.
+ * Note that NamedNodeMap does not inherit from NodeList;
+ * NamedNodeMaps are not maintained in any particular order.
+ * Objects contained in an object implementing NamedNodeMap may also be accessed by an ordinal index,
+ * but this is simply to allow convenient enumeration of the contents of a NamedNodeMap,
+ * and does not imply that the DOM specifies an order to these Nodes.
  * NamedNodeMap objects in the DOM are live.
  * used for attributes or DocumentType entities 
  */
@@ -1251,55 +1503,108 @@ NamedNodeMap.prototype = {
 		return null;
 	}
 };
+
 /**
- * @see http://www.w3.org/TR/REC-DOM-Level-1/level-one-core.html#ID-102161490
+ * The DOMImplementation interface represents an object providing methods
+ * which are not dependent on any particular document.
+ * Such an object is returned by the `Document.implementation` property.
+ *
+ * __The individual methods describe the differences compared to the specs.__
+ *
+ * @constructor
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMImplementation MDN
+ * @see https://www.w3.org/TR/REC-DOM-Level-1/level-one-core.html#ID-102161490 DOM Level 1 Core (Initial)
+ * @see https://www.w3.org/TR/DOM-Level-2-Core/core.html#ID-102161490 DOM Level 2 Core
+ * @see https://www.w3.org/TR/DOM-Level-3-Core/core.html#ID-102161490 DOM Level 3 Core
+ * @see https://dom.spec.whatwg.org/#domimplementation DOM Living Standard
  */
-function DOMImplementation(/* Object */ features) {
-	this._features = {};
-	if (features) {
-		for (var feature in features) {
-			 this._features = features[feature];
-		}
-	}
-};
+function DOMImplementation() {
+}
 
 DOMImplementation.prototype = {
-	hasFeature: function(/* string */ feature, /* string */ version) {
-		var versions = this._features[feature.toLowerCase()];
-		if (versions && (!version || version in versions)) {
+	/**
+	 * The DOMImplementation.hasFeature() method returns a Boolean flag indicating if a given feature is supported.
+	 * The different implementations fairly diverged in what kind of features were reported.
+	 * The latest version of the spec settled to force this method to always return true, where the functionality was accurate and in use.
+	 *
+	 * @deprecated It is deprecated and modern browsers return true in all cases.
+	 *
+	 * @param {string} feature
+	 * @param {string} [version]
+	 * @returns {boolean} always true
+	 *
+	 * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMImplementation/hasFeature MDN
+	 * @see https://www.w3.org/TR/REC-DOM-Level-1/level-one-core.html#ID-5CED94D7 DOM Level 1 Core
+	 * @see https://dom.spec.whatwg.org/#dom-domimplementation-hasfeature DOM Living Standard
+	 */
+	hasFeature: function(feature, version) {
 			return true;
-		} else {
-			return false;
-		}
 	},
-	// Introduced in DOM Level 2:
-	createDocument:function(namespaceURI,  qualifiedName, doctype){// raises:INVALID_CHARACTER_ERR,NAMESPACE_ERR,WRONG_DOCUMENT_ERR
+	/**
+	 * Creates an XML Document object of the specified type with its document element.
+	 *
+	 * __It behaves slightly different from the description in the living standard__:
+	 * - There is no interface/class `XMLDocument`, it returns a `Document` instance.
+	 * - `contentType`, `encoding`, `mode`, `origin`, `url` fields are currently not declared.
+	 * - this implementation is not validating names or qualified names
+	 *   (when parsing XML strings, the SAX parser takes care of that)
+	 *
+	 * @param {string|null} namespaceURI
+	 * @param {string} qualifiedName
+	 * @param {DocumentType=null} doctype
+	 * @returns {Document}
+	 *
+	 * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMImplementation/createDocument MDN
+	 * @see https://www.w3.org/TR/DOM-Level-2-Core/core.html#Level-2-Core-DOM-createDocument DOM Level 2 Core (initial)
+	 * @see https://dom.spec.whatwg.org/#dom-domimplementation-createdocument  DOM Level 2 Core
+	 *
+	 * @see https://dom.spec.whatwg.org/#validate-and-extract DOM: Validate and extract
+	 * @see https://www.w3.org/TR/xml/#NT-NameStartChar XML Spec: Names
+	 * @see https://www.w3.org/TR/xml-names/#ns-qualnames XML Namespaces: Qualified names
+	 */
+	createDocument: function(namespaceURI,  qualifiedName, doctype){
 		var doc = new Document();
 		doc.implementation = this;
 		doc.childNodes = new NodeList();
-		doc.doctype = doctype;
-		if(doctype){
+		doc.doctype = doctype || null;
+		if (doctype){
 			doc.appendChild(doctype);
 		}
-		if(qualifiedName){
-			var root = doc.createElementNS(namespaceURI,qualifiedName);
+		if (qualifiedName){
+			var root = doc.createElementNS(namespaceURI, qualifiedName);
 			doc.appendChild(root);
 		}
 		return doc;
 	},
-	// Introduced in DOM Level 2:
-	createDocumentType:function(qualifiedName, publicId, systemId){// raises:INVALID_CHARACTER_ERR,NAMESPACE_ERR
+	/**
+	 * Returns a doctype, with the given `qualifiedName`, `publicId`, and `systemId`.
+	 *
+	 * __This behavior is slightly different from the in the specs__:
+	 * - this implementation is not validating names or qualified names
+	 *   (when parsing XML strings, the SAX parser takes care of that)
+	 *
+	 * @param {string} qualifiedName
+	 * @param {string} [publicId]
+	 * @param {string} [systemId]
+	 * @returns {DocumentType} which can either be used with `DOMImplementation.createDocument` upon document creation
+	 * 				  or can be put into the document via methods like `Node.insertBefore()` or `Node.replaceChild()`
+	 *
+	 * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMImplementation/createDocumentType MDN
+	 * @see https://www.w3.org/TR/DOM-Level-2-Core/core.html#Level-2-Core-DOM-createDocType DOM Level 2 Core
+	 * @see https://dom.spec.whatwg.org/#dom-domimplementation-createdocumenttype DOM Living Standard
+	 *
+	 * @see https://dom.spec.whatwg.org/#validate-and-extract DOM: Validate and extract
+	 * @see https://www.w3.org/TR/xml/#NT-NameStartChar XML Spec: Names
+	 * @see https://www.w3.org/TR/xml-names/#ns-qualnames XML Namespaces: Qualified names
+	 */
+	createDocumentType: function(qualifiedName, publicId, systemId){
 		var node = new DocumentType();
 		node.name = qualifiedName;
 		node.nodeName = qualifiedName;
-		node.publicId = publicId;
-		node.systemId = systemId;
-		// Introduced in DOM Level 2:
-		//readonly attribute DOMString        internalSubset;
-		
-		//TODO:..
-		//  readonly attribute NamedNodeMap     entities;
-		//  readonly attribute NamedNodeMap     notations;
+		node.publicId = publicId || '';
+		node.systemId = systemId || '';
+
 		return node;
 	}
 };
@@ -1369,6 +1674,20 @@ Node.prototype = {
     hasAttributes:function(){
     	return this.attributes.length>0;
     },
+	/**
+	 * Look up the prefix associated to the given namespace URI, starting from this node.
+	 * **The default namespace declarations are ignored by this method.**
+	 * See Namespace Prefix Lookup for details on the algorithm used by this method.
+	 *
+	 * _Note: The implementation seems to be incomplete when compared to the algorithm described in the specs._
+	 *
+	 * @param {string | null} namespaceURI
+	 * @returns {string | null}
+	 * @see https://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-lookupNamespacePrefix
+	 * @see https://www.w3.org/TR/DOM-Level-3-Core/namespaces-algorithms.html#lookupNamespacePrefixAlgo
+	 * @see https://dom.spec.whatwg.org/#dom-node-lookupprefix
+	 * @see https://github.com/xmldom/xmldom/issues/322
+	 */
     lookupPrefix:function(namespaceURI){
     	var el = this;
     	while(el){
@@ -1439,64 +1758,86 @@ function _visitNode(node,callback){
 
 function Document(){
 }
+
 function _onAddAttribute(doc,el,newAttr){
 	doc && doc._inc++;
 	var ns = newAttr.namespaceURI ;
-	if(ns == 'http://www.w3.org/2000/xmlns/'){
+	if(ns === NAMESPACE.XMLNS){
 		//update namespace
 		el._nsMap[newAttr.prefix?newAttr.localName:''] = newAttr.value
 	}
 }
+
 function _onRemoveAttribute(doc,el,newAttr,remove){
 	doc && doc._inc++;
 	var ns = newAttr.namespaceURI ;
-	if(ns == 'http://www.w3.org/2000/xmlns/'){
+	if(ns === NAMESPACE.XMLNS){
 		//update namespace
 		delete el._nsMap[newAttr.prefix?newAttr.localName:'']
 	}
 }
-function _onUpdateChild(doc,el,newChild){
+
+/**
+ * Updates `el.childNodes`, updating the indexed items and it's `length`.
+ * Passing `newChild` means it will be appended.
+ * Otherwise it's assumed that an item has been removed,
+ * and `el.firstNode` and it's `.nextSibling` are used
+ * to walk the current list of child nodes.
+ *
+ * @param {Document} doc
+ * @param {Node} el
+ * @param {Node} [newChild]
+ * @private
+ */
+function _onUpdateChild (doc, el, newChild) {
 	if(doc && doc._inc){
 		doc._inc++;
 		//update childNodes
 		var cs = el.childNodes;
-		if(newChild){
+		if (newChild) {
 			cs[cs.length++] = newChild;
-		}else{
-			//console.log(1)
+		} else {
 			var child = el.firstChild;
 			var i = 0;
-			while(child){
+			while (child) {
 				cs[i++] = child;
-				child =child.nextSibling;
+				child = child.nextSibling;
 			}
 			cs.length = i;
+			delete cs[cs.length];
 		}
 	}
 }
 
 /**
- * attributes;
- * children;
- * 
- * writeable properties:
- * nodeValue,Attr:value,CharacterData:data
- * prefix
+ * Removes the connections between `parentNode` and `child`
+ * and any existing `child.previousSibling` or `child.nextSibling`.
+ *
+ * @see https://github.com/xmldom/xmldom/issues/135
+ * @see https://github.com/xmldom/xmldom/issues/145
+ *
+ * @param {Node} parentNode
+ * @param {Node} child
+ * @returns {Node} the child that was removed.
+ * @private
  */
-function _removeChild(parentNode,child){
+function _removeChild (parentNode, child) {
 	var previous = child.previousSibling;
 	var next = child.nextSibling;
-	if(previous){
+	if (previous) {
 		previous.nextSibling = next;
-	}else{
-		parentNode.firstChild = next
+	} else {
+		parentNode.firstChild = next;
 	}
-	if(next){
+	if (next) {
 		next.previousSibling = previous;
-	}else{
+	} else {
 		parentNode.lastChild = previous;
 	}
-	_onUpdateChild(parentNode.ownerDocument,parentNode);
+	child.parentNode = null;
+	child.previousSibling = null;
+	child.nextSibling = null;
+	_onUpdateChild(parentNode.ownerDocument, parentNode);
 	return child;
 }
 /**
@@ -1542,36 +1883,50 @@ function _insertBefore(parentNode,newChild,nextChild){
 	}
 	return newChild;
 }
-function _appendSingleChild(parentNode,newChild){
-	var cp = newChild.parentNode;
-	if(cp){
-		var pre = parentNode.lastChild;
-		cp.removeChild(newChild);//remove and update
-		var pre = parentNode.lastChild;
+
+/**
+ * Appends `newChild` to `parentNode`.
+ * If `newChild` is already connected to a `parentNode` it is first removed from it.
+ *
+ * @see https://github.com/xmldom/xmldom/issues/135
+ * @see https://github.com/xmldom/xmldom/issues/145
+ * @param {Node} parentNode
+ * @param {Node} newChild
+ * @returns {Node}
+ * @private
+ */
+function _appendSingleChild (parentNode, newChild) {
+	if (newChild.parentNode) {
+		newChild.parentNode.removeChild(newChild);
 	}
-	var pre = parentNode.lastChild;
 	newChild.parentNode = parentNode;
-	newChild.previousSibling = pre;
+	newChild.previousSibling = parentNode.lastChild;
 	newChild.nextSibling = null;
-	if(pre){
-		pre.nextSibling = newChild;
-	}else{
+	if (newChild.previousSibling) {
+		newChild.previousSibling.nextSibling = newChild;
+	} else {
 		parentNode.firstChild = newChild;
 	}
 	parentNode.lastChild = newChild;
-	_onUpdateChild(parentNode.ownerDocument,parentNode,newChild);
+	_onUpdateChild(parentNode.ownerDocument, parentNode, newChild);
 	return newChild;
-	//console.log("__aa",parentNode.lastChild.nextSibling == null)
 }
+
 Document.prototype = {
 	//implementation : null,
 	nodeName :  '#document',
 	nodeType :  DOCUMENT_NODE,
+	/**
+	 * The DocumentType node of the document.
+	 *
+	 * @readonly
+	 * @type DocumentType
+	 */
 	doctype :  null,
 	documentElement :  null,
 	_inc : 1,
-	
-	insertBefore :  function(newChild, refChild){//raises 
+
+	insertBefore :  function(newChild, refChild){//raises
 		if(newChild.nodeType == DOCUMENT_FRAGMENT_NODE){
 			var child = newChild.firstChild;
 			while(child){
@@ -1584,7 +1939,7 @@ Document.prototype = {
 		if(this.documentElement == null && newChild.nodeType == ELEMENT_NODE){
 			this.documentElement = newChild;
 		}
-		
+
 		return _insertBefore(this,newChild,refChild),(newChild.ownerDocument = this),newChild;
 	},
 	removeChild :  function(oldChild){
@@ -1610,28 +1965,58 @@ Document.prototype = {
 		})
 		return rtv;
 	},
-	
-	getElementsByClassName: function(className) {
-		var pattern = new RegExp("(^|\\s)" + className + "(\\s|$)");
+
+	/**
+	 * The `getElementsByClassName` method of `Document` interface returns an array-like object
+	 * of all child elements which have **all** of the given class name(s).
+	 *
+	 * Returns an empty list if `classeNames` is an empty string or only contains HTML white space characters.
+	 *
+	 *
+	 * Warning: This is a live LiveNodeList.
+	 * Changes in the DOM will reflect in the array as the changes occur.
+	 * If an element selected by this array no longer qualifies for the selector,
+	 * it will automatically be removed. Be aware of this for iteration purposes.
+	 *
+	 * @param {string} classNames is a string representing the class name(s) to match; multiple class names are separated by (ASCII-)whitespace
+	 *
+	 * @see https://developer.mozilla.org/en-US/docs/Web/API/Document/getElementsByClassName
+	 * @see https://dom.spec.whatwg.org/#concept-getelementsbyclassname
+	 */
+	getElementsByClassName: function(classNames) {
+		var classNamesSet = toOrderedSet(classNames)
 		return new LiveNodeList(this, function(base) {
 			var ls = [];
-			_visitNode(base.documentElement, function(node) {
-				if(node !== base && node.nodeType == ELEMENT_NODE) {
-					if(pattern.test(node.getAttribute('class'))) {
-						ls.push(node);
+			if (classNamesSet.length > 0) {
+				_visitNode(base.documentElement, function(node) {
+					if(node !== base && node.nodeType === ELEMENT_NODE) {
+						var nodeClassNames = node.getAttribute('class')
+						// can be null if the attribute does not exist
+						if (nodeClassNames) {
+							// before splitting and iterating just compare them for the most common case
+							var matches = classNames === nodeClassNames;
+							if (!matches) {
+								var nodeClassNamesSet = toOrderedSet(nodeClassNames)
+								matches = classNamesSet.every(arrayIncludes(nodeClassNamesSet))
+							}
+							if(matches) {
+								ls.push(node);
+							}
+						}
 					}
-				}
-			});
+				});
+			}
 			return ls;
 		});
 	},
-	
+
 	//document factory method:
 	createElement :	function(tagName){
 		var node = new Element();
 		node.ownerDocument = this;
 		node.nodeName = tagName;
 		node.tagName = tagName;
+		node.localName = tagName;
 		node.childNodes = new NodeList();
 		var attrs	= node.attributes = new NamedNodeMap();
 		attrs._ownerElement = node;
@@ -1949,36 +2334,56 @@ function nodeSerializeToString(isHtml,nodeFilter){
 	//console.log('###',this.nodeType,uri,prefix,buf.join(''))
 	return buf.join('');
 }
-function needNamespaceDefine(node,isHTML, visibleNamespaces) {
-	var prefix = node.prefix||'';
+
+function needNamespaceDefine(node, isHTML, visibleNamespaces) {
+	var prefix = node.prefix || '';
 	var uri = node.namespaceURI;
-	if (!prefix && !uri){
+	// According to [Namespaces in XML 1.0](https://www.w3.org/TR/REC-xml-names/#ns-using) ,
+	// and more specifically https://www.w3.org/TR/REC-xml-names/#nsc-NoPrefixUndecl :
+	// > In a namespace declaration for a prefix [...], the attribute value MUST NOT be empty.
+	// in a similar manner [Namespaces in XML 1.1](https://www.w3.org/TR/xml-names11/#ns-using)
+	// and more specifically https://www.w3.org/TR/xml-names11/#nsc-NSDeclared :
+	// > [...] Furthermore, the attribute value [...] must not be an empty string.
+	// so serializing empty namespace value like xmlns:ds="" would produce an invalid XML document.
+	if (!uri) {
 		return false;
 	}
-	if (prefix === "xml" && uri === "http://www.w3.org/XML/1998/namespace" 
-		|| uri == 'http://www.w3.org/2000/xmlns/'){
+	if (prefix === "xml" && uri === NAMESPACE.XML || uri === NAMESPACE.XMLNS) {
 		return false;
 	}
 	
 	var i = visibleNamespaces.length 
-	//console.log('@@@@',node.tagName,prefix,uri,visibleNamespaces)
 	while (i--) {
 		var ns = visibleNamespaces[i];
 		// get namespace prefix
-		//console.log(node.nodeType,node.tagName,ns.prefix,prefix)
-		if (ns.prefix == prefix){
-			return ns.namespace != uri;
+		if (ns.prefix === prefix) {
+			return ns.namespace !== uri;
 		}
 	}
-	//console.log(isHTML,uri,prefix=='')
-	//if(isHTML && prefix ==null && uri == 'http://www.w3.org/1999/xhtml'){
-	//	return false;
-	//}
-	//node.flag = '11111'
-	//console.error(3,true,node.flag,node.prefix,node.namespaceURI)
 	return true;
 }
+/**
+ * Well-formed constraint: No < in Attribute Values
+ * > The replacement text of any entity referred to directly or indirectly
+ * > in an attribute value must not contain a <.
+ * @see https://www.w3.org/TR/xml11/#CleanAttrVals
+ * @see https://www.w3.org/TR/xml11/#NT-AttValue
+ *
+ * Literal whitespace other than space that appear in attribute values
+ * are serialized as their entity references, so they will be preserved.
+ * (In contrast to whitespace literals in the input which are normalized to spaces)
+ * @see https://www.w3.org/TR/xml11/#AVNormalize
+ * @see https://w3c.github.io/DOM-Parsing/#serializing-an-element-s-attributes
+ */
+function addSerializedAttribute(buf, qualifiedName, value) {
+	buf.push(' ', qualifiedName, '="', value.replace(/[<>&"\t\n\r]/g, _xmlEncoder), '"')
+}
+
 function serializeToString(node,buf,isHTML,nodeFilter,visibleNamespaces){
+	if (!visibleNamespaces) {
+		visibleNamespaces = [];
+	}
+
 	if(nodeFilter){
 		node = nodeFilter(node);
 		if(node){
@@ -1991,20 +2396,51 @@ function serializeToString(node,buf,isHTML,nodeFilter,visibleNamespaces){
 		}
 		//buf.sort.apply(attrs, attributeSorter);
 	}
+
 	switch(node.nodeType){
 	case ELEMENT_NODE:
-		if (!visibleNamespaces) visibleNamespaces = [];
-		var startVisibleNamespaces = visibleNamespaces.length;
 		var attrs = node.attributes;
 		var len = attrs.length;
 		var child = node.firstChild;
 		var nodeName = node.tagName;
 		
-		isHTML =  (htmlns === node.namespaceURI) ||isHTML 
-		buf.push('<',nodeName);
-		
-		
-		
+		isHTML = NAMESPACE.isHTML(node.namespaceURI) || isHTML
+
+		var prefixedNodeName = nodeName
+		if (!isHTML && !node.prefix && node.namespaceURI) {
+			var defaultNS
+			// lookup current default ns from `xmlns` attribute
+			for (var ai = 0; ai < attrs.length; ai++) {
+				if (attrs.item(ai).name === 'xmlns') {
+					defaultNS = attrs.item(ai).value
+					break
+				}
+			}
+			if (!defaultNS) {
+				// lookup current default ns in visibleNamespaces
+				for (var nsi = visibleNamespaces.length - 1; nsi >= 0; nsi--) {
+					var namespace = visibleNamespaces[nsi]
+					if (namespace.prefix === '' && namespace.namespace === node.namespaceURI) {
+						defaultNS = namespace.namespace
+						break
+					}
+				}
+			}
+			if (defaultNS !== node.namespaceURI) {
+				for (var nsi = visibleNamespaces.length - 1; nsi >= 0; nsi--) {
+					var namespace = visibleNamespaces[nsi]
+					if (namespace.namespace === node.namespaceURI) {
+						if (namespace.prefix) {
+							prefixedNodeName = namespace.prefix + ':' + nodeName
+						}
+						break
+					}
+				}
+			}
+		}
+
+		buf.push('<', prefixedNodeName);
+
 		for(var i=0;i<len;i++){
 			// add namespaces for attributes
 			var attr = attrs.item(i);
@@ -2014,28 +2450,24 @@ function serializeToString(node,buf,isHTML,nodeFilter,visibleNamespaces){
 				visibleNamespaces.push({ prefix: '', namespace: attr.value });
 			}
 		}
+
 		for(var i=0;i<len;i++){
 			var attr = attrs.item(i);
 			if (needNamespaceDefine(attr,isHTML, visibleNamespaces)) {
 				var prefix = attr.prefix||'';
 				var uri = attr.namespaceURI;
-				var ns = prefix ? ' xmlns:' + prefix : " xmlns";
-				buf.push(ns, '="' , uri , '"');
+				addSerializedAttribute(buf, prefix ? 'xmlns:' + prefix : "xmlns", uri);
 				visibleNamespaces.push({ prefix: prefix, namespace:uri });
 			}
 			serializeToString(attr,buf,isHTML,nodeFilter,visibleNamespaces);
 		}
+
 		// add namespace for current node		
-		if (needNamespaceDefine(node,isHTML, visibleNamespaces)) {
+		if (nodeName === prefixedNodeName && needNamespaceDefine(node, isHTML, visibleNamespaces)) {
 			var prefix = node.prefix||'';
 			var uri = node.namespaceURI;
-			if (uri) {
-				// Avoid empty namespace value like xmlns:ds=""
-				// Empty namespace URL will we produce an invalid XML document
-				var ns = prefix ? ' xmlns:' + prefix : " xmlns";
-				buf.push(ns, '="' , uri , '"');
-				visibleNamespaces.push({ prefix: prefix, namespace:uri });
-			}
+			addSerializedAttribute(buf, prefix ? 'xmlns:' + prefix : "xmlns", uri);
+			visibleNamespaces.push({ prefix: prefix, namespace:uri });
 		}
 		
 		if(child || isHTML && !/^(?:meta|link|img|br|hr|input)$/i.test(nodeName)){
@@ -2046,18 +2478,18 @@ function serializeToString(node,buf,isHTML,nodeFilter,visibleNamespaces){
 					if(child.data){
 						buf.push(child.data);
 					}else{
-						serializeToString(child,buf,isHTML,nodeFilter,visibleNamespaces);
+						serializeToString(child, buf, isHTML, nodeFilter, visibleNamespaces.slice());
 					}
 					child = child.nextSibling;
 				}
 			}else
 			{
 				while(child){
-					serializeToString(child,buf,isHTML,nodeFilter,visibleNamespaces);
+					serializeToString(child, buf, isHTML, nodeFilter, visibleNamespaces.slice());
 					child = child.nextSibling;
 				}
 			}
-			buf.push('</',nodeName,'>');
+			buf.push('</',prefixedNodeName,'>');
 		}else{
 			buf.push('/>');
 		}
@@ -2068,18 +2500,12 @@ function serializeToString(node,buf,isHTML,nodeFilter,visibleNamespaces){
 	case DOCUMENT_FRAGMENT_NODE:
 		var child = node.firstChild;
 		while(child){
-			serializeToString(child,buf,isHTML,nodeFilter,visibleNamespaces);
+			serializeToString(child, buf, isHTML, nodeFilter, visibleNamespaces.slice());
 			child = child.nextSibling;
 		}
 		return;
 	case ATTRIBUTE_NODE:
-		/**
-		 * Well-formedness constraint: No < in Attribute Values
-		 * The replacement text of any entity referred to directly or indirectly in an attribute value must not contain a <.
-		 * @see https://www.w3.org/TR/xml/#CleanAttrVals
-		 * @see https://www.w3.org/TR/xml/#NT-AttValue
-		 */
-		return buf.push(' ', node.name, '="', node.value.replace(/[<&"]/g,_xmlEncoder), '"');
+		return addSerializedAttribute(buf, node.name, node.value);
 	case TEXT_NODE:
 		/**
 		 * The ampersand character (&) and the left angle bracket (<) must not appear in their literal form,
@@ -2095,10 +2521,10 @@ function serializeToString(node,buf,isHTML,nodeFilter,visibleNamespaces){
 		 * and does not include the CDATA-section-close delimiter, `]]>`.
 		 *
 		 * @see https://www.w3.org/TR/xml/#NT-CharData
+		 * @see https://w3c.github.io/DOM-Parsing/#xml-serializing-a-text-node
 		 */
 		return buf.push(node.data
-			.replace(/[<&]/g,_xmlEncoder)
-			.replace(/]]>/g, ']]&gt;')
+			.replace(/[<&>]/g,_xmlEncoder)
 		);
 	case CDATA_SECTION_NODE:
 		return buf.push( '<![CDATA[',node.data,']]>');
@@ -2231,10 +2657,12 @@ try{
 				return this.$$length;
 			}
 		});
+
 		Object.defineProperty(Node.prototype,'textContent',{
 			get:function(){
 				return getTextContent(this);
 			},
+
 			set:function(data){
 				switch(this.nodeType){
 				case ELEMENT_NODE:
@@ -2246,8 +2674,8 @@ try{
 						this.appendChild(this.ownerDocument.createTextNode(data));
 					}
 					break;
+
 				default:
-					//TODO:
 					this.data = data;
 					this.value = data;
 					this.nodeValue = data;
@@ -2272,6 +2700,7 @@ try{
 				return node.nodeValue;
 			}
 		}
+
 		__set__ = function(object,key,value){
 			//console.log(value)
 			object['$$'+key] = value
@@ -2281,15 +2710,18 @@ try{
 }
 
 //if(typeof require == 'function'){
-	exports.Node = Node;
+	exports.DocumentType = DocumentType;
 	exports.DOMException = DOMException;
 	exports.DOMImplementation = DOMImplementation;
+	exports.Element = Element;
+	exports.Node = Node;
+	exports.NodeList = NodeList;
 	exports.XMLSerializer = XMLSerializer;
 //}
 
 
 /***/ }),
-/* 3 */
+/* 4 */
 /***/ (function(module, exports) {
 
 var initEvent = function (cos) {
@@ -2328,7 +2760,7 @@ module.exports.init = initEvent;
 module.exports.EventProxy = EventProxy;
 
 /***/ }),
-/* 4 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var util = __webpack_require__(0);
@@ -2434,24 +2866,24 @@ var mod = {
 module.exports = mod;
 
 /***/ }),
-/* 5 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var COS = __webpack_require__(6);
+var COS = __webpack_require__(7);
 module.exports = COS;
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 var util = __webpack_require__(0);
-var event = __webpack_require__(3);
-var task = __webpack_require__(16);
-var base = __webpack_require__(17);
-var advance = __webpack_require__(19);
+var event = __webpack_require__(4);
+var task = __webpack_require__(18);
+var base = __webpack_require__(19);
+var advance = __webpack_require__(21);
 
 var defaultOptions = {
     AppId: '', // AppId 已废弃，请拼接到 Bucket 后传入，例如：test-1250000000
@@ -2481,7 +2913,8 @@ var defaultOptions = {
     UploadQueueSize: 10000,
     UploadAddMetaMd5: false,
     UploadIdCacheLimit: 50,
-    UseAccelerate: false
+    UseAccelerate: false,
+    ForceSignHost: true // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
 };
 
 // 对外暴露的类
@@ -2524,12 +2957,12 @@ COS.util = {
     json2xml: util.json2xml
 };
 COS.getAuthorization = util.getAuth;
-COS.version = '1.3.6';
+COS.version = '1.3.7';
 
 module.exports = COS;
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(process, global) {var __WEBPACK_AMD_DEFINE_RESULT__;/* https://github.com/emn178/js-md5 */
@@ -2550,7 +2983,7 @@ module.exports = COS;
         root = self;
     }
     var COMMON_JS = !root.JS_MD5_NO_COMMON_JS && typeof module === 'object' && module.exports;
-    var AMD = "function" === 'function' && __webpack_require__(9);
+    var AMD = "function" === 'function' && __webpack_require__(10);
     var ARRAY_BUFFER = !root.JS_MD5_NO_ARRAY_BUFFER && typeof ArrayBuffer !== 'undefined';
     var HEX_CHARS = '0123456789abcdef'.split('');
     var EXTRA = [128, 32768, 8388608, -2147483648];
@@ -3168,10 +3601,10 @@ module.exports = COS;
         }
     }
 })();
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1), __webpack_require__(8)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2), __webpack_require__(9)))
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports) {
 
 var g;
@@ -3198,7 +3631,7 @@ module.exports = g;
 
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports) {
 
 /* WEBPACK VAR INJECTION */(function(__webpack_amd_options__) {/* globals __webpack_amd_options__ */
@@ -3207,7 +3640,7 @@ module.exports = __webpack_amd_options__;
 /* WEBPACK VAR INJECTION */}.call(exports, {}))
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /*
@@ -3451,7 +3884,7 @@ if (true) {
 }
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* Copyright 2015 William Summers, MetaTribal LLC
@@ -3473,7 +3906,7 @@ if (true) {
  * @author William Summers
  * https://github.com/metatribal/xmlToJSON
  */
-var DOMParser = __webpack_require__(12).DOMParser;
+var DOMParser = __webpack_require__(13).DOMParser;
 
 var xmlToJSON = function () {
 
@@ -3621,9 +4054,89 @@ var xml2json = function (xmlString) {
 module.exports = xml2json;
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
+var dom = __webpack_require__(3)
+exports.DOMImplementation = dom.DOMImplementation
+exports.XMLSerializer = dom.XMLSerializer
+exports.DOMParser = __webpack_require__(14).DOMParser
+
+
+/***/ }),
+/* 14 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var conventions = __webpack_require__(1);
+var dom = __webpack_require__(3)
+var entities = __webpack_require__(15);
+var sax = __webpack_require__(16);
+
+var DOMImplementation = dom.DOMImplementation;
+
+var NAMESPACE = conventions.NAMESPACE;
+
+var ParseError = sax.ParseError;
+var XMLReader = sax.XMLReader;
+
+/**
+ * Normalizes line ending according to https://www.w3.org/TR/xml11/#sec-line-ends:
+ *
+ * > XML parsed entities are often stored in computer files which,
+ * > for editing convenience, are organized into lines.
+ * > These lines are typically separated by some combination
+ * > of the characters CARRIAGE RETURN (#xD) and LINE FEED (#xA).
+ * >
+ * > To simplify the tasks of applications, the XML processor must behave
+ * > as if it normalized all line breaks in external parsed entities (including the document entity)
+ * > on input, before parsing, by translating all of the following to a single #xA character:
+ * >
+ * > 1. the two-character sequence #xD #xA
+ * > 2. the two-character sequence #xD #x85
+ * > 3. the single character #x85
+ * > 4. the single character #x2028
+ * > 5. any #xD character that is not immediately followed by #xA or #x85.
+ *
+ * @param {string} input
+ * @returns {string}
+ */
+function normalizeLineEndings(input) {
+	return input
+		.replace(/\r[\n\u0085]/g, '\n')
+		.replace(/[\r\u0085\u2028]/g, '\n')
+}
+
+/**
+ * @typedef Locator
+ * @property {number} [columnNumber]
+ * @property {number} [lineNumber]
+ */
+
+/**
+ * @typedef DOMParserOptions
+ * @property {DOMHandler} [domBuilder]
+ * @property {Function} [errorHandler]
+ * @property {(string) => string} [normalizeLineEndings] used to replace line endings before parsing
+ * 						defaults to `normalizeLineEndings`
+ * @property {Locator} [locator]
+ * @property {Record<string, string>} [xmlns]
+ *
+ * @see normalizeLineEndings
+ */
+
+/**
+ * The DOMParser interface provides the ability to parse XML or HTML source code
+ * from a string into a DOM `Document`.
+ *
+ * _xmldom is different from the spec in that it allows an `options` parameter,
+ * to override the default behavior._
+ *
+ * @param {DOMParserOptions} [options]
+ * @constructor
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMParser
+ * @see https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#dom-parsing-and-serialization
+ */
 function DOMParser(options){
 	this.options = options ||{locator:{}};
 }
@@ -3636,7 +4149,7 @@ DOMParser.prototype.parseFromString = function(source,mimeType){
 	var locator = options.locator;
 	var defaultNSMap = options.xmlns||{};
 	var isHTML = /\/x?html?$/.test(mimeType);//mimeType.toLowerCase().indexOf('html') > -1;
-  	var entityMap = isHTML?htmlEntity.entityMap:{'lt':'<','gt':'>','amp':'&','quot':'"','apos':"'"};
+  	var entityMap = isHTML ? entities.HTML_ENTITIES : entities.XML_ENTITIES;
 	if(locator){
 		domBuilder.setDocumentLocator(locator)
 	}
@@ -3644,13 +4157,18 @@ DOMParser.prototype.parseFromString = function(source,mimeType){
 	sax.errorHandler = buildErrorHandler(errorHandler,domBuilder,locator);
 	sax.domBuilder = options.domBuilder || domBuilder;
 	if(isHTML){
-		defaultNSMap['']= 'http://www.w3.org/1999/xhtml';
+		defaultNSMap[''] = NAMESPACE.HTML;
 	}
-	defaultNSMap.xml = defaultNSMap.xml || 'http://www.w3.org/XML/1998/namespace';
-	if(source && typeof source === 'string'){
-		sax.parse(source,defaultNSMap,entityMap);
-	}else{
-		sax.errorHandler.error("invalid doc source");
+	defaultNSMap.xml = defaultNSMap.xml || NAMESPACE.XML;
+	var normalize = options.normalizeLineEndings || normalizeLineEndings;
+	if (source && typeof source === 'string') {
+		sax.parse(
+			normalize(source),
+			defaultNSMap,
+			entityMap
+		)
+	} else {
+		sax.errorHandler.error('invalid doc source')
 	}
 	return domBuilder.doc;
 }
@@ -3791,6 +4309,7 @@ DOMHandler.prototype = {
 	        var dt = impl.createDocumentType(name, publicId, systemId);
 	        this.locator && position(this.locator,dt)
 	        appendElement(this, dt);
+					this.doc.doctype = dt;
 	    }
 	},
 	/**
@@ -3867,23 +4386,40 @@ function appendElement (hander,node) {
     }
 }//appendChild and setAttributeNS are preformance key
 
-//if(typeof require == 'function'){
-var htmlEntity = __webpack_require__(13);
-var sax = __webpack_require__(14);
-var XMLReader = sax.XMLReader;
-var ParseError = sax.ParseError;
-var DOMImplementation = exports.DOMImplementation = __webpack_require__(2).DOMImplementation;
-exports.XMLSerializer = __webpack_require__(2).XMLSerializer ;
-exports.DOMParser = DOMParser;
 exports.__DOMHandler = DOMHandler;
-//}
+exports.normalizeLineEndings = normalizeLineEndings;
+exports.DOMParser = DOMParser;
 
 
 /***/ }),
-/* 13 */
-/***/ (function(module, exports) {
+/* 15 */
+/***/ (function(module, exports, __webpack_require__) {
 
-exports.entityMap = {
+var freeze = __webpack_require__(1).freeze;
+
+/**
+ * The entities that are predefined in every XML document.
+ *
+ * @see https://www.w3.org/TR/2006/REC-xml11-20060816/#sec-predefined-ent W3C XML 1.1
+ * @see https://www.w3.org/TR/2008/REC-xml-20081126/#sec-predefined-ent W3C XML 1.0
+ * @see https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references#Predefined_entities_in_XML Wikipedia
+ */
+exports.XML_ENTITIES = freeze({amp:'&', apos:"'", gt:'>', lt:'<', quot:'"'})
+
+/**
+ * A map of currently 241 entities that are detected in an HTML document.
+ * They contain all entries from `XML_ENTITIES`.
+ *
+ * @see XML_ENTITIES
+ * @see DOMParser.parseFromString
+ * @see DOMImplementation.prototype.createHTMLDocument
+ * @see https://html.spec.whatwg.org/#named-character-references WHATWG HTML(5) Spec
+ * @see https://www.w3.org/TR/xml-entity-names/ W3C XML Entity Names
+ * @see https://www.w3.org/TR/html4/sgml/entities.html W3C HTML4/SGML
+ * @see https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references#Character_entity_references_in_HTML Wikipedia (HTML)
+ * @see https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references#Entities_representing_special_characters_in_XHTML Wikpedia (XHTML)
+ */
+exports.HTML_ENTITIES = freeze({
        lt: '<',
        gt: '>',
        amp: '&',
@@ -4125,12 +4661,20 @@ exports.entityMap = {
        clubs: "♣",
        hearts: "♥",
        diams: "♦"
-};
+});
+
+/**
+ * @deprecated use `HTML_ENTITIES` instead
+ * @see HTML_ENTITIES
+ */
+exports.entityMap = exports.HTML_ENTITIES
 
 
 /***/ }),
-/* 14 */
-/***/ (function(module, exports) {
+/* 16 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var NAMESPACE = __webpack_require__(1).NAMESPACE;
 
 //[4]   	NameStartChar	   ::=   	":" | [A-Z] | "_" | [a-z] | [#xC0-#xD6] | [#xD8-#xF6] | [#xF8-#x2FF] | [#x370-#x37D] | [#x37F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
 //[4a]   	NameChar	   ::=   	NameStartChar | "-" | "." | [0-9] | #xB7 | [#x0300-#x036F] | [#x203F-#x2040]
@@ -4144,7 +4688,7 @@ var tagNamePattern = new RegExp('^'+nameStartChar.source+nameChar.source+'*(?:\:
 //S_TAG,	S_ATTR,	S_EQ,	S_ATTR_NOQUOT_VALUE
 //S_ATTR_SPACE,	S_ATTR_END,	S_TAG_SPACE, S_TAG_CLOSE
 var S_TAG = 0;//tag name offerring
-var S_ATTR = 1;//attr name offerring 
+var S_ATTR = 1;//attr name offerring
 var S_ATTR_SPACE=2;//attr name end and space offer
 var S_EQ = 3;//=space?
 var S_ATTR_NOQUOT_VALUE = 4;//attr value(no quot value only)
@@ -4168,7 +4712,7 @@ ParseError.prototype = new Error();
 ParseError.prototype.name = ParseError.name
 
 function XMLReader(){
-	
+
 }
 
 XMLReader.prototype = {
@@ -4197,8 +4741,8 @@ function parse(source,defaultNSMapCopy,entityMap,domBuilder,errorHandler){
 	}
 	function entityReplacer(a){
 		var k = a.slice(1,-1);
-		if(k in entityMap){
-			return entityMap[k]; 
+		if (Object.hasOwnProperty.call(entityMap, k)) {
+			return entityMap[k];
 		}else if(k.charAt(0) === '#'){
 			return fixedFromCharCode(parseInt(k.substr(1).replace('x','0x')))
 		}else{
@@ -4227,7 +4771,7 @@ function parse(source,defaultNSMapCopy,entityMap,domBuilder,errorHandler){
 	var lineEnd = 0;
 	var linePattern = /.*(?:\r\n?|\n)|.*$/g
 	var locator = domBuilder.locator;
-	
+
 	var parseStack = [{currentNSMap:defaultNSMapCopy}]
 	var closeMap = {};
 	var start = 0;
@@ -4249,10 +4793,10 @@ function parse(source,defaultNSMapCopy,entityMap,domBuilder,errorHandler){
 			switch(source.charAt(tagStart+1)){
 			case '/':
 				var end = source.indexOf('>',tagStart+3);
-				var tagName = source.substring(tagStart+2,end);
+				var tagName = source.substring(tagStart + 2, end).replace(/[ \t\n\r]+$/g, '');
 				var config = parseStack.pop();
 				if(end<0){
-					
+
 	        		tagName = source.substring(tagStart+2).replace(/[\s<].*/,'');
 	        		errorHandler.error("end tag name: "+tagName+' is not complete:'+config.tagName);
 	        		end = tagStart+1+tagName.length;
@@ -4277,7 +4821,7 @@ function parse(source,defaultNSMapCopy,entityMap,domBuilder,errorHandler){
 		        }else{
 		        	parseStack.push(config)
 		        }
-				
+
 				end++;
 				break;
 				// end elment
@@ -4296,8 +4840,8 @@ function parse(source,defaultNSMapCopy,entityMap,domBuilder,errorHandler){
 				//elStartEnd
 				var end = parseElementStartPart(source,tagStart,el,currentNSMap,entityReplacer,errorHandler);
 				var len = el.length;
-				
-				
+
+
 				if(!el.closed && fixSelfClosed(source,end,el.tagName,closeMap)){
 					el.closed = true;
 					if(!entityMap.nbsp){
@@ -4322,12 +4866,10 @@ function parse(source,defaultNSMapCopy,entityMap,domBuilder,errorHandler){
 						parseStack.push(el)
 					}
 				}
-				
-				
-				
-				if(el.uri === 'http://www.w3.org/1999/xhtml' && !el.closed){
+
+				if (NAMESPACE.isHTML(el.uri) && !el.closed) {
 					end = parseHtmlSpecialContent(source,end,el.tagName,entityReplacer,domBuilder)
-				}else{
+				} else {
 					end++;
 				}
 			}
@@ -4364,8 +4906,18 @@ function parseElementStartPart(source,start,el,currentNSMap,entityReplacer,error
 	 * @param {number} startIndex
 	 */
 	function addAttribute(qname, value, startIndex) {
-		if (qname in el.attributeNames) errorHandler.fatalError('Attribute ' + qname + ' redefined')
-		el.addValue(qname, value, startIndex)
+		if (el.attributeNames.hasOwnProperty(qname)) {
+			errorHandler.fatalError('Attribute ' + qname + ' redefined')
+		}
+		el.addValue(
+			qname,
+			// @see https://www.w3.org/TR/xml/#AVNormalize
+			// since the xmldom sax parser does not "interpret" DTD the following is not implemented:
+			// - recursive replacement of (DTD) entity references
+			// - trimming and collapsing multiple spaces into a single one for attributes that are not of type CDATA
+			value.replace(/[\t\n\r]/g, ' ').replace(/&#?\w+;/g, entityReplacer),
+			startIndex
+		)
 	}
 	var attrName;
 	var value;
@@ -4396,7 +4948,7 @@ function parseElementStartPart(source,start,el,currentNSMap,entityReplacer,error
 				start = p+1;
 				p = source.indexOf(c,start)
 				if(p>0){
-					value = source.slice(start,p).replace(/&#?\w+;/g,entityReplacer);
+					value = source.slice(start, p);
 					addAttribute(attrName, value, start-1);
 					s = S_ATTR_END;
 				}else{
@@ -4404,10 +4956,8 @@ function parseElementStartPart(source,start,el,currentNSMap,entityReplacer,error
 					throw new Error('attribute value no end \''+c+'\' match');
 				}
 			}else if(s == S_ATTR_NOQUOT_VALUE){
-				value = source.slice(start,p).replace(/&#?\w+;/g,entityReplacer);
-				//console.log(attrName,value,start,p)
+				value = source.slice(start, p);
 				addAttribute(attrName, value, start);
-				//console.dir(el)
 				errorHandler.warning('attribute "'+attrName+'" missed start quot('+c+')!!');
 				start = p+1;
 				s = S_ATTR_END
@@ -4461,9 +5011,9 @@ function parseElementStartPart(source,start,el,currentNSMap,entityReplacer,error
 				}
 				if(s == S_ATTR_NOQUOT_VALUE){
 					errorHandler.warning('attribute "'+value+'" missed quot(")!');
-					addAttribute(attrName, value.replace(/&#?\w+;/g,entityReplacer), start)
+					addAttribute(attrName, value, start)
 				}else{
-					if(currentNSMap[''] !== 'http://www.w3.org/1999/xhtml' || !value.match(/^(?:disabled|checked|selected)$/i)){
+					if(!NAMESPACE.isHTML(currentNSMap['']) || !value.match(/^(?:disabled|checked|selected)$/i)){
 						errorHandler.warning('attribute "'+value+'" missed value!! "'+value+'" instead!!')
 					}
 					addAttribute(value, value, start)
@@ -4489,7 +5039,7 @@ function parseElementStartPart(source,start,el,currentNSMap,entityReplacer,error
 					s = S_ATTR_SPACE;
 					break;
 				case S_ATTR_NOQUOT_VALUE:
-					var value = source.slice(start,p).replace(/&#?\w+;/g,entityReplacer);
+					var value = source.slice(start, p);
 					errorHandler.warning('attribute "'+value+'" missed quot(")!!');
 					addAttribute(attrName, value, start)
 				case S_ATTR_END:
@@ -4511,7 +5061,7 @@ function parseElementStartPart(source,start,el,currentNSMap,entityReplacer,error
 				//case S_ATTR_NOQUOT_VALUE:void();break;
 				case S_ATTR_SPACE:
 					var tagName =  el.tagName;
-					if(currentNSMap[''] !== 'http://www.w3.org/1999/xhtml' || !attrName.match(/^(?:disabled|checked|selected)$/i)){
+					if (!NAMESPACE.isHTML(currentNSMap['']) || !attrName.match(/^(?:disabled|checked|selected)$/i)) {
 						errorHandler.warning('attribute "'+attrName+'" missed value!! "'+attrName+'" instead2!!')
 					}
 					addAttribute(attrName, attrName, start);
@@ -4561,7 +5111,7 @@ function appendElement(el,domBuilder,currentNSMap){
 		}
 		//can not set prefix,because prefix !== ''
 		a.localName = localName ;
-		//prefix == null for no ns prefix attribute 
+		//prefix == null for no ns prefix attribute
 		if(nsPrefix !== false){//hack!!
 			if(localNSMap == null){
 				localNSMap = {}
@@ -4570,8 +5120,8 @@ function appendElement(el,domBuilder,currentNSMap){
 				//console.log(currentNSMap,1)
 			}
 			currentNSMap[nsPrefix] = localNSMap[nsPrefix] = value;
-			a.uri = 'http://www.w3.org/2000/xmlns/'
-			domBuilder.startPrefixMapping(nsPrefix, value) 
+			a.uri = NAMESPACE.XMLNS
+			domBuilder.startPrefixMapping(nsPrefix, value)
 		}
 	}
 	var i = el.length;
@@ -4580,10 +5130,10 @@ function appendElement(el,domBuilder,currentNSMap){
 		var prefix = a.prefix;
 		if(prefix){//no prefix attribute has no namespace
 			if(prefix === 'xml'){
-				a.uri = 'http://www.w3.org/XML/1998/namespace';
+				a.uri = NAMESPACE.XML;
 			}if(prefix !== 'xmlns'){
 				a.uri = currentNSMap[prefix || '']
-				
+
 				//{console.log('###'+a.qName,domBuilder.locator.systemId+'',currentNSMap,a.uri)}
 			}
 		}
@@ -4605,7 +5155,7 @@ function appendElement(el,domBuilder,currentNSMap){
 		domBuilder.endElement(ns,localName,tagName);
 		if(localNSMap){
 			for(prefix in localNSMap){
-				domBuilder.endPrefixMapping(prefix) 
+				domBuilder.endPrefixMapping(prefix)
 			}
 		}
 	}else{
@@ -4632,7 +5182,7 @@ function parseHtmlSpecialContent(source,elStartEnd,tagName,entityReplacer,domBui
 				domBuilder.characters(text,0,text.length);
 				return elEndStart;
 			//}
-			
+
 		}
 	}
 	return elStartEnd+1;
@@ -4649,7 +5199,7 @@ function fixSelfClosed(source,elStartEnd,tagName,closeMap){
 		closeMap[tagName] =pos
 	}
 	return pos<elStartEnd;
-	//} 
+	//}
 }
 function _copy(source,target){
 	for(var n in source){target[n] = source[n]}
@@ -4677,11 +5227,11 @@ function parseDCC(source,start,domBuilder,errorHandler){//sure start with '<!'
 			var end = source.indexOf(']]>',start+9);
 			domBuilder.startCDATA();
 			domBuilder.characters(source,start+9,end-start-9);
-			domBuilder.endCDATA() 
+			domBuilder.endCDATA()
 			return end+3;
 		}
 		//<!DOCTYPE
-		//startDTD(java.lang.String name, java.lang.String publicId, java.lang.String systemId) 
+		//startDTD(java.lang.String name, java.lang.String publicId, java.lang.String systemId)
 		var matchs = split(source,start);
 		var len = matchs.length;
 		if(len>1 && /!doctype/i.test(matchs[0][0])){
@@ -4699,7 +5249,7 @@ function parseDCC(source,start,domBuilder,errorHandler){//sure start with '<!'
 			var lastMatch = matchs[len-1]
 			domBuilder.startDTD(name, pubid, sysid);
 			domBuilder.endDTD();
-			
+
 			return lastMatch.index+lastMatch[0].length
 		}
 	}
@@ -4748,7 +5298,7 @@ ElementAttributes.prototype = {
 	getValue:function(i){return this[i].value}
 //	,getIndex:function(uri, localName)){
 //		if(localName){
-//			
+//
 //		}else{
 //			var qName = uri
 //		}
@@ -4777,7 +5327,7 @@ exports.ParseError = ParseError;
 
 
 /***/ }),
-/* 15 */
+/* 17 */
 /***/ (function(module, exports) {
 
 //copyright Ryan Day 2010 <http://ryanday.org>, Joscha Feth 2013 <http://www.feth.com> [MIT Licensed]
@@ -4936,10 +5486,10 @@ module.exports = function (obj, options) {
 };
 
 /***/ }),
-/* 16 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var session = __webpack_require__(4);
+var session = __webpack_require__(5);
 var util = __webpack_require__(0);
 
 var originApiMap = {};
@@ -5192,10 +5742,10 @@ module.exports.transferToTaskMethod = transferToTaskMethod;
 module.exports.init = initTask;
 
 /***/ }),
-/* 17 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var REQUEST = __webpack_require__(18);
+var REQUEST = __webpack_require__(20);
 var util = __webpack_require__(0);
 
 // Bucket 相关
@@ -8165,12 +8715,13 @@ function getAuth(params) {
  */
 function getObjectUrl(params, callback) {
     var self = this;
+    var useAccelerate = params.UseAccelerate === undefined ? self.options.UseAccelerate : params.UseAccelerate;
     var url = getUrl({
         ForcePathStyle: self.options.ForcePathStyle,
         protocol: params.Protocol || self.options.Protocol,
         domain: params.Domain || self.options.Domain,
         bucket: params.Bucket,
-        region: params.Region,
+        region: useAccelerate ? 'accelerate' : params.Region,
         object: params.Key
     });
 
@@ -8190,7 +8741,7 @@ function getObjectUrl(params, callback) {
     }
 
     // 签名加上 Host，避免跨桶访问
-    var SignHost = getSignHost.call(this, { Bucket: params.Bucket, Region: params.Region, Url: url });
+    var SignHost = getSignHost.call(this, { Bucket: params.Bucket, Region: params.Region, UseAccelerate: params.UseAccelerate, Url: url });
     var AuthData = getAuthorizationAsync.call(this, {
         Action: (params.Method || '').toUpperCase() === 'PUT' ? 'name/cos:PutObject' : 'name/cos:GetObject',
         Bucket: params.Bucket || '',
@@ -8200,7 +8751,8 @@ function getObjectUrl(params, callback) {
         Expires: params.Expires,
         Headers: params.Headers,
         Query: params.Query,
-        SignHost: SignHost
+        SignHost: SignHost,
+        ForceSignHost: params.ForceSignHost === false ? false : self.options.ForceSignHost // getObjectUrl支持传参ForceSignHost
     }, function (err, AuthData) {
         if (!callback) return;
         if (err) {
@@ -8350,12 +8902,13 @@ function getUrl(params) {
 
 var getSignHost = function (opt) {
     if (!opt.Bucket || !opt.Region) return '';
+    var useAccelerate = opt.UseAccelerate === undefined ? this.options.UseAccelerate : opt.UseAccelerate;
     var url = opt.Url || getUrl({
         ForcePathStyle: this.options.ForcePathStyle,
         protocol: this.options.Protocol,
         domain: this.options.Domain,
         bucket: opt.Bucket,
-        region: this.options.UseAccelerate ? 'accelerate' : opt.Region
+        region: useAccelerate ? 'accelerate' : opt.Region
     });
     var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
     var standardHostReg = new RegExp('^([a-z\\d-]+-\\d+\\.)?(cos|cosv6|ci|pic)\\.([a-z\\d-]+)\\.myqcloud\\.com$');
@@ -8371,9 +8924,11 @@ function getAuthorizationAsync(params, callback) {
         (v === '' || ['content-type', 'cache-control', 'expires'].indexOf(k.toLowerCase()) > -1) && delete headers[k];
         if (k.toLowerCase() === 'host') headerHost = v;
     });
+    // ForceSignHost明确传入false才不加入host签名
+    var forceSignHost = params.ForceSignHost === false ? false : true;
 
     // Host 加入签名计算
-    if (!headerHost && params.SignHost) headers.Host = params.SignHost;
+    if (!headerHost && params.SignHost && forceSignHost) headers.Host = params.SignHost;
 
     // 获取凭证的回调，避免用户 callback 多次
     var cbDone = false;
@@ -8433,8 +8988,7 @@ function getAuthorizationAsync(params, callback) {
     })();
 
     var calcAuthByTmpKey = function () {
-        var KeyTime = '';
-        if (StsData.StartTime && params.Expires) KeyTime = StsData.StartTime + ';' + (StsData.StartTime + params.Expires * 1);else if (StsData.StartTime && StsData.ExpiredTime) KeyTime = StsData.StartTime + ';' + StsData.ExpiredTime;
+        var KeyTime = StsData.StartTime && StsData.ExpiredTime ? StsData.StartTime + ';' + StsData.ExpiredTime : '';
         var Authorization = util.getAuth({
             SecretId: StsData.TmpSecretId,
             SecretKey: StsData.TmpSecretKey,
@@ -8445,7 +8999,8 @@ function getAuthorizationAsync(params, callback) {
             Expires: params.Expires,
             UseRawKey: self.options.UseRawKey,
             SystemClockOffset: self.options.SystemClockOffset,
-            KeyTime: KeyTime
+            KeyTime: KeyTime,
+            ForceSignHost: forceSignHost
         });
         var AuthData = {
             Authorization: Authorization,
@@ -8502,7 +9057,8 @@ function getAuthorizationAsync(params, callback) {
             Query: params.Query,
             Headers: headers,
             Scope: Scope,
-            SystemClockOffset: self.options.SystemClockOffset
+            SystemClockOffset: self.options.SystemClockOffset,
+            ForceSignHost: forceSignHost
         }, function (AuthData) {
             if (typeof AuthData === 'string') AuthData = { Authorization: AuthData };
             var AuthError = checkAuthError(AuthData);
@@ -8545,7 +9101,8 @@ function getAuthorizationAsync(params, callback) {
                 Headers: headers,
                 Expires: params.Expires,
                 UseRawKey: self.options.UseRawKey,
-                SystemClockOffset: self.options.SystemClockOffset
+                SystemClockOffset: self.options.SystemClockOffset,
+                ForceSignHost: forceSignHost
             });
             var AuthData = {
                 Authorization: Authorization,
@@ -8618,7 +9175,8 @@ function submitRequest(params, callback) {
             SignHost: SignHost,
             Action: params.Action,
             ResourceKey: params.ResourceKey,
-            Scope: params.Scope
+            Scope: params.Scope,
+            ForceSignHost: self.options.ForceSignHost
         }, function (err, AuthData) {
             if (err) {
                 callback(err);
@@ -8924,7 +9482,7 @@ module.exports.init = function (COS, task) {
 };
 
 /***/ }),
-/* 18 */
+/* 20 */
 /***/ (function(module, exports) {
 
 var stringifyPrimitive = function (v) {
@@ -9061,12 +9619,12 @@ var request = function (opt, callback) {
 module.exports = request;
 
 /***/ }),
-/* 19 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var session = __webpack_require__(4);
-var Async = __webpack_require__(20);
-var EventProxy = __webpack_require__(3).EventProxy;
+var session = __webpack_require__(5);
+var Async = __webpack_require__(22);
+var EventProxy = __webpack_require__(4).EventProxy;
 var util = __webpack_require__(0);
 
 // 文件分块上传全过程，暴露的分块上传接口
@@ -10249,7 +10807,7 @@ module.exports.init = function (COS, task) {
 };
 
 /***/ }),
-/* 20 */
+/* 22 */
 /***/ (function(module, exports) {
 
 var eachLimit = function (arr, limit, iterator, callback) {

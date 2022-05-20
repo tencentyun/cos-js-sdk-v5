@@ -145,11 +145,11 @@ declare namespace COS {
     ProgressInterval?: number,
     /** 上传队列最长大小，超出的任务如果状态不是 waiting、checking、uploading 会被清理，默认10000 */
     UploadQueueSize?: number,
-    /** 上传队列最长大小，超出的任务如果状态不是 waiting、checking、uploading 会被清理，默认10000 */
+    /** 调用操作存储桶和对象的 API 时自定义请求域名。可以使用模板，如"{Bucket}.cos.{Region}.myqcloud.com"，即在调用 API 时会使用参数中传入的 Bucket 和 Region 进行替换。 */
     Domain?: string,
-    /** 强制使用后缀式模式发请求。后缀式模式中 Bucket 会放在域名后的 pathname 里，并且 Bucket 会加入签名 pathname 计算，默认 false */
+    /** getService方法可以使用的自定义域名 */
     ServiceDomain?: string,
-    /** 强制使用后缀式模式发请求。后缀式模式中 Bucket 会放在域名后的 pathname 里，并且 Bucket 会加入签名 pathname 计算，默认 false */
+    /** http协议，枚举值'http:','https:'冒号必须 */
     Protocol?: string,
     /** 开启兼容模式，默认 false 不开启，兼容模式下不校验 Region 是否格式有误，在用于私有化 COS 时使用 */
     CompatibilityMode?: boolean,
@@ -171,6 +171,8 @@ declare namespace COS {
     UploadIdCacheLimit?: number,
     /** 是否使用全球加速域名。开启该配置后仅以下接口支持操作：putObject、getObject、headObject、optionsObject、multipartInit、multipartListPart、multipartUpload、multipartAbort、multipartComplete、multipartList、sliceUploadFile、uploadFiles */
     UseAccelerate?: boolean,
+    /** 默认为true，将host加入签名计算，关闭后可能导致越权风险，建议保持为true */
+    ForceSignHost?: boolean,
     /** 获取签名的回调方法，如果没有 SecretId、SecretKey 时，必选 */
     getAuthorization?: (
       options: GetAuthorizationOptions,
@@ -1865,6 +1867,8 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     QueryString?: string,
     /** 签名几秒后失效，默认为900秒 */
     Expires?: number,
+    /** 是否使用全球加速域名,默认false */
+    UseAccelerate?: boolean,
   }
 
   /** getObjectUrl 接口返回值 */
@@ -1907,6 +1911,8 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     Query?: Query,
     /** 请求里的 Header 参数 */
     Headers?: Headers,
+    /** 默认为true，将host加入签名计算，关闭后可能导致越权风险，建议保持为true */
+    ForceSignHost?: boolean,
   }
 
 }
