@@ -3014,7 +3014,7 @@ function getObjectUrl(params, callback) {
         callback(null, {Url: syncUrl});
         return syncUrl;
     }
-    
+
     // 签名加上 Host，避免跨桶访问
     var SignHost = getSignHost.call(this, {Bucket: params.Bucket, Region: params.Region, Url: url});
     var AuthData = getAuthorizationAsync.call(this, {
@@ -3269,7 +3269,9 @@ function getAuthorizationAsync(params, callback) {
     })();
 
     var calcAuthByTmpKey = function () {
-        var KeyTime = StsData.StartTime && StsData.ExpiredTime ? StsData.StartTime + ';' + StsData.ExpiredTime : '';
+        var KeyTime = '';
+        if (StsData.StartTime && params.Expires) KeyTime = StsData.StartTime + ';' + (StsData.StartTime + params.Expires * 1);
+        else if (StsData.StartTime && StsData.ExpiredTime) KeyTime = StsData.StartTime + ';' + StsData.ExpiredTime;
         var Authorization = util.getAuth({
             SecretId: StsData.TmpSecretId,
             SecretKey: StsData.TmpSecretKey,

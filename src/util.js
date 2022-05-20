@@ -432,8 +432,8 @@ var hasMissingParams = function (apiName, params) {
     var Region = params.Region;
     var Key = params.Key;
     var Domain = this.options.Domain;
-    var checkBucket = !Domain || Domain.indexOf('{Bucket}') > -1;
-    var checkRegion = !Domain || Domain.indexOf('{Region}') > -1;
+    var checkBucket = !Domain || typeof Domain === 'string' && Domain.indexOf('{Bucket}') > -1;
+    var checkRegion = !Domain || typeof Domain === 'string' && Domain.indexOf('{Region}') > -1;
     if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList' || apiName === 'listObjectVersions') {
         if (checkBucket && !Bucket) return 'Bucket';
         if (checkRegion && !Region) return 'Region';
