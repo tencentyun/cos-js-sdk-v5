@@ -497,8 +497,8 @@ var hasMissingParams = function (apiName, params) {
     var Region = params.Region;
     var Key = params.Key;
     var Domain = this.options.Domain;
-    var checkBucket = !Domain || Domain.indexOf('{Bucket}') > -1;
-    var checkRegion = !Domain || Domain.indexOf('{Region}') > -1;
+    var checkBucket = !Domain || typeof Domain === 'string' && Domain.indexOf('{Bucket}') > -1;
+    var checkRegion = !Domain || typeof Domain === 'string' && Domain.indexOf('{Region}') > -1;
     if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList' || apiName === 'listObjectVersions') {
         if (checkBucket && !Bucket) return 'Bucket';
         if (checkRegion && !Region) return 'Region';
@@ -2957,7 +2957,7 @@ COS.util = {
     json2xml: util.json2xml
 };
 COS.getAuthorization = util.getAuth;
-COS.version = '1.3.7';
+COS.version = '1.3.8';
 
 module.exports = COS;
 
@@ -8988,7 +8988,8 @@ function getAuthorizationAsync(params, callback) {
     })();
 
     var calcAuthByTmpKey = function () {
-        var KeyTime = StsData.StartTime && StsData.ExpiredTime ? StsData.StartTime + ';' + StsData.ExpiredTime : '';
+        var KeyTime = '';
+        if (StsData.StartTime && params.Expires) KeyTime = StsData.StartTime + ';' + (StsData.StartTime + params.Expires * 1);else if (StsData.StartTime && StsData.ExpiredTime) KeyTime = StsData.StartTime + ';' + StsData.ExpiredTime;
         var Authorization = util.getAuth({
             SecretId: StsData.TmpSecretId,
             SecretKey: StsData.TmpSecretKey,
