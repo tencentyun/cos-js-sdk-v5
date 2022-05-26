@@ -50,10 +50,10 @@ var getAuthorization = function (options, callback) {
     // 格式一、（推荐）后端通过获取临时密钥给到前端，前端计算签名
     // 服务端 JS 和 PHP 例子：https://github.com/tencentyun/cos-js-sdk-v5/blob/master/server/
     // 服务端其他语言参考 COS STS SDK ：https://github.com/tencentyun/qcloud-cos-sts-sdk
-    // var url = '../server/sts.php'; // 如果起的是 php server 用这个
     var url = '/sts'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onload = function (e) {
         try {
             var data = JSON.parse(e.target.responseText);
@@ -61,23 +61,18 @@ var getAuthorization = function (options, callback) {
         } catch (e) {
         }
         if (!data || !credentials) {
-          return logger.error('credentials invalid:\n' + JSON.stringify(data, null, 2))
+            return logger.error('credentials invalid:\n' + JSON.stringify(data, null, 2))
         };
-        var authorization = COS.getAuthorization({
-            SecretId: credentials.tmpSecretId, // 可传固定密钥或者临时密钥
-            SecretKey: credentials.tmpSecretKey, // 可传固定密钥或者临时密钥
-            Method: options.Method,
-            Pathname: options.Pathname,
-            Query: options.Query,
-            Headers: options.Headers,
-            Expires: 900,
-        });
         callback({
-            Authorization: authorization,
-            XCosSecurityToken: credentials.sessionToken,
+            TmpSecretId: credentials.tmpSecretId,
+            TmpSecretKey: credentials.tmpSecretKey,
+            SecurityToken: credentials.sessionToken,
+            StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+            ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000000
+            ScopeLimit: true, // 细粒度控制权限需要设为 true，会限制密钥只在相同请求时重复使用
         });
     };
-    xhr.send();
+    xhr.send(JSON.stringify(options.Scope));
 
 
     // // 格式二、（推荐）【细粒度控制权限】后端通过获取临时密钥给到前端，前端只有相同请求才重复使用临时密钥，后端可以通过 Scope 细粒度控制权限
