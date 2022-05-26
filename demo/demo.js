@@ -1797,7 +1797,7 @@ function postImagesAuditing() {
 
 // 查询图片审核任务结果
 function getImageAuditingResult() {
-  var jobId = 'si8263213daf3711eca0d1525400d88560'; // jobId可以通过图片批量审核返回
+  var jobId = 'si8263213daf3711eca0d1525400d88xxx'; // jobId可以通过图片批量审核返回
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
   var url = 'https://' + host + '/image/auditing/' + jobId;
   cos.request({
@@ -1847,7 +1847,7 @@ function postVideoAuditing() {
 
 // 查询视频审核任务结果
 function getVideoAuditingResult() {
-  var jobId = 'av14d9ca15af3a11eca0d6525400d88560'; // jobId可以通过提交视频审核任务返回
+  var jobId = 'av14d9ca15af3a11eca0d6525400d88xxx'; // jobId可以通过提交视频审核任务返回
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
   var url = 'https://' + host + '/video/auditing/' + jobId;
   cos.request({
@@ -1893,7 +1893,7 @@ function postAudioAuditing() {
 
 // 查询音频审核任务结果
 function getAudioAuditingResult() {
-  var jobId = 'sa0c28d41daff411ecb23352540078ca25'; // jobId可以通过提交音频审核任务返回
+  var jobId = 'sa0c28d41daff411ecb23352540078cxxx'; // jobId可以通过提交音频审核任务返回
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
   var url = 'https://' + host + '/audio/auditing/' + jobId;
   cos.request({
@@ -1940,7 +1940,7 @@ function postTextAuditing() {
 
 // 查询文本审核任务结果
 function getTextAuditingResult() {
-  var jobId = 'st8d88c664aff511ecb23352540078ca25'; // jobId可以通过提交文本审核任务返回（Input传入Object）
+  var jobId = 'st8d88c664aff511ecb23352540078cxxx'; // jobId可以通过提交文本审核任务返回（Input传入Object）
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
   var url = 'https://' + host + '/text/auditing/' + jobId;
   cos.request({
@@ -2032,7 +2032,7 @@ function postWebpageAuditing() {
 
 // 查询网页审核任务结果
 function getWebpageAuditingResult() {
-  var jobId = 'shce868019aff611ecb1155254009a49da'; // jobId可以通过提交网页审核任务返回
+  var jobId = 'shce868019aff611ecb1155254009a4xxx'; // jobId可以通过提交网页审核任务返回
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
   var url = 'https://' + host + '/webpage/auditing/' + jobId;
   cos.request({
