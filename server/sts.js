@@ -19,17 +19,17 @@ var config = {
     allowPrefix: '_ALLOW_DIR_/*',
     // 密钥的权限列表
     allowActions: [
-      // 所有 action 请看文档 https://cloud.tencent.com/document/product/436/31923
-      // 简单上传
-      'name/cos:PutObject',
-      'name/cos:PostObject',
-      // 分片上传
-      'name/cos:InitiateMultipartUpload',
-      'name/cos:ListMultipartUploads',
-      'name/cos:ListParts',
-      'name/cos:UploadPart',
-      'name/cos:CompleteMultipartUpload'
-  ],
+        // 所有 action 请看文档 https://cloud.tencent.com/document/product/436/31923
+        // 简单上传
+        'name/cos:PutObject',
+        'name/cos:PostObject',
+        // 分片上传
+        'name/cos:InitiateMultipartUpload',
+        'name/cos:ListMultipartUploads',
+        'name/cos:ListParts',
+        'name/cos:UploadPart',
+        'name/cos:CompleteMultipartUpload'
+    ],
 };
 
 // 创建临时密钥服务和用于调试的静态服务
@@ -39,7 +39,7 @@ var replaceBucketRegion = (filePath) => {
     return (req, res, next) => {
         var content = fs.readFileSync(filePath).toString()
             .replace(/(var config = {\r?\n *Bucket: ')test-1250000000(',\r?\n *Region: ')ap-guangzhou(',?\r?\n};?)/,
-            '$1' + config.bucket + '$2' + config.region +'$3');
+                '$1' + config.bucket + '$2' + config.region +'$3');
         content = content.replace("config.Uin = '10001';", "config.Uin = '" + process.env.Uin + "'");
         res.header('Content-Type', 'application/javascript');
         res.send(content);
@@ -63,9 +63,7 @@ app.all('/sts', function (req, res, next) {
     }
 
     // 获取临时密钥
-    var LongBucketName = config.bucket;
-    var ShortBucketName = LongBucketName.substr(0, LongBucketName.lastIndexOf('-'));
-    var AppId = LongBucketName.substr(LongBucketName.lastIndexOf('-') + 1);
+    var AppId = config.bucket.substr(config.bucket.lastIndexOf('-') + 1);
     // 数据万象DescribeMediaBuckets接口需要resource为*,参考 https://cloud.tencent.com/document/product/460/41741
     var policy = {
         'version': '2.0',
@@ -73,7 +71,7 @@ app.all('/sts', function (req, res, next) {
             'action': config.allowActions,
             'effect': 'allow',
             'resource': [
-                'qcs::cos:' + config.region + ':uid/' + AppId + ':prefix//' + AppId + '/' + ShortBucketName + '/' + config.allowPrefix,
+                'qcs::cos:' + config.region + ':uid/' + AppId + ':' + config.bucket + '/' + config.allowPrefix,
             ],
         }],
     };
