@@ -331,6 +331,7 @@ function putBucketCors() {
     cos.putBucketCors({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
+        ResponseVary: "true",
         CORSRules: [{
             "AllowedOrigin": ["*"],
             "AllowedMethod": ["GET", "POST", "PUT", "DELETE", "HEAD"],
