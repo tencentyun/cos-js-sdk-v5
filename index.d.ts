@@ -547,7 +547,7 @@ declare namespace COS {
     /** 存储桶跨域资源共享（CORS）访问控制规则 */
     CORSRules: CORSRule[],
     /** 是否允许同一个 url 有多份缓存，如果设置为 true 浏览器在 img 标签加载和 ajax 加载同一个对象 url 将会使用不同缓存 */
-    ResponseVary?: Boolean | String,
+    ResponseVary?: BooleanString,
   }
   /** putBucketCors 接口返回值 */
   interface PutBucketCorsResult extends GeneralResult {
@@ -563,7 +563,7 @@ declare namespace COS {
     /** 存储桶跨域资源共享（CORS）访问控制规则 */
     CORSRules: Record<string, any>,
     /** 是否允许同一个 url 有多份缓存，如果设置为 true 浏览器在 img 标签加载和 ajax 加载同一个对象 url 将会使用不同缓存 */
-    ResponseVary?: Boolean | String,
+    ResponseVary?: BooleanString,
   }
 
   // deleteBucketCors
@@ -1230,6 +1230,8 @@ declare namespace COS {
     onTaskStart?: (TaskInfo: COS.Task) => void,
     /** 上传的进度回调方法 */
     onProgress?: onProgress,
+    /** 续传校验的进度回调方法 */
+    onHashProgress?: onProgress,
   }
   /** putObject 接口返回值 */
   interface PutObjectResult extends GeneralResult {
@@ -1731,7 +1733,7 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     /** 上传的进度回调方法 */
     onProgress?: onProgress,
     /** 上传完成回调方法 */
-    onFileFinish?: (err: Error, data?: Record<string, any>) => void,
+    onFileFinish?: onFileFinish,
   }
   /** 要上传的单个文件参数 */
   interface UploadFileItemResult extends GeneralResult {
@@ -1750,7 +1752,7 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     /** 所有文件整体上传进度回调方法 */
     onProgress?: onProgress,
     /** 所有文件上传完成回调方法 */
-    onFileFinish?: (err: CosError, data?: Record<string, any>) => void,
+    onFileFinish?: onFileFinish,
   }
   /** uploadFiles 接口返回值 */
   interface UploadFilesResult extends GeneralResult {
@@ -1803,6 +1805,7 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     CopySliceSize?: number,
     /** 使用 sliceCopyFile 分块复制文件时，每片的大小字节数，默认值10485760（10MB） */
     CopyChunkSize?: number,
+    SliceSize?: number,
     /** 分片复制进度回调方法 */
     onProgress: onProgress
   }
@@ -1848,7 +1851,7 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     /** 请求里的 Url Query 参数 */
     Query?: Query,
     /** 请求里的 Body 参数 */
-    Body?: Body,
+    Body?: Body | string,
     /** 请求的 API 动作接口(可理解为不带 = 的 Query 参数)，如 acl、tagging、image_process 等 */
     Action?: Action,
     /** 请求url */
@@ -1857,6 +1860,7 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     RawBody?: boolean,
     /** 返回文件内容格式，如string、blob、arraybuffer */
     DataType?: string,
+    ContentType?: string,
   }
   /** Request 接口返回值 */
   interface RequestResult extends GeneralResult {
