@@ -709,15 +709,17 @@ var error = function (err, opt) {
     return err;
 }
 
+var isWebWorker = function () {
+    // 有限判断 worker 环境的 constructor name 其次用 worker 独有的 FileReaderSync 兜底 详细参考 https://developer.mozilla.org/zh-CN/docs/Web/API/Web_Workers_API/Using_web_workers
+    return typeof globalThis === 'object' && (globalThis.constructor.name === 'DedicatedWorkerGlobalScope' || globalThis.FileReaderSync);
+}
+
 var isNode = function () {
     // 得兜底 web worker 环境中 webpack 用了 process 插件之类的情况
     return typeof window !== 'object' && typeof process === 'object' && typeof require === 'function' && !isWebWorker();
 }
 
-var isWebWorker = function () {
-    // 有限判断 worker 环境的 constructor name 其次用 worker 独有的 FileReaderSync 兜底 详细参考 https://developer.mozilla.org/zh-CN/docs/Web/API/Web_Workers_API/Using_web_workers
-    return globalThis.constructor.name === 'DedicatedWorkerGlobalScope' || globalThis.FileReaderSync;
-}
+
 
 var isCIHost = function(url) {
     return /^https?:\/\/([^/]+\.)?ci\.[^/]+/.test(url);
