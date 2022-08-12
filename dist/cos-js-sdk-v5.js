@@ -13289,6 +13289,8 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
 
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
 var pkg = __webpack_require__(/*! ../package.json */ "./package.json");
 
 var BeaconAction = __webpack_require__(/*! ../lib/beacon.min */ "./lib/beacon.min.js");
@@ -13316,8 +13318,183 @@ var getBeacon = function getBeacon(delay) {
   }
 
   return beacon;
-}; // 分块上传原子方法
+};
 
+var utils = {
+  // 生成uid 每个链路对应唯一一条uid
+  getUid: function getUid() {
+    var S4 = function S4() {
+      return ((1 + Math.random()) * 0x10000 | 0).toString(16).substring(1);
+    };
+
+    return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
+  },
+  // 获取网络类型
+  getNetType: function getNetType() {
+    if ((typeof navigator === "undefined" ? "undefined" : _typeof(navigator)) === 'object') {
+      var connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      return (connection === null || connection === void 0 ? void 0 : connection.type) || (connection === null || connection === void 0 ? void 0 : connection.effectiveType) || 'unknown';
+    }
+
+    return 'unknown';
+  },
+  // 获取pc端操作系统类型
+  getOsType: function getOsType() {
+    var agent = navigator.userAgent.toLowerCase();
+    var isMac = /macintosh|mac os x/i.test(navigator.userAgent);
+
+    if (agent.indexOf("win32") >= 0 || agent.indexOf("wow32") >= 0) {
+      return 'win32';
+    }
+
+    if (agent.indexOf("win64") >= 0 || agent.indexOf("wow64") >= 0) {
+      return 'win64';
+    }
+
+    if (isMac) {
+      return 'mac';
+    }
+
+    return 'unknown os';
+  },
+  isMobile: function isMobile() {
+    var exp = /(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i;
+
+    if ((typeof navigator === "undefined" ? "undefined" : _typeof(navigator)) === 'object' && navigator.userAgent.match(exp)) {
+      return true; // 移动端
+    }
+
+    return false; // PC端
+  },
+  isAndroid: function isAndroid() {
+    var exp = /(Android|Adr|Linux)/i;
+
+    if ((typeof navigator === "undefined" ? "undefined" : _typeof(navigator)) === 'object' && navigator.userAgent.match(exp)) {
+      return true;
+    }
+
+    return false;
+  },
+  isIOS: function isIOS() {
+    var exp = /(iPhone|iPod|iPad|iOS)/i;
+
+    if ((typeof navigator === "undefined" ? "undefined" : _typeof(navigator)) === 'object' && navigator.userAgent.match(exp)) {
+      return true;
+    }
+
+    return false;
+  },
+  isOtherMobile: function isOtherMobile() {
+    return isMobile && !isAndroid && !isIOS;
+  },
+  // 获取浏览器类型
+  getDeviceName: function getDeviceName() {
+    if ((typeof navigator === "undefined" ? "undefined" : _typeof(navigator)) !== 'object') {
+      return 'unknown device';
+    }
+
+    var explorer = navigator.userAgent.toLowerCase(); // 腾讯会议内置浏览器
+
+    if (explorer.includes('app/tencent_wemeet')) {
+      return 'tencent_wemeet';
+    } // 遨游浏览器
+
+
+    if (explorer.indexOf('maxthon') >= 0) {
+      var match = explorer.match(/maxthon\/([\d.]+)/);
+      var ver = match && match[1] || '';
+      return "\u50B2\u6E38\u6D4F\u89C8\u5668 ".concat(ver).trim();
+    } // QQ浏览器
+
+
+    if (explorer.indexOf('qqbrowser') >= 0) {
+      var _match = explorer.match(/qqbrowser\/([\d.]+)/);
+
+      var _ver = _match && _match[1] || '';
+
+      return "QQ\u6D4F\u89C8\u5668 ".concat(_ver).trim();
+    } // 搜狗浏览器
+
+
+    if (explorer.indexOf('se 2.x') >= 0) {
+      return '搜狗浏览器';
+    } // 微信浏览器
+
+
+    if (explorer.indexOf('wxwork') >= 0) {
+      return '微信内置浏览器';
+    } // ie
+
+
+    if (explorer.indexOf('msie') >= 0) {
+      var _match2 = explorer.match(/msie ([\d.]+)/);
+
+      var _ver2 = _match2 && _match2[1] || '';
+
+      return "IE ".concat(_ver2).trim();
+    } // firefox
+
+
+    if (explorer.indexOf('firefox') >= 0) {
+      var _match3 = explorer.match(/firefox\/([\d.]+)/);
+
+      var _ver3 = _match3 && _match3[1] || '';
+
+      return "Firefox ".concat(_ver3).trim();
+    } // Chrome
+
+
+    if (explorer.indexOf('chrome') >= 0) {
+      var _match4 = explorer.match(/chrome\/([\d.]+)/);
+
+      var _ver4 = _match4 && _match4[1] || '';
+
+      return "Chrome ".concat(_ver4).trim();
+    } // Opera
+
+
+    if (explorer.indexOf('opera') >= 0) {
+      var _match5 = explorer.match(/opera.([\d.]+)/);
+
+      var _ver5 = _match5 && _match5[1] || '';
+
+      return "Opera ".concat(_ver5).trim();
+    } // Safari
+
+
+    if (explorer.indexOf('safari') >= 0) {
+      var _match6 = explorer.match(/version\/([\d.]+)/);
+
+      var _ver6 = _match6 && _match6[1] || '';
+
+      return "Safari ".concat(_ver6).trim();
+    }
+
+    if (explorer.indexOf('edge') >= 0) {
+      var _match7 = explorer.match(/edge\/([\d.]+)/);
+
+      var _ver7 = _match7 && _match7[1] || '';
+
+      return "edge ".concat(_ver7).trim();
+    }
+
+    return explorer.substr(0, 200);
+  }
+};
+var constant = {
+  isMobile: utils.isMobile(),
+  isBrowser: !utils.isMobile(),
+  mobileOsType: utils.isAndroid() ? 'android' : utils.isIOS ? 'ios' : 'other_mobile',
+  pcOsType: utils.getOsType()
+}; // 设备信息，只取一次值
+
+var deviceInfo = {
+  // ↓上报项
+  deviceType: constant.isMobile ? 'mobile' : constant.isBrowser ? 'browser' : 'unknown',
+  devicePlatform: constant.isMobile ? constant.mobileOsType : constant.pcOsType,
+  deviceName: utils.getDeviceName() //浏览器名称
+
+}; // 分块上传原子方法
 
 var sliceUploadMethods = ['multipartInit', 'multipartUpload', 'multipartComplete', 'multipartList', 'multipartListPart', 'multipartAbort'];
 var uploadApi = ['putObject', 'postObject', 'appendObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].concat(sliceUploadMethods);
@@ -13342,8 +13519,8 @@ function camel2underline(key) {
 
 function formatParams(params) {
   var formattedParams = {};
-  var allReporterKeys = ['tracePlatform', 'cossdkVersion', 'region', 'networkType', 'host', 'accelerate', 'requestPath', 'size', 'httpMd5', 'httpSign', 'httpFull', 'name', 'result', 'tookTime', 'errorNode', 'errorCode', 'errorMessage', 'errorRequestId', 'errorStatusCode', 'errorServiceName', 'errorType', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError'];
-  var successKeys = ['tracePlatform', 'cossdkVersion', 'region', 'bucket', 'appid', 'networkType', 'host', 'accelerate', 'requestPath', 'partNumber', 'size', 'name', 'result', 'tookTime', 'errorRequestId', 'retryTimes', 'reqUrl', 'customId']; // 需要上报的参数字段
+  var allReporterKeys = ['tracePlatform', 'cossdkVersion', 'region', 'networkType', 'host', 'accelerate', 'requestPath', 'size', 'httpMd5', 'httpSign', 'httpFull', 'name', 'result', 'tookTime', 'errorNode', 'errorCode', 'errorMessage', 'errorRequestId', 'errorStatusCode', 'errorServiceName', 'errorType', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError', 'deviceType', 'devicePlatform', 'deviceName'];
+  var successKeys = ['tracePlatform', 'cossdkVersion', 'region', 'bucket', 'appid', 'networkType', 'host', 'accelerate', 'requestPath', 'partNumber', 'size', 'name', 'result', 'tookTime', 'errorRequestId', 'retryTimes', 'reqUrl', 'customId', 'deviceType', 'devicePlatform', 'deviceName']; // 需要上报的参数字段
 
   var reporterKeys = params.result === 'Success' ? successKeys : allReporterKeys;
 
@@ -13403,7 +13580,7 @@ var Tracker = /*#__PURE__*/function () {
       // js补充字段
       tracePlatform: 'js',
       // 上报平台=js
-      traceId: traceId || this.getUid(),
+      traceId: traceId || utils.getUid(),
       // 每条上报唯一标识
       bucket: bucket,
       appid: appid,
@@ -13415,6 +13592,10 @@ var Tracker = /*#__PURE__*/function () {
       // 请求url
       customId: customId || '',
       // 业务id
+      deviceType: deviceInfo.deviceType,
+      // 设备类型 移动端浏览器、web浏览器
+      devicePlatform: deviceInfo.devicePlatform,
+      deviceName: deviceInfo.deviceName,
       md5StartTime: 0,
       // md5计算开始时间
       md5EndTime: 0,
@@ -13434,37 +13615,20 @@ var Tracker = /*#__PURE__*/function () {
       deepTracker: deepTracker
     };
     this.beacon = getBeacon(delay);
-  } // 生成uid 每个链路对应唯一一条uid
+  } // 格式化sdk回调
 
 
   _createClass(Tracker, [{
-    key: "getUid",
-    value: function getUid() {
-      var S4 = function S4() {
-        return ((1 + Math.random()) * 0x10000 | 0).toString(16).substring(1);
-      };
-
-      return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
-    }
-  }, {
-    key: "getNetType",
-    value: // 获取网络类型
-    function getNetType() {
-      var connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-      return (connection === null || connection === void 0 ? void 0 : connection.type) || (connection === null || connection === void 0 ? void 0 : connection.effectiveType) || 'unknown';
-    } // 格式化sdk回调
-
-  }, {
     key: "formatResult",
     value: function formatResult(err, data) {
       var _err$error, _err$error2, _err$error3, _err$error4, _err$error5, _err$error6;
 
       var now = new Date().getTime();
       var tookTime = now - this.params.startTime;
-      var networkType = this.getNetType();
+      var networkType = utils.getNetType();
       var errorCode = err ? (err === null || err === void 0 ? void 0 : err.code) || (err === null || err === void 0 ? void 0 : (_err$error = err.error) === null || _err$error === void 0 ? void 0 : _err$error.code) || (err === null || err === void 0 ? void 0 : (_err$error2 = err.error) === null || _err$error2 === void 0 ? void 0 : _err$error2.Code) : '';
       var errorMessage = err ? (err === null || err === void 0 ? void 0 : err.message) || (err === null || err === void 0 ? void 0 : (_err$error3 = err.error) === null || _err$error3 === void 0 ? void 0 : _err$error3.message) || (err === null || err === void 0 ? void 0 : (_err$error4 = err.error) === null || _err$error4 === void 0 ? void 0 : _err$error4.Message) : '';
-      var errorServiceName = err ? err.resource || (err === null || err === void 0 ? void 0 : (_err$error5 = err.error) === null || _err$error5 === void 0 ? void 0 : _err$error5.resource) || (err === null || err === void 0 ? void 0 : (_err$error6 = err.error) === null || _err$error6 === void 0 ? void 0 : _err$error6.Resource) : '';
+      var errorServiceName = err ? (err === null || err === void 0 ? void 0 : err.resource) || (err === null || err === void 0 ? void 0 : (_err$error5 = err.error) === null || _err$error5 === void 0 ? void 0 : _err$error5.resource) || (err === null || err === void 0 ? void 0 : (_err$error6 = err.error) === null || _err$error6 === void 0 ? void 0 : _err$error6.Resource) : '';
       var errorStatusCode = err ? err === null || err === void 0 ? void 0 : err.statusCode : data.statusCode;
       var requestId = err ? (err === null || err === void 0 ? void 0 : err.headers) && (err === null || err === void 0 ? void 0 : err.headers['x-cos-request-id']) : (data === null || data === void 0 ? void 0 : data.headers) && (data === null || data === void 0 ? void 0 : data.headers['x-cos-request-id']);
       var errorType = err ? requestId ? 'Server' : 'Client' : '';
@@ -13494,8 +13658,8 @@ var Tracker = /*#__PURE__*/function () {
 
       if (this.params.reqUrl) {
         try {
-          var exec = /^http(s)?:\/\/(.*?)\//.exec(this.params.reqUrl);
-          this.params.host = exec[2];
+          var execRes = /^http(s)?:\/\/(.*?)\//.exec(this.params.reqUrl);
+          this.params.host = execRes[2];
         } catch (e) {
           this.params.host = this.params.reqUrl;
         }

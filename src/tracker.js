@@ -19,6 +19,144 @@ const getBeacon = (delay) => {
   return beacon;
 };
 
+const utils = {
+    // 生成uid 每个链路对应唯一一条uid
+    getUid() {
+      var S4 = function () {
+          return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+      };
+      return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
+    },
+    // 获取网络类型
+    getNetType() {
+      if (typeof navigator === 'object') {
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        return connection?.type || connection?.effectiveType || 'unknown';
+      }
+      return 'unknown';
+    },
+    // 获取pc端操作系统类型
+    getOsType() {
+      var agent = navigator.userAgent.toLowerCase();
+      var isMac = /macintosh|mac os x/i.test(navigator.userAgent);
+      if (agent.indexOf("win32") >= 0 || agent.indexOf("wow32") >= 0) {
+          return 'win32';
+      }
+      if (agent.indexOf("win64") >= 0 || agent.indexOf("wow64") >= 0) {
+          return 'win64';
+      }
+      if (isMac) {
+          return 'mac';
+      }
+      return 'unknown os';
+    },
+    isMobile() {
+      const exp = /(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i;
+      if (typeof navigator === 'object' && navigator.userAgent.match(exp)) {
+        return true; // 移动端
+      }
+      return false; // PC端
+    },
+    isAndroid() {
+      const exp = /(Android|Adr|Linux)/i;
+      if (typeof navigator === 'object' && navigator.userAgent.match(exp)) {
+        return true;
+      }
+      return false;
+    },
+    isIOS() {
+      const exp = /(iPhone|iPod|iPad|iOS)/i;
+      if (typeof navigator === 'object' && navigator.userAgent.match(exp)) {
+        return true;
+      }
+      return false;
+    },
+    isOtherMobile() {
+      return isMobile && !isAndroid && !isIOS;
+    },
+    // 获取浏览器类型
+    getDeviceName() {
+      if (typeof navigator !== 'object') {
+        return 'unknown device';
+      }
+      const explorer = navigator.userAgent.toLowerCase();
+      // 腾讯会议内置浏览器
+      if (explorer.includes('app/tencent_wemeet')) {
+        return 'tencent_wemeet';
+      }
+      // 遨游浏览器
+      if (explorer.indexOf('maxthon') >= 0) {
+        const match = explorer.match(/maxthon\/([\d.]+)/);
+        const ver = (match && match[1]) || '';
+        return `傲游浏览器 ${ver}`.trim();
+      }
+      // QQ浏览器
+      if (explorer.indexOf('qqbrowser') >= 0) {
+        const match = explorer.match(/qqbrowser\/([\d.]+)/);
+        const ver = (match && match[1]) || '';
+        return `QQ浏览器 ${ver}`.trim();
+      }
+      // 搜狗浏览器
+      if (explorer.indexOf('se 2.x') >= 0) {
+        return '搜狗浏览器';
+      }
+      // 微信浏览器
+      if (explorer.indexOf('wxwork') >= 0) {
+        return '微信内置浏览器';
+      }
+      // ie
+      if (explorer.indexOf('msie') >= 0) {
+        const match = explorer.match(/msie ([\d.]+)/);
+        const ver = (match && match[1]) || '';
+        return `IE ${ver}`.trim();
+      }
+      // firefox
+      if (explorer.indexOf('firefox') >= 0) {
+        const match = explorer.match(/firefox\/([\d.]+)/);
+        const ver = (match && match[1]) || '';
+        return `Firefox ${ver}`.trim();
+      }
+      // Chrome
+      if (explorer.indexOf('chrome') >= 0) {
+        const match = explorer.match(/chrome\/([\d.]+)/);
+        const ver = (match && match[1]) || '';
+        return `Chrome ${ver}`.trim();
+      }
+      // Opera
+      if (explorer.indexOf('opera') >= 0) {
+        const match = explorer.match(/opera.([\d.]+)/);
+        const ver = (match && match[1]) || '';
+        return `Opera ${ver}`.trim();
+      }
+      // Safari
+      if (explorer.indexOf('safari') >= 0) {
+        const match = explorer.match(/version\/([\d.]+)/);
+        const ver = (match && match[1]) || '';
+        return `Safari ${ver}`.trim();
+      }
+      if (explorer.indexOf('edge') >= 0) {
+        const match = explorer.match(/edge\/([\d.]+)/);
+        const ver = (match && match[1]) || '';
+        return `edge ${ver}`.trim();
+      }
+      return explorer.substr(0, 200);
+    },
+};
+
+const constant = {
+  isMobile: utils.isMobile(),
+  isBrowser: !utils.isMobile(),
+  mobileOsType: utils.isAndroid() ? 'android' : utils.isIOS ? 'ios' : 'other_mobile',
+  pcOsType: utils.getOsType(),
+};
+
+// 设备信息，只取一次值
+const deviceInfo = {
+  // ↓上报项
+  deviceType: constant.isMobile ? 'mobile' : constant.isBrowser ? 'browser' : 'unknown',
+  devicePlatform: constant.isMobile ? constant.mobileOsType : constant.pcOsType,
+  deviceName: utils.getDeviceName(), //浏览器名称
+};
 
 // 分块上传原子方法
 const sliceUploadMethods = ['multipartInit', 'multipartUpload', 'multipartComplete', 'multipartList', 'multipartListPart', 'multipartAbort'];
@@ -44,9 +182,11 @@ function formatParams(params) {
   const formattedParams = {};
   const allReporterKeys = ['tracePlatform', 'cossdkVersion', 'region', 'networkType', 'host', 'accelerate', 'requestPath', 'size', 'httpMd5',
   'httpSign', 'httpFull', 'name', 'result', 'tookTime', 'errorNode', 'errorCode', 'errorMessage', 'errorRequestId', 'errorStatusCode', 'errorServiceName',
-  'errorType', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError'];
+  'errorType', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError',
+  'deviceType', 'devicePlatform', 'deviceName'];
   const successKeys = ['tracePlatform', 'cossdkVersion', 'region', 'bucket', 'appid', 'networkType', 'host', 'accelerate', 'requestPath',
-    'partNumber', 'size', 'name', 'result', 'tookTime', 'errorRequestId', 'retryTimes', 'reqUrl', 'customId'];
+    'partNumber', 'size', 'name', 'result', 'tookTime', 'errorRequestId', 'retryTimes', 'reqUrl', 'customId',
+    'deviceType', 'devicePlatform', 'deviceName'];
   // 需要上报的参数字段
   const reporterKeys = params.result === 'Success' ? successKeys : allReporterKeys;
   for (let key in params) {
@@ -87,13 +227,16 @@ class Tracker {
 
       // js补充字段
       tracePlatform: 'js', // 上报平台=js
-      traceId: traceId || this.getUid(), // 每条上报唯一标识
+      traceId: traceId || utils.getUid(), // 每条上报唯一标识
       bucket,
       appid,
       partNumber: 0, // 分块上传编号
       retryTimes: 0, // sdk内部发起的请求重试
       reqUrl: '', // 请求url
       customId: customId || '', // 业务id
+      deviceType: deviceInfo.deviceType, // 设备类型 移动端浏览器、web浏览器
+      devicePlatform: deviceInfo.devicePlatform,
+      deviceName: deviceInfo.deviceName,
 
       md5StartTime: 0, // md5计算开始时间
       md5EndTime: 0, // md5计算结束时间
@@ -108,28 +251,14 @@ class Tracker {
     this.beacon = getBeacon(delay);
   }
 
-  // 生成uid 每个链路对应唯一一条uid
-  getUid() {
-    var S4 = function () {
-        return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-    };
-    return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
-  };
-
-  // 获取网络类型
-  getNetType() {
-    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-    return connection?.type || connection?.effectiveType || 'unknown';
-  }
-
   // 格式化sdk回调
   formatResult(err, data) {
     const now = new Date().getTime();
     const tookTime = now - this.params.startTime;
-    const networkType = this.getNetType();
+    const networkType = utils.getNetType();
     const errorCode = err ? (err?.code || err?.error?.code || err?.error?.Code) : '';
     const errorMessage = err ? (err?.message || err?.error?.message || err?.error?.Message) : '';
-    const errorServiceName = err ? (err.resource || err?.error?.resource || err?.error?.Resource) : '';
+    const errorServiceName = err ? (err?.resource || err?.error?.resource || err?.error?.Resource) : '';
     const errorStatusCode = err ? err?.statusCode : data.statusCode;
     const requestId = err ? (err?.headers && err?.headers['x-cos-request-id']) : (data?.headers && data?.headers['x-cos-request-id']);
     const errorType = err ? (requestId ? 'Server' : 'Client'): '';
@@ -156,12 +285,11 @@ class Tracker {
     }
     if (this.params.reqUrl) {
       try {
-        const exec = /^http(s)?:\/\/(.*?)\//.exec(this.params.reqUrl);
-        this.params.host = exec[2];
+        const execRes = /^http(s)?:\/\/(.*?)\//.exec(this.params.reqUrl);
+        this.params.host = execRes[2];
       } catch (e) {
         this.params.host = this.params.reqUrl;
       }
-      
     }
     this.sendEvents();
   }
