@@ -2607,7 +2607,10 @@ function multipartInit(params, callback) {
             qs: params.Query,
             tracker: tracker,
         }, function (err, data) {
-            if (err) return callback(err);
+          if (err) {
+            tracker && tracker.parent && tracker.parent.setParams({ errorNode: 'multipartInit' });
+            return callback(err);
+          }
             data = util.clone(data || {});
             if (data && data.InitiateMultipartUploadResult) {
                 return callback(null, util.extend(data.InitiateMultipartUploadResult, {
@@ -2663,7 +2666,10 @@ function multipartUpload(params, callback) {
                 body: params.Body || null,
                 tracker: tracker,
             }, function (err, data) {
-                if (err) return callback(err);
+              if (err) {
+                tracker && tracker.parent && tracker.parent.setParams({ errorNode: 'multipartUpload' });
+                return callback(err);
+              }
                 callback(null, {
                     ETag: util.attr(data.headers, 'etag', ''),
                     statusCode: data.statusCode,
@@ -2726,7 +2732,10 @@ function multipartComplete(params, callback) {
         headers: headers,
         tracker: tracker,
     }, function (err, data) {
-        if (err) return callback(err);
+      if (err) {
+        tracker && tracker.parent && tracker.parent.setParams({ errorNode: 'multipartComplete' });
+        return callback(err);
+      }
         var url = getUrl({
             ForcePathStyle: self.options.ForcePathStyle,
             protocol: self.options.Protocol,
@@ -2805,7 +2814,10 @@ function multipartList(params, callback) {
         action: 'uploads',
         tracker: tracker,
     }, function (err, data) {
-        if (err) return callback(err);
+      if (err) {
+        tracker && tracker.parent && tracker.parent.setParams({ errorNode: 'multipartList' });
+        return callback(err);
+      }
 
         if (data && data.ListMultipartUploadsResult) {
             var Upload = data.ListMultipartUploadsResult.Upload || [];
@@ -2853,7 +2865,10 @@ function multipartListPart(params, callback) {
         headers: params.Headers,
         qs: reqParams,
     }, function (err, data) {
-        if (err) return callback(err);
+        if (err) {
+          tracker && tracker.parent && tracker.parent.setParams({ errorNode: 'multipartListPart' });
+          return callback(err);
+        }
         var ListPartsResult = data.ListPartsResult || {};
         var Part = ListPartsResult.Part || [];
         Part = util.isArray(Part) ? Part : [Part];
@@ -3618,7 +3633,12 @@ function _submitRequest(params, callback) {
 
     self.options.ForcePathStyle && (opt.pathStyle = self.options.ForcePathStyle);
     self.emit('before-send', opt);
-    params.tracker && params.tracker.setParams({ reqUrl: opt.url });
+    var useAccelerate = opt.url.includes('accelerate.');
+    var queryString = Object.keys(opt.qs).map(key => `${key}=${opt.qs[key]}`).join('&');
+    var fullUrl = queryString ? (opt.url + '?' + queryString) : opt.url;
+    params.tracker && params.tracker.setParams({ reqUrl: fullUrl, accelerate: useAccelerate ? 'Y' : 'N' });
+    // 分块上传时给父级tracker设置url信息
+    params.tracker && params.tracker.parent && params.tracker.parent.setParams({ reqUrl: fullUrl, accelerate: useAccelerate ? 'Y' : 'N' });
     var sender = (self.options.Request || REQUEST)(opt, function (r) {
         if (r.error === 'abort') return;
 

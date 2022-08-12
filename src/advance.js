@@ -829,6 +829,22 @@ function uploadFile(params, callback) {
     var FileSize = Body.size || Body.length || 0;
     var fileInfo = {TaskId: ''};
 
+        // 上传链路
+    if (self.options.EnableTracker) {
+      const accelerate = self.options.UseAccelerate || self.options.Domain.includes('accelerate.');
+      params.tracker = new Tracker({
+        bucket: params.Bucket,
+        region: params.Region,
+        apiName: 'uploadFile',
+        fileKey: params.Key,
+        fileSize: FileSize,
+        accelerate,
+        deepTracker: self.options.DeepTracker,
+        customId: self.options.CustomId,
+        delay: self.options.TrackerDelay,
+      });
+    }
+
     // 整理 option，用于返回给回调
     util.each(params, function (v, k) {
         if (typeof v !== 'object' && typeof v !== 'function') {
@@ -847,22 +863,11 @@ function uploadFile(params, callback) {
     // 添加上传任务,超过阈值使用分块上传，小于等于则简单上传
     var api = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
 
-    // 上传链路
-    params.tracker = new Tracker({
-      buctet: params.Bucket,
-      region: params.Reigon,
-      apiName: api,
-      originApiName: 'uploadFile',
-      fileKey: params.Key,
-      fileSize: FileSize,
-    });
-
     // 处理文件完成
     var _onFileFinish = params.onFileFinish;
     var onFileFinish = function (err, data) {
        // 格式化上报参数并上报
        params.tracker && params.tracker.formatResult(err, data);
-       params.tracker && params.tracker.sendEvents();
         _onFileFinish && _onFileFinish(err, data, fileInfo);
         callback && callback(err, data);
     };
@@ -919,6 +924,22 @@ function uploadFiles(params, callback) {
             // 更新文件总大小
             TotalSize += FileSize;
 
+            // 单个文件上传链路
+            if (self.options.EnableTracker) {
+              const accelerate = self.options.UseAccelerate || self.options.Domain.includes('accelerate.');
+              fileParams.tracker = new Tracker({
+                  bucket: fileParams.Bucket,
+                  region: fileParams.Region,
+                  apiName: 'uploadFiles',
+                  fileKey: fileParams.Key,
+                  fileSize: FileSize,
+                  accelerate,
+                  deepTracker: self.options.DeepTracker,
+                  customId: self.options.CustomId,
+                  delay: self.options.TrackerDelay,
+              });
+            }
+
             // 整理 option，用于返回给回调
             util.each(fileParams, function (v, k) {
                 if (typeof v !== 'object' && typeof v !== 'function') {
@@ -948,22 +969,11 @@ function uploadFiles(params, callback) {
             // 添加上传任务
             var api = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
 
-            // 单个文件上传链路
-            fileParams.tracker = new Tracker({
-              bucket: fileParams.Bucket,
-              region: fileParams.Region,
-              apiName: api,
-              originApiName: 'uploadFiles',
-              fileKey: fileParams.Key,
-              fileSize: FileSize,
-            });
-
             // 处理单个文件完成
             var _onFileFinish = fileParams.onFileFinish;
             var onFileFinish = function (err, data) {
                 // 格式化上报参数并上报
                 fileParams.tracker && fileParams.tracker.formatResult(err, data);
-                fileParams.tracker && fileParams.tracker.sendEvents();
                 _onFileFinish && _onFileFinish(err, data);
                 onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
             };

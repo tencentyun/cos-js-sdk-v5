@@ -173,8 +173,12 @@ declare namespace COS {
     UseAccelerate?: boolean,
     /** 默认为true，将host加入签名计算，关闭后可能导致越权风险，建议保持为true */
     ForceSignHost?: boolean,
-    /** 深度链路 */
+    /** 链路上报 */
+    EnableTracker?: boolean,
     DeepTracker?: boolean,
+    TrackerDelay?: number,
+    CustomId?: string,
+    /** 链路上报 */
     /** 获取签名的回调方法，如果没有 SecretId、SecretKey 时，必选 */
     getAuthorization?: (
       options: GetAuthorizationOptions,
