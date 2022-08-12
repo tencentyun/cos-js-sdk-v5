@@ -44,9 +44,9 @@ function formatParams(params) {
   const formattedParams = {};
   const allReporterKeys = ['tracePlatform', 'cossdkVersion', 'region', 'networkType', 'host', 'accelerate', 'requestPath', 'size', 'httpMd5',
   'httpSign', 'httpFull', 'name', 'result', 'tookTime', 'errorNode', 'errorCode', 'errorMessage', 'errorRequestId', 'errorStatusCode', 'errorServiceName',
-  'tracePlatform', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError'];
+  'errorType', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError'];
   const successKeys = ['tracePlatform', 'cossdkVersion', 'region', 'bucket', 'appid', 'networkType', 'host', 'accelerate', 'requestPath',
-    'size', 'name', 'result', 'tookTime', 'errorRequestId', 'retryTimes', 'reqUrl', 'customId'];
+    'partNumber', 'size', 'name', 'result', 'tookTime', 'errorRequestId', 'retryTimes', 'reqUrl', 'customId'];
   // 需要上报的参数字段
   const reporterKeys = params.result === 'Success' ? successKeys : allReporterKeys;
   for (let key in params) {
@@ -132,6 +132,7 @@ class Tracker {
     const errorServiceName = err ? (err.resource || err?.error?.resource || err?.error?.Resource) : '';
     const errorStatusCode = err ? err?.statusCode : data.statusCode;
     const requestId = err ? (err?.headers && err?.headers['x-cos-request-id']) : (data?.headers && data?.headers['x-cos-request-id']);
+    const errorType = err ? (requestId ? 'Server' : 'Client'): '';
     Object.assign(this.params, {
       tookTime,
       networkType,
@@ -139,6 +140,7 @@ class Tracker {
       httpSign: this.params.signEndTime - this.params.signStartTime,
       httpFull: this.params.httpEndTime - this.params.httpStartTime,
       result: err ? 'Fail' : 'Success',
+      errorType,
       errorCode,
       errorStatusCode,
       errorMessage,
@@ -178,13 +180,13 @@ class Tracker {
     const eventCode = getEventCode(this.params.name);
     const formattedParams = formatParams(this.params);
     console.log('formattedParams', eventCode, formattedParams);
-    // if (this.params.delay === 0) {
-    //   // 实时上报
-    //   this.beacon.onDirectUserAction(eventCode, formattedParams);
-    // } else {
-    //   // 周期性上报
-    //   this.beacon.onUserAction(eventCode, formattedParams);
-    // }
+    if (this.params.delay === 0) {
+      // 实时上报
+      this.beacon.onDirectUserAction(eventCode, formattedParams);
+    } else {
+      // 周期性上报
+      this.beacon.onUserAction(eventCode, formattedParams);
+    }
     // 上报结束即销毁
     this.destroy();
   }
@@ -196,7 +198,7 @@ class Tracker {
       traceId: this.params.traceId,
       bucket: this.params.bucket,
       region: this.params.region,
-      fileKey: this.params.fileKey,
+      fileKey: this.params.requestPath,
       customId: this.params.customId,
       delay: this.params.delay,
       deepTracker: this.params.deepTracker,

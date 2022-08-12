@@ -7144,7 +7144,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.3.10\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"index.js\",\"types\":\"index.d.ts\",\"scripts\":{\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"nyc\":\"node test/watcher.js && nyc report --reporter=clover --reporter=cobertura\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.2\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"nyc\":\"^15.1.0\",\"puppeteer\":\"^5.3.1\",\"puppeteer-to-istanbul\":\"^1.4.0\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\",\"terser-webpack-plugin\":\"4.2.3\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.4.0-beta\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"index.js\",\"types\":\"index.d.ts\",\"scripts\":{\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"nyc\":\"node test/watcher.js && nyc report --reporter=clover --reporter=cobertura\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.2\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"nyc\":\"^15.1.0\",\"puppeteer\":\"^5.3.1\",\"puppeteer-to-istanbul\":\"^1.4.0\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\",\"terser-webpack-plugin\":\"4.2.3\"}}");
 
 /***/ }),
 
@@ -13342,8 +13342,8 @@ function camel2underline(key) {
 
 function formatParams(params) {
   var formattedParams = {};
-  var allReporterKeys = ['tracePlatform', 'cossdkVersion', 'region', 'networkType', 'host', 'accelerate', 'requestPath', 'size', 'httpMd5', 'httpSign', 'httpFull', 'name', 'result', 'tookTime', 'errorNode', 'errorCode', 'errorMessage', 'errorRequestId', 'errorStatusCode', 'errorServiceName', 'tracePlatform', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError'];
-  var successKeys = ['tracePlatform', 'cossdkVersion', 'region', 'bucket', 'appid', 'networkType', 'host', 'accelerate', 'requestPath', 'size', 'name', 'result', 'tookTime', 'errorRequestId', 'retryTimes', 'reqUrl', 'customId']; // 需要上报的参数字段
+  var allReporterKeys = ['tracePlatform', 'cossdkVersion', 'region', 'networkType', 'host', 'accelerate', 'requestPath', 'size', 'httpMd5', 'httpSign', 'httpFull', 'name', 'result', 'tookTime', 'errorNode', 'errorCode', 'errorMessage', 'errorRequestId', 'errorStatusCode', 'errorServiceName', 'errorType', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError'];
+  var successKeys = ['tracePlatform', 'cossdkVersion', 'region', 'bucket', 'appid', 'networkType', 'host', 'accelerate', 'requestPath', 'partNumber', 'size', 'name', 'result', 'tookTime', 'errorRequestId', 'retryTimes', 'reqUrl', 'customId']; // 需要上报的参数字段
 
   var reporterKeys = params.result === 'Success' ? successKeys : allReporterKeys;
 
@@ -13467,6 +13467,7 @@ var Tracker = /*#__PURE__*/function () {
       var errorServiceName = err ? err.resource || (err === null || err === void 0 ? void 0 : (_err$error5 = err.error) === null || _err$error5 === void 0 ? void 0 : _err$error5.resource) || (err === null || err === void 0 ? void 0 : (_err$error6 = err.error) === null || _err$error6 === void 0 ? void 0 : _err$error6.Resource) : '';
       var errorStatusCode = err ? err === null || err === void 0 ? void 0 : err.statusCode : data.statusCode;
       var requestId = err ? (err === null || err === void 0 ? void 0 : err.headers) && (err === null || err === void 0 ? void 0 : err.headers['x-cos-request-id']) : (data === null || data === void 0 ? void 0 : data.headers) && (data === null || data === void 0 ? void 0 : data.headers['x-cos-request-id']);
+      var errorType = err ? requestId ? 'Server' : 'Client' : '';
       Object.assign(this.params, {
         tookTime: tookTime,
         networkType: networkType,
@@ -13474,6 +13475,7 @@ var Tracker = /*#__PURE__*/function () {
         httpSign: this.params.signEndTime - this.params.signStartTime,
         httpFull: this.params.httpEndTime - this.params.httpStartTime,
         result: err ? 'Fail' : 'Success',
+        errorType: errorType,
         errorCode: errorCode,
         errorStatusCode: errorStatusCode,
         errorMessage: errorMessage,
@@ -13518,14 +13520,16 @@ var Tracker = /*#__PURE__*/function () {
 
       var eventCode = getEventCode(this.params.name);
       var formattedParams = formatParams(this.params);
-      console.log('formattedParams', eventCode, formattedParams); // if (this.params.delay === 0) {
-      //   // 实时上报
-      //   this.beacon.onDirectUserAction(eventCode, formattedParams);
-      // } else {
-      //   // 周期性上报
-      //   this.beacon.onUserAction(eventCode, formattedParams);
-      // }
-      // 上报结束即销毁
+      console.log('formattedParams', eventCode, formattedParams);
+
+      if (this.params.delay === 0) {
+        // 实时上报
+        this.beacon.onDirectUserAction(eventCode, formattedParams);
+      } else {
+        // 周期性上报
+        this.beacon.onUserAction(eventCode, formattedParams);
+      } // 上报结束即销毁
+
 
       this.destroy();
     } // 生成子实例，与父所属一个链路，可用于分块上传内部流程上报单个分块操作
@@ -13538,7 +13542,7 @@ var Tracker = /*#__PURE__*/function () {
         traceId: this.params.traceId,
         bucket: this.params.bucket,
         region: this.params.region,
-        fileKey: this.params.fileKey,
+        fileKey: this.params.requestPath,
         customId: this.params.customId,
         delay: this.params.delay,
         deepTracker: this.params.deepTracker
