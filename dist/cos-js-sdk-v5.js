@@ -13520,7 +13520,6 @@ var Tracker = /*#__PURE__*/function () {
 
       var eventCode = getEventCode(this.params.name);
       var formattedParams = formatParams(this.params);
-      console.log('formattedParams', eventCode, formattedParams);
 
       if (this.params.delay === 0) {
         // 实时上报

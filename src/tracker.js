@@ -179,7 +179,6 @@ class Tracker {
     }
     const eventCode = getEventCode(this.params.name);
     const formattedParams = formatParams(this.params);
-    console.log('formattedParams', eventCode, formattedParams);
     if (this.params.delay === 0) {
       // 实时上报
       this.beacon.onDirectUserAction(eventCode, formattedParams);
