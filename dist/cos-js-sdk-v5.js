@@ -12750,6 +12750,7 @@ var defaultOptions = {
   ForceSignHost: true,
   // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
   EnableTracker: true,
+  // 默认打开上报
   DeepTracker: false,
   TrackerDelay: 5000,
   CustomId: ''
