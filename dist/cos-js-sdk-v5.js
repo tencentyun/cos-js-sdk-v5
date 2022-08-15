@@ -13551,6 +13551,8 @@ var Tracker = /*#__PURE__*/function () {
         deepTracker = opt.deepTracker;
     var appid = bucket && bucket.substr(bucket.lastIndexOf('-') + 1) || '';
     this.parent = parent;
+    this.deepTracker = deepTracker; // 上报用到的字段
+
     this.params = {
       // 通用字段
       cossdkVersion: pkg.version,
@@ -13610,9 +13612,8 @@ var Tracker = /*#__PURE__*/function () {
       // 网路请求结束时间
       startTime: new Date().getTime(),
       // sdk api调用起始时间，不是纯网络耗时
-      endTime: 0,
-      //  sdk api调用结束时间，不是纯网络耗时
-      deepTracker: deepTracker
+      endTime: 0 //  sdk api调用结束时间，不是纯网络耗时
+
     };
     this.beacon = getBeacon(delay);
   } // 格式化sdk回调
@@ -13678,7 +13679,7 @@ var Tracker = /*#__PURE__*/function () {
     key: "sendEvents",
     value: function sendEvents() {
       // DeepTracker模式下才会上报分块上传内部细节
-      if (sliceUploadMethods.includes(this.params.name) && !this.params.deepTracker) {
+      if (sliceUploadMethods.includes(this.params.name) && !this.deepTracker) {
         return;
       }
 
@@ -13702,13 +13703,13 @@ var Tracker = /*#__PURE__*/function () {
     value: function generateSubTracker(subParams) {
       Object.assign(subParams, {
         parent: this,
+        deepTracker: this.deepTracker,
         traceId: this.params.traceId,
         bucket: this.params.bucket,
         region: this.params.region,
         fileKey: this.params.requestPath,
         customId: this.params.customId,
-        delay: this.params.delay,
-        deepTracker: this.params.deepTracker
+        delay: this.params.delay
       });
       return new Tracker(subParams);
     } // 链路结束后销毁实例

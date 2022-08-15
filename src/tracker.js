@@ -203,6 +203,8 @@ class Tracker {
     const { parent, traceId, bucket, region, apiName, fileKey, fileSize, accelerate, customId, delay, deepTracker } = opt;
     const appid = bucket && bucket.substr(bucket.lastIndexOf('-') + 1) || '';
     this.parent = parent;
+    this.deepTracker = deepTracker;
+    // 上报用到的字段
     this.params = {
       // 通用字段
       cossdkVersion: pkg.version,
@@ -246,7 +248,6 @@ class Tracker {
       httpEndTime: 0, // 网路请求结束时间
       startTime: new Date().getTime(), // sdk api调用起始时间，不是纯网络耗时
       endTime: 0, //  sdk api调用结束时间，不是纯网络耗时
-      deepTracker,
     };
     this.beacon = getBeacon(delay);
   }
@@ -302,7 +303,7 @@ class Tracker {
   // 使用灯塔延时上报
   sendEvents() {
     // DeepTracker模式下才会上报分块上传内部细节
-    if (sliceUploadMethods.includes(this.params.name) && !this.params.deepTracker) {
+    if (sliceUploadMethods.includes(this.params.name) && !this.deepTracker) {
       return;
     }
     const eventCode = getEventCode(this.params.name);
@@ -322,13 +323,13 @@ class Tracker {
   generateSubTracker(subParams) {
     Object.assign(subParams, {
       parent: this,
+      deepTracker: this.deepTracker,
       traceId: this.params.traceId,
       bucket: this.params.bucket,
       region: this.params.region,
       fileKey: this.params.requestPath,
       customId: this.params.customId,
       delay: this.params.delay,
-      deepTracker: this.params.deepTracker,
     });
     return new Tracker(subParams);
   }
