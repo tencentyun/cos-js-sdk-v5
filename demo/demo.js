@@ -155,7 +155,6 @@ var getAuthorization = function (options, callback) {
 var cos = new COS({
     getAuthorization: getAuthorization,
     UploadCheckContentMd5: true,
-    Protocol: 'https:',
 });
 
 var TaskId;
@@ -178,7 +177,6 @@ var showLogText = function (text, color) {
 
 var logger = {
     log: function (text) {
-      return;
         console.log.apply(console, arguments);
         var args = [].map.call(arguments, function (v) {
             return typeof v === 'object' ? JSON.stringify(v, null, 2) : v;
@@ -1603,7 +1601,7 @@ function CIExample1(){
                 Headers: {
                   // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
                   'Pic-Operations':
-                    '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/50x/"}]}',
+                    '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}',
                 },
                 onTaskReady: function (tid) {
                     TaskId = tid;
