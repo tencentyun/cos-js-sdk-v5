@@ -228,7 +228,7 @@ class Tracker {
       errorServiceName: '',
 
       // js补充字段
-      tracePlatform: 'js', // 上报平台=js
+      tracePlatform: 'cos-js-sdk-v5', // 上报平台=js
       traceId: traceId || utils.getUid(), // 每条上报唯一标识
       bucket,
       appid,

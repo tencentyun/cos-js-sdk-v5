@@ -13581,7 +13581,7 @@ var Tracker = /*#__PURE__*/function () {
       errorStatusCode: 0,
       errorServiceName: '',
       // js补充字段
-      tracePlatform: 'js',
+      tracePlatform: 'cos-js-sdk-v5',
       // 上报平台=js
       traceId: traceId || utils.getUid(),
       // 每条上报唯一标识
