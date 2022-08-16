@@ -903,7 +903,7 @@ function putObject() {
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
         Key: filename, /* 必须 */
-        Body: 'qweqeqee',
+        Body: blob,
         onTaskReady: function (tid) {
             TaskId = tid;
             logger.log('onTaskReady', tid);
@@ -912,7 +912,7 @@ function putObject() {
             logger.log('onTaskStart', info);
         },
         onProgress: function (progressData) {
-            logger.log(JSON.stringify(progressData), new Date().getTime());
+            logger.log(JSON.stringify(progressData));
         },
         Headers: {
             // 万象持久化接口，上传时持久化
@@ -1013,7 +1013,7 @@ function getObject() {
     cos.getObject({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
-        Key: '1.mp3',
+        Key: '1mb.zip',
         onProgress: function (progressData) {
             logger.log(JSON.stringify(progressData));
         }
@@ -1213,11 +1213,11 @@ function uploadFile() {
 }
 
 function sliceUploadFile() {
-    var blob = util.createFile({size: 1024 * 1024 * 10});
+    var blob = util.createFile({size: 1024 * 1024 * 3});
     cos.sliceUploadFile({
         Bucket: config.Bucket, // Bucket 格式：test-1250000000
         Region: config.Region,
-        Key: '10mb.zip', /* 必须 */
+        Key: '3mb.zip', /* 必须 */
         Body: blob,
         Headers: {
             // 万象持久化接口，上传时持久化
@@ -1323,7 +1323,6 @@ function uploadFiles() {
             logger.log('进度：' + percent + '%; 速度：' + speed + 'Mb/s;');
         },
         onFileFinish: function (err, data, options) {
-          debugger
             logger.log(options.Key + ' 上传' + (err ? '失败' : '完成'));
         },
     }, function (err, data) {
@@ -1599,12 +1598,12 @@ function CIExample1(){
             cos.putObject({
                 Bucket: config.Bucket, // Bucket 格式：test-1250000000
                 Region: config.Region,
-                Key: '1.jpg',
+                Key: file.name,
                 Body: file,
                 Headers: {
                   // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
                   'Pic-Operations':
-                    '{"is_pic_info": 1, "rules": [{"fileid": "1.jpg", "rule": "imageMogr2/thumbnail/50x/"}]}',
+                    '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/50x/"}]}',
                 },
                 onTaskReady: function (tid) {
                     TaskId = tid;
