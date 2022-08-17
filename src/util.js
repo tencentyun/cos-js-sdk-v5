@@ -4,6 +4,7 @@ var md5 = require('../lib/md5');
 var CryptoJS = require('../lib/crypto');
 var xml2json = require('../lib/xml2json');
 var json2xml = require('../lib/json2xml');
+var Tracker = require('./tracker');
 
 function camSafeUrlEncode(str) {
     return encodeURIComponent(str)
@@ -533,6 +534,34 @@ var apiWrapper = function (apiName, apiFn) {
         // 整理参数格式
         params = formatParams(apiName, params);
 
+        // tracker传递
+        var tracker;
+        if (self.options.EnableTracker) {
+          if (params.calledBySdk === 'sliceUploadFile') {
+            // 分块上传内部方法使用sliceUploadFile的子链路
+            tracker = params.tracker && params.tracker.generateSubTracker({ apiName });
+          } else if (['uploadFile', 'uploadFiles'].includes(apiName)) {
+            // uploadFile、uploadFiles方法在内部处理，此处不处理
+            tracker = null;
+          } else {
+            var fileSize = -1;
+            if (params.Body) {
+              fileSize = typeof params.Body === 'string' ? params.Body.length : params.Body.size || params.Body.byteLength || -1;
+            }
+            tracker = new Tracker({
+              bucket: params.Bucket,
+              region: params.Region,
+              apiName: apiName,
+              fileKey: params.Key,
+              fileSize: fileSize,
+              deepTracker: self.options.DeepTracker,
+              customId: self.options.CustomId,
+              delay: self.options.TrackerDelay,
+            });
+          }
+        }
+        params.tracker = tracker;
+
         // 代理回调函数
         var formatResult = function (result) {
             if (result && result.headers) {
@@ -544,6 +573,8 @@ var apiWrapper = function (apiName, apiFn) {
             return result;
         };
         var _callback = function (err, data) {
+            // 格式化上报参数并上报
+            tracker && tracker.formatResult(err, data);
             callback && callback(formatResult(err), formatResult(data));
         };
 

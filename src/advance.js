@@ -2,6 +2,7 @@ var session = require('./session');
 var Async = require('./async');
 var EventProxy = require('./event').EventProxy;
 var util = require('./util');
+var Tracker = require('./tracker');
 
 // 文件分块上传全过程，暴露的分块上传接口
 function sliceUploadFile(params, callback) {
@@ -20,6 +21,9 @@ function sliceUploadFile(params, callback) {
 
     var onProgress;
     var onHashProgress = params.onHashProgress;
+    
+    var tracker = params.tracker;
+    tracker && tracker.setParams({ chunkSize: ChunkSize });
 
     // 上传过程中出现错误，返回错误
     ep.on('error', function (err) {
@@ -50,6 +54,7 @@ function sliceUploadFile(params, callback) {
             UploadId: UploadData.UploadId,
             SliceList: UploadData.SliceList,
             Headers: metaHeaders,
+            tracker: tracker,
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             session.removeUsing(UploadData.UploadId);
@@ -85,7 +90,8 @@ function sliceUploadFile(params, callback) {
             ServerSideEncryption: ServerSideEncryption,
             UploadData: UploadData,
             Headers: params.Headers,
-            onProgress: onProgress
+            onProgress: onProgress,
+            tracker: tracker,
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (err) {
@@ -115,6 +121,7 @@ function sliceUploadFile(params, callback) {
                 FileSize: FileSize,
                 SliceSize: ChunkSize,
                 onHashProgress: onHashProgress,
+                tracker: tracker,
             }, params);
             getUploadIdAndPartList.call(self, _params, function (err, UploadData) {
                 if (!self._isRunningTask(TaskId)) return;
@@ -161,6 +168,7 @@ function sliceUploadFile(params, callback) {
 
 // 获取上传任务的 UploadId
 function getUploadIdAndPartList(params, callback) {
+
     var TaskId = params.TaskId;
     var Bucket = params.Bucket;
     var Region = params.Region;
@@ -284,6 +292,8 @@ function getUploadIdAndPartList(params, callback) {
             Query: util.clone(params.Query),
             StorageClass: StorageClass,
             Body: params.Body,
+            calledBySdk: 'sliceUploadFile',
+            tracker: params.tracker,
         }, params);
         var headers = util.clone(params.Headers)
         delete headers['x-cos-mime-limit'];
@@ -316,6 +326,7 @@ function getUploadIdAndPartList(params, callback) {
                 Region: Region,
                 Key: Key,
                 UploadId: UploadId,
+                tracker: params.tracker,
             }, function (err, PartListData) {
                 if (!self._isRunningTask(TaskId)) return;
                 if (err) {
@@ -385,6 +396,7 @@ function getUploadIdAndPartList(params, callback) {
                 Region: Region,
                 Key: Key,
                 UploadId: UploadId,
+                tracker: params.tracker,
             }, function (err, PartListData) {
                 if (!self._isRunningTask(TaskId)) return;
                 if (err) {
@@ -410,6 +422,7 @@ function getUploadIdAndPartList(params, callback) {
             Bucket: Bucket,
             Region: Region,
             Key: Key,
+            tracker: params.tracker,
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (err) return ep.emit('error', err);
@@ -441,12 +454,15 @@ function getUploadIdAndPartList(params, callback) {
 
 // 获取符合条件的全部上传任务 (条件包括 Bucket, Region, Prefix)
 function wholeMultipartList(params, callback) {
+
     var self = this;
     var UploadList = [];
     var sendParams = {
         Bucket: params.Bucket,
         Region: params.Region,
-        Prefix: params.Key
+        Prefix: params.Key,
+        calledBySdk: params.calledBySdk || 'sliceUploadFile',
+        tracker: params.tracker,
     };
     var next = function () {
         self.multipartList(sendParams, function (err, data) {
@@ -472,7 +488,9 @@ function wholeMultipartListPart(params, callback) {
         Bucket: params.Bucket,
         Region: params.Region,
         Key: params.Key,
-        UploadId: params.UploadId
+        UploadId: params.UploadId,
+        calledBySdk: 'sliceUploadFile',
+        tracker: params.tracker,
     };
     var next = function () {
         self.multipartListPart(sendParams, function (err, data) {
@@ -544,6 +562,7 @@ function uploadSliceList(params, cb) {
                 preAddSize = data.loaded;
                 onProgress({loaded: FinishSize, total: FileSize});
             },
+            tracker: params.tracker,
         }, function (err, data) {
             if (!self._isRunningTask(TaskId)) return;
             if (!err && !data.ETag) err = 'get ETag error, please add "ETag" to CORS ExposeHeader setting.( 获取ETag失败，请在CORS ExposeHeader设置中添加ETag，请参考文档：https://cloud.tencent.com/document/product/436/13318 )';
@@ -617,6 +636,8 @@ function uploadSliceItem(params, callback) {
                 Body: Body,
                 Headers: headers,
                 onProgress: params.onProgress,
+                calledBySdk: 'sliceUploadFile',
+                tracker: params.tracker,
             }, function (err, data) {
                 if (!self._isRunningTask(TaskId)) return;
                 if (err) return tryCallback(err);
@@ -656,6 +677,8 @@ function uploadSliceComplete(params, callback) {
             UploadId: UploadId,
             Parts: Parts,
             Headers: Headers,
+            calledBySdk: 'sliceUploadFile',
+            tracker: params.tracker,
         }, tryCallback);
     }, function (err, data) {
         callback(err, data);
@@ -699,7 +722,8 @@ function abortUploadTask(params, callback) {
         // Bucket 级别的任务抛弃，抛弃该 Bucket 下的全部上传任务
         wholeMultipartList.call(self, {
             Bucket: Bucket,
-            Region: Region
+            Region: Region,
+            calledBySdk: 'abortUploadTask',
         }, function (err, data) {
             if (err) return callback(err);
             ep.emit('get_abort_array', data.UploadList || []);
@@ -710,7 +734,8 @@ function abortUploadTask(params, callback) {
         wholeMultipartList.call(self, {
             Bucket: Bucket,
             Region: Region,
-            Key: Key
+            Key: Key,
+            calledBySdk: 'abortUploadTask',
         }, function (err, data) {
             if (err) return callback(err);
             ep.emit('get_abort_array', data.UploadList || []);
@@ -754,7 +779,7 @@ function abortUploadTaskArray(params, callback) {
             Region: Region,
             Key: AbortItem.Key,
             Headers: params.Headers,
-            UploadId: UploadId
+            UploadId: UploadId,
         }, function (err) {
             var task = {
                 Bucket: Bucket,
@@ -804,6 +829,22 @@ function uploadFile(params, callback) {
     var FileSize = Body.size || Body.length || 0;
     var fileInfo = {TaskId: ''};
 
+        // 上传链路
+    if (self.options.EnableTracker) {
+      const accelerate = self.options.UseAccelerate || self.options.Domain.includes('accelerate.');
+      params.tracker = new Tracker({
+        bucket: params.Bucket,
+        region: params.Region,
+        apiName: 'uploadFile',
+        fileKey: params.Key,
+        fileSize: FileSize,
+        accelerate,
+        deepTracker: self.options.DeepTracker,
+        customId: self.options.CustomId,
+        delay: self.options.TrackerDelay,
+      });
+    }
+
     // 整理 option，用于返回给回调
     util.each(params, function (v, k) {
         if (typeof v !== 'object' && typeof v !== 'function') {
@@ -819,15 +860,19 @@ function uploadFile(params, callback) {
     };
     params.onTaskReady = onTaskReady;
 
+    // 添加上传任务,超过阈值使用分块上传，小于等于则简单上传
+    var api = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
+
     // 处理文件完成
     var _onFileFinish = params.onFileFinish;
     var onFileFinish = function (err, data) {
+       // 格式化上报参数并上报
+       params.tracker && params.tracker.formatResult(err, data);
         _onFileFinish && _onFileFinish(err, data, fileInfo);
         callback && callback(err, data);
     };
 
-    // 添加上传任务,超过阈值使用分块上传，小于等于则简单上传
-    var api = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
+    
     taskList.push({
         api: api,
         params: params,
@@ -839,6 +884,7 @@ function uploadFile(params, callback) {
 
 // 批量上传文件
 function uploadFiles(params, callback) {
+
     var self = this;
 
     // 判断多大的文件使用分片上传
@@ -878,6 +924,22 @@ function uploadFiles(params, callback) {
             // 更新文件总大小
             TotalSize += FileSize;
 
+            // 单个文件上传链路
+            if (self.options.EnableTracker) {
+              const accelerate = self.options.UseAccelerate || self.options.Domain.includes('accelerate.');
+              fileParams.tracker = new Tracker({
+                  bucket: fileParams.Bucket,
+                  region: fileParams.Region,
+                  apiName: 'uploadFiles',
+                  fileKey: fileParams.Key,
+                  fileSize: FileSize,
+                  accelerate,
+                  deepTracker: self.options.DeepTracker,
+                  customId: self.options.CustomId,
+                  delay: self.options.TrackerDelay,
+              });
+            }
+
             // 整理 option，用于返回给回调
             util.each(fileParams, function (v, k) {
                 if (typeof v !== 'object' && typeof v !== 'function') {
@@ -904,15 +966,18 @@ function uploadFiles(params, callback) {
             };
             fileParams.onProgress = onProgress;
 
+            // 添加上传任务
+            var api = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
+
             // 处理单个文件完成
             var _onFileFinish = fileParams.onFileFinish;
             var onFileFinish = function (err, data) {
+                // 格式化上报参数并上报
+                fileParams.tracker && fileParams.tracker.formatResult(err, data);
                 _onFileFinish && _onFileFinish(err, data);
                 onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
             };
 
-            // 添加上传任务
-            var api = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
             taskList.push({
                 api: api,
                 params: fileParams,
@@ -969,6 +1034,7 @@ function sliceCopyFile(params, callback) {
             Key: Key,
             UploadId: UploadData.UploadId,
             Parts: Parts,
+            calledBySdk: 'sliceCopyFile',
         },function (err, data) {
             if (err) {
                 onProgress(null, true);
@@ -1071,6 +1137,7 @@ function sliceCopyFile(params, callback) {
             Region: Region,
             Key: Key,
             Headers: TargetHeader,
+            calledBySdk: 'sliceCopyFile',
         },function (err,data) {
             if (err) return callback(err);
             params.UploadId = data.UploadId;

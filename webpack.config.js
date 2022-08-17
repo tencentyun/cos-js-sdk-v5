@@ -2,6 +2,7 @@ var fs = require('fs');
 var path = require('path');
 var webpack = require('webpack');
 var pkg = require('./package');
+const TerserPlugin = require('terser-webpack-plugin');
 
 // replaceVersion
 var replaceVersion = function () {
@@ -47,7 +48,9 @@ var replaceDevCode = function (list) {
 replaceVersion();
 
 module.exports = {
+    mode: process.env.NODE_ENV,
     entry: path.resolve(__dirname, './index.js'),
+    devtool: "none",
     output: {
         path: path.resolve(__dirname, './dist'),
         publicPath: '/dist/',
@@ -64,6 +67,17 @@ module.exports = {
             }
         ]
     },
+    optimization: {
+      minimize: false,
+      minimizer: [
+        new TerserPlugin({
+          cache: true,
+          parallel: true,
+          sourceMap: true,
+          extractComments: false,
+        }),
+      ],
+  },
     devServer: {
         historyApiFallback: true,
         noInfo: true
@@ -82,20 +96,28 @@ if (process.env.NODE_ENV === 'production') {
         'server/sts.php',
     ]);
     module.exports.output.filename = 'cos-js-sdk-v5.min.js';
+    module.exports.optimization = {
+      minimize: true,
+      minimizer: [
+        new TerserPlugin({
+          cache: true,
+          parallel: true,
+          sourceMap: true,
+          extractComments: false,
+          terserOptions: {
+            compress: {
+              drop_debugger: true,
+              drop_console: true,
+            }
+          },
+        }),
+      ],
+    };
     module.exports.plugins = (module.exports.plugins || []).concat([
         new webpack.DefinePlugin({
             'process.env': {
                 NODE_ENV: '"production"'
             }
-        }),
-        new webpack.optimize.UglifyJsPlugin({
-            sourceMap: false,
-            output: {
-                ascii_only: true,
-            },
-            compress: {
-                warnings: false,
-            },
         }),
         new webpack.LoaderOptionsPlugin({
             minimize: true

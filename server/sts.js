@@ -19,17 +19,17 @@ var config = {
     allowPrefix: '_ALLOW_DIR_/*',
     // 密钥的权限列表
     allowActions: [
-        // 所有 action 请看文档 https://cloud.tencent.com/document/product/436/31923
-        // 简单上传
-        'name/cos:PutObject',
-        'name/cos:PostObject',
-        // 分片上传
-        'name/cos:InitiateMultipartUpload',
-        'name/cos:ListMultipartUploads',
-        'name/cos:ListParts',
-        'name/cos:UploadPart',
-        'name/cos:CompleteMultipartUpload'
-    ],
+      // 所有 action 请看文档 https://cloud.tencent.com/document/product/436/31923
+      // 简单上传
+      'name/cos:PutObject',
+      'name/cos:PostObject',
+      // 分片上传
+      'name/cos:InitiateMultipartUpload',
+      'name/cos:ListMultipartUploads',
+      'name/cos:ListParts',
+      'name/cos:UploadPart',
+      'name/cos:CompleteMultipartUpload'
+  ],
 };
 
 // 创建临时密钥服务和用于调试的静态服务

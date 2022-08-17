@@ -173,6 +173,12 @@ declare namespace COS {
     UseAccelerate?: boolean,
     /** 默认为true，将host加入签名计算，关闭后可能导致越权风险，建议保持为true */
     ForceSignHost?: boolean,
+    /** 链路上报 */
+    EnableTracker?: boolean,
+    DeepTracker?: boolean,
+    TrackerDelay?: number,
+    CustomId?: string,
+    /** 链路上报 */
     /** 获取签名的回调方法，如果没有 SecretId、SecretKey 时，必选 */
     getAuthorization?: (
       options: GetAuthorizationOptions,
@@ -287,6 +293,7 @@ declare namespace COS {
     Region: Region,
     /** 请求时带上的 Header 字段 */
     Headers?: Headers,
+    tracker?: any,
   }
   /** 对象操作接口的公共参数 */
   interface ObjectParams {
@@ -298,6 +305,7 @@ declare namespace COS {
     Key: Key,
     /** 发请求时带上的 Header 字段 */
     Headers?: Headers,
+    tracker?: any,
   }
 
   // 所有接口的入参和出参

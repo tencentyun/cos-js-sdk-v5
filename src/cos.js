@@ -5,6 +5,7 @@ var event = require('./event');
 var task = require('./task');
 var base = require('./base');
 var advance = require('./advance');
+var pkg = require('../package.json');
 
 var defaultOptions = {
     AppId: '', // AppId 已废弃，请拼接到 Bucket 后传入，例如：test-1250000000
@@ -36,6 +37,10 @@ var defaultOptions = {
     UploadIdCacheLimit: 50,
     UseAccelerate: false,
     ForceSignHost: true, // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
+    EnableTracker: false, // 默认关闭上报
+    DeepTracker: false, // 上报时是否对每个分块上传做单独上报
+    TrackerDelay: 5000, // 周期性上报，单位毫秒。0代表实时上报
+    CustomId: '', // 自定义上报id
 };
 
 // 对外暴露的类
@@ -78,6 +83,6 @@ COS.util = {
     json2xml: util.json2xml,
 };
 COS.getAuthorization = util.getAuth;
-COS.version = '1.3.10';
+COS.version = pkg.version;
 
 module.exports = COS;

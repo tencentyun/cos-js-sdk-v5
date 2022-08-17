@@ -7,7 +7,7 @@
 		exports["COS"] = factory();
 	else
 		root["COS"] = factory();
-})(typeof self !== 'undefined' ? self : this, function() {
+})(window, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -46,12 +46,32 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// define getter function for harmony exports
 /******/ 	__webpack_require__.d = function(exports, name, getter) {
 /******/ 		if(!__webpack_require__.o(exports, name)) {
-/******/ 			Object.defineProperty(exports, name, {
-/******/ 				configurable: false,
-/******/ 				enumerable: true,
-/******/ 				get: getter
-/******/ 			});
+/******/ 			Object.defineProperty(exports, name, { enumerable: true, get: getter });
 /******/ 		}
+/******/ 	};
+/******/
+/******/ 	// define __esModule on exports
+/******/ 	__webpack_require__.r = function(exports) {
+/******/ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 		}
+/******/ 		Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 	};
+/******/
+/******/ 	// create a fake namespace object
+/******/ 	// mode & 1: value is a module id, require it
+/******/ 	// mode & 2: merge all properties of value into the ns
+/******/ 	// mode & 4: return value when already ns object
+/******/ 	// mode & 8|1: behave like require
+/******/ 	__webpack_require__.t = function(value, mode) {
+/******/ 		if(mode & 1) value = __webpack_require__(value);
+/******/ 		if(mode & 8) return value;
+/******/ 		if((mode & 4) && typeof value === 'object' && value && value.__esModule) return value;
+/******/ 		var ns = Object.create(null);
+/******/ 		__webpack_require__.r(ns);
+/******/ 		Object.defineProperty(ns, 'default', { enumerable: true, value: value });
+/******/ 		if(mode & 2 && typeof value != 'string') for(var key in value) __webpack_require__.d(ns, key, function(key) { return value[key]; }.bind(null, key));
+/******/ 		return ns;
 /******/ 	};
 /******/
 /******/ 	// getDefaultExport function for compatibility with non-harmony modules
@@ -69,758 +89,3766 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "/dist/";
 /******/
+/******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 6);
+/******/ 	return __webpack_require__(__webpack_require__.s = "./index.js");
 /******/ })
 /************************************************************************/
-/******/ ([
-/* 0 */
+/******/ ({
+
+/***/ "./index.js":
+/*!******************!*\
+  !*** ./index.js ***!
+  \******************/
+/*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-"use strict";
-/* WEBPACK VAR INJECTION */(function(process) {
+var COS = __webpack_require__(/*! ./src/cos */ "./src/cos.js");
 
-var md5 = __webpack_require__(8);
-var CryptoJS = __webpack_require__(11);
-var xml2json = __webpack_require__(12);
-var json2xml = __webpack_require__(17);
-
-function camSafeUrlEncode(str) {
-    return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/\*/g, '%2A');
-}
-
-function getObjectKeys(obj, forKey) {
-    var list = [];
-    for (var key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            list.push(forKey ? camSafeUrlEncode(key).toLowerCase() : key);
-        }
-    }
-    return list.sort(function (a, b) {
-        a = a.toLowerCase();
-        b = b.toLowerCase();
-        return a === b ? 0 : a > b ? 1 : -1;
-    });
-};
-
-/**
- * obj转为string
- * @param  {Object}  obj                需要转的对象，必须
- * @param  {Boolean} lowerCaseKey       key是否转为小写，默认false，非必须
- * @return {String}  data               返回字符串
- */
-var obj2str = function (obj, lowerCaseKey) {
-    var i, key, val;
-    var list = [];
-    var keyList = getObjectKeys(obj);
-    for (i = 0; i < keyList.length; i++) {
-        key = keyList[i];
-        val = obj[key] === undefined || obj[key] === null ? '' : '' + obj[key];
-        key = lowerCaseKey ? camSafeUrlEncode(key).toLowerCase() : camSafeUrlEncode(key);
-        val = camSafeUrlEncode(val) || '';
-        list.push(key + '=' + val);
-    }
-    return list.join('&');
-};
-
-// 可以签入签名的headers
-var signHeaders = ['content-disposition', 'content-encoding', 'content-length', 'content-md5', 'expect', 'host', 'if-match', 'if-modified-since', 'if-none-match', 'if-unmodified-since', 'origin', 'range', 'response-cache-control', 'response-content-disposition', 'response-content-encoding', 'response-content-language', 'response-content-type', 'response-expires', 'transfer-encoding', 'versionid'];
-
-var getSignHeaderObj = function (headers) {
-    var signHeaderObj = {};
-    for (var i in headers) {
-        var key = i.toLowerCase();
-        if (key.indexOf('x-cos-') > -1 || signHeaders.indexOf(key) > -1) {
-            signHeaderObj[i] = headers[i];
-        }
-    }
-    return signHeaderObj;
-};
-
-//测试用的key后面可以去掉
-var getAuth = function (opt) {
-    opt = opt || {};
-
-    var SecretId = opt.SecretId;
-    var SecretKey = opt.SecretKey;
-    var KeyTime = opt.KeyTime;
-    var method = (opt.method || opt.Method || 'get').toLowerCase();
-    var queryParams = clone(opt.Query || opt.params || {});
-    var headers = getSignHeaderObj(clone(opt.Headers || opt.headers || {}));
-
-    var Key = opt.Key || '';
-    var pathname;
-    if (opt.UseRawKey) {
-        pathname = opt.Pathname || opt.pathname || '/' + Key;
-    } else {
-        pathname = opt.Pathname || opt.pathname || Key;
-        pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
-    }
-
-    // ForceSignHost明确传入false才不加入host签名
-    var forceSignHost = opt.ForceSignHost === false ? false : true;
-
-    // 如果有传入存储桶且需要强制签名，那么签名默认加 Host 参与计算，避免跨桶访问
-    if (!headers.Host && !headers.host && opt.Bucket && opt.Region && forceSignHost) headers.Host = opt.Bucket + '.cos.' + opt.Region + '.myqcloud.com';
-
-    if (!SecretId) throw new Error('missing param SecretId');
-    if (!SecretKey) throw new Error('missing param SecretKey');
-
-    // 签名有效起止时间
-    var now = Math.round(getSkewTime(opt.SystemClockOffset) / 1000) - 1;
-    var exp = now;
-
-    var Expires = opt.Expires || opt.expires;
-    if (Expires === undefined) {
-        exp += 900; // 签名过期时间为当前 + 900s
-    } else {
-        exp += Expires * 1 || 0;
-    }
-
-    // 要用到的 Authorization 参数列表
-    var qSignAlgorithm = 'sha1';
-    var qAk = SecretId;
-    var qSignTime = KeyTime || now + ';' + exp;
-    var qKeyTime = KeyTime || now + ';' + exp;
-    var qHeaderList = getObjectKeys(headers, true).join(';').toLowerCase();
-    var qUrlParamList = getObjectKeys(queryParams, true).join(';').toLowerCase();
-
-    // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
-    // 步骤一：计算 SignKey
-    var signKey = CryptoJS.HmacSHA1(qKeyTime, SecretKey).toString();
-
-    // 步骤二：构成 FormatString
-    var formatString = [method, pathname, util.obj2str(queryParams, true), util.obj2str(headers, true), ''].join('\n');
-
-    // 步骤三：计算 StringToSign
-    var stringToSign = ['sha1', qSignTime, CryptoJS.SHA1(formatString).toString(), ''].join('\n');
-
-    // 步骤四：计算 Signature
-    var qSignature = CryptoJS.HmacSHA1(stringToSign, signKey).toString();
-
-    // 步骤五：构造 Authorization
-    var authorization = ['q-sign-algorithm=' + qSignAlgorithm, 'q-ak=' + qAk, 'q-sign-time=' + qSignTime, 'q-key-time=' + qKeyTime, 'q-header-list=' + qHeaderList, 'q-url-param-list=' + qUrlParamList, 'q-signature=' + qSignature].join('&');
-
-    return authorization;
-};
-
-var readIntBE = function (chunk, size, offset) {
-    var bytes = size / 8;
-    var buf = chunk.slice(offset, offset + bytes);
-    new Uint8Array(buf).reverse();
-    return new { 8: Uint8Array, 16: Uint16Array, 32: Uint32Array }[size](buf)[0];
-};
-var buf2str = function (chunk, start, end, isUtf8) {
-    var buf = chunk.slice(start, end);
-    var str = '';
-    new Uint8Array(buf).forEach(function (charCode) {
-        str += String.fromCharCode(charCode);
-    });
-    if (isUtf8) str = decodeURIComponent(escape(str));
-    return str;
-};
-var parseSelectPayload = function (chunk) {
-    var header = {};
-    var body = buf2str(chunk);
-    var result = { records: [] };
-    while (chunk.byteLength) {
-        var totalLength = readIntBE(chunk, 32, 0);
-        var headerLength = readIntBE(chunk, 32, 4);
-        var payloadRestLength = totalLength - headerLength - 16;
-        var offset = 0;
-        var content;
-        chunk = chunk.slice(12);
-        // 获取 Message 的 header 信息
-        while (offset < headerLength) {
-            var headerNameLength = readIntBE(chunk, 8, offset);
-            var headerName = buf2str(chunk, offset + 1, offset + 1 + headerNameLength);
-            var headerValueLength = readIntBE(chunk, 16, offset + headerNameLength + 2);
-            var headerValue = buf2str(chunk, offset + headerNameLength + 4, offset + headerNameLength + 4 + headerValueLength);
-            header[headerName] = headerValue;
-            offset += headerNameLength + 4 + headerValueLength;
-        }
-        if (header[':event-type'] === 'Records') {
-            content = buf2str(chunk, offset, offset + payloadRestLength, true);
-            result.records.push(content);
-        } else if (header[':event-type'] === 'Stats') {
-            content = buf2str(chunk, offset, offset + payloadRestLength, true);
-            result.stats = util.xml2json(content).Stats;
-        } else if (header[':event-type'] === 'error') {
-            var errCode = header[':error-code'];
-            var errMessage = header[':error-message'];
-            var err = new Error(errMessage);
-            err.message = errMessage;
-            err.name = err.code = errCode;
-            result.error = err;
-        } else if (['Progress', 'Continuation', 'End'].includes(header[':event-type'])) {
-            // do nothing
-        }
-        chunk = chunk.slice(offset + payloadRestLength + 4);
-    }
-    return {
-        payload: result.records.join(''),
-        body: body
-    };
-};
-
-var getSourceParams = function (source) {
-    var parser = this.options.CopySourceParser;
-    if (parser) return parser(source);
-    var m = source.match(/^([^.]+-\d+)\.cos(v6|-cdc)?\.([^.]+)\.myqcloud\.com\/(.+)$/);
-    if (!m) return null;
-    return { Bucket: m[1], Region: m[3], Key: m[4] };
-};
-
-var noop = function () {};
-
-// 清除对象里值为的 undefined 或 null 的属性
-var clearKey = function (obj) {
-    var retObj = {};
-    for (var key in obj) {
-        if (obj.hasOwnProperty(key) && obj[key] !== undefined && obj[key] !== null) {
-            retObj[key] = obj[key];
-        }
-    }
-    return retObj;
-};
-
-var readAsBinaryString = function (blob, callback) {
-    var readFun;
-    var fr = new FileReader();
-    if (FileReader.prototype.readAsBinaryString) {
-        readFun = FileReader.prototype.readAsBinaryString;
-        fr.onload = function () {
-            callback(this.result);
-        };
-    } else if (FileReader.prototype.readAsArrayBuffer) {
-        // 在 ie11 添加 readAsBinaryString 兼容
-        readFun = function (fileData) {
-            var binary = "";
-            var pt = this;
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                var bytes = new Uint8Array(reader.result);
-                var length = bytes.byteLength;
-                for (var i = 0; i < length; i++) {
-                    binary += String.fromCharCode(bytes[i]);
-                }
-                callback(binary);
-            };
-            reader.readAsArrayBuffer(fileData);
-        };
-    } else {
-        console.error('FileReader not support readAsBinaryString');
-    }
-    readFun.call(fr, blob);
-};
-
-var fileSliceNeedCopy = function () {
-    var compareVersion = function (a, b) {
-        a = a.split('.');
-        b = b.split('.');
-        for (var i = 0; i < b.length; i++) {
-            if (a[i] !== b[i]) {
-                return parseInt(a[i]) > parseInt(b[i]) ? 1 : -1;
-            }
-        }
-        return 0;
-    };
-    var check = function (ua) {
-        if (!ua) return false;
-        var ChromeVersion = (ua.match(/Chrome\/([.\d]+)/) || [])[1];
-        var QBCoreVersion = (ua.match(/QBCore\/([.\d]+)/) || [])[1];
-        var QQBrowserVersion = (ua.match(/QQBrowser\/([.\d]+)/) || [])[1];
-        var need = ChromeVersion && compareVersion(ChromeVersion, '53.0.2785.116') < 0 && QBCoreVersion && compareVersion(QBCoreVersion, '3.53.991.400') < 0 && QQBrowserVersion && compareVersion(QQBrowserVersion, '9.0.2524.400') <= 0 || false;
-        return need;
-    };
-    return check(typeof navigator !== 'undefined' && navigator.userAgent);
-}();
-
-// 获取文件分片
-var fileSlice = function (file, start, end, isUseToUpload, callback) {
-    var blob;
-    if (file.slice) {
-        blob = file.slice(start, end);
-    } else if (file.mozSlice) {
-        blob = file.mozSlice(start, end);
-    } else if (file.webkitSlice) {
-        blob = file.webkitSlice(start, end);
-    }
-    if (isUseToUpload && fileSliceNeedCopy) {
-        var reader = new FileReader();
-        reader.onload = function (e) {
-            blob = null;
-            callback(new Blob([reader.result]));
-        };
-        reader.readAsArrayBuffer(blob);
-    } else {
-        callback(blob);
-    }
-};
-
-// 获取文件内容的 MD5
-var getBodyMd5 = function (UploadCheckContentMd5, Body, callback, onProgress) {
-    callback = callback || noop;
-    if (UploadCheckContentMd5) {
-        if (typeof Body === 'string') {
-            callback(util.md5(Body, true));
-        } else if (Blob && Body instanceof Blob) {
-            util.getFileMd5(Body, function (err, md5) {
-                callback(md5);
-            }, onProgress);
-        } else {
-            callback();
-        }
-    } else {
-        callback();
-    }
-};
-
-// 获取文件 md5 值
-var md5ChunkSize = 1024 * 1024;
-var getFileMd5 = function (blob, callback, onProgress) {
-    var size = blob.size;
-    var loaded = 0;
-    var md5ctx = md5.getCtx();
-    var next = function (start) {
-        if (start >= size) {
-            var hash = md5ctx.digest('hex');
-            callback(null, hash);
-            return;
-        }
-        var end = Math.min(size, start + md5ChunkSize);
-        util.fileSlice(blob, start, end, false, function (chunk) {
-            readAsBinaryString(chunk, function (content) {
-                chunk = null;
-                md5ctx = md5ctx.update(content, true);
-                loaded += content.length;
-                content = null;
-                if (onProgress) onProgress({ loaded: loaded, total: size, percent: Math.round(loaded / size * 10000) / 10000 });
-                next(start + md5ChunkSize);
-            });
-        });
-    };
-    next(0);
-};
-
-function clone(obj) {
-    return map(obj, function (v) {
-        return typeof v === 'object' && v !== null ? clone(v) : v;
-    });
-}
-
-function attr(obj, name, defaultValue) {
-    return obj && name in obj ? obj[name] : defaultValue;
-}
-
-function extend(target, source) {
-    each(source, function (val, key) {
-        target[key] = source[key];
-    });
-    return target;
-}
-
-function isArray(arr) {
-    return arr instanceof Array;
-}
-
-function isInArray(arr, item) {
-    var flag = false;
-    for (var i = 0; i < arr.length; i++) {
-        if (item === arr[i]) {
-            flag = true;
-            break;
-        }
-    }
-    return flag;
-}
-
-function makeArray(arr) {
-    return isArray(arr) ? arr : [arr];
-}
-
-function each(obj, fn) {
-    for (var i in obj) {
-        if (obj.hasOwnProperty(i)) {
-            fn(obj[i], i);
-        }
-    }
-}
-
-function map(obj, fn) {
-    var o = isArray(obj) ? [] : {};
-    for (var i in obj) {
-        if (obj.hasOwnProperty(i)) {
-            o[i] = fn(obj[i], i);
-        }
-    }
-    return o;
-}
-
-function filter(obj, fn) {
-    var iaArr = isArray(obj);
-    var o = iaArr ? [] : {};
-    for (var i in obj) {
-        if (obj.hasOwnProperty(i)) {
-            if (fn(obj[i], i)) {
-                if (iaArr) {
-                    o.push(obj[i]);
-                } else {
-                    o[i] = obj[i];
-                }
-            }
-        }
-    }
-    return o;
-}
-
-var binaryBase64 = function (str) {
-    var i,
-        len,
-        char,
-        res = '';
-    for (i = 0, len = str.length / 2; i < len; i++) {
-        char = parseInt(str[i * 2] + str[i * 2 + 1], 16);
-        res += String.fromCharCode(char);
-    }
-    return btoa(res);
-};
-var uuid = function () {
-    var S4 = function () {
-        return ((1 + Math.random()) * 0x10000 | 0).toString(16).substring(1);
-    };
-    return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
-};
-
-var hasMissingParams = function (apiName, params) {
-    var Bucket = params.Bucket;
-    var Region = params.Region;
-    var Key = params.Key;
-    var Domain = this.options.Domain;
-    var checkBucket = !Domain || typeof Domain === 'string' && Domain.indexOf('{Bucket}') > -1;
-    var checkRegion = !Domain || typeof Domain === 'string' && Domain.indexOf('{Region}') > -1;
-    if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList' || apiName === 'listObjectVersions') {
-        if (checkBucket && !Bucket) return 'Bucket';
-        if (checkRegion && !Region) return 'Region';
-    } else if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask') {
-        if (checkBucket && !Bucket) return 'Bucket';
-        if (checkRegion && !Region) return 'Region';
-        if (!Key) return 'Key';
-    }
-    return false;
-};
-
-var formatParams = function (apiName, params) {
-
-    // 复制参数对象
-    params = extend({}, params);
-
-    // 统一处理 Headers
-    if (apiName !== 'getAuth' && apiName !== 'getV4Auth' && apiName !== 'getObjectUrl') {
-        var Headers = params.Headers || {};
-        if (params && typeof params === 'object') {
-            (function () {
-                for (var key in params) {
-                    if (params.hasOwnProperty(key) && key.indexOf('x-cos-') > -1) {
-                        Headers[key] = params[key];
-                    }
-                }
-            })();
-
-            var headerMap = {
-                // params headers
-                'x-cos-mfa': 'MFA',
-                'Content-MD5': 'ContentMD5',
-                'Content-Length': 'ContentLength',
-                'Content-Type': 'ContentType',
-                'Expect': 'Expect',
-                'Expires': 'Expires',
-                'Cache-Control': 'CacheControl',
-                'Content-Disposition': 'ContentDisposition',
-                'Content-Encoding': 'ContentEncoding',
-                'Range': 'Range',
-                'If-Modified-Since': 'IfModifiedSince',
-                'If-Unmodified-Since': 'IfUnmodifiedSince',
-                'If-Match': 'IfMatch',
-                'If-None-Match': 'IfNoneMatch',
-                'x-cos-copy-source': 'CopySource',
-                'x-cos-copy-source-Range': 'CopySourceRange',
-                'x-cos-metadata-directive': 'MetadataDirective',
-                'x-cos-copy-source-If-Modified-Since': 'CopySourceIfModifiedSince',
-                'x-cos-copy-source-If-Unmodified-Since': 'CopySourceIfUnmodifiedSince',
-                'x-cos-copy-source-If-Match': 'CopySourceIfMatch',
-                'x-cos-copy-source-If-None-Match': 'CopySourceIfNoneMatch',
-                'x-cos-acl': 'ACL',
-                'x-cos-grant-read': 'GrantRead',
-                'x-cos-grant-write': 'GrantWrite',
-                'x-cos-grant-full-control': 'GrantFullControl',
-                'x-cos-grant-read-acp': 'GrantReadAcp',
-                'x-cos-grant-write-acp': 'GrantWriteAcp',
-                'x-cos-storage-class': 'StorageClass',
-                'x-cos-traffic-limit': 'TrafficLimit',
-                'x-cos-mime-limit': 'MimeLimit',
-                // SSE-C
-                'x-cos-server-side-encryption-customer-algorithm': 'SSECustomerAlgorithm',
-                'x-cos-server-side-encryption-customer-key': 'SSECustomerKey',
-                'x-cos-server-side-encryption-customer-key-MD5': 'SSECustomerKeyMD5',
-                // SSE-COS、SSE-KMS
-                'x-cos-server-side-encryption': 'ServerSideEncryption',
-                'x-cos-server-side-encryption-cos-kms-key-id': 'SSEKMSKeyId',
-                'x-cos-server-side-encryption-context': 'SSEContext'
-            };
-            util.each(headerMap, function (paramKey, headerKey) {
-                if (params[paramKey] !== undefined) {
-                    Headers[headerKey] = params[paramKey];
-                }
-            });
-
-            params.Headers = clearKey(Headers);
-        }
-    }
-
-    return params;
-};
-
-var apiWrapper = function (apiName, apiFn) {
-    return function (params, callback) {
-
-        var self = this;
-
-        // 处理参数
-        if (typeof params === 'function') {
-            callback = params;
-            params = {};
-        }
-
-        // 整理参数格式
-        params = formatParams(apiName, params);
-
-        // 代理回调函数
-        var formatResult = function (result) {
-            if (result && result.headers) {
-                result.headers['x-cos-request-id'] && (result.RequestId = result.headers['x-cos-request-id']);
-                result.headers['x-ci-request-id'] && (result.RequestId = result.headers['x-ci-request-id']);
-                result.headers['x-cos-version-id'] && (result.VersionId = result.headers['x-cos-version-id']);
-                result.headers['x-cos-delete-marker'] && (result.DeleteMarker = result.headers['x-cos-delete-marker']);
-            }
-            return result;
-        };
-        var _callback = function (err, data) {
-            callback && callback(formatResult(err), formatResult(data));
-        };
-
-        var checkParams = function () {
-            if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
-                // 判断参数是否完整
-                var missingResult = hasMissingParams.call(self, apiName, params);
-                if (missingResult) {
-                    return 'missing param ' + missingResult;
-                }
-                // 判断 region 格式
-                if (params.Region) {
-                    if (self.options.CompatibilityMode) {
-                        if (!/^([a-z\d-.]+)$/.test(params.Region)) {
-                            return 'Region format error.';
-                        }
-                    } else {
-                        if (params.Region.indexOf('cos.') > -1) {
-                            return 'param Region should not be start with "cos."';
-                        } else if (!/^([a-z\d-]+)$/.test(params.Region)) {
-                            return 'Region format error.';
-                        }
-                    }
-                    // 判断 region 格式
-                    if (!self.options.CompatibilityMode && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default' && params.Region !== 'accelerate') {
-                        console.warn('warning: param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
-                    }
-                }
-                // 兼容不带 AppId 的 Bucket
-                if (params.Bucket) {
-                    if (!/^([a-z\d-]+)-(\d+)$/.test(params.Bucket)) {
-                        if (params.AppId) {
-                            params.Bucket = params.Bucket + '-' + params.AppId;
-                        } else if (self.options.AppId) {
-                            params.Bucket = params.Bucket + '-' + self.options.AppId;
-                        } else {
-                            return 'Bucket should format as "test-1250000000".';
-                        }
-                    }
-                    if (params.AppId) {
-                        console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g Bucket:"test-1250000000" ).');
-                        delete params.AppId;
-                    }
-                }
-                // 如果 Key 是 / 开头，强制去掉第一个 /
-                if (!self.options.UseRawKey && params.Key && params.Key.substr(0, 1) === '/') {
-                    params.Key = params.Key.substr(1);
-                }
-            }
-        };
-
-        var errMsg = checkParams();
-        var isSync = apiName === 'getAuth' || apiName === 'getObjectUrl';
-        if (typeof Promise === 'function' && !isSync && !callback) {
-            return new Promise(function (resolve, reject) {
-                callback = function (err, data) {
-                    err ? reject(err) : resolve(data);
-                };
-                if (errMsg) return _callback(util.error(new Error(errMsg)));
-                apiFn.call(self, params, _callback);
-            });
-        } else {
-            if (errMsg) return _callback(util.error(new Error(errMsg)));
-            var res = apiFn.call(self, params, _callback);
-            if (isSync) return res;
-        }
-    };
-};
-
-var throttleOnProgress = function (total, onProgress) {
-    var self = this;
-    var size0 = 0;
-    var size1 = 0;
-    var time0 = Date.now();
-    var time1;
-    var timer;
-
-    function update() {
-        timer = 0;
-        if (onProgress && typeof onProgress === 'function') {
-            time1 = Date.now();
-            var speed = Math.max(0, Math.round((size1 - size0) / ((time1 - time0) / 1000) * 100) / 100) || 0;
-            var percent;
-            if (size1 === 0 && total === 0) {
-                percent = 1;
-            } else {
-                percent = Math.floor(size1 / total * 100) / 100 || 0;
-            }
-            time0 = time1;
-            size0 = size1;
-            try {
-                onProgress({ loaded: size1, total: total, speed: speed, percent: percent });
-            } catch (e) {}
-        }
-    }
-
-    return function (info, immediately) {
-        if (info) {
-            size1 = info.loaded;
-            total = info.total;
-        }
-        if (immediately) {
-            clearTimeout(timer);
-            update();
-        } else {
-            if (timer) return;
-            timer = setTimeout(update, self.options.ProgressInterval);
-        }
-    };
-};
-
-var getFileSize = function (api, params, callback) {
-    var size;
-    if (typeof params.Body === 'string') {
-        params.Body = new Blob([params.Body], { type: 'text/plain' });
-    } else if (params.Body instanceof ArrayBuffer) {
-        params.Body = new Blob([params.Body]);
-    }
-    if (params.Body && (params.Body instanceof Blob || params.Body.toString() === '[object File]' || params.Body.toString() === '[object Blob]')) {
-        size = params.Body.size;
-    } else {
-        callback(util.error(new Error('params body format error, Only allow File|Blob|String.')));
-        return;
-    }
-    params.ContentLength = size;
-    callback(null, size);
-};
-
-// 获取调正的时间戳
-var getSkewTime = function (offset) {
-    return Date.now() + (offset || 0);
-};
-
-var error = function (err, opt) {
-    var sourceErr = err;
-    err.message = err.message || null;
-
-    if (typeof opt === 'string') {
-        err.error = opt;
-        err.message = opt;
-    } else if (typeof opt === 'object' && opt !== null) {
-        extend(err, opt);
-        if (opt.code || opt.name) err.code = opt.code || opt.name;
-        if (opt.message) err.message = opt.message;
-        if (opt.stack) err.stack = opt.stack;
-    }
-
-    if (typeof Object.defineProperty === 'function') {
-        Object.defineProperty(err, 'name', { writable: true, enumerable: false });
-        Object.defineProperty(err, 'message', { enumerable: true });
-    }
-
-    err.name = opt && opt.name || err.name || err.code || 'Error';
-    if (!err.code) err.code = err.name;
-    if (!err.error) err.error = clone(sourceErr); // 兼容老的错误格式
-
-    return err;
-};
-
-var isWebWorker = function () {
-    // 有限判断 worker 环境的 constructor name 其次用 worker 独有的 FileReaderSync 兜底 详细参考 https://developer.mozilla.org/zh-CN/docs/Web/API/Web_Workers_API/Using_web_workers
-    return typeof globalThis === 'object' && (globalThis.constructor.name === 'DedicatedWorkerGlobalScope' || globalThis.FileReaderSync);
-};
-
-var isNode = function () {
-    // 得兜底 web worker 环境中 webpack 用了 process 插件之类的情况
-    return typeof window !== 'object' && typeof process === 'object' && "function" === 'function' && !isWebWorker();
-};
-
-var isCIHost = function (url) {
-    return (/^https?:\/\/([^/]+\.)?ci\.[^/]+/.test(url)
-    );
-};
-
-var util = {
-    noop: noop,
-    formatParams: formatParams,
-    apiWrapper: apiWrapper,
-    xml2json: xml2json,
-    json2xml: json2xml,
-    md5: md5,
-    clearKey: clearKey,
-    fileSlice: fileSlice,
-    getBodyMd5: getBodyMd5,
-    getFileMd5: getFileMd5,
-    binaryBase64: binaryBase64,
-    extend: extend,
-    isArray: isArray,
-    isInArray: isInArray,
-    makeArray: makeArray,
-    each: each,
-    map: map,
-    filter: filter,
-    clone: clone,
-    attr: attr,
-    uuid: uuid,
-    camSafeUrlEncode: camSafeUrlEncode,
-    throttleOnProgress: throttleOnProgress,
-    getFileSize: getFileSize,
-    getSkewTime: getSkewTime,
-    error: error,
-    obj2str: obj2str,
-    getAuth: getAuth,
-    parseSelectPayload: parseSelectPayload,
-    getSourceParams: getSourceParams,
-    isBrowser: true,
-    isNode: isNode,
-    isCIHost: isCIHost
-};
-
-module.exports = util;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)))
+module.exports = COS;
 
 /***/ }),
-/* 1 */
+
+/***/ "./lib/beacon.min.js":
+/*!***************************!*\
+  !*** ./lib/beacon.min.js ***!
+  \***************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(global) {var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+!function (t, e) {
+  "object" == ( false ? undefined : _typeof(exports)) && "undefined" != typeof module ? module.exports = e() :  true ? !(__WEBPACK_AMD_DEFINE_FACTORY__ = (e),
+				__WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ?
+				(__WEBPACK_AMD_DEFINE_FACTORY__.call(exports, __webpack_require__, exports, module)) :
+				__WEBPACK_AMD_DEFINE_FACTORY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__)) : undefined;
+}(this, function () {
+  "use strict";
+
+  var _t = function t(e, r) {
+    return (_t = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (t, e) {
+      t.__proto__ = e;
+    } || function (t, e) {
+      for (var r in e) {
+        Object.prototype.hasOwnProperty.call(e, r) && (t[r] = e[r]);
+      }
+    })(e, r);
+  };
+
+  var _e = function e() {
+    return (_e = Object.assign || function (t) {
+      for (var e, r = 1, n = arguments.length; r < n; r++) {
+        for (var o in e = arguments[r]) {
+          Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
+        }
+      }
+
+      return t;
+    }).apply(this, arguments);
+  };
+
+  function r(t, e, r, n) {
+    return new (r || (r = Promise))(function (o, i) {
+      function a(t) {
+        try {
+          c(n.next(t));
+        } catch (t) {
+          i(t);
+        }
+      }
+
+      function s(t) {
+        try {
+          c(n["throw"](t));
+        } catch (t) {
+          i(t);
+        }
+      }
+
+      function c(t) {
+        var e;
+        t.done ? o(t.value) : (e = t.value, e instanceof r ? e : new r(function (t) {
+          t(e);
+        })).then(a, s);
+      }
+
+      c((n = n.apply(t, e || [])).next());
+    });
+  }
+
+  function n(t, e) {
+    var r,
+        n,
+        o,
+        i,
+        a = {
+      label: 0,
+      sent: function sent() {
+        if (1 & o[0]) throw o[1];
+        return o[1];
+      },
+      trys: [],
+      ops: []
+    };
+    return i = {
+      next: s(0),
+      "throw": s(1),
+      "return": s(2)
+    }, "function" == typeof Symbol && (i[Symbol.iterator] = function () {
+      return this;
+    }), i;
+
+    function s(i) {
+      return function (s) {
+        return function (i) {
+          if (r) throw new TypeError("Generator is already executing.");
+
+          for (; a;) {
+            try {
+              if (r = 1, n && (o = 2 & i[0] ? n["return"] : i[0] ? n["throw"] || ((o = n["return"]) && o.call(n), 0) : n.next) && !(o = o.call(n, i[1])).done) return o;
+
+              switch (n = 0, o && (i = [2 & i[0], o.value]), i[0]) {
+                case 0:
+                case 1:
+                  o = i;
+                  break;
+
+                case 4:
+                  return a.label++, {
+                    value: i[1],
+                    done: !1
+                  };
+
+                case 5:
+                  a.label++, n = i[1], i = [0];
+                  continue;
+
+                case 7:
+                  i = a.ops.pop(), a.trys.pop();
+                  continue;
+
+                default:
+                  if (!(o = a.trys, (o = o.length > 0 && o[o.length - 1]) || 6 !== i[0] && 2 !== i[0])) {
+                    a = 0;
+                    continue;
+                  }
+
+                  if (3 === i[0] && (!o || i[1] > o[0] && i[1] < o[3])) {
+                    a.label = i[1];
+                    break;
+                  }
+
+                  if (6 === i[0] && a.label < o[1]) {
+                    a.label = o[1], o = i;
+                    break;
+                  }
+
+                  if (o && a.label < o[2]) {
+                    a.label = o[2], a.ops.push(i);
+                    break;
+                  }
+
+                  o[2] && a.ops.pop(), a.trys.pop();
+                  continue;
+              }
+
+              i = e.call(t, a);
+            } catch (t) {
+              i = [6, t], n = 0;
+            } finally {
+              r = o = 0;
+            }
+          }
+
+          if (5 & i[0]) throw i[1];
+          return {
+            value: i[0] ? i[1] : void 0,
+            done: !0
+          };
+        }([i, s]);
+      };
+    }
+  }
+
+  var o = "__BEACON_",
+      i = "__BEACON_deviceId",
+      a = "last_report_time",
+      s = "sending_event_ids",
+      c = "beacon_config",
+      u = "beacon_config_request_time",
+      l = function () {
+    function t() {
+      var t = this;
+      this.emit = function (e, r) {
+        if (t) {
+          var n,
+              o = t.__EventsList[e];
+
+          if (null == o ? void 0 : o.length) {
+            o = o.slice();
+
+            for (var i = 0; i < o.length; i++) {
+              n = o[i];
+
+              try {
+                var a = n.callback.apply(t, [r]);
+                if (1 === n.type && t.remove(e, n.callback), !1 === a) break;
+              } catch (t) {
+                throw t;
+              }
+            }
+          }
+
+          return t;
+        }
+      }, this.__EventsList = {};
+    }
+
+    return t.prototype.indexOf = function (t, e) {
+      for (var r = 0; r < t.length; r++) {
+        if (t[r].callback === e) return r;
+      }
+
+      return -1;
+    }, t.prototype.on = function (t, e, r) {
+      if (void 0 === r && (r = 0), this) {
+        var n = this.__EventsList[t];
+
+        if (n || (n = this.__EventsList[t] = []), -1 === this.indexOf(n, e)) {
+          var o = {
+            name: t,
+            type: r || 0,
+            callback: e
+          };
+          return n.push(o), this;
+        }
+
+        return this;
+      }
+    }, t.prototype.one = function (t, e) {
+      this.on(t, e, 1);
+    }, t.prototype.remove = function (t, e) {
+      if (this) {
+        var r = this.__EventsList[t];
+        if (!r) return null;
+
+        if (!e) {
+          try {
+            delete this.__EventsList[t];
+          } catch (t) {}
+
+          return null;
+        }
+
+        if (r.length) {
+          var n = this.indexOf(r, e);
+          r.splice(n, 1);
+        }
+
+        return this;
+      }
+    }, t;
+  }();
+
+  function h(t, e) {
+    for (var r = {}, n = 0, o = Object.keys(t); n < o.length; n++) {
+      var i = o[n],
+          a = t[i];
+      if ("string" == typeof a) r[f(i)] = f(a);else {
+        if (e) throw new Error("value mast be string  !!!!");
+        r[f(String(i))] = f(String(a));
+      }
+    }
+
+    return r;
+  }
+
+  function f(t) {
+    if ("string" != typeof t) return t;
+
+    try {
+      return t.replace(new RegExp("\\|", "g"), "%7C").replace(new RegExp("\\&", "g"), "%26").replace(new RegExp("\\=", "g"), "%3D").replace(new RegExp("\\+", "g"), "%2B");
+    } catch (t) {
+      return "";
+    }
+  }
+
+  function p(t) {
+    return String(t.A99) + String(t.A100);
+  }
+
+  var d = function d() {};
+
+  var v = function () {
+    function t(t) {
+      var r = this;
+      this.lifeCycle = new l(), this.uploadJobQueue = [], this.additionalParams = {}, this.delayTime = 0, this._normalLogPipeline = function (t) {
+        if (!t || !t.reduce || !t.length) throw new TypeError("createPipeline 方法需要传入至少有一个 pipe 的数组");
+        return 1 === t.length ? function (e, r) {
+          t[0](e, r || d);
+        } : t.reduce(function (t, e) {
+          return function (r, n) {
+            return void 0 === n && (n = d), t(r, function (t) {
+              return null == e ? void 0 : e(t, n);
+            });
+          };
+        });
+      }([function (t) {
+        r.send({
+          url: r.strategy.getUploadUrl(),
+          data: t,
+          method: "post",
+          contentType: "application/json;charset=UTF-8"
+        }, function () {
+          var e = r.config.onReportSuccess;
+          "function" == typeof e && e(JSON.stringify(t.events));
+        }, function () {
+          var e = r.config.onReportFail;
+          "function" == typeof e && e(JSON.stringify(t.events));
+        });
+      }]), function (t, e) {
+        if (!t) throw e instanceof Error ? e : new Error(e);
+      }(Boolean(t.appkey), "appkey must be initial"), this.config = _e({}, t);
+    }
+
+    return t.prototype.onUserAction = function (t, e) {
+      this.preReport(t, e, !1);
+    }, t.prototype.onDirectUserAction = function (t, e) {
+      this.preReport(t, e, !0);
+    }, t.prototype.preReport = function (t, e, r) {
+      t ? this.strategy.isEventUpOnOff() && (this.strategy.isBlackEvent(t) || this.strategy.isSampleEvent(t) || this.onReport(t, e, r)) : this.errorReport.reportError("602", " no eventCode");
+    }, t.prototype.addAdditionalParams = function (t) {
+      for (var e = 0, r = Object.keys(t); e < r.length; e++) {
+        var n = r[e];
+        this.additionalParams[n] = t[n];
+      }
+    }, t.prototype.setChannelId = function (t) {
+      this.commonInfo.channelID = String(t);
+    }, t.prototype.setOpenId = function (t) {
+      this.commonInfo.openid = String(t);
+    }, t.prototype.setUnionid = function (t) {
+      this.commonInfo.unid = String(t);
+    }, t.prototype.getDeviceId = function () {
+      return this.commonInfo.deviceId;
+    }, t.prototype.getCommonInfo = function () {
+      return this.commonInfo;
+    }, t.prototype.removeSendingId = function (t) {
+      try {
+        var e = JSON.parse(this.storage.getItem(s)),
+            r = e.indexOf(t);
+        -1 != r && (e.splice(r, 1), this.storage.setItem(s, JSON.stringify(e)));
+      } catch (t) {}
+    }, t;
+  }(),
+      y = function () {
+    function t(t, e, r, n) {
+      this.requestParams = {}, this.network = n, this.requestParams.attaid = "00400014144", this.requestParams.token = "6478159937", this.requestParams.product_id = t.appkey, this.requestParams.platform = r, this.requestParams.uin = e.deviceId, this.requestParams.model = "", this.requestParams.os = r, this.requestParams.app_version = t.appVersion, this.requestParams.sdk_version = e.sdkVersion, this.requestParams.error_stack = "", this.uploadUrl = t.isOversea ? "https://htrace.wetvinfo.com/kv" : "https://h.trace.qq.com/kv";
+    }
+
+    return t.prototype.reportError = function (t, e) {
+      this.requestParams._dc = Math.random(), this.requestParams.error_msg = e, this.requestParams.error_code = t, this.network.get(this.uploadUrl, {
+        params: this.requestParams
+      })["catch"](function (t) {});
+    }, t;
+  }(),
+      g = function () {
+    function t(t, e, r, n) {
+      this.strategy = {
+        isEventUpOnOff: !0,
+        httpsUploadUrl: "https://otheve.beacon.qq.com/analytics/v2_upload",
+        requestInterval: 30,
+        blacklist: [],
+        samplelist: []
+      }, this.realSample = {}, this.appkey = "", this.appkey = t.appkey, this.storage = r;
+
+      try {
+        var o = JSON.parse(this.storage.getItem(c));
+        o && this.processData(o);
+      } catch (t) {}
+
+      t.isOversea && (this.strategy.httpsUploadUrl = "https://svibeacon.onezapp.com/analytics/v2_upload"), !t.isOversea && this.needRequestConfig() && this.requestConfig(t.appVersion, e, n);
+    }
+
+    return t.prototype.requestConfig = function (t, e, r) {
+      var n = this;
+      this.storage.setItem(u, Date.now().toString()), r.post("https://oth.str.beacon.qq.com/trpc.beacon.configserver.BeaconConfigService/QueryConfig", {
+        platformId: "undefined" == typeof wx ? "3" : "4",
+        mainAppKey: this.appkey,
+        appVersion: t,
+        sdkVersion: e.sdkVersion,
+        osVersion: e.userAgent,
+        model: "",
+        packageName: "",
+        params: {
+          A3: e.deviceId
+        }
+      }).then(function (t) {
+        if (0 == t.data.ret) try {
+          var e = JSON.parse(t.data.beaconConfig);
+          e && (n.processData(e), n.storage.setItem(c, t.data.beaconConfig));
+        } catch (t) {} else n.processData(null), n.storage.setItem(c, "");
+      })["catch"](function (t) {});
+    }, t.prototype.processData = function (t) {
+      var e, r, n, o, i;
+      this.strategy.isEventUpOnOff = null !== (e = null == t ? void 0 : t.isEventUpOnOff) && void 0 !== e ? e : this.strategy.isEventUpOnOff, this.strategy.httpsUploadUrl = null !== (r = null == t ? void 0 : t.httpsUploadUrl) && void 0 !== r ? r : this.strategy.httpsUploadUrl, this.strategy.requestInterval = null !== (n = null == t ? void 0 : t.requestInterval) && void 0 !== n ? n : this.strategy.requestInterval, this.strategy.blacklist = null !== (o = null == t ? void 0 : t.blacklist) && void 0 !== o ? o : this.strategy.blacklist, this.strategy.samplelist = null !== (i = null == t ? void 0 : t.samplelist) && void 0 !== i ? i : this.strategy.samplelist;
+
+      for (var a = 0, s = this.strategy.samplelist; a < s.length; a++) {
+        var c = s[a].split(",");
+        2 == c.length && (this.realSample[c[0]] = c[1]);
+      }
+    }, t.prototype.needRequestConfig = function () {
+      var t = Number(this.storage.getItem(u));
+      return Date.now() - t > 60 * this.strategy.requestInterval * 1e3;
+    }, t.prototype.getUploadUrl = function () {
+      return this.strategy.httpsUploadUrl + "?appkey=" + this.appkey;
+    }, t.prototype.isBlackEvent = function (t) {
+      return -1 != this.strategy.blacklist.indexOf(t);
+    }, t.prototype.isEventUpOnOff = function () {
+      return this.strategy.isEventUpOnOff;
+    }, t.prototype.isSampleEvent = function (t) {
+      return !!Object.prototype.hasOwnProperty.call(this.realSample, t) && this.realSample[t] < Math.floor(Math.random() * Math.floor(1e4));
+    }, t;
+  }(),
+      m = "session_storage_key",
+      w = function () {
+    function t(t, e, r) {
+      this.beacon = r, this.storage = t, this.duration = e, this.appkey = r.config.appkey;
+    }
+
+    return t.prototype.getSession = function () {
+      var t = this.storage.getItem(m);
+      if (!t) return this.createSession();
+      var e = "",
+          r = 0;
+
+      try {
+        var n = JSON.parse(t) || {
+          sessionId: void 0,
+          sessionStart: void 0
+        };
+        if (!n.sessionId || !n.sessionStart) return this.createSession();
+        var o = Number(this.storage.getItem(a));
+        if (Date.now() - o > this.duration) return this.createSession();
+        e = n.sessionId, r = n.sessionStart;
+      } catch (t) {}
+
+      return {
+        sessionId: e,
+        sessionStart: r
+      };
+    }, t.prototype.createSession = function () {
+      var t = Date.now(),
+          e = {
+        sessionId: this.appkey + "_" + t.toString(),
+        sessionStart: t
+      };
+      this.storage.setItem(m, JSON.stringify(e)), this.storage.setItem(a, t.toString());
+      var r = "is_new_user",
+          n = this.storage.getItem(r);
+      return this.beacon.onDirectUserAction("rqd_applaunched", {
+        A21: n ? "N" : "Y"
+      }), this.storage.setItem(r, JSON.stringify(!1)), e;
+    }, t;
+  }();
+
+  function b() {
+    var t = navigator.userAgent,
+        e = t.indexOf("compatible") > -1 && t.indexOf("MSIE") > -1,
+        r = t.indexOf("Edge") > -1 && !e,
+        n = t.indexOf("Trident") > -1 && t.indexOf("rv:11.0") > -1;
+
+    if (e) {
+      new RegExp("MSIE (\\d+\\.\\d+);").test(t);
+      var o = parseFloat(RegExp.$1);
+      return 7 == o ? 7 : 8 == o ? 8 : 9 == o ? 9 : 10 == o ? 10 : 6;
+    }
+
+    return r ? -2 : n ? 11 : -1;
+  }
+
+  var _S = function S() {
+    return (_S = Object.assign || function (t) {
+      for (var e, r = 1, n = arguments.length; r < n; r++) {
+        for (var o in e = arguments[r]) {
+          Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
+        }
+      }
+
+      return t;
+    }).apply(this, arguments);
+  };
+
+  var E,
+      I = function () {
+    function t(t, e) {
+      void 0 === e && (e = {}), this.reportOptions = {}, this.config = t, this.reportOptions = e;
+    }
+
+    return t.canUseDB = function () {
+      return !!(null === window || void 0 === window ? void 0 : window.indexedDB);
+    }, t.prototype.openDB = function () {
+      var e = this;
+      return new Promise(function (r, n) {
+        if (!t.canUseDB()) return n({
+          message: "当前不支持 indexeddb"
+        });
+        var o = e.config,
+            i = o.name,
+            a = o.version,
+            s = o.stores,
+            c = indexedDB.open(i, a);
+        c.onsuccess = function () {
+          e.db = c.result, r(), _S({
+            result: 1,
+            func: "open",
+            params: JSON.stringify(e.config)
+          }, e.reportOptions);
+        }, c.onerror = function (t) {
+          var r, o;
+          n(t), _S({
+            result: 0,
+            func: "open",
+            params: JSON.stringify(e.config),
+            error_msg: null === (o = null === (r = t.target) || void 0 === r ? void 0 : r.error) || void 0 === o ? void 0 : o.message
+          }, e.reportOptions);
+        }, c.onupgradeneeded = function () {
+          e.db = c.result;
+
+          try {
+            null == s || s.forEach(function (t) {
+              e.createStore(t);
+            });
+          } catch (t) {
+            _S({
+              result: 0,
+              func: "open",
+              params: JSON.stringify(e.config),
+              error_msg: t.message
+            }, e.reportOptions), n(t);
+          }
+        };
+      });
+    }, t.prototype.useStore = function (t) {
+      return this.storeName = t, this;
+    }, t.prototype.deleteDB = function () {
+      var t = this;
+      return this.closeDB(), new Promise(function (e, r) {
+        var n = indexedDB.deleteDatabase(t.config.name);
+        n.onsuccess = function () {
+          return e();
+        }, n.onerror = r;
+      });
+    }, t.prototype.closeDB = function () {
+      var t;
+      null === (t = this.db) || void 0 === t || t.close(), this.db = null;
+    }, t.prototype.getStoreCount = function () {
+      var t = this;
+      return new Promise(function (e, r) {
+        var n = t.getStore("readonly").count();
+        n.onsuccess = function () {
+          return e(n.result);
+        }, n.onerror = r;
+      });
+    }, t.prototype.clearStore = function () {
+      var t = this;
+      return new Promise(function (e, r) {
+        var n = t.getStore("readwrite").clear();
+        n.onsuccess = function () {
+          return e();
+        }, n.onerror = r;
+      });
+    }, t.prototype.add = function (t, e) {
+      var r = this;
+      return new Promise(function (n, o) {
+        var i = r.getStore("readwrite").add(t, e);
+        i.onsuccess = function () {
+          n(i.result);
+        }, i.onerror = o;
+      });
+    }, t.prototype.put = function (t, e) {
+      var r = this;
+      return new Promise(function (n, o) {
+        var i = r.getStore("readwrite").put(t, e);
+        i.onsuccess = function () {
+          n(i.result);
+        }, i.onerror = o;
+      });
+    }, t.prototype.getStoreAllData = function () {
+      var t = this;
+      return new Promise(function (e, r) {
+        var n = t.getStore("readonly").openCursor(),
+            o = [];
+        n.onsuccess = function () {
+          var t;
+
+          if (null === (t = n.result) || void 0 === t ? void 0 : t.value) {
+            var r = n.result.value;
+            o.push(r), n.result["continue"]();
+          } else e(o);
+        }, n.onerror = r;
+      });
+    }, t.prototype.getDataRangeByIndex = function (t, e, r, n, o) {
+      var i = this;
+      return new Promise(function (a, s) {
+        var c = i.getStore().index(t),
+            u = IDBKeyRange.bound(e, r, n, o),
+            l = [],
+            h = c.openCursor(u);
+        h.onsuccess = function () {
+          var t;
+          (null === (t = null == h ? void 0 : h.result) || void 0 === t ? void 0 : t.value) ? (l.push(null == h ? void 0 : h.result.value), null == h || h.result["continue"]()) : a(l);
+        }, h.onerror = s;
+      });
+    }, t.prototype.removeDataByIndex = function (t, e, r, n, o) {
+      var i = this;
+      return new Promise(function (a, s) {
+        var c = i.getStore("readwrite").index(t),
+            u = IDBKeyRange.bound(e, r, n, o),
+            l = c.openCursor(u),
+            h = 0;
+        l.onsuccess = function (t) {
+          var e = t.target.result;
+          e ? (h += 1, e["delete"](), e["continue"]()) : a(h);
+        }, l.onerror = s;
+      });
+    }, t.prototype.createStore = function (t) {
+      var e = t.name,
+          r = t.indexes,
+          n = void 0 === r ? [] : r,
+          o = t.options;
+
+      if (this.db) {
+        this.db.objectStoreNames.contains(e) && this.db.deleteObjectStore(e);
+        var i = this.db.createObjectStore(e, o);
+        n.forEach(function (t) {
+          i.createIndex(t.indexName, t.keyPath, t.options);
+        });
+      }
+    }, t.prototype.getStore = function (t) {
+      var e;
+      return void 0 === t && (t = "readonly"), null === (e = this.db) || void 0 === e ? void 0 : e.transaction(this.storeName, t).objectStore(this.storeName);
+    }, t;
+  }(),
+      O = "event_table_v3",
+      k = "eventId",
+      x = function () {
+    function t(t) {
+      this.isReady = !1, this.taskQueue = Promise.resolve(), this.db = new I({
+        name: "Beacon_" + t + "_V3",
+        version: 1,
+        stores: [{
+          name: O,
+          options: {
+            keyPath: k
+          },
+          indexes: [{
+            indexName: k,
+            keyPath: k,
+            options: {
+              unique: !0
+            }
+          }]
+        }]
+      }), this.open();
+    }
+
+    return t.prototype.getCount = function () {
+      var t = this;
+      return this.readyExec(function () {
+        return t.db.getStoreCount();
+      });
+    }, t.prototype.setItem = function (t, e) {
+      var r = this;
+      return this.readyExec(function () {
+        return r.db.add({
+          eventId: t,
+          value: e
+        });
+      });
+    }, t.prototype.getItem = function (t) {
+      return r(this, void 0, void 0, function () {
+        var e = this;
+        return n(this, function (r) {
+          return [2, this.readyExec(function () {
+            return e.db.getDataRangeByIndex(k, t, t);
+          })];
+        });
+      });
+    }, t.prototype.removeItem = function (t) {
+      var e = this;
+      return this.readyExec(function () {
+        return e.db.removeDataByIndex(k, t, t);
+      });
+    }, t.prototype.updateItem = function (t, e) {
+      var r = this;
+      return this.readyExec(function () {
+        return r.db.put({
+          eventId: t,
+          value: e
+        });
+      });
+    }, t.prototype.iterate = function (t) {
+      var e = this;
+      return this.readyExec(function () {
+        return e.db.getStoreAllData().then(function (e) {
+          e.forEach(function (e) {
+            t(e.value);
+          });
+        });
+      });
+    }, t.prototype.open = function () {
+      return r(this, void 0, void 0, function () {
+        var t = this;
+        return n(this, function (e) {
+          switch (e.label) {
+            case 0:
+              return this.taskQueue = this.taskQueue.then(function () {
+                return t.db.openDB();
+              }), [4, this.taskQueue];
+
+            case 1:
+              return e.sent(), this.isReady = !0, this.db.useStore(O), [2];
+          }
+        });
+      });
+    }, t.prototype.readyExec = function (t) {
+      return this.isReady ? t() : (this.taskQueue = this.taskQueue.then(function () {
+        return t();
+      }), this.taskQueue);
+    }, t;
+  }(),
+      C = function () {
+    function t(t) {
+      this.keyObject = {}, this.storage = t;
+    }
+
+    return t.prototype.getCount = function () {
+      return this.storage.getStoreCount();
+    }, t.prototype.removeItem = function (t) {
+      this.storage.removeItem(t), delete this.keyObject[t];
+    }, t.prototype.setItem = function (t, e) {
+      var r = JSON.stringify(e);
+      this.storage.setItem(t, r), this.keyObject[t] = e;
+    }, t.prototype.iterate = function (t) {
+      for (var e = Object.keys(this.keyObject), r = 0; r < e.length; r++) {
+        var n = this.storage.getItem(e[r]);
+        t(JSON.parse(n));
+      }
+    }, t;
+  }(),
+      _ = function () {
+    function t(t, e) {
+      var r = this;
+      this.dbEventCount = 0, b() > 0 || !window.indexedDB || /X5Lite/.test(navigator.userAgent) ? (this.store = new C(e), this.dbEventCount = this.store.getCount()) : (this.store = new x(t), this.getCount().then(function (t) {
+        r.dbEventCount = t;
+      }));
+    }
+
+    return t.prototype.getCount = function () {
+      return r(this, void 0, void 0, function () {
+        return n(this, function (t) {
+          switch (t.label) {
+            case 0:
+              return t.trys.push([0, 2,, 3]), [4, this.store.getCount()];
+
+            case 1:
+              return [2, t.sent()];
+
+            case 2:
+              return t.sent(), [2, Promise.reject()];
+
+            case 3:
+              return [2];
+          }
+        });
+      });
+    }, t.prototype.insertEvent = function (t, e) {
+      return r(this, void 0, void 0, function () {
+        var r, o;
+        return n(this, function (n) {
+          switch (n.label) {
+            case 0:
+              if (this.dbEventCount >= 1e4) return [2, Promise.reject()];
+              r = p(t.mapValue), n.label = 1;
+
+            case 1:
+              return n.trys.push([1, 3,, 4]), this.dbEventCount++, [4, this.store.setItem(r, t)];
+
+            case 2:
+              return [2, n.sent()];
+
+            case 3:
+              return o = n.sent(), e && e(o, t), this.dbEventCount--, [2, Promise.reject()];
+
+            case 4:
+              return [2];
+          }
+        });
+      });
+    }, t.prototype.getEvents = function () {
+      return r(this, void 0, void 0, function () {
+        var t;
+        return n(this, function (e) {
+          switch (e.label) {
+            case 0:
+              t = [], e.label = 1;
+
+            case 1:
+              return e.trys.push([1, 3,, 4]), [4, this.store.iterate(function (e) {
+                t.push(e);
+              })];
+
+            case 2:
+              return e.sent(), [2, Promise.all(t)];
+
+            case 3:
+              return e.sent(), [2, Promise.all(t)];
+
+            case 4:
+              return [2];
+          }
+        });
+      });
+    }, t.prototype.removeEvent = function (t) {
+      return r(this, void 0, void 0, function () {
+        var e;
+        return n(this, function (r) {
+          switch (r.label) {
+            case 0:
+              e = p(t.mapValue), r.label = 1;
+
+            case 1:
+              return r.trys.push([1, 3,, 4]), this.dbEventCount--, [4, this.store.removeItem(e)];
+
+            case 2:
+              return [2, r.sent()];
+
+            case 3:
+              return r.sent(), this.dbEventCount++, [2, Promise.reject()];
+
+            case 4:
+              return [2];
+          }
+        });
+      });
+    }, t;
+  }(),
+      _A = function A() {
+    return (_A = Object.assign || function (t) {
+      for (var e, r = 1, n = arguments.length; r < n; r++) {
+        for (var o in e = arguments[r]) {
+          Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
+        }
+      }
+
+      return t;
+    }).apply(this, arguments);
+  };
+
+  function P(t) {
+    try {
+      return decodeURIComponent(t.replace(/\+/g, " "));
+    } catch (t) {
+      return null;
+    }
+  }
+
+  function j(t, e) {
+    var r = [null, void 0, "", NaN].includes(t);
+    if (e.isSkipEmpty && r) return null;
+    var n = !e.isSkipEmpty && r ? "" : t;
+
+    try {
+      return e.encode ? encodeURIComponent(n) : n;
+    } catch (t) {
+      return null;
+    }
+  }
+
+  function D(t) {
+    var e = t.split("#"),
+        r = e[0],
+        n = e[1],
+        o = void 0 === n ? "" : n,
+        i = r.split("?"),
+        a = i[0],
+        s = i[1],
+        c = void 0 === s ? "" : s,
+        u = P(o),
+        l = Object.create(null);
+    return c.split("&").forEach(function (t) {
+      var e = t.split("="),
+          r = e[0],
+          n = e[1],
+          o = void 0 === n ? "" : n,
+          i = P(r),
+          a = P(o);
+      null === i || null === a || "" === i && "" === a || l[i] || (l[i] = a);
+    }), {
+      url: a,
+      query: l,
+      hash: u
+    };
+  }
+
+  function T(t, e) {
+    void 0 === e && (e = {
+      encode: !0,
+      isSkipEmpty: !1
+    });
+
+    var r = t.url,
+        n = t.query,
+        o = void 0 === n ? {} : n,
+        i = t.hash,
+        a = r.split("#"),
+        s = a[0],
+        c = a[1],
+        u = void 0 === c ? "" : c,
+        l = s.split("?")[0],
+        h = [],
+        f = j(i || u, e),
+        p = _A(_A({}, D(r).query), o);
+
+    return Object.keys(p).forEach(function (t) {
+      var r = j(t, e),
+          n = j(p[t], e);
+      null !== r && null !== n && h.push(r + "=" + n);
+    }), l + (h.length ? "?" + h.join("&") : "") + (f ? "#" + f : "");
+  }
+
+  function N(t, e) {
+    return new Promise(function (r, n) {
+      if (e && document.querySelectorAll("script[data-tag=" + e + "]").length) return r();
+
+      var o = document.createElement("script"),
+          i = _A({
+        type: "text/javascript",
+        charset: "utf-8"
+      }, t);
+
+      Object.keys(i).forEach(function (t) {
+        return function (t, e, r) {
+          if (t) return void 0 === r ? t.getAttribute(e) : t.setAttribute(e, r);
+        }(o, t, i[t]);
+      }), e && (o.dataset.tag = e), o.onload = function () {
+        return r();
+      }, o.onreadystatechange = function () {
+        var t = o.readyState;
+        ["complete", "loaded"].includes(t) && (o.onreadystatechange = null, r());
+      }, o.onerror = n, document.body.appendChild(o);
+    });
+  }
+
+  !function (t) {
+    t[t.equal = 0] = "equal", t[t.low = -1] = "low", t[t.high = 1] = "high";
+  }(E || (E = {}));
+
+  var _U = function U() {
+    return (_U = Object.assign || function (t) {
+      for (var e, r = 1, n = arguments.length; r < n; r++) {
+        for (var o in e = arguments[r]) {
+          Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
+        }
+      }
+
+      return t;
+    }).apply(this, arguments);
+  };
+
+  function q(t, e, r, n) {
+    return new (r || (r = Promise))(function (o, i) {
+      function a(t) {
+        try {
+          c(n.next(t));
+        } catch (t) {
+          i(t);
+        }
+      }
+
+      function s(t) {
+        try {
+          c(n["throw"](t));
+        } catch (t) {
+          i(t);
+        }
+      }
+
+      function c(t) {
+        var e;
+        t.done ? o(t.value) : (e = t.value, e instanceof r ? e : new r(function (t) {
+          t(e);
+        })).then(a, s);
+      }
+
+      c((n = n.apply(t, e || [])).next());
+    });
+  }
+
+  function R(t, e) {
+    var r,
+        n,
+        o,
+        i,
+        a = {
+      label: 0,
+      sent: function sent() {
+        if (1 & o[0]) throw o[1];
+        return o[1];
+      },
+      trys: [],
+      ops: []
+    };
+    return i = {
+      next: s(0),
+      "throw": s(1),
+      "return": s(2)
+    }, "function" == typeof Symbol && (i[Symbol.iterator] = function () {
+      return this;
+    }), i;
+
+    function s(i) {
+      return function (s) {
+        return function (i) {
+          if (r) throw new TypeError("Generator is already executing.");
+
+          for (; a;) {
+            try {
+              if (r = 1, n && (o = 2 & i[0] ? n["return"] : i[0] ? n["throw"] || ((o = n["return"]) && o.call(n), 0) : n.next) && !(o = o.call(n, i[1])).done) return o;
+
+              switch (n = 0, o && (i = [2 & i[0], o.value]), i[0]) {
+                case 0:
+                case 1:
+                  o = i;
+                  break;
+
+                case 4:
+                  return a.label++, {
+                    value: i[1],
+                    done: !1
+                  };
+
+                case 5:
+                  a.label++, n = i[1], i = [0];
+                  continue;
+
+                case 7:
+                  i = a.ops.pop(), a.trys.pop();
+                  continue;
+
+                default:
+                  if (!((o = (o = a.trys).length > 0 && o[o.length - 1]) || 6 !== i[0] && 2 !== i[0])) {
+                    a = 0;
+                    continue;
+                  }
+
+                  if (3 === i[0] && (!o || i[1] > o[0] && i[1] < o[3])) {
+                    a.label = i[1];
+                    break;
+                  }
+
+                  if (6 === i[0] && a.label < o[1]) {
+                    a.label = o[1], o = i;
+                    break;
+                  }
+
+                  if (o && a.label < o[2]) {
+                    a.label = o[2], a.ops.push(i);
+                    break;
+                  }
+
+                  o[2] && a.ops.pop(), a.trys.pop();
+                  continue;
+              }
+
+              i = e.call(t, a);
+            } catch (t) {
+              i = [6, t], n = 0;
+            } finally {
+              r = o = 0;
+            }
+          }
+
+          if (5 & i[0]) throw i[1];
+          return {
+            value: i[0] ? i[1] : void 0,
+            done: !0
+          };
+        }([i, s]);
+      };
+    }
+  }
+
+  var L = function () {
+    function t() {
+      this.interceptors = [];
+    }
+
+    return t.prototype.use = function (t, e) {
+      return this.interceptors.push({
+        resolved: t,
+        rejected: e
+      }), this.interceptors.length - 1;
+    }, t.prototype.traverse = function (t, e) {
+      void 0 === e && (e = !1);
+      var r = Promise.resolve(t);
+      return (e ? Array.prototype.reduceRight : Array.prototype.reduce).call(this.interceptors, function (t, e) {
+        if (e) {
+          var n = e.resolved,
+              o = e.rejected;
+          r = r.then(n, o);
+        }
+
+        return t;
+      }, ""), r;
+    }, t.prototype.eject = function (t) {
+      this.interceptors[t] && (this.interceptors[t] = null);
+    }, t;
+  }(),
+      B = {
+    defaults: {
+      timeout: 0,
+      method: "GET",
+      mode: "cors",
+      redirect: "follow",
+      credentials: "same-origin"
+    },
+    headers: {
+      common: {
+        Accept: "application/json, text/plain, */*"
+      },
+      POST: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      PUT: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      PATCH: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
+    },
+    baseURL: "",
+    polyfillUrl: "https://vm.gtimg.cn/comps/script/fetch.min.js",
+    interceptors: {
+      request: new L(),
+      response: new L()
+    }
+  },
+      J = /^([a-z][a-z\d+\-.]*:)?\/\//i,
+      M = Object.prototype.toString;
+
+  function V(t) {
+    return q(this, void 0, void 0, function () {
+      var e;
+      return R(this, function (r) {
+        switch (r.label) {
+          case 0:
+            if (window.fetch) return [2];
+            r.label = 1;
+
+          case 1:
+            return r.trys.push([1, 3,, 4]), [4, N({
+              src: t
+            })];
+
+          case 2:
+            return r.sent(), [3, 4];
+
+          case 3:
+            throw e = r.sent(), function (t) {
+              if ("undefined" != typeof Image) {
+                var e = new Image(1, 1),
+                    r = _U({
+                  attaid: "0f400053130",
+                  token: "6552374442",
+                  comps: "@tencent/ovb-request",
+                  version: "1.1.18",
+                  ua: navigator.userAgent,
+                  url: location.href,
+                  _dc: Math.random()
+                }, t),
+                    n = Object.keys(r).map(function (t) {
+                  return t + "=" + encodeURIComponent(r[t]);
+                }).join("&");
+
+                e.src = "https://h.trace.qq.com/kv?" + n;
+              }
+            }({
+              func: "loadPolyfill",
+              result: 0,
+              params: t,
+              error_msg: e.message
+            }), new Error("加载 polyfill " + t + " 失败: " + e.message);
+
+          case 4:
+            return [2];
+        }
+      });
+    });
+  }
+
+  function G(t) {
+    return ["Accept", "Content-Type"].forEach(function (e) {
+      return r = e, void ((n = t.headers) && Object.keys(n).forEach(function (t) {
+        t !== r && t.toUpperCase() === r.toUpperCase() && (n[r] = n[t], delete n[t]);
+      }));
+      var r, n;
+    }), function (t) {
+      if ("[object Object]" !== M.call(t)) return !1;
+      var e = Object.getPrototypeOf(t);
+      return null === e || e === Object.prototype;
+    }(t.body) && (t.body = JSON.stringify(t.body), t.headers && (t.headers["Content-Type"] = "application/json;charset=utf-8")), t;
+  }
+
+  function F(t) {
+    return q(this, void 0, void 0, function () {
+      var e, r, n, o, i, a, s, c, u, l, h, f, p, d, v, y, g;
+      return R(this, function (m) {
+        switch (m.label) {
+          case 0:
+            return e = B.baseURL, r = B.defaults, n = B.interceptors, [4, V(B.polyfillUrl)];
+
+          case 1:
+            return m.sent(), (o = _U(_U({}, r), t)).headers || (o.headers = function (t) {
+              void 0 === t && (t = "GET");
+              var e = B.headers[t] || {};
+              return _U(_U({}, B.headers.common), e);
+            }(o.method)), G(o), [4, n.request.traverse(o, !0)];
+
+          case 2:
+            if ((i = m.sent()) instanceof Error) throw i;
+            return i.url = function (t, e) {
+              return !t || J.test(e) ? e : t.replace(/\/+$/, "") + "/" + e.replace(/^\/+/, "");
+            }(e, i.url), a = i.url, s = i.timeout, c = i.params, u = i.method, l = ["GET", "DELETE", "OPTIONS", "HEAD"].includes(void 0 === u ? "GET" : u) && !!c, h = l ? T({
+              url: a,
+              query: c
+            }) : a, f = [], s && !i.signal && (v = new Promise(function (t) {
+              p = setTimeout(function () {
+                t(new Error("timeout"));
+              }, s);
+            }), f.push(v), d = new AbortController(), i.signal = d.signal), f.push(fetch(h, i)["catch"](function (t) {
+              return t;
+            })), [4, Promise.race(f)];
+
+          case 3:
+            return y = m.sent(), p && clearTimeout(p), [4, n.response.traverse(y)];
+
+          case 4:
+            if ((g = m.sent()) instanceof Error) throw null == d || d.abort(), g;
+            return [2, g];
+        }
+      });
+    });
+  }
+
+  var Q = function () {
+    function t(t) {
+      B.interceptors.request.use(function (r) {
+        var n = r.url,
+            o = r.method,
+            i = r.body,
+            a = i;
+
+        if (t.onReportBeforeSend) {
+          var s = t.onReportBeforeSend({
+            url: n,
+            method: o,
+            data: i ? JSON.parse(i) : null
+          });
+          a = (null == s ? void 0 : s.data) ? JSON.stringify(s.data) : null;
+        }
+
+        if ("GET" !== o && !a) throw new Error("No data for sdk, cancel.");
+        return _e(_e({}, r), {
+          body: a
+        });
+      });
+    }
+
+    return t.prototype.get = function (t, o) {
+      return r(this, void 0, void 0, function () {
+        var r, i;
+        return n(this, function (n) {
+          switch (n.label) {
+            case 0:
+              return [4, F(_e({
+                url: t
+              }, o))];
+
+            case 1:
+              return [4, (r = n.sent()).json()];
+
+            case 2:
+              return i = n.sent(), [2, Promise.resolve({
+                data: i,
+                status: r.status,
+                statusText: r.statusText,
+                headers: r.headers
+              })];
+          }
+        });
+      });
+    }, t.prototype.post = function (t, o, i) {
+      return r(this, void 0, void 0, function () {
+        var r, a;
+        return n(this, function (n) {
+          switch (n.label) {
+            case 0:
+              return [4, F(_e({
+                url: t,
+                body: o,
+                method: "POST"
+              }, i))];
+
+            case 1:
+              return [4, (r = n.sent()).json()];
+
+            case 2:
+              return a = n.sent(), [2, Promise.resolve({
+                data: a,
+                status: r.status,
+                statusText: r.statusText,
+                headers: r.headers
+              })];
+          }
+        });
+      });
+    }, t;
+  }(),
+      K = function () {
+    function t(t) {
+      this.appkey = t;
+    }
+
+    return t.prototype.getItem = function (t) {
+      try {
+        return window.localStorage.getItem(this.getStoreKey(t));
+      } catch (t) {
+        return "";
+      }
+    }, t.prototype.removeItem = function (t) {
+      try {
+        window.localStorage.removeItem(this.getStoreKey(t));
+      } catch (t) {}
+    }, t.prototype.setItem = function (t, e) {
+      try {
+        window.localStorage.setItem(this.getStoreKey(t), e);
+      } catch (t) {}
+    }, t.prototype.setSessionItem = function (t, e) {
+      try {
+        window.sessionStorage.setItem(this.getStoreKey(t), e);
+      } catch (t) {}
+    }, t.prototype.getSessionItem = function (t) {
+      try {
+        return window.sessionStorage.getItem(this.getStoreKey(t));
+      } catch (t) {
+        return "";
+      }
+    }, t.prototype.getStoreKey = function (t) {
+      return o + this.appkey + "_" + t;
+    }, t.prototype.createDeviceId = function () {
+      try {
+        var t = window.localStorage.getItem(i);
+        return t || (t = function (t) {
+          for (var e = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz0123456789", r = "", n = 0; n < t; n++) {
+            r += e.charAt(Math.floor(Math.random() * e.length));
+          }
+
+          return r;
+        }(32), window.localStorage.setItem(i, t)), t;
+      } catch (t) {
+        return "";
+      }
+    }, t.prototype.clear = function () {
+      try {
+        for (var t = window.localStorage.length, e = 0; e < t; e++) {
+          var r = window.localStorage.key(e);
+          (null == r ? void 0 : r.substr(0, 9)) == o && window.localStorage.removeItem(r);
+        }
+      } catch (t) {}
+    }, t.prototype.getStoreCount = function () {
+      var t = 0;
+
+      try {
+        t = window.localStorage.length;
+      } catch (t) {}
+
+      return t;
+    }, t;
+  }();
+
+  "undefined" != typeof globalThis ? globalThis : "undefined" != typeof window ? window : "undefined" != typeof global ? global : "undefined" != typeof self && self;
+
+  var W = function (t) {
+    var e = {
+      exports: {}
+    };
+    return t(e, e.exports), e.exports;
+  }(function (t, e) {
+    t.exports = function () {
+      function t(t, e, r, n, o, i, a) {
+        try {
+          var s = t[i](a),
+              c = s.value;
+        } catch (t) {
+          return void r(t);
+        }
+
+        s.done ? e(c) : Promise.resolve(c).then(n, o);
+      }
+
+      function e(t, e) {
+        for (var r = 0; r < e.length; r++) {
+          var n = e[r];
+          n.enumerable = n.enumerable || !1, n.configurable = !0, "value" in n && (n.writable = !0), Object.defineProperty(t, n.key, n);
+        }
+      }
+
+      var r,
+          n = (function (t) {
+        t = function (t) {
+          var e,
+              r = Object.prototype,
+              n = r.hasOwnProperty,
+              o = "function" == typeof Symbol ? Symbol : {},
+              i = o.iterator || "@@iterator",
+              a = o.asyncIterator || "@@asyncIterator",
+              s = o.toStringTag || "@@toStringTag";
+
+          function c(t, e, r) {
+            return Object.defineProperty(t, e, {
+              value: r,
+              enumerable: !0,
+              configurable: !0,
+              writable: !0
+            }), t[e];
+          }
+
+          try {
+            c({}, "");
+          } catch (r) {
+            c = function c(t, e, r) {
+              return t[e] = r;
+            };
+          }
+
+          function u(t, r, n, o) {
+            var i, a, s, c;
+            return r = r && r.prototype instanceof y ? r : y, r = Object.create(r.prototype), o = new k(o || []), r._invoke = (i = t, a = n, s = o, c = h, function (t, r) {
+              if (c === p) throw new Error("Generator is already running");
+
+              if (c === d) {
+                if ("throw" === t) throw r;
+                return C();
+              }
+
+              for (s.method = t, s.arg = r;;) {
+                var n = s.delegate;
+
+                if (n) {
+                  var o = function t(r, n) {
+                    var o;
+
+                    if ((o = r.iterator[n.method]) === e) {
+                      if (n.delegate = null, "throw" === n.method) {
+                        if (r.iterator["return"] && (n.method = "return", n.arg = e, t(r, n), "throw" === n.method)) return v;
+                        n.method = "throw", n.arg = new TypeError("The iterator does not provide a 'throw' method");
+                      }
+
+                      return v;
+                    }
+
+                    return "throw" === (o = l(o, r.iterator, n.arg)).type ? (n.method = "throw", n.arg = o.arg, n.delegate = null, v) : (o = o.arg) ? o.done ? (n[r.resultName] = o.value, n.next = r.nextLoc, "return" !== n.method && (n.method = "next", n.arg = e), n.delegate = null, v) : o : (n.method = "throw", n.arg = new TypeError("iterator result is not an object"), n.delegate = null, v);
+                  }(n, s);
+
+                  if (o) {
+                    if (o === v) continue;
+                    return o;
+                  }
+                }
+
+                if ("next" === s.method) s.sent = s._sent = s.arg;else if ("throw" === s.method) {
+                  if (c === h) throw c = d, s.arg;
+                  s.dispatchException(s.arg);
+                } else "return" === s.method && s.abrupt("return", s.arg);
+
+                if (c = p, "normal" === (o = l(i, a, s)).type) {
+                  if (c = s.done ? d : f, o.arg !== v) return {
+                    value: o.arg,
+                    done: s.done
+                  };
+                } else "throw" === o.type && (c = d, s.method = "throw", s.arg = o.arg);
+              }
+            }), r;
+          }
+
+          function l(t, e, r) {
+            try {
+              return {
+                type: "normal",
+                arg: t.call(e, r)
+              };
+            } catch (t) {
+              return {
+                type: "throw",
+                arg: t
+              };
+            }
+          }
+
+          t.wrap = u;
+          var h = "suspendedStart",
+              f = "suspendedYield",
+              p = "executing",
+              d = "completed",
+              v = {};
+
+          function y() {}
+
+          function g() {}
+
+          function m() {}
+
+          var w = {};
+          w[i] = function () {
+            return this;
+          }, (o = (o = Object.getPrototypeOf) && o(o(x([])))) && o !== r && n.call(o, i) && (w = o);
+          var b = m.prototype = y.prototype = Object.create(w);
+
+          function S(t) {
+            ["next", "throw", "return"].forEach(function (e) {
+              c(t, e, function (t) {
+                return this._invoke(e, t);
+              });
+            });
+          }
+
+          function E(t, e) {
+            var r;
+
+            this._invoke = function (o, i) {
+              function a() {
+                return new e(function (r, a) {
+                  !function r(o, i, a, s) {
+                    if ("throw" !== (o = l(t[o], t, i)).type) {
+                      var c = o.arg;
+                      return (i = c.value) && "object" == _typeof(i) && n.call(i, "__await") ? e.resolve(i.__await).then(function (t) {
+                        r("next", t, a, s);
+                      }, function (t) {
+                        r("throw", t, a, s);
+                      }) : e.resolve(i).then(function (t) {
+                        c.value = t, a(c);
+                      }, function (t) {
+                        return r("throw", t, a, s);
+                      });
+                    }
+
+                    s(o.arg);
+                  }(o, i, r, a);
+                });
+              }
+
+              return r = r ? r.then(a, a) : a();
+            };
+          }
+
+          function I(t) {
+            var e = {
+              tryLoc: t[0]
+            };
+            1 in t && (e.catchLoc = t[1]), 2 in t && (e.finallyLoc = t[2], e.afterLoc = t[3]), this.tryEntries.push(e);
+          }
+
+          function O(t) {
+            var e = t.completion || {};
+            e.type = "normal", delete e.arg, t.completion = e;
+          }
+
+          function k(t) {
+            this.tryEntries = [{
+              tryLoc: "root"
+            }], t.forEach(I, this), this.reset(!0);
+          }
+
+          function x(t) {
+            if (t) {
+              if (r = t[i]) return r.call(t);
+              if ("function" == typeof t.next) return t;
+
+              if (!isNaN(t.length)) {
+                var r,
+                    o = -1;
+                return (r = function r() {
+                  for (; ++o < t.length;) {
+                    if (n.call(t, o)) return r.value = t[o], r.done = !1, r;
+                  }
+
+                  return r.value = e, r.done = !0, r;
+                }).next = r;
+              }
+            }
+
+            return {
+              next: C
+            };
+          }
+
+          function C() {
+            return {
+              value: e,
+              done: !0
+            };
+          }
+
+          return ((g.prototype = b.constructor = m).constructor = g).displayName = c(m, s, "GeneratorFunction"), t.isGeneratorFunction = function (t) {
+            return !!(t = "function" == typeof t && t.constructor) && (t === g || "GeneratorFunction" === (t.displayName || t.name));
+          }, t.mark = function (t) {
+            return Object.setPrototypeOf ? Object.setPrototypeOf(t, m) : (t.__proto__ = m, c(t, s, "GeneratorFunction")), t.prototype = Object.create(b), t;
+          }, t.awrap = function (t) {
+            return {
+              __await: t
+            };
+          }, S(E.prototype), E.prototype[a] = function () {
+            return this;
+          }, t.AsyncIterator = E, t.async = function (e, r, n, o, i) {
+            void 0 === i && (i = Promise);
+            var a = new E(u(e, r, n, o), i);
+            return t.isGeneratorFunction(r) ? a : a.next().then(function (t) {
+              return t.done ? t.value : a.next();
+            });
+          }, S(b), c(b, s, "Generator"), b[i] = function () {
+            return this;
+          }, b.toString = function () {
+            return "[object Generator]";
+          }, t.keys = function (t) {
+            var e,
+                r = [];
+
+            for (e in t) {
+              r.push(e);
+            }
+
+            return r.reverse(), function e() {
+              for (; r.length;) {
+                var n = r.pop();
+                if (n in t) return e.value = n, e.done = !1, e;
+              }
+
+              return e.done = !0, e;
+            };
+          }, t.values = x, k.prototype = {
+            constructor: k,
+            reset: function reset(t) {
+              if (this.prev = 0, this.next = 0, this.sent = this._sent = e, this.done = !1, this.delegate = null, this.method = "next", this.arg = e, this.tryEntries.forEach(O), !t) for (var r in this) {
+                "t" === r.charAt(0) && n.call(this, r) && !isNaN(+r.slice(1)) && (this[r] = e);
+              }
+            },
+            stop: function stop() {
+              this.done = !0;
+              var t = this.tryEntries[0].completion;
+              if ("throw" === t.type) throw t.arg;
+              return this.rval;
+            },
+            dispatchException: function dispatchException(t) {
+              if (this.done) throw t;
+              var r = this;
+
+              function o(n, o) {
+                return s.type = "throw", s.arg = t, r.next = n, o && (r.method = "next", r.arg = e), !!o;
+              }
+
+              for (var i = this.tryEntries.length - 1; 0 <= i; --i) {
+                var a = this.tryEntries[i],
+                    s = a.completion;
+                if ("root" === a.tryLoc) return o("end");
+
+                if (a.tryLoc <= this.prev) {
+                  var c = n.call(a, "catchLoc"),
+                      u = n.call(a, "finallyLoc");
+
+                  if (c && u) {
+                    if (this.prev < a.catchLoc) return o(a.catchLoc, !0);
+                    if (this.prev < a.finallyLoc) return o(a.finallyLoc);
+                  } else if (c) {
+                    if (this.prev < a.catchLoc) return o(a.catchLoc, !0);
+                  } else {
+                    if (!u) throw new Error("try statement without catch or finally");
+                    if (this.prev < a.finallyLoc) return o(a.finallyLoc);
+                  }
+                }
+              }
+            },
+            abrupt: function abrupt(t, e) {
+              for (var r = this.tryEntries.length - 1; 0 <= r; --r) {
+                var o = this.tryEntries[r];
+
+                if (o.tryLoc <= this.prev && n.call(o, "finallyLoc") && this.prev < o.finallyLoc) {
+                  var i = o;
+                  break;
+                }
+              }
+
+              var a = (i = i && ("break" === t || "continue" === t) && i.tryLoc <= e && e <= i.finallyLoc ? null : i) ? i.completion : {};
+              return a.type = t, a.arg = e, i ? (this.method = "next", this.next = i.finallyLoc, v) : this.complete(a);
+            },
+            complete: function complete(t, e) {
+              if ("throw" === t.type) throw t.arg;
+              return "break" === t.type || "continue" === t.type ? this.next = t.arg : "return" === t.type ? (this.rval = this.arg = t.arg, this.method = "return", this.next = "end") : "normal" === t.type && e && (this.next = e), v;
+            },
+            finish: function finish(t) {
+              for (var e = this.tryEntries.length - 1; 0 <= e; --e) {
+                var r = this.tryEntries[e];
+                if (r.finallyLoc === t) return this.complete(r.completion, r.afterLoc), O(r), v;
+              }
+            },
+            "catch": function _catch(t) {
+              for (var e = this.tryEntries.length - 1; 0 <= e; --e) {
+                var r = this.tryEntries[e];
+
+                if (r.tryLoc === t) {
+                  var n,
+                      o = r.completion;
+                  return "throw" === o.type && (n = o.arg, O(r)), n;
+                }
+              }
+
+              throw new Error("illegal catch attempt");
+            },
+            delegateYield: function delegateYield(t, r, n) {
+              return this.delegate = {
+                iterator: x(t),
+                resultName: r,
+                nextLoc: n
+              }, "next" === this.method && (this.arg = e), v;
+            }
+          }, t;
+        }(t.exports);
+
+        try {
+          regeneratorRuntime = t;
+        } catch (e) {
+          Function("r", "regeneratorRuntime = r")(t);
+        }
+      }(r = {
+        exports: {}
+      }), r.exports);
+      return function () {
+        function r(t) {
+          !function (t, e) {
+            if (!(t instanceof e)) throw new TypeError("Cannot call a class as a function");
+          }(this, r), this.version = "1.0.0";
+          var e = Array.prototype.map,
+              n = Array.prototype.forEach;
+          t && (this.hasher = t), this.each = function (t, e, r) {
+            if (null != t) if (n && t.forEach === n) t.forEach(e, r);else if (t.length === +t.length) {
+              for (var o = 0, i = t.length; o < i; o++) {
+                if (e.call(r, t[o], o, t) === {}) return;
+              }
+            } else for (var a in t) {
+              if (t.hasOwnProperty(a) && e.call(r, t[a], a, t) === {}) return;
+            }
+          }, this.map = function (t, r, n) {
+            var o = [];
+            return null == t ? o : e && t.map === e ? t.map(r, n) : (this.each(t, function (t, e, i) {
+              o[o.length] = r.call(n, t, e, i);
+            }), o);
+          };
+        }
+
+        var o, i, a, s;
+        return o = r, (i = [{
+          key: "getQimei36",
+          value: function value(t, e) {
+            var r = this;
+            this.getHid().then(function (n) {
+              var o = "3BJr" + t.substring(0, 2) + (n && n.substring(3, 7)),
+                  i = new XMLHttpRequest();
+              i.open("POST", "https://snowflake.qq.com/ola/h5", !0), i.setRequestHeader("Content-Type", "application/json"), i.onreadystatechange = function () {
+                if (i.readyState == XMLHttpRequest.DONE && 200 == i.status) try {
+                  e && e(JSON.parse(i.responseText));
+                } catch (t) {
+                  e(null);
+                }
+              }, i.send(JSON.stringify({
+                appKey: t,
+                hid: n,
+                sign: o,
+                version: r.version
+              }));
+            });
+          }
+        }, {
+          key: "getHid",
+          value: (a = n.mark(function t() {
+            var e, r;
+            return n.wrap(function (t) {
+              for (;;) {
+                switch (t.prev = t.next) {
+                  case 0:
+                    return (e = []).push((n = void 0, (n = [Math.floor(window.screen.width * window.devicePixelRatio), Math.floor(window.screen.height * window.devicePixelRatio)]).sort().reverse(), n.join("x"))), e.push((n = void 0, (n = [Math.floor(window.screen.availWidth * window.devicePixelRatio), Math.floor(window.screen.availHeight * window.devicePixelRatio)]).sort().reverse(), n.join("x"))), e.push(navigator.deviceMemory), e.push(!!window.sessionStorage), e.push(!!window.indexedDB), e.push(navigator.productSub), e.push(navigator.hardwareConcurrency), e.push(this.getWebglVendorAndRenderer()), e.push(new Date().getTimezoneOffset()), t.next = 12, this.getFactor();
+
+                  case 12:
+                    if (r = t.sent, e.push(r), this.hasher) return t.abrupt("return", this.hasher(e.join("###"), 31));
+                    t.next = 18;
+                    break;
+
+                  case 18:
+                    return t.abrupt("return", this.x64hash128(e.join("###"), 31));
+
+                  case 19:
+                  case "end":
+                    return t.stop();
+                }
+              }
+
+              var n;
+            }, t, this);
+          }), s = function s() {
+            var e = this,
+                r = arguments;
+            return new Promise(function (n, o) {
+              var i = a.apply(e, r);
+
+              function s(e) {
+                t(i, n, o, s, c, "next", e);
+              }
+
+              function c(e) {
+                t(i, n, o, s, c, "throw", e);
+              }
+
+              s(void 0);
+            });
+          }, function () {
+            return s.apply(this, arguments);
+          })
+        }, {
+          key: "getUserAgent",
+          value: function value() {
+            return navigator.userAgent;
+          }
+        }, {
+          key: "getNative",
+          value: function value() {
+            var t = this;
+            this.getHid().then(function (e) {
+              JSInterface.callback(t.version, e, t.getUserAgent());
+            });
+          }
+        }, {
+          key: "getWebglVendorAndRenderer",
+          value: function value() {
+            try {
+              var t = function () {
+                var t = document.createElement("canvas"),
+                    e = null;
+
+                try {
+                  e = t.getContext("webgl") || t.getContext("experimental-webgl");
+                } catch (t) {}
+
+                return e || null;
+              }(),
+                  e = t.getExtension("WEBGL_debug_renderer_info"),
+                  r = [t.getParameter(e.UNMASKED_VENDOR_WEBGL), t.getParameter(e.UNMASKED_RENDERER_WEBGL)].join("~"),
+                  n = t.getExtension("WEBGL_lose_context");
+
+              return null != n && n.loseContext(), r;
+            } catch (t) {
+              return null;
+            }
+          }
+        }, {
+          key: "getFactor",
+          value: function value() {
+            return new Promise(function (t, e) {
+              var r = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
+              r ? function () {
+                var e = new r({
+                  iceServers: []
+                });
+                e.createDataChannel("", {
+                  reliable: !1
+                }), e.onicecandidate = function (t) {
+                  t.candidate && i("a=".concat(t.candidate.candidate));
+                }, e.createOffer(function (t) {
+                  i(t.sdp), e.setLocalDescription(t);
+                }, function (t) {});
+                var n = Object.create(null);
+
+                function o(e) {
+                  if (!(e in n)) {
+                    n[e] = !0;
+
+                    for (var r = Object.keys(n).filter(function (t) {
+                      return n[t];
+                    }), o = 0; o < r.length; o++) {
+                      16 < r[o].length && (r.splice(o, 1), o--);
+                    }
+
+                    t(r[0]);
+                  }
+                }
+
+                function i(t) {
+                  (0 < arguments.length && void 0 !== t ? t : "").split("\r\n").forEach(function (t, e, r) {
+                    var n, i;
+                    ~t.indexOf("a=candidate") ? (i = (n = t.split(" "))[4], "host" === n[7] && o(i)) : ~t.indexOf("c=") && o(t.split(" ")[2]);
+                  });
+                }
+
+                n["0.0.0.0"] = !1;
+              }() : t(null);
+            });
+          }
+        }, {
+          key: "x64hash128",
+          value: function value(t, e) {
+            for (var r = function r(t, e) {
+              t = [t[0] >>> 16, 65535 & t[0], t[1] >>> 16, 65535 & t[1]], e = [e[0] >>> 16, 65535 & e[0], e[1] >>> 16, 65535 & e[1]];
+              var r = [0, 0, 0, 0];
+              return r[3] += t[3] + e[3], r[2] += r[3] >>> 16, r[3] &= 65535, r[2] += t[2] + e[2], r[1] += r[2] >>> 16, r[2] &= 65535, r[1] += t[1] + e[1], r[0] += r[1] >>> 16, r[1] &= 65535, r[0] += t[0] + e[0], r[0] &= 65535, [r[0] << 16 | r[1], r[2] << 16 | r[3]];
+            }, n = function n(t, e) {
+              t = [t[0] >>> 16, 65535 & t[0], t[1] >>> 16, 65535 & t[1]], e = [e[0] >>> 16, 65535 & e[0], e[1] >>> 16, 65535 & e[1]];
+              var r = [0, 0, 0, 0];
+              return r[3] += t[3] * e[3], r[2] += r[3] >>> 16, r[3] &= 65535, r[2] += t[2] * e[3], r[1] += r[2] >>> 16, r[2] &= 65535, r[2] += t[3] * e[2], r[1] += r[2] >>> 16, r[2] &= 65535, r[1] += t[1] * e[3], r[0] += r[1] >>> 16, r[1] &= 65535, r[1] += t[2] * e[2], r[0] += r[1] >>> 16, r[1] &= 65535, r[1] += t[3] * e[1], r[0] += r[1] >>> 16, r[1] &= 65535, r[0] += t[0] * e[3] + t[1] * e[2] + t[2] * e[1] + t[3] * e[0], r[0] &= 65535, [r[0] << 16 | r[1], r[2] << 16 | r[3]];
+            }, o = function o(t, e) {
+              return 32 == (e %= 64) ? [t[1], t[0]] : e < 32 ? [t[0] << e | t[1] >>> 32 - e, t[1] << e | t[0] >>> 32 - e] : [t[1] << (e -= 32) | t[0] >>> 32 - e, t[0] << e | t[1] >>> 32 - e];
+            }, i = function i(t, e) {
+              return 0 == (e %= 64) ? t : e < 32 ? [t[0] << e | t[1] >>> 32 - e, t[1] << e] : [t[1] << e - 32, 0];
+            }, a = function a(t, e) {
+              return [t[0] ^ e[0], t[1] ^ e[1]];
+            }, s = function s(t) {
+              return t = a(t, [0, t[0] >>> 1]), t = n(t, [4283543511, 3981806797]), t = a(t, [0, t[0] >>> 1]), t = n(t, [3301882366, 444984403]), a(t, [0, t[0] >>> 1]);
+            }, c = (t = t || "").length % 16, u = t.length - c, l = [0, e = e || 0], h = [0, e], f = [0, 0], p = [0, 0], d = [2277735313, 289559509], v = [1291169091, 658871167], y = 0; y < u; y += 16) {
+              f = [255 & t.charCodeAt(y + 4) | (255 & t.charCodeAt(y + 5)) << 8 | (255 & t.charCodeAt(y + 6)) << 16 | (255 & t.charCodeAt(y + 7)) << 24, 255 & t.charCodeAt(y) | (255 & t.charCodeAt(y + 1)) << 8 | (255 & t.charCodeAt(y + 2)) << 16 | (255 & t.charCodeAt(y + 3)) << 24], p = [255 & t.charCodeAt(y + 12) | (255 & t.charCodeAt(y + 13)) << 8 | (255 & t.charCodeAt(y + 14)) << 16 | (255 & t.charCodeAt(y + 15)) << 24, 255 & t.charCodeAt(y + 8) | (255 & t.charCodeAt(y + 9)) << 8 | (255 & t.charCodeAt(y + 10)) << 16 | (255 & t.charCodeAt(y + 11)) << 24], f = o(f = n(f, d), 31), f = n(f, v), l = r(l = o(l = a(l, f), 27), h), l = r(n(l, [0, 5]), [0, 1390208809]), p = o(p = n(p, v), 33), p = n(p, d), h = r(h = o(h = a(h, p), 31), l), h = r(n(h, [0, 5]), [0, 944331445]);
+            }
+
+            switch (f = [0, 0], p = [0, 0], c) {
+              case 15:
+                p = a(p, i([0, t.charCodeAt(y + 14)], 48));
+
+              case 14:
+                p = a(p, i([0, t.charCodeAt(y + 13)], 40));
+
+              case 13:
+                p = a(p, i([0, t.charCodeAt(y + 12)], 32));
+
+              case 12:
+                p = a(p, i([0, t.charCodeAt(y + 11)], 24));
+
+              case 11:
+                p = a(p, i([0, t.charCodeAt(y + 10)], 16));
+
+              case 10:
+                p = a(p, i([0, t.charCodeAt(y + 9)], 8));
+
+              case 9:
+                p = a(p, [0, t.charCodeAt(y + 8)]), p = o(p = n(p, v), 33), p = n(p, d), h = a(h, p);
+
+              case 8:
+                f = a(f, i([0, t.charCodeAt(y + 7)], 56));
+
+              case 7:
+                f = a(f, i([0, t.charCodeAt(y + 6)], 48));
+
+              case 6:
+                f = a(f, i([0, t.charCodeAt(y + 5)], 40));
+
+              case 5:
+                f = a(f, i([0, t.charCodeAt(y + 4)], 32));
+
+              case 4:
+                f = a(f, i([0, t.charCodeAt(y + 3)], 24));
+
+              case 3:
+                f = a(f, i([0, t.charCodeAt(y + 2)], 16));
+
+              case 2:
+                f = a(f, i([0, t.charCodeAt(y + 1)], 8));
+
+              case 1:
+                f = a(f, [t.charCodeAt(y)]), f = o(f = n(f, d), 31), f = n(f, v), l = a(l, f);
+            }
+
+            return l = a(l, [0, t.length]), h = r(h = a(h, [0, t.length]), l = r(l, h)), l = s(l), h = r(h = s(h), l = r(l, h)), ("00000000" + (l[0] >>> 0).toString(16)).slice(-8) + ("00000000" + (l[1] >>> 0).toString(16)).slice(-8) + ("00000000" + (h[0] >>> 0).toString(16)).slice(-8) + ("00000000" + (h[1] >>> 0).toString(16)).slice(-8);
+          }
+        }]) && e(o.prototype, i), r;
+      }();
+    }();
+  }),
+      H = "logid_start",
+      z = "4.5.6-web";
+
+  return function (r) {
+    function n(t) {
+      var e = r.call(this, t) || this;
+      e.qimei36 = "", e.uselessCycleTaskNum = 0, e.underWeakNet = !1, e.send = function (t, r, n) {
+        e.storage.setItem(a, Date.now().toString()), e.network.post(e.uploadUrl || e.strategy.getUploadUrl(), t.data).then(function (n) {
+          var o;
+          100 == (null === (o = null == n ? void 0 : n.data) || void 0 === o ? void 0 : o.result) ? e.delayTime = 1e3 * n.data.delayTime : e.delayTime = 0, r && r(t.data), t.data.events.forEach(function (t) {
+            e.store.removeEvent(t).then(function () {
+              e.removeSendingId(p(t.mapValue));
+            });
+          }), e.doCustomCycleTask();
+        })["catch"](function (r) {
+          var o = t.data.events;
+          e.errorReport.reportError(r.code ? r.code.toString() : "600", r.message), n && n(t.data);
+          var i = JSON.parse(e.storage.getItem(s));
+          o.forEach(function (t) {
+            i && -1 != i.indexOf(p(t)) && e.store.insertEvent(t, function (t, r) {
+              t && e.errorReport.reportError("604", "insertEvent fail!");
+            }), e.removeSendingId(p(t));
+          }), e.monitorUploadFailed();
+        });
+      };
+      var n,
+          o,
+          i = b();
+      return e.isUnderIE8 = i > 0 && i < 8, e.isUnderIE8 || (e.isUnderIE = i > 0, t.needInitQimei && e.initQimei(t.appkey), e.network = new Q(t), e.storage = new K(t.appkey), e.initCommonInfo(t), e.store = new _(t.appkey, e.storage), e.errorReport = new y(e.config, e.commonInfo, "web", e.network), e.strategy = new g(e.config, e.commonInfo, e.storage, e.network), e.logidStartTime = e.storage.getItem(H), e.logidStartTime || (e.logidStartTime = Date.now().toString(), e.storage.setItem(H, e.logidStartTime)), n = e.logidStartTime, o = Date.now() - Number.parseFloat(n), Math.floor(o / 864e5) >= 365 && e.storage.clear(), e.initSession(t), e.onDirectUserAction("rqd_js_init", {}), setTimeout(function () {
+        return e.lifeCycle.emit("init");
+      }, 0), e.initDelayTime = t.delay ? t.delay : 1e3, e.cycleTask(e.initDelayTime)), e;
+    }
+
+    return function (e, r) {
+      if ("function" != typeof r && null !== r) throw new TypeError("Class extends value " + String(r) + " is not a constructor or null");
+
+      function n() {
+        this.constructor = e;
+      }
+
+      _t(e, r), e.prototype = null === r ? Object.create(r) : (n.prototype = r.prototype, new n());
+    }(n, r), n.prototype.initQimei = function (t) {
+      var e = this;
+      new W().getQimei36(t, function (t) {
+        e.qimei36 = t.q36;
+      });
+    }, n.prototype.initSession = function (t) {
+      var e = 18e5;
+      t.sessionDuration && t.sessionDuration > 3e4 && (e = t.sessionDuration), this.beaconSession = new w(this.storage, e, this);
+    }, n.prototype.initCommonInfo = function (t) {
+      var e = Number(this.storage.getItem(a));
+
+      try {
+        var r = JSON.parse(this.storage.getItem(s));
+        (Date.now() - e > 3e4 || !r) && this.storage.setItem(s, JSON.stringify([]));
+      } catch (t) {}
+
+      t.uploadUrl && (this.uploadUrl = t.uploadUrl + "?appkey=" + t.appkey);
+      var n = [window.screen.width, window.screen.height];
+      window.devicePixelRatio && n.push(window.devicePixelRatio), this.commonInfo = {
+        deviceId: this.storage.createDeviceId(),
+        language: navigator && navigator.language || "zh_CN",
+        query: window.location.search,
+        userAgent: navigator.userAgent,
+        pixel: n.join("*"),
+        channelID: t.channelID ? String(t.channelID) : "",
+        openid: t.openid ? String(t.openid) : "",
+        unid: t.unionid ? String(t.unionid) : "",
+        sdkVersion: z
+      }, this.config.appVersion = t.versionCode ? String(t.versionCode) : "", this.config.strictMode = t.strictMode;
+    }, n.prototype.cycleTask = function (t) {
+      var e = this;
+      this.intervalID = window.setInterval(function () {
+        e.store.getEvents().then(function (t) {
+          var r = [],
+              n = JSON.parse(e.storage.getItem(s));
+          n || (n = []), t && t.forEach(function (t) {
+            var e = p(t.mapValue);
+            -1 == n.indexOf(e) && (r.push(t), n.push(e));
+          }), 0 != r.length && (e.storage.setItem(s, JSON.stringify(n)), e._normalLogPipeline(e.assembleData(r)));
+        })["catch"](function (t) {});
+      }, t);
+    }, n.prototype.onReport = function (t, e, r) {
+      var n = this;
+      if (this.isUnderIE8) this.errorReport.reportError("601", "UnderIE8");else {
+        var o = this.generateData(t, e, r);
+        if (r && 0 == this.delayTime && !this.underWeakNet) this._normalLogPipeline(this.assembleData(o));else {
+          var i = o.shift();
+          i && this.store.insertEvent(i, function (t) {
+            t && n.errorReport.reportError("604", "insertEvent fail!");
+          })["catch"](function (t) {
+            n._normalLogPipeline(n.assembleData(o));
+          });
+        }
+      }
+    }, n.prototype.onSendBeacon = function (t, e) {
+      if (this.isUnderIE) this.errorReport.reportError("605", "UnderIE");else {
+        var r = this.assembleData(this.generateData(t, e, !0));
+        "function" == typeof navigator.sendBeacon && navigator.sendBeacon(this.uploadUrl || this.strategy.getUploadUrl(), JSON.stringify(r));
+      }
+    }, n.prototype.generateData = function (t, r, n) {
+      var o = [],
+          i = "4.5.6-web_" + (n ? "direct_log_id" : "normal_log_id"),
+          a = Number(this.storage.getItem(i));
+      return a = a || 1, r = _e(_e({}, r), {
+        A99: n ? "Y" : "N",
+        A100: a.toString(),
+        A72: z,
+        A88: this.logidStartTime
+      }), a++, this.storage.setItem(i, a.toString()), o.push({
+        eventCode: t,
+        eventTime: Date.now().toString(),
+        mapValue: h(r, this.config.strictMode)
+      }), o;
+    }, n.prototype.assembleData = function (t) {
+      var r = this.beaconSession.getSession();
+      return {
+        appVersion: this.config.appVersion ? f(this.config.appVersion) : "",
+        sdkId: "js",
+        sdkVersion: z,
+        mainAppKey: this.config.appkey,
+        platformId: 3,
+        common: h(_e(_e({}, this.additionalParams), {
+          A2: this.commonInfo.deviceId,
+          A8: this.commonInfo.openid,
+          A12: this.commonInfo.language,
+          A17: this.commonInfo.pixel,
+          A23: this.commonInfo.channelID,
+          A50: this.commonInfo.unid,
+          A76: r.sessionId,
+          A101: this.commonInfo.userAgent,
+          A102: window.location.href,
+          A104: document.referrer,
+          A119: this.commonInfo.query,
+          A153: this.qimei36
+        }), !1),
+        events: t
+      };
+    }, n.prototype.monitorUploadFailed = function () {
+      this.uselessCycleTaskNum++, this.uselessCycleTaskNum >= 5 && (window.clearInterval(this.intervalID), this.cycleTask(6e4), this.underWeakNet = !0);
+    }, n.prototype.doCustomCycleTask = function () {
+      this.uselessCycleTaskNum >= 5 && (window.clearInterval(this.intervalID), this.cycleTask(this.initDelayTime)), this.uselessCycleTaskNum = 0, this.underWeakNet = !1;
+    }, n;
+  }(v);
+});
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/_webpack@4.46.0@webpack/buildin/global.js */ "./node_modules/_webpack@4.46.0@webpack/buildin/global.js")))
+
+/***/ }),
+
+/***/ "./lib/crypto.js":
+/*!***********************!*\
+  !*** ./lib/crypto.js ***!
+  \***********************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(module) {function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+/*
+ CryptoJS v3.1.2
+ code.google.com/p/crypto-js
+ (c) 2009-2013 by Jeff Mott. All rights reserved.
+ code.google.com/p/crypto-js/wiki/License
+ */
+var CryptoJS = CryptoJS || function (g, l) {
+  var e = {},
+      d = e.lib = {},
+      m = function m() {},
+      k = d.Base = {
+    extend: function extend(a) {
+      m.prototype = this;
+      var c = new m();
+      a && c.mixIn(a);
+      c.hasOwnProperty("init") || (c.init = function () {
+        c.$super.init.apply(this, arguments);
+      });
+      c.init.prototype = c;
+      c.$super = this;
+      return c;
+    },
+    create: function create() {
+      var a = this.extend();
+      a.init.apply(a, arguments);
+      return a;
+    },
+    init: function init() {},
+    mixIn: function mixIn(a) {
+      for (var c in a) {
+        a.hasOwnProperty(c) && (this[c] = a[c]);
+      }
+
+      a.hasOwnProperty("toString") && (this.toString = a.toString);
+    },
+    clone: function clone() {
+      return this.init.prototype.extend(this);
+    }
+  },
+      p = d.WordArray = k.extend({
+    init: function init(a, c) {
+      a = this.words = a || [];
+      this.sigBytes = c != l ? c : 4 * a.length;
+    },
+    toString: function toString(a) {
+      return (a || n).stringify(this);
+    },
+    concat: function concat(a) {
+      var c = this.words,
+          q = a.words,
+          f = this.sigBytes;
+      a = a.sigBytes;
+      this.clamp();
+      if (f % 4) for (var b = 0; b < a; b++) {
+        c[f + b >>> 2] |= (q[b >>> 2] >>> 24 - 8 * (b % 4) & 255) << 24 - 8 * ((f + b) % 4);
+      } else if (65535 < q.length) for (b = 0; b < a; b += 4) {
+        c[f + b >>> 2] = q[b >>> 2];
+      } else c.push.apply(c, q);
+      this.sigBytes += a;
+      return this;
+    },
+    clamp: function clamp() {
+      var a = this.words,
+          c = this.sigBytes;
+      a[c >>> 2] &= 4294967295 << 32 - 8 * (c % 4);
+      a.length = g.ceil(c / 4);
+    },
+    clone: function clone() {
+      var a = k.clone.call(this);
+      a.words = this.words.slice(0);
+      return a;
+    },
+    random: function random(a) {
+      for (var c = [], b = 0; b < a; b += 4) {
+        c.push(4294967296 * g.random() | 0);
+      }
+
+      return new p.init(c, a);
+    }
+  }),
+      b = e.enc = {},
+      n = b.Hex = {
+    stringify: function stringify(a) {
+      var c = a.words;
+      a = a.sigBytes;
+
+      for (var b = [], f = 0; f < a; f++) {
+        var d = c[f >>> 2] >>> 24 - 8 * (f % 4) & 255;
+        b.push((d >>> 4).toString(16));
+        b.push((d & 15).toString(16));
+      }
+
+      return b.join("");
+    },
+    parse: function parse(a) {
+      for (var c = a.length, b = [], f = 0; f < c; f += 2) {
+        b[f >>> 3] |= parseInt(a.substr(f, 2), 16) << 24 - 4 * (f % 8);
+      }
+
+      return new p.init(b, c / 2);
+    }
+  },
+      j = b.Latin1 = {
+    stringify: function stringify(a) {
+      var c = a.words;
+      a = a.sigBytes;
+
+      for (var b = [], f = 0; f < a; f++) {
+        b.push(String.fromCharCode(c[f >>> 2] >>> 24 - 8 * (f % 4) & 255));
+      }
+
+      return b.join("");
+    },
+    parse: function parse(a) {
+      for (var c = a.length, b = [], f = 0; f < c; f++) {
+        b[f >>> 2] |= (a.charCodeAt(f) & 255) << 24 - 8 * (f % 4);
+      }
+
+      return new p.init(b, c);
+    }
+  },
+      h = b.Utf8 = {
+    stringify: function stringify(a) {
+      try {
+        return decodeURIComponent(escape(j.stringify(a)));
+      } catch (c) {
+        throw Error("Malformed UTF-8 data");
+      }
+    },
+    parse: function parse(a) {
+      return j.parse(unescape(encodeURIComponent(a)));
+    }
+  },
+      r = d.BufferedBlockAlgorithm = k.extend({
+    reset: function reset() {
+      this._data = new p.init();
+      this._nDataBytes = 0;
+    },
+    _append: function _append(a) {
+      "string" == typeof a && (a = h.parse(a));
+
+      this._data.concat(a);
+
+      this._nDataBytes += a.sigBytes;
+    },
+    _process: function _process(a) {
+      var c = this._data,
+          b = c.words,
+          f = c.sigBytes,
+          d = this.blockSize,
+          e = f / (4 * d),
+          e = a ? g.ceil(e) : g.max((e | 0) - this._minBufferSize, 0);
+      a = e * d;
+      f = g.min(4 * a, f);
+
+      if (a) {
+        for (var k = 0; k < a; k += d) {
+          this._doProcessBlock(b, k);
+        }
+
+        k = b.splice(0, a);
+        c.sigBytes -= f;
+      }
+
+      return new p.init(k, f);
+    },
+    clone: function clone() {
+      var a = k.clone.call(this);
+      a._data = this._data.clone();
+      return a;
+    },
+    _minBufferSize: 0
+  });
+
+  d.Hasher = r.extend({
+    cfg: k.extend(),
+    init: function init(a) {
+      this.cfg = this.cfg.extend(a);
+      this.reset();
+    },
+    reset: function reset() {
+      r.reset.call(this);
+
+      this._doReset();
+    },
+    update: function update(a) {
+      this._append(a);
+
+      this._process();
+
+      return this;
+    },
+    finalize: function finalize(a) {
+      a && this._append(a);
+      return this._doFinalize();
+    },
+    blockSize: 16,
+    _createHelper: function _createHelper(a) {
+      return function (b, d) {
+        return new a.init(d).finalize(b);
+      };
+    },
+    _createHmacHelper: function _createHmacHelper(a) {
+      return function (b, d) {
+        return new s.HMAC.init(a, d).finalize(b);
+      };
+    }
+  });
+  var s = e.algo = {};
+  return e;
+}(Math);
+
+(function () {
+  var g = CryptoJS,
+      l = g.lib,
+      e = l.WordArray,
+      d = l.Hasher,
+      m = [],
+      l = g.algo.SHA1 = d.extend({
+    _doReset: function _doReset() {
+      this._hash = new e.init([1732584193, 4023233417, 2562383102, 271733878, 3285377520]);
+    },
+    _doProcessBlock: function _doProcessBlock(d, e) {
+      for (var b = this._hash.words, n = b[0], j = b[1], h = b[2], g = b[3], l = b[4], a = 0; 80 > a; a++) {
+        if (16 > a) m[a] = d[e + a] | 0;else {
+          var c = m[a - 3] ^ m[a - 8] ^ m[a - 14] ^ m[a - 16];
+          m[a] = c << 1 | c >>> 31;
+        }
+        c = (n << 5 | n >>> 27) + l + m[a];
+        c = 20 > a ? c + ((j & h | ~j & g) + 1518500249) : 40 > a ? c + ((j ^ h ^ g) + 1859775393) : 60 > a ? c + ((j & h | j & g | h & g) - 1894007588) : c + ((j ^ h ^ g) - 899497514);
+        l = g;
+        g = h;
+        h = j << 30 | j >>> 2;
+        j = n;
+        n = c;
+      }
+
+      b[0] = b[0] + n | 0;
+      b[1] = b[1] + j | 0;
+      b[2] = b[2] + h | 0;
+      b[3] = b[3] + g | 0;
+      b[4] = b[4] + l | 0;
+    },
+    _doFinalize: function _doFinalize() {
+      var d = this._data,
+          e = d.words,
+          b = 8 * this._nDataBytes,
+          g = 8 * d.sigBytes;
+      e[g >>> 5] |= 128 << 24 - g % 32;
+      e[(g + 64 >>> 9 << 4) + 14] = Math.floor(b / 4294967296);
+      e[(g + 64 >>> 9 << 4) + 15] = b;
+      d.sigBytes = 4 * e.length;
+
+      this._process();
+
+      return this._hash;
+    },
+    clone: function clone() {
+      var e = d.clone.call(this);
+      e._hash = this._hash.clone();
+      return e;
+    }
+  });
+  g.SHA1 = d._createHelper(l);
+  g.HmacSHA1 = d._createHmacHelper(l);
+})();
+
+(function () {
+  var g = CryptoJS,
+      l = g.enc.Utf8;
+  g.algo.HMAC = g.lib.Base.extend({
+    init: function init(e, d) {
+      e = this._hasher = new e.init();
+      "string" == typeof d && (d = l.parse(d));
+      var g = e.blockSize,
+          k = 4 * g;
+      d.sigBytes > k && (d = e.finalize(d));
+      d.clamp();
+
+      for (var p = this._oKey = d.clone(), b = this._iKey = d.clone(), n = p.words, j = b.words, h = 0; h < g; h++) {
+        n[h] ^= 1549556828, j[h] ^= 909522486;
+      }
+
+      p.sigBytes = b.sigBytes = k;
+      this.reset();
+    },
+    reset: function reset() {
+      var e = this._hasher;
+      e.reset();
+      e.update(this._iKey);
+    },
+    update: function update(e) {
+      this._hasher.update(e);
+
+      return this;
+    },
+    finalize: function finalize(e) {
+      var d = this._hasher;
+      e = d.finalize(e);
+      d.reset();
+      return d.finalize(this._oKey.clone().concat(e));
+    }
+  });
+})();
+
+(function () {
+  // Shortcuts
+  var C = CryptoJS;
+  var C_lib = C.lib;
+  var WordArray = C_lib.WordArray;
+  var C_enc = C.enc;
+  /**
+   * Base64 encoding strategy.
+   */
+
+  var Base64 = C_enc.Base64 = {
+    /**
+     * Converts a word array to a Base64 string.
+     *
+     * @param {WordArray} wordArray The word array.
+     *
+     * @return {string} The Base64 string.
+     *
+     * @static
+     *
+     * @example
+     *
+     *     var base64String = CryptoJS.enc.Base64.stringify(wordArray);
+     */
+    stringify: function stringify(wordArray) {
+      // Shortcuts
+      var words = wordArray.words;
+      var sigBytes = wordArray.sigBytes;
+      var map = this._map; // Clamp excess bits
+
+      wordArray.clamp(); // Convert
+
+      var base64Chars = [];
+
+      for (var i = 0; i < sigBytes; i += 3) {
+        var byte1 = words[i >>> 2] >>> 24 - i % 4 * 8 & 0xff;
+        var byte2 = words[i + 1 >>> 2] >>> 24 - (i + 1) % 4 * 8 & 0xff;
+        var byte3 = words[i + 2 >>> 2] >>> 24 - (i + 2) % 4 * 8 & 0xff;
+        var triplet = byte1 << 16 | byte2 << 8 | byte3;
+
+        for (var j = 0; j < 4 && i + j * 0.75 < sigBytes; j++) {
+          base64Chars.push(map.charAt(triplet >>> 6 * (3 - j) & 0x3f));
+        }
+      } // Add padding
+
+
+      var paddingChar = map.charAt(64);
+
+      if (paddingChar) {
+        while (base64Chars.length % 4) {
+          base64Chars.push(paddingChar);
+        }
+      }
+
+      return base64Chars.join('');
+    },
+
+    /**
+     * Converts a Base64 string to a word array.
+     *
+     * @param {string} base64Str The Base64 string.
+     *
+     * @return {WordArray} The word array.
+     *
+     * @static
+     *
+     * @example
+     *
+     *     var wordArray = CryptoJS.enc.Base64.parse(base64String);
+     */
+    parse: function parse(base64Str) {
+      // Shortcuts
+      var base64StrLength = base64Str.length;
+      var map = this._map; // Ignore padding
+
+      var paddingChar = map.charAt(64);
+
+      if (paddingChar) {
+        var paddingIndex = base64Str.indexOf(paddingChar);
+
+        if (paddingIndex != -1) {
+          base64StrLength = paddingIndex;
+        }
+      } // Convert
+
+
+      var words = [];
+      var nBytes = 0;
+
+      for (var i = 0; i < base64StrLength; i++) {
+        if (i % 4) {
+          var bits1 = map.indexOf(base64Str.charAt(i - 1)) << i % 4 * 2;
+          var bits2 = map.indexOf(base64Str.charAt(i)) >>> 6 - i % 4 * 2;
+          words[nBytes >>> 2] |= (bits1 | bits2) << 24 - nBytes % 4 * 8;
+          nBytes++;
+        }
+      }
+
+      return WordArray.create(words, nBytes);
+    },
+    _map: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='
+  };
+})();
+
+if (( false ? undefined : _typeof(module)) === 'object') {
+  module.exports = CryptoJS;
+} else {
+  window.CryptoJS = CryptoJS;
+}
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/_webpack@4.46.0@webpack/buildin/module.js */ "./node_modules/_webpack@4.46.0@webpack/buildin/module.js")(module)))
+
+/***/ }),
+
+/***/ "./lib/json2xml.js":
+/*!*************************!*\
+  !*** ./lib/json2xml.js ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+//copyright Ryan Day 2010 <http://ryanday.org>, Joscha Feth 2013 <http://www.feth.com> [MIT Licensed]
+var element_start_char = "a-zA-Z_\xC0-\xD6\xD8-\xF6\xF8-\xFF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FFF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD";
+var element_non_start_char = "-.0-9\xB7\u0300-\u036F\u203F\u2040";
+var element_replace = new RegExp("^([^" + element_start_char + "])|^((x|X)(m|M)(l|L))|([^" + element_start_char + element_non_start_char + "])", "g");
+var not_safe_in_xml = /[^\x09\x0A\x0D\x20-\xFF\x85\xA0-\uD7FF\uE000-\uFDCF\uFDE0-\uFFFD]/gm;
+
+var objKeys = function objKeys(obj) {
+  var l = [];
+
+  if (obj instanceof Object) {
+    for (var k in obj) {
+      if (obj.hasOwnProperty(k)) {
+        l.push(k);
+      }
+    }
+  }
+
+  return l;
+};
+
+var process_to_xml = function process_to_xml(node_data, options) {
+  var makeNode = function makeNode(name, content, attributes, level, hasSubNodes) {
+    var indent_value = options.indent !== undefined ? options.indent : "\t";
+    var indent = options.prettyPrint ? '\n' + new Array(level).join(indent_value) : '';
+
+    if (options.removeIllegalNameCharacters) {
+      name = name.replace(element_replace, '_');
+    }
+
+    var node = [indent, '<', name, attributes || ''];
+
+    if (content && content.length > 0) {
+      node.push('>');
+      node.push(content);
+      hasSubNodes && node.push(indent);
+      node.push('</');
+      node.push(name);
+      node.push('>');
+    } else {
+      node.push('/>');
+    }
+
+    return node.join('');
+  };
+
+  return function fn(node_data, node_descriptor, level) {
+    var type = _typeof(node_data);
+
+    if (Array.isArray ? Array.isArray(node_data) : node_data instanceof Array) {
+      type = 'array';
+    } else if (node_data instanceof Date) {
+      type = 'date';
+    }
+
+    switch (type) {
+      //if value is an array create child nodes from values
+      case 'array':
+        var ret = [];
+        node_data.map(function (v) {
+          ret.push(fn(v, 1, level + 1)); //entries that are values of an array are the only ones that can be special node descriptors
+        });
+        options.prettyPrint && ret.push('\n');
+        return ret.join('');
+        break;
+
+      case 'date':
+        // cast dates to ISO 8601 date (soap likes it)
+        return node_data.toJSON ? node_data.toJSON() : node_data + '';
+        break;
+
+      case 'object':
+        var nodes = [];
+
+        for (var name in node_data) {
+          if (node_data.hasOwnProperty(name)) {
+            if (node_data[name] instanceof Array) {
+              for (var j = 0; j < node_data[name].length; j++) {
+                if (node_data[name].hasOwnProperty(j)) {
+                  nodes.push(makeNode(name, fn(node_data[name][j], 0, level + 1), null, level + 1, objKeys(node_data[name][j]).length));
+                }
+              }
+            } else {
+              nodes.push(makeNode(name, fn(node_data[name], 0, level + 1), null, level + 1));
+            }
+          }
+        }
+
+        options.prettyPrint && nodes.length > 0 && nodes.push('\n');
+        return nodes.join('');
+        break;
+
+      case 'function':
+        return node_data();
+        break;
+
+      default:
+        return options.escape ? esc(node_data) : '' + node_data;
+    }
+  }(node_data, 0, 0);
+};
+
+var xml_header = function xml_header(standalone) {
+  var ret = ['<?xml version="1.0" encoding="UTF-8"'];
+
+  if (standalone) {
+    ret.push(' standalone="yes"');
+  }
+
+  ret.push('?>');
+  return ret.join('');
+};
+
+function esc(str) {
+  return ('' + str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&apos;').replace(/"/g, '&quot;').replace(not_safe_in_xml, '');
+}
+
+module.exports = function (obj, options) {
+  if (!options) {
+    options = {
+      xmlHeader: {
+        standalone: true
+      },
+      prettyPrint: true,
+      indent: "  ",
+      escape: true
+    };
+  }
+
+  if (typeof obj == 'string') {
+    try {
+      obj = JSON.parse(obj.toString());
+    } catch (e) {
+      return false;
+    }
+  }
+
+  var xmlheader = '';
+  var docType = '';
+
+  if (options) {
+    if (_typeof(options) == 'object') {
+      // our config is an object
+      if (options.xmlHeader) {
+        // the user wants an xml header
+        xmlheader = xml_header(!!options.xmlHeader.standalone);
+      }
+
+      if (typeof options.docType != 'undefined') {
+        docType = '<!DOCTYPE ' + options.docType + '>';
+      }
+    } else {
+      // our config is a boolean value, so just add xml header
+      xmlheader = xml_header();
+    }
+  }
+
+  options = options || {};
+  var ret = [xmlheader, options.prettyPrint && docType ? '\n' : '', docType, process_to_xml(obj, options)];
+  return ret.join('').replace(/\n{2,}/g, '\n').replace(/\s+$/g, '');
+};
+
+/***/ }),
+
+/***/ "./lib/md5.js":
+/*!********************!*\
+  !*** ./lib/md5.js ***!
+  \********************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(process, global, module) {var __WEBPACK_AMD_DEFINE_RESULT__;function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+/* https://github.com/emn178/js-md5 */
+(function () {
+  'use strict';
+
+  var ERROR = 'input is invalid type';
+  var WINDOW = (typeof window === "undefined" ? "undefined" : _typeof(window)) === 'object';
+  var root = WINDOW ? window : {};
+
+  if (root.JS_MD5_NO_WINDOW) {
+    WINDOW = false;
+  }
+
+  var WEB_WORKER = !WINDOW && (typeof self === "undefined" ? "undefined" : _typeof(self)) === 'object';
+  var NODE_JS = !root.JS_MD5_NO_NODE_JS && (typeof process === "undefined" ? "undefined" : _typeof(process)) === 'object' && process.versions && process.versions.node;
+
+  if (NODE_JS) {
+    root = global;
+  } else if (WEB_WORKER) {
+    root = self;
+  }
+
+  var COMMON_JS = !root.JS_MD5_NO_COMMON_JS && ( false ? undefined : _typeof(module)) === 'object' && module.exports;
+  var AMD =  true && __webpack_require__(/*! !webpack amd options */ "./node_modules/_webpack@4.46.0@webpack/buildin/amd-options.js");
+  var ARRAY_BUFFER = !root.JS_MD5_NO_ARRAY_BUFFER && typeof ArrayBuffer !== 'undefined';
+  var HEX_CHARS = '0123456789abcdef'.split('');
+  var EXTRA = [128, 32768, 8388608, -2147483648];
+  var SHIFT = [0, 8, 16, 24];
+  var OUTPUT_TYPES = ['hex', 'array', 'digest', 'buffer', 'arrayBuffer', 'base64'];
+  var BASE64_ENCODE_CHAR = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split('');
+  var blocks = [],
+      buffer8;
+
+  if (ARRAY_BUFFER) {
+    var buffer = new ArrayBuffer(68);
+    buffer8 = new Uint8Array(buffer);
+    blocks = new Uint32Array(buffer);
+  }
+
+  if (root.JS_MD5_NO_NODE_JS || !Array.isArray) {
+    Array.isArray = function (obj) {
+      return Object.prototype.toString.call(obj) === '[object Array]';
+    };
+  }
+
+  if (ARRAY_BUFFER && (root.JS_MD5_NO_ARRAY_BUFFER_IS_VIEW || !ArrayBuffer.isView)) {
+    ArrayBuffer.isView = function (obj) {
+      return _typeof(obj) === 'object' && obj.buffer && obj.buffer.constructor === ArrayBuffer;
+    };
+  }
+  /**
+   * @method hex
+   * @memberof md5
+   * @description Output hash as hex string
+   * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
+   * @returns {String} Hex string
+   * @example
+   * md5.hex('The quick brown fox jumps over the lazy dog');
+   * // equal to
+   * md5('The quick brown fox jumps over the lazy dog');
+   */
+
+  /**
+   * @method digest
+   * @memberof md5
+   * @description Output hash as bytes array
+   * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
+   * @returns {Array} Bytes array
+   * @example
+   * md5.digest('The quick brown fox jumps over the lazy dog');
+   */
+
+  /**
+   * @method array
+   * @memberof md5
+   * @description Output hash as bytes array
+   * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
+   * @returns {Array} Bytes array
+   * @example
+   * md5.array('The quick brown fox jumps over the lazy dog');
+   */
+
+  /**
+   * @method arrayBuffer
+   * @memberof md5
+   * @description Output hash as ArrayBuffer
+   * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
+   * @returns {ArrayBuffer} ArrayBuffer
+   * @example
+   * md5.arrayBuffer('The quick brown fox jumps over the lazy dog');
+   */
+
+  /**
+   * @method buffer
+   * @deprecated This maybe confuse with Buffer in node.js. Please use arrayBuffer instead.
+   * @memberof md5
+   * @description Output hash as ArrayBuffer
+   * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
+   * @returns {ArrayBuffer} ArrayBuffer
+   * @example
+   * md5.buffer('The quick brown fox jumps over the lazy dog');
+   */
+
+  /**
+   * @method base64
+   * @memberof md5
+   * @description Output hash as base64 string
+   * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
+   * @returns {String} base64 string
+   * @example
+   * md5.base64('The quick brown fox jumps over the lazy dog');
+   */
+
+
+  var createOutputMethod = function createOutputMethod(outputType) {
+    return function (message, isBinStr) {
+      return new Md5(true).update(message, isBinStr)[outputType]();
+    };
+  };
+  /**
+   * @method create
+   * @memberof md5
+   * @description Create Md5 object
+   * @returns {Md5} Md5 object.
+   * @example
+   * var hash = md5.create();
+   */
+
+  /**
+   * @method update
+   * @memberof md5
+   * @description Create and update Md5 object
+   * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
+   * @returns {Md5} Md5 object.
+   * @example
+   * var hash = md5.update('The quick brown fox jumps over the lazy dog');
+   * // equal to
+   * var hash = md5.create();
+   * hash.update('The quick brown fox jumps over the lazy dog');
+   */
+
+
+  var createMethod = function createMethod() {
+    var method = createOutputMethod('hex');
+
+    if (NODE_JS) {
+      method = nodeWrap(method);
+    }
+
+    method.getCtx = method.create = function () {
+      return new Md5();
+    };
+
+    method.update = function (message) {
+      return method.create().update(message);
+    };
+
+    for (var i = 0; i < OUTPUT_TYPES.length; ++i) {
+      var type = OUTPUT_TYPES[i];
+      method[type] = createOutputMethod(type);
+    }
+
+    return method;
+  };
+
+  var nodeWrap = function nodeWrap(method) {
+    var crypto = eval("require('crypto')");
+    var Buffer = eval("require('buffer').Buffer");
+
+    var nodeMethod = function nodeMethod(message) {
+      if (typeof message === 'string') {
+        return crypto.createHash('md5').update(message, 'utf8').digest('hex');
+      } else {
+        if (message === null || message === undefined) {
+          throw ERROR;
+        } else if (message.constructor === ArrayBuffer) {
+          message = new Uint8Array(message);
+        }
+      }
+
+      if (Array.isArray(message) || ArrayBuffer.isView(message) || message.constructor === Buffer) {
+        return crypto.createHash('md5').update(new Buffer(message)).digest('hex');
+      } else {
+        return method(message);
+      }
+    };
+
+    return nodeMethod;
+  };
+  /**
+   * Md5 class
+   * @class Md5
+   * @description This is internal class.
+   * @see {@link md5.create}
+   */
+
+
+  function Md5(sharedMemory) {
+    if (sharedMemory) {
+      blocks[0] = blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
+      this.blocks = blocks;
+      this.buffer8 = buffer8;
+    } else {
+      if (ARRAY_BUFFER) {
+        var buffer = new ArrayBuffer(68);
+        this.buffer8 = new Uint8Array(buffer);
+        this.blocks = new Uint32Array(buffer);
+      } else {
+        this.blocks = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      }
+    }
+
+    this.h0 = this.h1 = this.h2 = this.h3 = this.start = this.bytes = this.hBytes = 0;
+    this.finalized = this.hashed = false;
+    this.first = true;
+  }
+  /**
+   * @method update
+   * @memberof Md5
+   * @instance
+   * @description Update hash
+   * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
+   * @returns {Md5} Md5 object.
+   * @see {@link md5.update}
+   */
+
+
+  Md5.prototype.update = function (message, isBinStr) {
+    if (this.finalized) {
+      return;
+    }
+
+    var code,
+        index = 0,
+        i,
+        length = message.length,
+        blocks = this.blocks;
+    var buffer8 = this.buffer8;
+
+    while (index < length) {
+      if (this.hashed) {
+        this.hashed = false;
+        blocks[0] = blocks[16];
+        blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
+      }
+
+      if (ARRAY_BUFFER) {
+        for (i = this.start; index < length && i < 64; ++index) {
+          code = message.charCodeAt(index);
+
+          if (isBinStr || code < 0x80) {
+            buffer8[i++] = code;
+          } else if (code < 0x800) {
+            buffer8[i++] = 0xc0 | code >> 6;
+            buffer8[i++] = 0x80 | code & 0x3f;
+          } else if (code < 0xd800 || code >= 0xe000) {
+            buffer8[i++] = 0xe0 | code >> 12;
+            buffer8[i++] = 0x80 | code >> 6 & 0x3f;
+            buffer8[i++] = 0x80 | code & 0x3f;
+          } else {
+            code = 0x10000 + ((code & 0x3ff) << 10 | message.charCodeAt(++index) & 0x3ff);
+            buffer8[i++] = 0xf0 | code >> 18;
+            buffer8[i++] = 0x80 | code >> 12 & 0x3f;
+            buffer8[i++] = 0x80 | code >> 6 & 0x3f;
+            buffer8[i++] = 0x80 | code & 0x3f;
+          }
+        }
+      } else {
+        for (i = this.start; index < length && i < 64; ++index) {
+          code = message.charCodeAt(index);
+
+          if (isBinStr || code < 0x80) {
+            blocks[i >> 2] |= code << SHIFT[i++ & 3];
+          } else if (code < 0x800) {
+            blocks[i >> 2] |= (0xc0 | code >> 6) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
+          } else if (code < 0xd800 || code >= 0xe000) {
+            blocks[i >> 2] |= (0xe0 | code >> 12) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
+          } else {
+            code = 0x10000 + ((code & 0x3ff) << 10 | message.charCodeAt(++index) & 0x3ff);
+            blocks[i >> 2] |= (0xf0 | code >> 18) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | code >> 12 & 0x3f) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
+          }
+        }
+      }
+
+      this.lastByteIndex = i;
+      this.bytes += i - this.start;
+
+      if (i >= 64) {
+        this.start = i - 64;
+        this.hash();
+        this.hashed = true;
+      } else {
+        this.start = i;
+      }
+    }
+
+    if (this.bytes > 4294967295) {
+      this.hBytes += this.bytes / 4294967296 << 0;
+      this.bytes = this.bytes % 4294967296;
+    }
+
+    return this;
+  };
+
+  Md5.prototype.finalize = function () {
+    if (this.finalized) {
+      return;
+    }
+
+    this.finalized = true;
+    var blocks = this.blocks,
+        i = this.lastByteIndex;
+    blocks[i >> 2] |= EXTRA[i & 3];
+
+    if (i >= 56) {
+      if (!this.hashed) {
+        this.hash();
+      }
+
+      blocks[0] = blocks[16];
+      blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
+    }
+
+    blocks[14] = this.bytes << 3;
+    blocks[15] = this.hBytes << 3 | this.bytes >>> 29;
+    this.hash();
+  };
+
+  Md5.prototype.hash = function () {
+    var a,
+        b,
+        c,
+        d,
+        bc,
+        da,
+        blocks = this.blocks;
+
+    if (this.first) {
+      a = blocks[0] - 680876937;
+      a = (a << 7 | a >>> 25) - 271733879 << 0;
+      d = (-1732584194 ^ a & 2004318071) + blocks[1] - 117830708;
+      d = (d << 12 | d >>> 20) + a << 0;
+      c = (-271733879 ^ d & (a ^ -271733879)) + blocks[2] - 1126478375;
+      c = (c << 17 | c >>> 15) + d << 0;
+      b = (a ^ c & (d ^ a)) + blocks[3] - 1316259209;
+      b = (b << 22 | b >>> 10) + c << 0;
+    } else {
+      a = this.h0;
+      b = this.h1;
+      c = this.h2;
+      d = this.h3;
+      a += (d ^ b & (c ^ d)) + blocks[0] - 680876936;
+      a = (a << 7 | a >>> 25) + b << 0;
+      d += (c ^ a & (b ^ c)) + blocks[1] - 389564586;
+      d = (d << 12 | d >>> 20) + a << 0;
+      c += (b ^ d & (a ^ b)) + blocks[2] + 606105819;
+      c = (c << 17 | c >>> 15) + d << 0;
+      b += (a ^ c & (d ^ a)) + blocks[3] - 1044525330;
+      b = (b << 22 | b >>> 10) + c << 0;
+    }
+
+    a += (d ^ b & (c ^ d)) + blocks[4] - 176418897;
+    a = (a << 7 | a >>> 25) + b << 0;
+    d += (c ^ a & (b ^ c)) + blocks[5] + 1200080426;
+    d = (d << 12 | d >>> 20) + a << 0;
+    c += (b ^ d & (a ^ b)) + blocks[6] - 1473231341;
+    c = (c << 17 | c >>> 15) + d << 0;
+    b += (a ^ c & (d ^ a)) + blocks[7] - 45705983;
+    b = (b << 22 | b >>> 10) + c << 0;
+    a += (d ^ b & (c ^ d)) + blocks[8] + 1770035416;
+    a = (a << 7 | a >>> 25) + b << 0;
+    d += (c ^ a & (b ^ c)) + blocks[9] - 1958414417;
+    d = (d << 12 | d >>> 20) + a << 0;
+    c += (b ^ d & (a ^ b)) + blocks[10] - 42063;
+    c = (c << 17 | c >>> 15) + d << 0;
+    b += (a ^ c & (d ^ a)) + blocks[11] - 1990404162;
+    b = (b << 22 | b >>> 10) + c << 0;
+    a += (d ^ b & (c ^ d)) + blocks[12] + 1804603682;
+    a = (a << 7 | a >>> 25) + b << 0;
+    d += (c ^ a & (b ^ c)) + blocks[13] - 40341101;
+    d = (d << 12 | d >>> 20) + a << 0;
+    c += (b ^ d & (a ^ b)) + blocks[14] - 1502002290;
+    c = (c << 17 | c >>> 15) + d << 0;
+    b += (a ^ c & (d ^ a)) + blocks[15] + 1236535329;
+    b = (b << 22 | b >>> 10) + c << 0;
+    a += (c ^ d & (b ^ c)) + blocks[1] - 165796510;
+    a = (a << 5 | a >>> 27) + b << 0;
+    d += (b ^ c & (a ^ b)) + blocks[6] - 1069501632;
+    d = (d << 9 | d >>> 23) + a << 0;
+    c += (a ^ b & (d ^ a)) + blocks[11] + 643717713;
+    c = (c << 14 | c >>> 18) + d << 0;
+    b += (d ^ a & (c ^ d)) + blocks[0] - 373897302;
+    b = (b << 20 | b >>> 12) + c << 0;
+    a += (c ^ d & (b ^ c)) + blocks[5] - 701558691;
+    a = (a << 5 | a >>> 27) + b << 0;
+    d += (b ^ c & (a ^ b)) + blocks[10] + 38016083;
+    d = (d << 9 | d >>> 23) + a << 0;
+    c += (a ^ b & (d ^ a)) + blocks[15] - 660478335;
+    c = (c << 14 | c >>> 18) + d << 0;
+    b += (d ^ a & (c ^ d)) + blocks[4] - 405537848;
+    b = (b << 20 | b >>> 12) + c << 0;
+    a += (c ^ d & (b ^ c)) + blocks[9] + 568446438;
+    a = (a << 5 | a >>> 27) + b << 0;
+    d += (b ^ c & (a ^ b)) + blocks[14] - 1019803690;
+    d = (d << 9 | d >>> 23) + a << 0;
+    c += (a ^ b & (d ^ a)) + blocks[3] - 187363961;
+    c = (c << 14 | c >>> 18) + d << 0;
+    b += (d ^ a & (c ^ d)) + blocks[8] + 1163531501;
+    b = (b << 20 | b >>> 12) + c << 0;
+    a += (c ^ d & (b ^ c)) + blocks[13] - 1444681467;
+    a = (a << 5 | a >>> 27) + b << 0;
+    d += (b ^ c & (a ^ b)) + blocks[2] - 51403784;
+    d = (d << 9 | d >>> 23) + a << 0;
+    c += (a ^ b & (d ^ a)) + blocks[7] + 1735328473;
+    c = (c << 14 | c >>> 18) + d << 0;
+    b += (d ^ a & (c ^ d)) + blocks[12] - 1926607734;
+    b = (b << 20 | b >>> 12) + c << 0;
+    bc = b ^ c;
+    a += (bc ^ d) + blocks[5] - 378558;
+    a = (a << 4 | a >>> 28) + b << 0;
+    d += (bc ^ a) + blocks[8] - 2022574463;
+    d = (d << 11 | d >>> 21) + a << 0;
+    da = d ^ a;
+    c += (da ^ b) + blocks[11] + 1839030562;
+    c = (c << 16 | c >>> 16) + d << 0;
+    b += (da ^ c) + blocks[14] - 35309556;
+    b = (b << 23 | b >>> 9) + c << 0;
+    bc = b ^ c;
+    a += (bc ^ d) + blocks[1] - 1530992060;
+    a = (a << 4 | a >>> 28) + b << 0;
+    d += (bc ^ a) + blocks[4] + 1272893353;
+    d = (d << 11 | d >>> 21) + a << 0;
+    da = d ^ a;
+    c += (da ^ b) + blocks[7] - 155497632;
+    c = (c << 16 | c >>> 16) + d << 0;
+    b += (da ^ c) + blocks[10] - 1094730640;
+    b = (b << 23 | b >>> 9) + c << 0;
+    bc = b ^ c;
+    a += (bc ^ d) + blocks[13] + 681279174;
+    a = (a << 4 | a >>> 28) + b << 0;
+    d += (bc ^ a) + blocks[0] - 358537222;
+    d = (d << 11 | d >>> 21) + a << 0;
+    da = d ^ a;
+    c += (da ^ b) + blocks[3] - 722521979;
+    c = (c << 16 | c >>> 16) + d << 0;
+    b += (da ^ c) + blocks[6] + 76029189;
+    b = (b << 23 | b >>> 9) + c << 0;
+    bc = b ^ c;
+    a += (bc ^ d) + blocks[9] - 640364487;
+    a = (a << 4 | a >>> 28) + b << 0;
+    d += (bc ^ a) + blocks[12] - 421815835;
+    d = (d << 11 | d >>> 21) + a << 0;
+    da = d ^ a;
+    c += (da ^ b) + blocks[15] + 530742520;
+    c = (c << 16 | c >>> 16) + d << 0;
+    b += (da ^ c) + blocks[2] - 995338651;
+    b = (b << 23 | b >>> 9) + c << 0;
+    a += (c ^ (b | ~d)) + blocks[0] - 198630844;
+    a = (a << 6 | a >>> 26) + b << 0;
+    d += (b ^ (a | ~c)) + blocks[7] + 1126891415;
+    d = (d << 10 | d >>> 22) + a << 0;
+    c += (a ^ (d | ~b)) + blocks[14] - 1416354905;
+    c = (c << 15 | c >>> 17) + d << 0;
+    b += (d ^ (c | ~a)) + blocks[5] - 57434055;
+    b = (b << 21 | b >>> 11) + c << 0;
+    a += (c ^ (b | ~d)) + blocks[12] + 1700485571;
+    a = (a << 6 | a >>> 26) + b << 0;
+    d += (b ^ (a | ~c)) + blocks[3] - 1894986606;
+    d = (d << 10 | d >>> 22) + a << 0;
+    c += (a ^ (d | ~b)) + blocks[10] - 1051523;
+    c = (c << 15 | c >>> 17) + d << 0;
+    b += (d ^ (c | ~a)) + blocks[1] - 2054922799;
+    b = (b << 21 | b >>> 11) + c << 0;
+    a += (c ^ (b | ~d)) + blocks[8] + 1873313359;
+    a = (a << 6 | a >>> 26) + b << 0;
+    d += (b ^ (a | ~c)) + blocks[15] - 30611744;
+    d = (d << 10 | d >>> 22) + a << 0;
+    c += (a ^ (d | ~b)) + blocks[6] - 1560198380;
+    c = (c << 15 | c >>> 17) + d << 0;
+    b += (d ^ (c | ~a)) + blocks[13] + 1309151649;
+    b = (b << 21 | b >>> 11) + c << 0;
+    a += (c ^ (b | ~d)) + blocks[4] - 145523070;
+    a = (a << 6 | a >>> 26) + b << 0;
+    d += (b ^ (a | ~c)) + blocks[11] - 1120210379;
+    d = (d << 10 | d >>> 22) + a << 0;
+    c += (a ^ (d | ~b)) + blocks[2] + 718787259;
+    c = (c << 15 | c >>> 17) + d << 0;
+    b += (d ^ (c | ~a)) + blocks[9] - 343485551;
+    b = (b << 21 | b >>> 11) + c << 0;
+
+    if (this.first) {
+      this.h0 = a + 1732584193 << 0;
+      this.h1 = b - 271733879 << 0;
+      this.h2 = c - 1732584194 << 0;
+      this.h3 = d + 271733878 << 0;
+      this.first = false;
+    } else {
+      this.h0 = this.h0 + a << 0;
+      this.h1 = this.h1 + b << 0;
+      this.h2 = this.h2 + c << 0;
+      this.h3 = this.h3 + d << 0;
+    }
+  };
+  /**
+   * @method hex
+   * @memberof Md5
+   * @instance
+   * @description Output hash as hex string
+   * @returns {String} Hex string
+   * @see {@link md5.hex}
+   * @example
+   * hash.hex();
+   */
+
+
+  Md5.prototype.hex = function () {
+    this.finalize();
+    var h0 = this.h0,
+        h1 = this.h1,
+        h2 = this.h2,
+        h3 = this.h3;
+    return HEX_CHARS[h0 >> 4 & 0x0F] + HEX_CHARS[h0 & 0x0F] + HEX_CHARS[h0 >> 12 & 0x0F] + HEX_CHARS[h0 >> 8 & 0x0F] + HEX_CHARS[h0 >> 20 & 0x0F] + HEX_CHARS[h0 >> 16 & 0x0F] + HEX_CHARS[h0 >> 28 & 0x0F] + HEX_CHARS[h0 >> 24 & 0x0F] + HEX_CHARS[h1 >> 4 & 0x0F] + HEX_CHARS[h1 & 0x0F] + HEX_CHARS[h1 >> 12 & 0x0F] + HEX_CHARS[h1 >> 8 & 0x0F] + HEX_CHARS[h1 >> 20 & 0x0F] + HEX_CHARS[h1 >> 16 & 0x0F] + HEX_CHARS[h1 >> 28 & 0x0F] + HEX_CHARS[h1 >> 24 & 0x0F] + HEX_CHARS[h2 >> 4 & 0x0F] + HEX_CHARS[h2 & 0x0F] + HEX_CHARS[h2 >> 12 & 0x0F] + HEX_CHARS[h2 >> 8 & 0x0F] + HEX_CHARS[h2 >> 20 & 0x0F] + HEX_CHARS[h2 >> 16 & 0x0F] + HEX_CHARS[h2 >> 28 & 0x0F] + HEX_CHARS[h2 >> 24 & 0x0F] + HEX_CHARS[h3 >> 4 & 0x0F] + HEX_CHARS[h3 & 0x0F] + HEX_CHARS[h3 >> 12 & 0x0F] + HEX_CHARS[h3 >> 8 & 0x0F] + HEX_CHARS[h3 >> 20 & 0x0F] + HEX_CHARS[h3 >> 16 & 0x0F] + HEX_CHARS[h3 >> 28 & 0x0F] + HEX_CHARS[h3 >> 24 & 0x0F];
+  };
+  /**
+   * @method toString
+   * @memberof Md5
+   * @instance
+   * @description Output hash as hex string
+   * @returns {String} Hex string
+   * @see {@link md5.hex}
+   * @example
+   * hash.toString();
+   */
+
+
+  Md5.prototype.toString = Md5.prototype.hex;
+  /**
+   * @method digest
+   * @memberof Md5
+   * @instance
+   * @description Output hash as bytes array
+   * @returns {Array} Bytes array
+   * @see {@link md5.digest}
+   * @example
+   * hash.digest();
+   */
+
+  Md5.prototype.digest = function (format) {
+    if (format === 'hex') return this.hex();
+    this.finalize();
+    var h0 = this.h0,
+        h1 = this.h1,
+        h2 = this.h2,
+        h3 = this.h3;
+    var res = [h0 & 0xFF, h0 >> 8 & 0xFF, h0 >> 16 & 0xFF, h0 >> 24 & 0xFF, h1 & 0xFF, h1 >> 8 & 0xFF, h1 >> 16 & 0xFF, h1 >> 24 & 0xFF, h2 & 0xFF, h2 >> 8 & 0xFF, h2 >> 16 & 0xFF, h2 >> 24 & 0xFF, h3 & 0xFF, h3 >> 8 & 0xFF, h3 >> 16 & 0xFF, h3 >> 24 & 0xFF];
+    return res;
+  };
+  /**
+   * @method array
+   * @memberof Md5
+   * @instance
+   * @description Output hash as bytes array
+   * @returns {Array} Bytes array
+   * @see {@link md5.array}
+   * @example
+   * hash.array();
+   */
+
+
+  Md5.prototype.array = Md5.prototype.digest;
+  /**
+   * @method arrayBuffer
+   * @memberof Md5
+   * @instance
+   * @description Output hash as ArrayBuffer
+   * @returns {ArrayBuffer} ArrayBuffer
+   * @see {@link md5.arrayBuffer}
+   * @example
+   * hash.arrayBuffer();
+   */
+
+  Md5.prototype.arrayBuffer = function () {
+    this.finalize();
+    var buffer = new ArrayBuffer(16);
+    var blocks = new Uint32Array(buffer);
+    blocks[0] = this.h0;
+    blocks[1] = this.h1;
+    blocks[2] = this.h2;
+    blocks[3] = this.h3;
+    return buffer;
+  };
+  /**
+   * @method buffer
+   * @deprecated This maybe confuse with Buffer in node.js. Please use arrayBuffer instead.
+   * @memberof Md5
+   * @instance
+   * @description Output hash as ArrayBuffer
+   * @returns {ArrayBuffer} ArrayBuffer
+   * @see {@link md5.buffer}
+   * @example
+   * hash.buffer();
+   */
+
+
+  Md5.prototype.buffer = Md5.prototype.arrayBuffer;
+  /**
+   * @method base64
+   * @memberof Md5
+   * @instance
+   * @description Output hash as base64 string
+   * @returns {String} base64 string
+   * @see {@link md5.base64}
+   * @example
+   * hash.base64();
+   */
+
+  Md5.prototype.base64 = function () {
+    var v1,
+        v2,
+        v3,
+        base64Str = '',
+        bytes = this.array();
+
+    for (var i = 0; i < 15;) {
+      v1 = bytes[i++];
+      v2 = bytes[i++];
+      v3 = bytes[i++];
+      base64Str += BASE64_ENCODE_CHAR[v1 >>> 2] + BASE64_ENCODE_CHAR[(v1 << 4 | v2 >>> 4) & 63] + BASE64_ENCODE_CHAR[(v2 << 2 | v3 >>> 6) & 63] + BASE64_ENCODE_CHAR[v3 & 63];
+    }
+
+    v1 = bytes[i];
+    base64Str += BASE64_ENCODE_CHAR[v1 >>> 2] + BASE64_ENCODE_CHAR[v1 << 4 & 63] + '==';
+    return base64Str;
+  };
+
+  var exports = createMethod();
+
+  if (COMMON_JS) {
+    module.exports = exports;
+  } else {
+    /**
+     * @method md5
+     * @description Md5 hash function, export to global in browsers.
+     * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
+     * @returns {String} md5 hashes
+     * @example
+     * md5(''); // d41d8cd98f00b204e9800998ecf8427e
+     * md5('The quick brown fox jumps over the lazy dog'); // 9e107d9d372bb6826bd81d3542a419d6
+     * md5('The quick brown fox jumps over the lazy dog.'); // e4d909c290d0fb1ca068ffaddf22cbd0
+     *
+     * // It also supports UTF-8 encoding
+     * md5('中文'); // a7bac2239fcdcb3a067903d8077c4a07
+     *
+     * // It also supports byte `Array`, `Uint8Array`, `ArrayBuffer`
+     * md5([]); // d41d8cd98f00b204e9800998ecf8427e
+     * md5(new Uint8Array([])); // d41d8cd98f00b204e9800998ecf8427e
+     */
+    root.md5 = exports;
+
+    if (AMD) {
+      !(__WEBPACK_AMD_DEFINE_RESULT__ = (function () {
+        return exports;
+      }).call(exports, __webpack_require__, exports, module),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+    }
+  }
+})();
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/_process@0.11.10@process/browser.js */ "./node_modules/_process@0.11.10@process/browser.js"), __webpack_require__(/*! ./../node_modules/_webpack@4.46.0@webpack/buildin/global.js */ "./node_modules/_webpack@4.46.0@webpack/buildin/global.js"), __webpack_require__(/*! ./../node_modules/_webpack@4.46.0@webpack/buildin/module.js */ "./node_modules/_webpack@4.46.0@webpack/buildin/module.js")(module)))
+
+/***/ }),
+
+/***/ "./lib/request.js":
+/*!************************!*\
+  !*** ./lib/request.js ***!
+  \************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+var stringifyPrimitive = function stringifyPrimitive(v) {
+  switch (_typeof(v)) {
+    case 'string':
+      return v;
+
+    case 'boolean':
+      return v ? 'true' : 'false';
+
+    case 'number':
+      return isFinite(v) ? v : '';
+
+    default:
+      return '';
+  }
+};
+
+var queryStringify = function queryStringify(obj, sep, eq, name) {
+  sep = sep || '&';
+  eq = eq || '=';
+
+  if (obj === null) {
+    obj = undefined;
+  }
+
+  if (_typeof(obj) === 'object') {
+    return Object.keys(obj).map(function (k) {
+      var ks = encodeURIComponent(stringifyPrimitive(k)) + eq;
+
+      if (Array.isArray(obj[k])) {
+        return obj[k].map(function (v) {
+          return ks + encodeURIComponent(stringifyPrimitive(v));
+        }).join(sep);
+      } else {
+        return ks + encodeURIComponent(stringifyPrimitive(obj[k]));
+      }
+    }).filter(Boolean).join(sep);
+  }
+
+  if (!name) return '';
+  return encodeURIComponent(stringifyPrimitive(name)) + eq + encodeURIComponent(stringifyPrimitive(obj));
+};
+
+var xhrRes = function xhrRes(err, xhr, body) {
+  var headers = {};
+  xhr.getAllResponseHeaders().trim().split('\n').forEach(function (item) {
+    if (item) {
+      var index = item.indexOf(':');
+      var key = item.substr(0, index).trim().toLowerCase();
+      var val = item.substr(index + 1).trim();
+      headers[key] = val;
+    }
+  });
+  return {
+    error: err,
+    statusCode: xhr.status,
+    statusMessage: xhr.statusText,
+    headers: headers,
+    body: body
+  };
+};
+
+var xhrBody = function xhrBody(xhr, dataType) {
+  return !dataType && dataType === 'text' ? xhr.responseText : xhr.response;
+};
+
+var request = function request(opt, callback) {
+  // method
+  var method = (opt.method || 'GET').toUpperCase(); // url、qs
+
+  var url = opt.url;
+
+  if (opt.qs) {
+    var qsStr = queryStringify(opt.qs);
+
+    if (qsStr) {
+      url += (url.indexOf('?') === -1 ? '?' : '&') + qsStr;
+    }
+  } // 创建 ajax 实例
+
+
+  var xhr = new XMLHttpRequest();
+  xhr.open(method, url, true);
+  xhr.responseType = opt.dataType || 'text'; // 处理 xhrFields 属性
+
+  if (opt.xhrFields) {
+    for (var xhrField in opt.xhrFields) {
+      xhr[xhrField] = opt.xhrFields[xhrField];
+    }
+  } // 处理 headers
+
+
+  var headers = opt.headers;
+
+  if (headers) {
+    for (var key in headers) {
+      if (headers.hasOwnProperty(key) && key.toLowerCase() !== 'content-length' && key.toLowerCase() !== 'user-agent' && key.toLowerCase() !== 'origin' && key.toLowerCase() !== 'host') {
+        xhr.setRequestHeader(key, headers[key]);
+      }
+    }
+  } // onprogress
+
+
+  if (opt.onProgress && xhr.upload) xhr.upload.onprogress = opt.onProgress;
+  if (opt.onDownloadProgress) xhr.onprogress = opt.onDownloadProgress; // timeout
+
+  if (opt.timeout) xhr.timeout = opt.timeout;
+
+  xhr.ontimeout = function (event) {
+    var error = new Error('timeout');
+    callback(xhrRes(error, xhr));
+  }; // success 2xx/3xx/4xx
+
+
+  xhr.onload = function () {
+    callback(xhrRes(null, xhr, xhrBody(xhr, opt.dataType)));
+  }; // error 5xx/0 (网络错误、跨域报错、Https connect-src 限制的报错时 statusCode 为 0)
+
+
+  xhr.onerror = function (err) {
+    var body = xhrBody(xhr, opt.dataType);
+
+    if (body) {
+      // 5xx
+      callback(xhrRes(null, xhr, body));
+    } else {
+      // 0
+      var error = xhr.statusText;
+      if (!error && xhr.status === 0) error = new Error('CORS blocked or network error');
+      callback(xhrRes(error, xhr, body));
+    }
+  }; // send
+
+
+  xhr.send(opt.body || ''); // 返回 ajax 实例，用于外部调用 xhr.abort
+
+  return xhr;
+};
+
+module.exports = request;
+
+/***/ }),
+
+/***/ "./lib/xml2json.js":
+/*!*************************!*\
+  !*** ./lib/xml2json.js ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* Copyright 2015 William Summers, MetaTribal LLC
+ * adapted from https://developer.mozilla.org/en-US/docs/JXON
+ *
+ * Licensed under the MIT License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * @author William Summers
+ * https://github.com/metatribal/xmlToJSON
+ */
+var DOMParser = __webpack_require__(/*! @xmldom/xmldom */ "./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/index.js").DOMParser;
+
+var xmlToJSON = function () {
+  this.version = "1.3.5";
+  var options = {
+    // set up the default options
+    mergeCDATA: true,
+    // extract cdata and merge with text
+    normalize: true,
+    // collapse multiple spaces to single space
+    stripElemPrefix: true // for elements of same name in diff namespaces, you can enable namespaces and access the nskey property
+
+  };
+  var prefixMatch = new RegExp(/(?!xmlns)^.*:/);
+  var trimMatch = new RegExp(/^\s+|\s+$/g);
+
+  this.grokType = function (sValue) {
+    if (/^\s*$/.test(sValue)) {
+      return null;
+    }
+
+    if (/^(?:true|false)$/i.test(sValue)) {
+      return sValue.toLowerCase() === "true";
+    }
+
+    if (isFinite(sValue)) {
+      return parseFloat(sValue);
+    }
+
+    return sValue;
+  };
+
+  this.parseString = function (xmlString, opt) {
+    if (xmlString) {
+      var xml = this.stringToXML(xmlString);
+
+      if (xml.getElementsByTagName('parsererror').length) {
+        return null;
+      } else {
+        return this.parseXML(xml, opt);
+      }
+    } else {
+      return null;
+    }
+  };
+
+  this.parseXML = function (oXMLParent, opt) {
+    // initialize options
+    for (var key in opt) {
+      options[key] = opt[key];
+    }
+
+    var vResult = {},
+        nLength = 0,
+        sCollectedTxt = ""; // iterate over the children
+
+    var childNum = oXMLParent.childNodes.length;
+
+    if (childNum) {
+      for (var oNode, sProp, vContent, nItem = 0; nItem < oXMLParent.childNodes.length; nItem++) {
+        oNode = oXMLParent.childNodes.item(nItem);
+
+        if (oNode.nodeType === 4) {
+          if (options.mergeCDATA) {
+            sCollectedTxt += oNode.nodeValue;
+          }
+        }
+        /* nodeType is "CDATASection" (4) */
+        else if (oNode.nodeType === 3) {
+          sCollectedTxt += oNode.nodeValue;
+        }
+        /* nodeType is "Text" (3) */
+        else if (oNode.nodeType === 1) {
+          /* nodeType is "Element" (1) */
+          if (nLength === 0) {
+            vResult = {};
+          } // using nodeName to support browser (IE) implementation with no 'localName' property
+
+
+          if (options.stripElemPrefix) {
+            sProp = oNode.nodeName.replace(prefixMatch, '');
+          } else {
+            sProp = oNode.nodeName;
+          }
+
+          vContent = xmlToJSON.parseXML(oNode);
+
+          if (vResult.hasOwnProperty(sProp)) {
+            if (vResult[sProp].constructor !== Array) {
+              vResult[sProp] = [vResult[sProp]];
+            }
+
+            vResult[sProp].push(vContent);
+          } else {
+            vResult[sProp] = vContent;
+            nLength++;
+          }
+        }
+      }
+    }
+
+    if (!Object.keys(vResult).length) {
+      // vResult = sCollectedTxt.replace(trimMatch, '') || ''; // by carsonxu 修复 getBucket返回的 Key 是 " /" 这种场景
+      vResult = sCollectedTxt || '';
+    }
+
+    return vResult;
+  }; // Convert xmlDocument to a string
+  // Returns null on failure
+
+
+  this.xmlToString = function (xmlDoc) {
+    try {
+      var xmlString = xmlDoc.xml ? xmlDoc.xml : new XMLSerializer().serializeToString(xmlDoc);
+      return xmlString;
+    } catch (err) {
+      return null;
+    }
+  }; // Convert a string to XML Node Structure
+  // Returns null on failure
+
+
+  this.stringToXML = function (xmlString) {
+    try {
+      var xmlDoc = null;
+
+      if (window.DOMParser) {
+        var parser = new DOMParser();
+        xmlDoc = parser.parseFromString(xmlString, "text/xml");
+        return xmlDoc;
+      } else {
+        xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
+        xmlDoc.async = false;
+        xmlDoc.loadXML(xmlString);
+        return xmlDoc;
+      }
+    } catch (e) {
+      return null;
+    }
+  };
+
+  return this;
+}.call({});
+
+var xml2json = function xml2json(xmlString) {
+  return xmlToJSON.parseString(xmlString);
+};
+
+module.exports = xml2json;
+
+/***/ }),
+
+/***/ "./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/conventions.js":
+/*!******************************************************************************!*\
+  !*** ./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/conventions.js ***!
+  \******************************************************************************/
+/*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -997,200 +4025,348 @@ exports.NAMESPACE = NAMESPACE;
 
 
 /***/ }),
-/* 2 */
-/***/ (function(module, exports) {
 
-// shim for using process in browser
-var process = module.exports = {};
+/***/ "./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/dom-parser.js":
+/*!*****************************************************************************!*\
+  !*** ./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/dom-parser.js ***!
+  \*****************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
 
-// cached from whatever global is present so that test runners that stub it
-// don't break things.  But we need to wrap it in a try catch in case it is
-// wrapped in strict mode code which doesn't define any globals.  It's inside a
-// function because try/catches deoptimize in certain engines.
+var conventions = __webpack_require__(/*! ./conventions */ "./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/conventions.js");
+var dom = __webpack_require__(/*! ./dom */ "./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/dom.js")
+var entities = __webpack_require__(/*! ./entities */ "./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/entities.js");
+var sax = __webpack_require__(/*! ./sax */ "./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/sax.js");
 
-var cachedSetTimeout;
-var cachedClearTimeout;
+var DOMImplementation = dom.DOMImplementation;
 
-function defaultSetTimout() {
-    throw new Error('setTimeout has not been defined');
+var NAMESPACE = conventions.NAMESPACE;
+
+var ParseError = sax.ParseError;
+var XMLReader = sax.XMLReader;
+
+/**
+ * Normalizes line ending according to https://www.w3.org/TR/xml11/#sec-line-ends:
+ *
+ * > XML parsed entities are often stored in computer files which,
+ * > for editing convenience, are organized into lines.
+ * > These lines are typically separated by some combination
+ * > of the characters CARRIAGE RETURN (#xD) and LINE FEED (#xA).
+ * >
+ * > To simplify the tasks of applications, the XML processor must behave
+ * > as if it normalized all line breaks in external parsed entities (including the document entity)
+ * > on input, before parsing, by translating all of the following to a single #xA character:
+ * >
+ * > 1. the two-character sequence #xD #xA
+ * > 2. the two-character sequence #xD #x85
+ * > 3. the single character #x85
+ * > 4. the single character #x2028
+ * > 5. any #xD character that is not immediately followed by #xA or #x85.
+ *
+ * @param {string} input
+ * @returns {string}
+ */
+function normalizeLineEndings(input) {
+	return input
+		.replace(/\r[\n\u0085]/g, '\n')
+		.replace(/[\r\u0085\u2028]/g, '\n')
 }
-function defaultClearTimeout () {
-    throw new Error('clearTimeout has not been defined');
+
+/**
+ * @typedef Locator
+ * @property {number} [columnNumber]
+ * @property {number} [lineNumber]
+ */
+
+/**
+ * @typedef DOMParserOptions
+ * @property {DOMHandler} [domBuilder]
+ * @property {Function} [errorHandler]
+ * @property {(string) => string} [normalizeLineEndings] used to replace line endings before parsing
+ * 						defaults to `normalizeLineEndings`
+ * @property {Locator} [locator]
+ * @property {Record<string, string>} [xmlns]
+ *
+ * @see normalizeLineEndings
+ */
+
+/**
+ * The DOMParser interface provides the ability to parse XML or HTML source code
+ * from a string into a DOM `Document`.
+ *
+ * _xmldom is different from the spec in that it allows an `options` parameter,
+ * to override the default behavior._
+ *
+ * @param {DOMParserOptions} [options]
+ * @constructor
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMParser
+ * @see https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#dom-parsing-and-serialization
+ */
+function DOMParser(options){
+	this.options = options ||{locator:{}};
 }
-(function () {
-    try {
-        if (typeof setTimeout === 'function') {
-            cachedSetTimeout = setTimeout;
-        } else {
-            cachedSetTimeout = defaultSetTimout;
-        }
-    } catch (e) {
-        cachedSetTimeout = defaultSetTimout;
-    }
-    try {
-        if (typeof clearTimeout === 'function') {
-            cachedClearTimeout = clearTimeout;
-        } else {
-            cachedClearTimeout = defaultClearTimeout;
-        }
-    } catch (e) {
-        cachedClearTimeout = defaultClearTimeout;
-    }
-} ())
-function runTimeout(fun) {
-    if (cachedSetTimeout === setTimeout) {
-        //normal enviroments in sane situations
-        return setTimeout(fun, 0);
-    }
-    // if setTimeout wasn't available but was latter defined
-    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
-        cachedSetTimeout = setTimeout;
-        return setTimeout(fun, 0);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedSetTimeout(fun, 0);
-    } catch(e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
-            return cachedSetTimeout.call(null, fun, 0);
-        } catch(e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
-            return cachedSetTimeout.call(this, fun, 0);
-        }
-    }
 
+DOMParser.prototype.parseFromString = function(source,mimeType){
+	var options = this.options;
+	var sax =  new XMLReader();
+	var domBuilder = options.domBuilder || new DOMHandler();//contentHandler and LexicalHandler
+	var errorHandler = options.errorHandler;
+	var locator = options.locator;
+	var defaultNSMap = options.xmlns||{};
+	var isHTML = /\/x?html?$/.test(mimeType);//mimeType.toLowerCase().indexOf('html') > -1;
+  	var entityMap = isHTML ? entities.HTML_ENTITIES : entities.XML_ENTITIES;
+	if(locator){
+		domBuilder.setDocumentLocator(locator)
+	}
 
+	sax.errorHandler = buildErrorHandler(errorHandler,domBuilder,locator);
+	sax.domBuilder = options.domBuilder || domBuilder;
+	if(isHTML){
+		defaultNSMap[''] = NAMESPACE.HTML;
+	}
+	defaultNSMap.xml = defaultNSMap.xml || NAMESPACE.XML;
+	var normalize = options.normalizeLineEndings || normalizeLineEndings;
+	if (source && typeof source === 'string') {
+		sax.parse(
+			normalize(source),
+			defaultNSMap,
+			entityMap
+		)
+	} else {
+		sax.errorHandler.error('invalid doc source')
+	}
+	return domBuilder.doc;
 }
-function runClearTimeout(marker) {
-    if (cachedClearTimeout === clearTimeout) {
-        //normal enviroments in sane situations
-        return clearTimeout(marker);
-    }
-    // if clearTimeout wasn't available but was latter defined
-    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
-        cachedClearTimeout = clearTimeout;
-        return clearTimeout(marker);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedClearTimeout(marker);
-    } catch (e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
-            return cachedClearTimeout.call(null, marker);
-        } catch (e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
-            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
-            return cachedClearTimeout.call(this, marker);
-        }
-    }
-
-
-
+function buildErrorHandler(errorImpl,domBuilder,locator){
+	if(!errorImpl){
+		if(domBuilder instanceof DOMHandler){
+			return domBuilder;
+		}
+		errorImpl = domBuilder ;
+	}
+	var errorHandler = {}
+	var isCallback = errorImpl instanceof Function;
+	locator = locator||{}
+	function build(key){
+		var fn = errorImpl[key];
+		if(!fn && isCallback){
+			fn = errorImpl.length == 2?function(msg){errorImpl(key,msg)}:errorImpl;
+		}
+		errorHandler[key] = fn && function(msg){
+			fn('[xmldom '+key+']\t'+msg+_locator(locator));
+		}||function(){};
+	}
+	build('warning');
+	build('error');
+	build('fatalError');
+	return errorHandler;
 }
-var queue = [];
-var draining = false;
-var currentQueue;
-var queueIndex = -1;
 
-function cleanUpNextTick() {
-    if (!draining || !currentQueue) {
-        return;
-    }
-    draining = false;
-    if (currentQueue.length) {
-        queue = currentQueue.concat(queue);
+//console.log('#\n\n\n\n\n\n\n####')
+/**
+ * +ContentHandler+ErrorHandler
+ * +LexicalHandler+EntityResolver2
+ * -DeclHandler-DTDHandler
+ *
+ * DefaultHandler:EntityResolver, DTDHandler, ContentHandler, ErrorHandler
+ * DefaultHandler2:DefaultHandler,LexicalHandler, DeclHandler, EntityResolver2
+ * @link http://www.saxproject.org/apidoc/org/xml/sax/helpers/DefaultHandler.html
+ */
+function DOMHandler() {
+    this.cdata = false;
+}
+function position(locator,node){
+	node.lineNumber = locator.lineNumber;
+	node.columnNumber = locator.columnNumber;
+}
+/**
+ * @see org.xml.sax.ContentHandler#startDocument
+ * @link http://www.saxproject.org/apidoc/org/xml/sax/ContentHandler.html
+ */
+DOMHandler.prototype = {
+	startDocument : function() {
+    	this.doc = new DOMImplementation().createDocument(null, null, null);
+    	if (this.locator) {
+        	this.doc.documentURI = this.locator.systemId;
+    	}
+	},
+	startElement:function(namespaceURI, localName, qName, attrs) {
+		var doc = this.doc;
+	    var el = doc.createElementNS(namespaceURI, qName||localName);
+	    var len = attrs.length;
+	    appendElement(this, el);
+	    this.currentElement = el;
+
+		this.locator && position(this.locator,el)
+	    for (var i = 0 ; i < len; i++) {
+	        var namespaceURI = attrs.getURI(i);
+	        var value = attrs.getValue(i);
+	        var qName = attrs.getQName(i);
+			var attr = doc.createAttributeNS(namespaceURI, qName);
+			this.locator &&position(attrs.getLocator(i),attr);
+			attr.value = attr.nodeValue = value;
+			el.setAttributeNode(attr)
+	    }
+	},
+	endElement:function(namespaceURI, localName, qName) {
+		var current = this.currentElement
+		var tagName = current.tagName;
+		this.currentElement = current.parentNode;
+	},
+	startPrefixMapping:function(prefix, uri) {
+	},
+	endPrefixMapping:function(prefix) {
+	},
+	processingInstruction:function(target, data) {
+	    var ins = this.doc.createProcessingInstruction(target, data);
+	    this.locator && position(this.locator,ins)
+	    appendElement(this, ins);
+	},
+	ignorableWhitespace:function(ch, start, length) {
+	},
+	characters:function(chars, start, length) {
+		chars = _toString.apply(this,arguments)
+		//console.log(chars)
+		if(chars){
+			if (this.cdata) {
+				var charNode = this.doc.createCDATASection(chars);
+			} else {
+				var charNode = this.doc.createTextNode(chars);
+			}
+			if(this.currentElement){
+				this.currentElement.appendChild(charNode);
+			}else if(/^\s*$/.test(chars)){
+				this.doc.appendChild(charNode);
+				//process xml
+			}
+			this.locator && position(this.locator,charNode)
+		}
+	},
+	skippedEntity:function(name) {
+	},
+	endDocument:function() {
+		this.doc.normalize();
+	},
+	setDocumentLocator:function (locator) {
+	    if(this.locator = locator){// && !('lineNumber' in locator)){
+	    	locator.lineNumber = 0;
+	    }
+	},
+	//LexicalHandler
+	comment:function(chars, start, length) {
+		chars = _toString.apply(this,arguments)
+	    var comm = this.doc.createComment(chars);
+	    this.locator && position(this.locator,comm)
+	    appendElement(this, comm);
+	},
+
+	startCDATA:function() {
+	    //used in characters() methods
+	    this.cdata = true;
+	},
+	endCDATA:function() {
+	    this.cdata = false;
+	},
+
+	startDTD:function(name, publicId, systemId) {
+		var impl = this.doc.implementation;
+	    if (impl && impl.createDocumentType) {
+	        var dt = impl.createDocumentType(name, publicId, systemId);
+	        this.locator && position(this.locator,dt)
+	        appendElement(this, dt);
+					this.doc.doctype = dt;
+	    }
+	},
+	/**
+	 * @see org.xml.sax.ErrorHandler
+	 * @link http://www.saxproject.org/apidoc/org/xml/sax/ErrorHandler.html
+	 */
+	warning:function(error) {
+		console.warn('[xmldom warning]\t'+error,_locator(this.locator));
+	},
+	error:function(error) {
+		console.error('[xmldom error]\t'+error,_locator(this.locator));
+	},
+	fatalError:function(error) {
+		throw new ParseError(error, this.locator);
+	}
+}
+function _locator(l){
+	if(l){
+		return '\n@'+(l.systemId ||'')+'#[line:'+l.lineNumber+',col:'+l.columnNumber+']'
+	}
+}
+function _toString(chars,start,length){
+	if(typeof chars == 'string'){
+		return chars.substr(start,length)
+	}else{//java sax connect width xmldom on rhino(what about: "? && !(chars instanceof String)")
+		if(chars.length >= start+length || start){
+			return new java.lang.String(chars,start,length)+'';
+		}
+		return chars;
+	}
+}
+
+/*
+ * @link http://www.saxproject.org/apidoc/org/xml/sax/ext/LexicalHandler.html
+ * used method of org.xml.sax.ext.LexicalHandler:
+ *  #comment(chars, start, length)
+ *  #startCDATA()
+ *  #endCDATA()
+ *  #startDTD(name, publicId, systemId)
+ *
+ *
+ * IGNORED method of org.xml.sax.ext.LexicalHandler:
+ *  #endDTD()
+ *  #startEntity(name)
+ *  #endEntity(name)
+ *
+ *
+ * @link http://www.saxproject.org/apidoc/org/xml/sax/ext/DeclHandler.html
+ * IGNORED method of org.xml.sax.ext.DeclHandler
+ * 	#attributeDecl(eName, aName, type, mode, value)
+ *  #elementDecl(name, model)
+ *  #externalEntityDecl(name, publicId, systemId)
+ *  #internalEntityDecl(name, value)
+ * @link http://www.saxproject.org/apidoc/org/xml/sax/ext/EntityResolver2.html
+ * IGNORED method of org.xml.sax.EntityResolver2
+ *  #resolveEntity(String name,String publicId,String baseURI,String systemId)
+ *  #resolveEntity(publicId, systemId)
+ *  #getExternalSubset(name, baseURI)
+ * @link http://www.saxproject.org/apidoc/org/xml/sax/DTDHandler.html
+ * IGNORED method of org.xml.sax.DTDHandler
+ *  #notationDecl(name, publicId, systemId) {};
+ *  #unparsedEntityDecl(name, publicId, systemId, notationName) {};
+ */
+"endDTD,startEntity,endEntity,attributeDecl,elementDecl,externalEntityDecl,internalEntityDecl,resolveEntity,getExternalSubset,notationDecl,unparsedEntityDecl".replace(/\w+/g,function(key){
+	DOMHandler.prototype[key] = function(){return null}
+})
+
+/* Private static helpers treated below as private instance methods, so don't need to add these to the public API; we might use a Relator to also get rid of non-standard public properties */
+function appendElement (hander,node) {
+    if (!hander.currentElement) {
+        hander.doc.appendChild(node);
     } else {
-        queueIndex = -1;
+        hander.currentElement.appendChild(node);
     }
-    if (queue.length) {
-        drainQueue();
-    }
-}
+}//appendChild and setAttributeNS are preformance key
 
-function drainQueue() {
-    if (draining) {
-        return;
-    }
-    var timeout = runTimeout(cleanUpNextTick);
-    draining = true;
-
-    var len = queue.length;
-    while(len) {
-        currentQueue = queue;
-        queue = [];
-        while (++queueIndex < len) {
-            if (currentQueue) {
-                currentQueue[queueIndex].run();
-            }
-        }
-        queueIndex = -1;
-        len = queue.length;
-    }
-    currentQueue = null;
-    draining = false;
-    runClearTimeout(timeout);
-}
-
-process.nextTick = function (fun) {
-    var args = new Array(arguments.length - 1);
-    if (arguments.length > 1) {
-        for (var i = 1; i < arguments.length; i++) {
-            args[i - 1] = arguments[i];
-        }
-    }
-    queue.push(new Item(fun, args));
-    if (queue.length === 1 && !draining) {
-        runTimeout(drainQueue);
-    }
-};
-
-// v8 likes predictible objects
-function Item(fun, array) {
-    this.fun = fun;
-    this.array = array;
-}
-Item.prototype.run = function () {
-    this.fun.apply(null, this.array);
-};
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-process.version = ''; // empty string to avoid regexp issues
-process.versions = {};
-
-function noop() {}
-
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
-process.prependListener = noop;
-process.prependOnceListener = noop;
-
-process.listeners = function (name) { return [] }
-
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-};
-
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
-process.umask = function() { return 0; };
+exports.__DOMHandler = DOMHandler;
+exports.normalizeLineEndings = normalizeLineEndings;
+exports.DOMParser = DOMParser;
 
 
 /***/ }),
-/* 3 */
+
+/***/ "./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/dom.js":
+/*!**********************************************************************!*\
+  !*** ./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/dom.js ***!
+  \**********************************************************************/
+/*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-var conventions = __webpack_require__(1);
+var conventions = __webpack_require__(/*! ./conventions */ "./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/conventions.js");
 
 var NAMESPACE = conventions.NAMESPACE;
 
@@ -2727,1681 +5903,15 @@ try{
 
 
 /***/ }),
-/* 4 */
-/***/ (function(module, exports) {
 
-var initEvent = function (cos) {
-    var listeners = {};
-    var getList = function (action) {
-        !listeners[action] && (listeners[action] = []);
-        return listeners[action];
-    };
-    cos.on = function (action, callback) {
-        if (action === 'task-list-update') {
-            console.warn('warning: Event "' + action + '" has been deprecated. Please use "list-update" instead.');
-        }
-        getList(action).push(callback);
-    };
-    cos.off = function (action, callback) {
-        var list = getList(action);
-        for (var i = list.length - 1; i >= 0; i--) {
-            callback === list[i] && list.splice(i, 1);
-        }
-    };
-    cos.emit = function (action, data) {
-        var list = getList(action).map(function (cb) {
-            return cb;
-        });
-        for (var i = 0; i < list.length; i++) {
-            list[i](data);
-        }
-    };
-};
-
-var EventProxy = function () {
-    initEvent(this);
-};
-
-module.exports.init = initEvent;
-module.exports.EventProxy = EventProxy;
-
-/***/ }),
-/* 5 */
+/***/ "./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/entities.js":
+/*!***************************************************************************!*\
+  !*** ./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/entities.js ***!
+  \***************************************************************************/
+/*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-var util = __webpack_require__(0);
-
-// 按照文件特征值，缓存 UploadId
-var cacheKey = 'cos_sdk_upload_cache';
-var expires = 30 * 24 * 3600;
-var cache;
-var timer;
-
-var getCache = function () {
-    try {
-        var val = JSON.parse(localStorage.getItem(cacheKey));
-    } catch (e) {}
-    if (!val) val = [];
-    cache = val;
-};
-var setCache = function () {
-    try {
-        localStorage.setItem(cacheKey, JSON.stringify(cache));
-    } catch (e) {}
-};
-
-var init = function () {
-    if (cache) return;
-    getCache.call(this);
-    // 清理太老旧的数据
-    var changed = false;
-    var now = Math.round(Date.now() / 1000);
-    for (var i = cache.length - 1; i >= 0; i--) {
-        var mtime = cache[i][2];
-        if (!mtime || mtime + expires < now) {
-            cache.splice(i, 1);
-            changed = true;
-        }
-    }
-    changed && setCache();
-};
-
-// 把缓存存到本地
-var save = function () {
-    if (timer) return;
-    timer = setTimeout(function () {
-        setCache();
-        timer = null;
-    }, 400);
-};
-
-var mod = {
-    using: {},
-    // 标记 UploadId 正在使用
-    setUsing: function (uuid) {
-        mod.using[uuid] = true;
-    },
-    // 标记 UploadId 已经没在使用
-    removeUsing: function (uuid) {
-        delete mod.using[uuid];
-    },
-    // 用上传参数生成哈希值
-    getFileId: function (file, ChunkSize, Bucket, Key) {
-        if (file.name && file.size && file.lastModifiedDate && ChunkSize) {
-            return util.md5([file.name, file.size, file.lastModifiedDate, ChunkSize, Bucket, Key].join('::'));
-        } else {
-            return null;
-        }
-    },
-    // 获取文件对应的 UploadId 列表
-    getUploadIdList: function (uuid) {
-        if (!uuid) return null;
-        init.call(this);
-        var list = [];
-        for (var i = 0; i < cache.length; i++) {
-            if (cache[i][0] === uuid) list.push(cache[i][1]);
-        }
-        return list.length ? list : null;
-    },
-    // 缓存 UploadId
-    saveUploadId: function (uuid, UploadId, limit) {
-        init.call(this);
-        if (!uuid) return;
-        // 清理没用的 UploadId，js 文件没有 FilePath ，只清理相同记录
-        for (var i = cache.length - 1; i >= 0; i--) {
-            var item = cache[i];
-            if (item[0] === uuid && item[1] === UploadId) {
-                cache.splice(i, 1);
-            }
-        }
-        cache.unshift([uuid, UploadId, Math.round(Date.now() / 1000)]);
-        if (cache.length > limit) cache.splice(limit);
-        save();
-    },
-    // UploadId 已用完，移除掉
-    removeUploadId: function (UploadId) {
-        init.call(this);
-        delete mod.using[UploadId];
-        for (var i = cache.length - 1; i >= 0; i--) {
-            if (cache[i][1] === UploadId) cache.splice(i, 1);
-        }
-        save();
-    }
-};
-
-module.exports = mod;
-
-/***/ }),
-/* 6 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var COS = __webpack_require__(7);
-module.exports = COS;
-
-/***/ }),
-/* 7 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var util = __webpack_require__(0);
-var event = __webpack_require__(4);
-var task = __webpack_require__(18);
-var base = __webpack_require__(19);
-var advance = __webpack_require__(21);
-
-var defaultOptions = {
-    AppId: '', // AppId 已废弃，请拼接到 Bucket 后传入，例如：test-1250000000
-    SecretId: '',
-    SecretKey: '',
-    SecurityToken: '', // 使用临时密钥需要注意自行刷新 Token
-    ChunkRetryTimes: 2,
-    FileParallelLimit: 3,
-    ChunkParallelLimit: 3,
-    ChunkSize: 1024 * 1024,
-    SliceSize: 1024 * 1024,
-    CopyChunkParallelLimit: 20,
-    CopyChunkSize: 1024 * 1024 * 10,
-    CopySliceSize: 1024 * 1024 * 10,
-    MaxPartNumber: 10000,
-    ProgressInterval: 1000,
-    Domain: '',
-    ServiceDomain: '',
-    Protocol: '',
-    CompatibilityMode: false,
-    ForcePathStyle: false,
-    UseRawKey: false,
-    Timeout: 0, // 单位毫秒，0 代表不设置超时时间
-    CorrectClockSkew: true,
-    SystemClockOffset: 0, // 单位毫秒，ms
-    UploadCheckContentMd5: false,
-    UploadQueueSize: 10000,
-    UploadAddMetaMd5: false,
-    UploadIdCacheLimit: 50,
-    UseAccelerate: false,
-    ForceSignHost: true // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
-};
-
-// 对外暴露的类
-var COS = function (options) {
-    this.options = util.extend(util.clone(defaultOptions), options || {});
-    this.options.FileParallelLimit = Math.max(1, this.options.FileParallelLimit);
-    this.options.ChunkParallelLimit = Math.max(1, this.options.ChunkParallelLimit);
-    this.options.ChunkRetryTimes = Math.max(0, this.options.ChunkRetryTimes);
-    this.options.ChunkSize = Math.max(1024 * 1024, this.options.ChunkSize);
-    this.options.CopyChunkParallelLimit = Math.max(1, this.options.CopyChunkParallelLimit);
-    this.options.CopyChunkSize = Math.max(1024 * 1024, this.options.CopyChunkSize);
-    this.options.CopySliceSize = Math.max(0, this.options.CopySliceSize);
-    this.options.MaxPartNumber = Math.max(1024, Math.min(10000, this.options.MaxPartNumber));
-    this.options.Timeout = Math.max(0, this.options.Timeout);
-    if (this.options.AppId) {
-        console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").');
-    }
-    if (this.options.SecretId && this.options.SecretId.indexOf(' ') > -1) {
-        console.error('error: SecretId格式错误，请检查');
-        console.error('error: SecretId format is incorrect. Please check');
-    }
-    if (this.options.SecretKey && this.options.SecretKey.indexOf(' ') > -1) {
-        console.error('error: SecretKey格式错误，请检查');
-        console.error('error: SecretKey format is incorrect. Please check');
-    }
-    if (util.isNode()) {
-        console.warn('warning: cos-js-sdk-v5 不支持 nodejs 环境使用，请改用 cos-nodejs-sdk-v5，参考文档： https://cloud.tencent.com/document/product/436/8629');
-        console.warn('warning: cos-js-sdk-v5 does not support nodejs environment. Please use cos-nodejs-sdk-v5 instead. See: https://cloud.tencent.com/document/product/436/8629');
-    }
-    event.init(this);
-    task.init(this);
-};
-
-base.init(COS, task);
-advance.init(COS, task);
-
-COS.util = {
-    md5: util.md5,
-    xml2json: util.xml2json,
-    json2xml: util.json2xml
-};
-COS.getAuthorization = util.getAuth;
-COS.version = '1.3.10';
-
-module.exports = COS;
-
-/***/ }),
-/* 8 */
-/***/ (function(module, exports, __webpack_require__) {
-
-/* WEBPACK VAR INJECTION */(function(process, global) {var __WEBPACK_AMD_DEFINE_RESULT__;/* https://github.com/emn178/js-md5 */
-(function () {
-    'use strict';
-
-    var ERROR = 'input is invalid type';
-    var WINDOW = typeof window === 'object';
-    var root = WINDOW ? window : {};
-    if (root.JS_MD5_NO_WINDOW) {
-        WINDOW = false;
-    }
-    var WEB_WORKER = !WINDOW && typeof self === 'object';
-    var NODE_JS = !root.JS_MD5_NO_NODE_JS && typeof process === 'object' && process.versions && process.versions.node;
-    if (NODE_JS) {
-        root = global;
-    } else if (WEB_WORKER) {
-        root = self;
-    }
-    var COMMON_JS = !root.JS_MD5_NO_COMMON_JS && typeof module === 'object' && module.exports;
-    var AMD = "function" === 'function' && __webpack_require__(10);
-    var ARRAY_BUFFER = !root.JS_MD5_NO_ARRAY_BUFFER && typeof ArrayBuffer !== 'undefined';
-    var HEX_CHARS = '0123456789abcdef'.split('');
-    var EXTRA = [128, 32768, 8388608, -2147483648];
-    var SHIFT = [0, 8, 16, 24];
-    var OUTPUT_TYPES = ['hex', 'array', 'digest', 'buffer', 'arrayBuffer', 'base64'];
-    var BASE64_ENCODE_CHAR = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split('');
-
-    var blocks = [],
-        buffer8;
-    if (ARRAY_BUFFER) {
-        var buffer = new ArrayBuffer(68);
-        buffer8 = new Uint8Array(buffer);
-        blocks = new Uint32Array(buffer);
-    }
-
-    if (root.JS_MD5_NO_NODE_JS || !Array.isArray) {
-        Array.isArray = function (obj) {
-            return Object.prototype.toString.call(obj) === '[object Array]';
-        };
-    }
-
-    if (ARRAY_BUFFER && (root.JS_MD5_NO_ARRAY_BUFFER_IS_VIEW || !ArrayBuffer.isView)) {
-        ArrayBuffer.isView = function (obj) {
-            return typeof obj === 'object' && obj.buffer && obj.buffer.constructor === ArrayBuffer;
-        };
-    }
-
-    /**
-     * @method hex
-     * @memberof md5
-     * @description Output hash as hex string
-     * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
-     * @returns {String} Hex string
-     * @example
-     * md5.hex('The quick brown fox jumps over the lazy dog');
-     * // equal to
-     * md5('The quick brown fox jumps over the lazy dog');
-     */
-    /**
-     * @method digest
-     * @memberof md5
-     * @description Output hash as bytes array
-     * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
-     * @returns {Array} Bytes array
-     * @example
-     * md5.digest('The quick brown fox jumps over the lazy dog');
-     */
-    /**
-     * @method array
-     * @memberof md5
-     * @description Output hash as bytes array
-     * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
-     * @returns {Array} Bytes array
-     * @example
-     * md5.array('The quick brown fox jumps over the lazy dog');
-     */
-    /**
-     * @method arrayBuffer
-     * @memberof md5
-     * @description Output hash as ArrayBuffer
-     * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
-     * @returns {ArrayBuffer} ArrayBuffer
-     * @example
-     * md5.arrayBuffer('The quick brown fox jumps over the lazy dog');
-     */
-    /**
-     * @method buffer
-     * @deprecated This maybe confuse with Buffer in node.js. Please use arrayBuffer instead.
-     * @memberof md5
-     * @description Output hash as ArrayBuffer
-     * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
-     * @returns {ArrayBuffer} ArrayBuffer
-     * @example
-     * md5.buffer('The quick brown fox jumps over the lazy dog');
-     */
-    /**
-     * @method base64
-     * @memberof md5
-     * @description Output hash as base64 string
-     * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
-     * @returns {String} base64 string
-     * @example
-     * md5.base64('The quick brown fox jumps over the lazy dog');
-     */
-    var createOutputMethod = function (outputType) {
-        return function (message, isBinStr) {
-            return new Md5(true).update(message, isBinStr)[outputType]();
-        };
-    };
-
-    /**
-     * @method create
-     * @memberof md5
-     * @description Create Md5 object
-     * @returns {Md5} Md5 object.
-     * @example
-     * var hash = md5.create();
-     */
-    /**
-     * @method update
-     * @memberof md5
-     * @description Create and update Md5 object
-     * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
-     * @returns {Md5} Md5 object.
-     * @example
-     * var hash = md5.update('The quick brown fox jumps over the lazy dog');
-     * // equal to
-     * var hash = md5.create();
-     * hash.update('The quick brown fox jumps over the lazy dog');
-     */
-    var createMethod = function () {
-        var method = createOutputMethod('hex');
-        if (NODE_JS) {
-            method = nodeWrap(method);
-        }
-        method.getCtx = method.create = function () {
-            return new Md5();
-        };
-        method.update = function (message) {
-            return method.create().update(message);
-        };
-        for (var i = 0; i < OUTPUT_TYPES.length; ++i) {
-            var type = OUTPUT_TYPES[i];
-            method[type] = createOutputMethod(type);
-        }
-        return method;
-    };
-
-    var nodeWrap = function (method) {
-        var crypto = eval("require('crypto')");
-        var Buffer = eval("require('buffer').Buffer");
-        var nodeMethod = function (message) {
-            if (typeof message === 'string') {
-                return crypto.createHash('md5').update(message, 'utf8').digest('hex');
-            } else {
-                if (message === null || message === undefined) {
-                    throw ERROR;
-                } else if (message.constructor === ArrayBuffer) {
-                    message = new Uint8Array(message);
-                }
-            }
-            if (Array.isArray(message) || ArrayBuffer.isView(message) || message.constructor === Buffer) {
-                return crypto.createHash('md5').update(new Buffer(message)).digest('hex');
-            } else {
-                return method(message);
-            }
-        };
-        return nodeMethod;
-    };
-
-    /**
-     * Md5 class
-     * @class Md5
-     * @description This is internal class.
-     * @see {@link md5.create}
-     */
-    function Md5(sharedMemory) {
-        if (sharedMemory) {
-            blocks[0] = blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
-            this.blocks = blocks;
-            this.buffer8 = buffer8;
-        } else {
-            if (ARRAY_BUFFER) {
-                var buffer = new ArrayBuffer(68);
-                this.buffer8 = new Uint8Array(buffer);
-                this.blocks = new Uint32Array(buffer);
-            } else {
-                this.blocks = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-            }
-        }
-        this.h0 = this.h1 = this.h2 = this.h3 = this.start = this.bytes = this.hBytes = 0;
-        this.finalized = this.hashed = false;
-        this.first = true;
-    }
-
-    /**
-     * @method update
-     * @memberof Md5
-     * @instance
-     * @description Update hash
-     * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
-     * @returns {Md5} Md5 object.
-     * @see {@link md5.update}
-     */
-    Md5.prototype.update = function (message, isBinStr) {
-        if (this.finalized) {
-            return;
-        }
-
-        var code,
-            index = 0,
-            i,
-            length = message.length,
-            blocks = this.blocks;
-        var buffer8 = this.buffer8;
-
-        while (index < length) {
-            if (this.hashed) {
-                this.hashed = false;
-                blocks[0] = blocks[16];
-                blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
-            }
-
-            if (ARRAY_BUFFER) {
-                for (i = this.start; index < length && i < 64; ++index) {
-                    code = message.charCodeAt(index);
-                    if (isBinStr || code < 0x80) {
-                        buffer8[i++] = code;
-                    } else if (code < 0x800) {
-                        buffer8[i++] = 0xc0 | code >> 6;
-                        buffer8[i++] = 0x80 | code & 0x3f;
-                    } else if (code < 0xd800 || code >= 0xe000) {
-                        buffer8[i++] = 0xe0 | code >> 12;
-                        buffer8[i++] = 0x80 | code >> 6 & 0x3f;
-                        buffer8[i++] = 0x80 | code & 0x3f;
-                    } else {
-                        code = 0x10000 + ((code & 0x3ff) << 10 | message.charCodeAt(++index) & 0x3ff);
-                        buffer8[i++] = 0xf0 | code >> 18;
-                        buffer8[i++] = 0x80 | code >> 12 & 0x3f;
-                        buffer8[i++] = 0x80 | code >> 6 & 0x3f;
-                        buffer8[i++] = 0x80 | code & 0x3f;
-                    }
-                }
-            } else {
-                for (i = this.start; index < length && i < 64; ++index) {
-                    code = message.charCodeAt(index);
-                    if (isBinStr || code < 0x80) {
-                        blocks[i >> 2] |= code << SHIFT[i++ & 3];
-                    } else if (code < 0x800) {
-                        blocks[i >> 2] |= (0xc0 | code >> 6) << SHIFT[i++ & 3];
-                        blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
-                    } else if (code < 0xd800 || code >= 0xe000) {
-                        blocks[i >> 2] |= (0xe0 | code >> 12) << SHIFT[i++ & 3];
-                        blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT[i++ & 3];
-                        blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
-                    } else {
-                        code = 0x10000 + ((code & 0x3ff) << 10 | message.charCodeAt(++index) & 0x3ff);
-                        blocks[i >> 2] |= (0xf0 | code >> 18) << SHIFT[i++ & 3];
-                        blocks[i >> 2] |= (0x80 | code >> 12 & 0x3f) << SHIFT[i++ & 3];
-                        blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT[i++ & 3];
-                        blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
-                    }
-                }
-            }
-            this.lastByteIndex = i;
-            this.bytes += i - this.start;
-            if (i >= 64) {
-                this.start = i - 64;
-                this.hash();
-                this.hashed = true;
-            } else {
-                this.start = i;
-            }
-        }
-        if (this.bytes > 4294967295) {
-            this.hBytes += this.bytes / 4294967296 << 0;
-            this.bytes = this.bytes % 4294967296;
-        }
-        return this;
-    };
-
-    Md5.prototype.finalize = function () {
-        if (this.finalized) {
-            return;
-        }
-        this.finalized = true;
-        var blocks = this.blocks,
-            i = this.lastByteIndex;
-        blocks[i >> 2] |= EXTRA[i & 3];
-        if (i >= 56) {
-            if (!this.hashed) {
-                this.hash();
-            }
-            blocks[0] = blocks[16];
-            blocks[16] = blocks[1] = blocks[2] = blocks[3] = blocks[4] = blocks[5] = blocks[6] = blocks[7] = blocks[8] = blocks[9] = blocks[10] = blocks[11] = blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
-        }
-        blocks[14] = this.bytes << 3;
-        blocks[15] = this.hBytes << 3 | this.bytes >>> 29;
-        this.hash();
-    };
-
-    Md5.prototype.hash = function () {
-        var a,
-            b,
-            c,
-            d,
-            bc,
-            da,
-            blocks = this.blocks;
-
-        if (this.first) {
-            a = blocks[0] - 680876937;
-            a = (a << 7 | a >>> 25) - 271733879 << 0;
-            d = (-1732584194 ^ a & 2004318071) + blocks[1] - 117830708;
-            d = (d << 12 | d >>> 20) + a << 0;
-            c = (-271733879 ^ d & (a ^ -271733879)) + blocks[2] - 1126478375;
-            c = (c << 17 | c >>> 15) + d << 0;
-            b = (a ^ c & (d ^ a)) + blocks[3] - 1316259209;
-            b = (b << 22 | b >>> 10) + c << 0;
-        } else {
-            a = this.h0;
-            b = this.h1;
-            c = this.h2;
-            d = this.h3;
-            a += (d ^ b & (c ^ d)) + blocks[0] - 680876936;
-            a = (a << 7 | a >>> 25) + b << 0;
-            d += (c ^ a & (b ^ c)) + blocks[1] - 389564586;
-            d = (d << 12 | d >>> 20) + a << 0;
-            c += (b ^ d & (a ^ b)) + blocks[2] + 606105819;
-            c = (c << 17 | c >>> 15) + d << 0;
-            b += (a ^ c & (d ^ a)) + blocks[3] - 1044525330;
-            b = (b << 22 | b >>> 10) + c << 0;
-        }
-
-        a += (d ^ b & (c ^ d)) + blocks[4] - 176418897;
-        a = (a << 7 | a >>> 25) + b << 0;
-        d += (c ^ a & (b ^ c)) + blocks[5] + 1200080426;
-        d = (d << 12 | d >>> 20) + a << 0;
-        c += (b ^ d & (a ^ b)) + blocks[6] - 1473231341;
-        c = (c << 17 | c >>> 15) + d << 0;
-        b += (a ^ c & (d ^ a)) + blocks[7] - 45705983;
-        b = (b << 22 | b >>> 10) + c << 0;
-        a += (d ^ b & (c ^ d)) + blocks[8] + 1770035416;
-        a = (a << 7 | a >>> 25) + b << 0;
-        d += (c ^ a & (b ^ c)) + blocks[9] - 1958414417;
-        d = (d << 12 | d >>> 20) + a << 0;
-        c += (b ^ d & (a ^ b)) + blocks[10] - 42063;
-        c = (c << 17 | c >>> 15) + d << 0;
-        b += (a ^ c & (d ^ a)) + blocks[11] - 1990404162;
-        b = (b << 22 | b >>> 10) + c << 0;
-        a += (d ^ b & (c ^ d)) + blocks[12] + 1804603682;
-        a = (a << 7 | a >>> 25) + b << 0;
-        d += (c ^ a & (b ^ c)) + blocks[13] - 40341101;
-        d = (d << 12 | d >>> 20) + a << 0;
-        c += (b ^ d & (a ^ b)) + blocks[14] - 1502002290;
-        c = (c << 17 | c >>> 15) + d << 0;
-        b += (a ^ c & (d ^ a)) + blocks[15] + 1236535329;
-        b = (b << 22 | b >>> 10) + c << 0;
-        a += (c ^ d & (b ^ c)) + blocks[1] - 165796510;
-        a = (a << 5 | a >>> 27) + b << 0;
-        d += (b ^ c & (a ^ b)) + blocks[6] - 1069501632;
-        d = (d << 9 | d >>> 23) + a << 0;
-        c += (a ^ b & (d ^ a)) + blocks[11] + 643717713;
-        c = (c << 14 | c >>> 18) + d << 0;
-        b += (d ^ a & (c ^ d)) + blocks[0] - 373897302;
-        b = (b << 20 | b >>> 12) + c << 0;
-        a += (c ^ d & (b ^ c)) + blocks[5] - 701558691;
-        a = (a << 5 | a >>> 27) + b << 0;
-        d += (b ^ c & (a ^ b)) + blocks[10] + 38016083;
-        d = (d << 9 | d >>> 23) + a << 0;
-        c += (a ^ b & (d ^ a)) + blocks[15] - 660478335;
-        c = (c << 14 | c >>> 18) + d << 0;
-        b += (d ^ a & (c ^ d)) + blocks[4] - 405537848;
-        b = (b << 20 | b >>> 12) + c << 0;
-        a += (c ^ d & (b ^ c)) + blocks[9] + 568446438;
-        a = (a << 5 | a >>> 27) + b << 0;
-        d += (b ^ c & (a ^ b)) + blocks[14] - 1019803690;
-        d = (d << 9 | d >>> 23) + a << 0;
-        c += (a ^ b & (d ^ a)) + blocks[3] - 187363961;
-        c = (c << 14 | c >>> 18) + d << 0;
-        b += (d ^ a & (c ^ d)) + blocks[8] + 1163531501;
-        b = (b << 20 | b >>> 12) + c << 0;
-        a += (c ^ d & (b ^ c)) + blocks[13] - 1444681467;
-        a = (a << 5 | a >>> 27) + b << 0;
-        d += (b ^ c & (a ^ b)) + blocks[2] - 51403784;
-        d = (d << 9 | d >>> 23) + a << 0;
-        c += (a ^ b & (d ^ a)) + blocks[7] + 1735328473;
-        c = (c << 14 | c >>> 18) + d << 0;
-        b += (d ^ a & (c ^ d)) + blocks[12] - 1926607734;
-        b = (b << 20 | b >>> 12) + c << 0;
-        bc = b ^ c;
-        a += (bc ^ d) + blocks[5] - 378558;
-        a = (a << 4 | a >>> 28) + b << 0;
-        d += (bc ^ a) + blocks[8] - 2022574463;
-        d = (d << 11 | d >>> 21) + a << 0;
-        da = d ^ a;
-        c += (da ^ b) + blocks[11] + 1839030562;
-        c = (c << 16 | c >>> 16) + d << 0;
-        b += (da ^ c) + blocks[14] - 35309556;
-        b = (b << 23 | b >>> 9) + c << 0;
-        bc = b ^ c;
-        a += (bc ^ d) + blocks[1] - 1530992060;
-        a = (a << 4 | a >>> 28) + b << 0;
-        d += (bc ^ a) + blocks[4] + 1272893353;
-        d = (d << 11 | d >>> 21) + a << 0;
-        da = d ^ a;
-        c += (da ^ b) + blocks[7] - 155497632;
-        c = (c << 16 | c >>> 16) + d << 0;
-        b += (da ^ c) + blocks[10] - 1094730640;
-        b = (b << 23 | b >>> 9) + c << 0;
-        bc = b ^ c;
-        a += (bc ^ d) + blocks[13] + 681279174;
-        a = (a << 4 | a >>> 28) + b << 0;
-        d += (bc ^ a) + blocks[0] - 358537222;
-        d = (d << 11 | d >>> 21) + a << 0;
-        da = d ^ a;
-        c += (da ^ b) + blocks[3] - 722521979;
-        c = (c << 16 | c >>> 16) + d << 0;
-        b += (da ^ c) + blocks[6] + 76029189;
-        b = (b << 23 | b >>> 9) + c << 0;
-        bc = b ^ c;
-        a += (bc ^ d) + blocks[9] - 640364487;
-        a = (a << 4 | a >>> 28) + b << 0;
-        d += (bc ^ a) + blocks[12] - 421815835;
-        d = (d << 11 | d >>> 21) + a << 0;
-        da = d ^ a;
-        c += (da ^ b) + blocks[15] + 530742520;
-        c = (c << 16 | c >>> 16) + d << 0;
-        b += (da ^ c) + blocks[2] - 995338651;
-        b = (b << 23 | b >>> 9) + c << 0;
-        a += (c ^ (b | ~d)) + blocks[0] - 198630844;
-        a = (a << 6 | a >>> 26) + b << 0;
-        d += (b ^ (a | ~c)) + blocks[7] + 1126891415;
-        d = (d << 10 | d >>> 22) + a << 0;
-        c += (a ^ (d | ~b)) + blocks[14] - 1416354905;
-        c = (c << 15 | c >>> 17) + d << 0;
-        b += (d ^ (c | ~a)) + blocks[5] - 57434055;
-        b = (b << 21 | b >>> 11) + c << 0;
-        a += (c ^ (b | ~d)) + blocks[12] + 1700485571;
-        a = (a << 6 | a >>> 26) + b << 0;
-        d += (b ^ (a | ~c)) + blocks[3] - 1894986606;
-        d = (d << 10 | d >>> 22) + a << 0;
-        c += (a ^ (d | ~b)) + blocks[10] - 1051523;
-        c = (c << 15 | c >>> 17) + d << 0;
-        b += (d ^ (c | ~a)) + blocks[1] - 2054922799;
-        b = (b << 21 | b >>> 11) + c << 0;
-        a += (c ^ (b | ~d)) + blocks[8] + 1873313359;
-        a = (a << 6 | a >>> 26) + b << 0;
-        d += (b ^ (a | ~c)) + blocks[15] - 30611744;
-        d = (d << 10 | d >>> 22) + a << 0;
-        c += (a ^ (d | ~b)) + blocks[6] - 1560198380;
-        c = (c << 15 | c >>> 17) + d << 0;
-        b += (d ^ (c | ~a)) + blocks[13] + 1309151649;
-        b = (b << 21 | b >>> 11) + c << 0;
-        a += (c ^ (b | ~d)) + blocks[4] - 145523070;
-        a = (a << 6 | a >>> 26) + b << 0;
-        d += (b ^ (a | ~c)) + blocks[11] - 1120210379;
-        d = (d << 10 | d >>> 22) + a << 0;
-        c += (a ^ (d | ~b)) + blocks[2] + 718787259;
-        c = (c << 15 | c >>> 17) + d << 0;
-        b += (d ^ (c | ~a)) + blocks[9] - 343485551;
-        b = (b << 21 | b >>> 11) + c << 0;
-
-        if (this.first) {
-            this.h0 = a + 1732584193 << 0;
-            this.h1 = b - 271733879 << 0;
-            this.h2 = c - 1732584194 << 0;
-            this.h3 = d + 271733878 << 0;
-            this.first = false;
-        } else {
-            this.h0 = this.h0 + a << 0;
-            this.h1 = this.h1 + b << 0;
-            this.h2 = this.h2 + c << 0;
-            this.h3 = this.h3 + d << 0;
-        }
-    };
-
-    /**
-     * @method hex
-     * @memberof Md5
-     * @instance
-     * @description Output hash as hex string
-     * @returns {String} Hex string
-     * @see {@link md5.hex}
-     * @example
-     * hash.hex();
-     */
-    Md5.prototype.hex = function () {
-        this.finalize();
-
-        var h0 = this.h0,
-            h1 = this.h1,
-            h2 = this.h2,
-            h3 = this.h3;
-
-        return HEX_CHARS[h0 >> 4 & 0x0F] + HEX_CHARS[h0 & 0x0F] + HEX_CHARS[h0 >> 12 & 0x0F] + HEX_CHARS[h0 >> 8 & 0x0F] + HEX_CHARS[h0 >> 20 & 0x0F] + HEX_CHARS[h0 >> 16 & 0x0F] + HEX_CHARS[h0 >> 28 & 0x0F] + HEX_CHARS[h0 >> 24 & 0x0F] + HEX_CHARS[h1 >> 4 & 0x0F] + HEX_CHARS[h1 & 0x0F] + HEX_CHARS[h1 >> 12 & 0x0F] + HEX_CHARS[h1 >> 8 & 0x0F] + HEX_CHARS[h1 >> 20 & 0x0F] + HEX_CHARS[h1 >> 16 & 0x0F] + HEX_CHARS[h1 >> 28 & 0x0F] + HEX_CHARS[h1 >> 24 & 0x0F] + HEX_CHARS[h2 >> 4 & 0x0F] + HEX_CHARS[h2 & 0x0F] + HEX_CHARS[h2 >> 12 & 0x0F] + HEX_CHARS[h2 >> 8 & 0x0F] + HEX_CHARS[h2 >> 20 & 0x0F] + HEX_CHARS[h2 >> 16 & 0x0F] + HEX_CHARS[h2 >> 28 & 0x0F] + HEX_CHARS[h2 >> 24 & 0x0F] + HEX_CHARS[h3 >> 4 & 0x0F] + HEX_CHARS[h3 & 0x0F] + HEX_CHARS[h3 >> 12 & 0x0F] + HEX_CHARS[h3 >> 8 & 0x0F] + HEX_CHARS[h3 >> 20 & 0x0F] + HEX_CHARS[h3 >> 16 & 0x0F] + HEX_CHARS[h3 >> 28 & 0x0F] + HEX_CHARS[h3 >> 24 & 0x0F];
-    };
-
-    /**
-     * @method toString
-     * @memberof Md5
-     * @instance
-     * @description Output hash as hex string
-     * @returns {String} Hex string
-     * @see {@link md5.hex}
-     * @example
-     * hash.toString();
-     */
-    Md5.prototype.toString = Md5.prototype.hex;
-
-    /**
-     * @method digest
-     * @memberof Md5
-     * @instance
-     * @description Output hash as bytes array
-     * @returns {Array} Bytes array
-     * @see {@link md5.digest}
-     * @example
-     * hash.digest();
-     */
-    Md5.prototype.digest = function (format) {
-        if (format === 'hex') return this.hex();
-        this.finalize();
-
-        var h0 = this.h0,
-            h1 = this.h1,
-            h2 = this.h2,
-            h3 = this.h3;
-        var res = [h0 & 0xFF, h0 >> 8 & 0xFF, h0 >> 16 & 0xFF, h0 >> 24 & 0xFF, h1 & 0xFF, h1 >> 8 & 0xFF, h1 >> 16 & 0xFF, h1 >> 24 & 0xFF, h2 & 0xFF, h2 >> 8 & 0xFF, h2 >> 16 & 0xFF, h2 >> 24 & 0xFF, h3 & 0xFF, h3 >> 8 & 0xFF, h3 >> 16 & 0xFF, h3 >> 24 & 0xFF];
-        return res;
-    };
-
-    /**
-     * @method array
-     * @memberof Md5
-     * @instance
-     * @description Output hash as bytes array
-     * @returns {Array} Bytes array
-     * @see {@link md5.array}
-     * @example
-     * hash.array();
-     */
-    Md5.prototype.array = Md5.prototype.digest;
-
-    /**
-     * @method arrayBuffer
-     * @memberof Md5
-     * @instance
-     * @description Output hash as ArrayBuffer
-     * @returns {ArrayBuffer} ArrayBuffer
-     * @see {@link md5.arrayBuffer}
-     * @example
-     * hash.arrayBuffer();
-     */
-    Md5.prototype.arrayBuffer = function () {
-        this.finalize();
-
-        var buffer = new ArrayBuffer(16);
-        var blocks = new Uint32Array(buffer);
-        blocks[0] = this.h0;
-        blocks[1] = this.h1;
-        blocks[2] = this.h2;
-        blocks[3] = this.h3;
-        return buffer;
-    };
-
-    /**
-     * @method buffer
-     * @deprecated This maybe confuse with Buffer in node.js. Please use arrayBuffer instead.
-     * @memberof Md5
-     * @instance
-     * @description Output hash as ArrayBuffer
-     * @returns {ArrayBuffer} ArrayBuffer
-     * @see {@link md5.buffer}
-     * @example
-     * hash.buffer();
-     */
-    Md5.prototype.buffer = Md5.prototype.arrayBuffer;
-
-    /**
-     * @method base64
-     * @memberof Md5
-     * @instance
-     * @description Output hash as base64 string
-     * @returns {String} base64 string
-     * @see {@link md5.base64}
-     * @example
-     * hash.base64();
-     */
-    Md5.prototype.base64 = function () {
-        var v1,
-            v2,
-            v3,
-            base64Str = '',
-            bytes = this.array();
-        for (var i = 0; i < 15;) {
-            v1 = bytes[i++];
-            v2 = bytes[i++];
-            v3 = bytes[i++];
-            base64Str += BASE64_ENCODE_CHAR[v1 >>> 2] + BASE64_ENCODE_CHAR[(v1 << 4 | v2 >>> 4) & 63] + BASE64_ENCODE_CHAR[(v2 << 2 | v3 >>> 6) & 63] + BASE64_ENCODE_CHAR[v3 & 63];
-        }
-        v1 = bytes[i];
-        base64Str += BASE64_ENCODE_CHAR[v1 >>> 2] + BASE64_ENCODE_CHAR[v1 << 4 & 63] + '==';
-        return base64Str;
-    };
-
-    var exports = createMethod();
-
-    if (COMMON_JS) {
-        module.exports = exports;
-    } else {
-        /**
-         * @method md5
-         * @description Md5 hash function, export to global in browsers.
-         * @param {String|Array|Uint8Array|ArrayBuffer} message message to hash
-         * @returns {String} md5 hashes
-         * @example
-         * md5(''); // d41d8cd98f00b204e9800998ecf8427e
-         * md5('The quick brown fox jumps over the lazy dog'); // 9e107d9d372bb6826bd81d3542a419d6
-         * md5('The quick brown fox jumps over the lazy dog.'); // e4d909c290d0fb1ca068ffaddf22cbd0
-         *
-         * // It also supports UTF-8 encoding
-         * md5('中文'); // a7bac2239fcdcb3a067903d8077c4a07
-         *
-         * // It also supports byte `Array`, `Uint8Array`, `ArrayBuffer`
-         * md5([]); // d41d8cd98f00b204e9800998ecf8427e
-         * md5(new Uint8Array([])); // d41d8cd98f00b204e9800998ecf8427e
-         */
-        root.md5 = exports;
-        if (AMD) {
-            !(__WEBPACK_AMD_DEFINE_RESULT__ = (function () {
-                return exports;
-            }).call(exports, __webpack_require__, exports, module),
-				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-        }
-    }
-})();
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2), __webpack_require__(9)))
-
-/***/ }),
-/* 9 */
-/***/ (function(module, exports) {
-
-var g;
-
-// This works in non-strict mode
-g = (function() {
-	return this;
-})();
-
-try {
-	// This works if eval is allowed (see CSP)
-	g = g || Function("return this")() || (1,eval)("this");
-} catch(e) {
-	// This works if the window reference is available
-	if(typeof window === "object")
-		g = window;
-}
-
-// g can still be undefined, but nothing to do about it...
-// We return undefined, instead of nothing here, so it's
-// easier to handle this case. if(!global) { ...}
-
-module.exports = g;
-
-
-/***/ }),
-/* 10 */
-/***/ (function(module, exports) {
-
-/* WEBPACK VAR INJECTION */(function(__webpack_amd_options__) {/* globals __webpack_amd_options__ */
-module.exports = __webpack_amd_options__;
-
-/* WEBPACK VAR INJECTION */}.call(exports, {}))
-
-/***/ }),
-/* 11 */
-/***/ (function(module, exports, __webpack_require__) {
-
-/*
- CryptoJS v3.1.2
- code.google.com/p/crypto-js
- (c) 2009-2013 by Jeff Mott. All rights reserved.
- code.google.com/p/crypto-js/wiki/License
- */
-var CryptoJS = CryptoJS || function (g, l) {
-    var e = {},
-        d = e.lib = {},
-        m = function () {},
-        k = d.Base = { extend: function (a) {
-            m.prototype = this;var c = new m();a && c.mixIn(a);c.hasOwnProperty("init") || (c.init = function () {
-                c.$super.init.apply(this, arguments);
-            });c.init.prototype = c;c.$super = this;return c;
-        }, create: function () {
-            var a = this.extend();a.init.apply(a, arguments);return a;
-        }, init: function () {}, mixIn: function (a) {
-            for (var c in a) a.hasOwnProperty(c) && (this[c] = a[c]);a.hasOwnProperty("toString") && (this.toString = a.toString);
-        }, clone: function () {
-            return this.init.prototype.extend(this);
-        } },
-        p = d.WordArray = k.extend({ init: function (a, c) {
-            a = this.words = a || [];this.sigBytes = c != l ? c : 4 * a.length;
-        }, toString: function (a) {
-            return (a || n).stringify(this);
-        }, concat: function (a) {
-            var c = this.words,
-                q = a.words,
-                f = this.sigBytes;a = a.sigBytes;this.clamp();if (f % 4) for (var b = 0; b < a; b++) c[f + b >>> 2] |= (q[b >>> 2] >>> 24 - 8 * (b % 4) & 255) << 24 - 8 * ((f + b) % 4);else if (65535 < q.length) for (b = 0; b < a; b += 4) c[f + b >>> 2] = q[b >>> 2];else c.push.apply(c, q);this.sigBytes += a;return this;
-        }, clamp: function () {
-            var a = this.words,
-                c = this.sigBytes;a[c >>> 2] &= 4294967295 << 32 - 8 * (c % 4);a.length = g.ceil(c / 4);
-        }, clone: function () {
-            var a = k.clone.call(this);a.words = this.words.slice(0);return a;
-        }, random: function (a) {
-            for (var c = [], b = 0; b < a; b += 4) c.push(4294967296 * g.random() | 0);return new p.init(c, a);
-        } }),
-        b = e.enc = {},
-        n = b.Hex = { stringify: function (a) {
-            var c = a.words;a = a.sigBytes;for (var b = [], f = 0; f < a; f++) {
-                var d = c[f >>> 2] >>> 24 - 8 * (f % 4) & 255;b.push((d >>> 4).toString(16));b.push((d & 15).toString(16));
-            }return b.join("");
-        }, parse: function (a) {
-            for (var c = a.length, b = [], f = 0; f < c; f += 2) b[f >>> 3] |= parseInt(a.substr(f, 2), 16) << 24 - 4 * (f % 8);return new p.init(b, c / 2);
-        } },
-        j = b.Latin1 = { stringify: function (a) {
-            var c = a.words;a = a.sigBytes;for (var b = [], f = 0; f < a; f++) b.push(String.fromCharCode(c[f >>> 2] >>> 24 - 8 * (f % 4) & 255));return b.join("");
-        }, parse: function (a) {
-            for (var c = a.length, b = [], f = 0; f < c; f++) b[f >>> 2] |= (a.charCodeAt(f) & 255) << 24 - 8 * (f % 4);return new p.init(b, c);
-        } },
-        h = b.Utf8 = { stringify: function (a) {
-            try {
-                return decodeURIComponent(escape(j.stringify(a)));
-            } catch (c) {
-                throw Error("Malformed UTF-8 data");
-            }
-        }, parse: function (a) {
-            return j.parse(unescape(encodeURIComponent(a)));
-        } },
-        r = d.BufferedBlockAlgorithm = k.extend({ reset: function () {
-            this._data = new p.init();this._nDataBytes = 0;
-        }, _append: function (a) {
-            "string" == typeof a && (a = h.parse(a));this._data.concat(a);this._nDataBytes += a.sigBytes;
-        }, _process: function (a) {
-            var c = this._data,
-                b = c.words,
-                f = c.sigBytes,
-                d = this.blockSize,
-                e = f / (4 * d),
-                e = a ? g.ceil(e) : g.max((e | 0) - this._minBufferSize, 0);a = e * d;f = g.min(4 * a, f);if (a) {
-                for (var k = 0; k < a; k += d) this._doProcessBlock(b, k);k = b.splice(0, a);c.sigBytes -= f;
-            }return new p.init(k, f);
-        }, clone: function () {
-            var a = k.clone.call(this);
-            a._data = this._data.clone();return a;
-        }, _minBufferSize: 0 });d.Hasher = r.extend({ cfg: k.extend(), init: function (a) {
-            this.cfg = this.cfg.extend(a);this.reset();
-        }, reset: function () {
-            r.reset.call(this);this._doReset();
-        }, update: function (a) {
-            this._append(a);this._process();return this;
-        }, finalize: function (a) {
-            a && this._append(a);return this._doFinalize();
-        }, blockSize: 16, _createHelper: function (a) {
-            return function (b, d) {
-                return new a.init(d).finalize(b);
-            };
-        }, _createHmacHelper: function (a) {
-            return function (b, d) {
-                return new s.HMAC.init(a, d).finalize(b);
-            };
-        } });var s = e.algo = {};return e;
-}(Math);
-(function () {
-    var g = CryptoJS,
-        l = g.lib,
-        e = l.WordArray,
-        d = l.Hasher,
-        m = [],
-        l = g.algo.SHA1 = d.extend({ _doReset: function () {
-            this._hash = new e.init([1732584193, 4023233417, 2562383102, 271733878, 3285377520]);
-        }, _doProcessBlock: function (d, e) {
-            for (var b = this._hash.words, n = b[0], j = b[1], h = b[2], g = b[3], l = b[4], a = 0; 80 > a; a++) {
-                if (16 > a) m[a] = d[e + a] | 0;else {
-                    var c = m[a - 3] ^ m[a - 8] ^ m[a - 14] ^ m[a - 16];m[a] = c << 1 | c >>> 31;
-                }c = (n << 5 | n >>> 27) + l + m[a];c = 20 > a ? c + ((j & h | ~j & g) + 1518500249) : 40 > a ? c + ((j ^ h ^ g) + 1859775393) : 60 > a ? c + ((j & h | j & g | h & g) - 1894007588) : c + ((j ^ h ^ g) - 899497514);l = g;g = h;h = j << 30 | j >>> 2;j = n;n = c;
-            }b[0] = b[0] + n | 0;b[1] = b[1] + j | 0;b[2] = b[2] + h | 0;b[3] = b[3] + g | 0;b[4] = b[4] + l | 0;
-        }, _doFinalize: function () {
-            var d = this._data,
-                e = d.words,
-                b = 8 * this._nDataBytes,
-                g = 8 * d.sigBytes;e[g >>> 5] |= 128 << 24 - g % 32;e[(g + 64 >>> 9 << 4) + 14] = Math.floor(b / 4294967296);e[(g + 64 >>> 9 << 4) + 15] = b;d.sigBytes = 4 * e.length;this._process();return this._hash;
-        }, clone: function () {
-            var e = d.clone.call(this);e._hash = this._hash.clone();return e;
-        } });g.SHA1 = d._createHelper(l);g.HmacSHA1 = d._createHmacHelper(l);
-})();
-(function () {
-    var g = CryptoJS,
-        l = g.enc.Utf8;g.algo.HMAC = g.lib.Base.extend({ init: function (e, d) {
-            e = this._hasher = new e.init();"string" == typeof d && (d = l.parse(d));var g = e.blockSize,
-                k = 4 * g;d.sigBytes > k && (d = e.finalize(d));d.clamp();for (var p = this._oKey = d.clone(), b = this._iKey = d.clone(), n = p.words, j = b.words, h = 0; h < g; h++) n[h] ^= 1549556828, j[h] ^= 909522486;p.sigBytes = b.sigBytes = k;this.reset();
-        }, reset: function () {
-            var e = this._hasher;e.reset();e.update(this._iKey);
-        }, update: function (e) {
-            this._hasher.update(e);return this;
-        }, finalize: function (e) {
-            var d = this._hasher;e = d.finalize(e);d.reset();return d.finalize(this._oKey.clone().concat(e));
-        } });
-})();
-
-(function () {
-    // Shortcuts
-    var C = CryptoJS;
-    var C_lib = C.lib;
-    var WordArray = C_lib.WordArray;
-    var C_enc = C.enc;
-
-    /**
-     * Base64 encoding strategy.
-     */
-    var Base64 = C_enc.Base64 = {
-        /**
-         * Converts a word array to a Base64 string.
-         *
-         * @param {WordArray} wordArray The word array.
-         *
-         * @return {string} The Base64 string.
-         *
-         * @static
-         *
-         * @example
-         *
-         *     var base64String = CryptoJS.enc.Base64.stringify(wordArray);
-         */
-        stringify: function (wordArray) {
-            // Shortcuts
-            var words = wordArray.words;
-            var sigBytes = wordArray.sigBytes;
-            var map = this._map;
-
-            // Clamp excess bits
-            wordArray.clamp();
-
-            // Convert
-            var base64Chars = [];
-            for (var i = 0; i < sigBytes; i += 3) {
-                var byte1 = words[i >>> 2] >>> 24 - i % 4 * 8 & 0xff;
-                var byte2 = words[i + 1 >>> 2] >>> 24 - (i + 1) % 4 * 8 & 0xff;
-                var byte3 = words[i + 2 >>> 2] >>> 24 - (i + 2) % 4 * 8 & 0xff;
-
-                var triplet = byte1 << 16 | byte2 << 8 | byte3;
-
-                for (var j = 0; j < 4 && i + j * 0.75 < sigBytes; j++) {
-                    base64Chars.push(map.charAt(triplet >>> 6 * (3 - j) & 0x3f));
-                }
-            }
-
-            // Add padding
-            var paddingChar = map.charAt(64);
-            if (paddingChar) {
-                while (base64Chars.length % 4) {
-                    base64Chars.push(paddingChar);
-                }
-            }
-
-            return base64Chars.join('');
-        },
-
-        /**
-         * Converts a Base64 string to a word array.
-         *
-         * @param {string} base64Str The Base64 string.
-         *
-         * @return {WordArray} The word array.
-         *
-         * @static
-         *
-         * @example
-         *
-         *     var wordArray = CryptoJS.enc.Base64.parse(base64String);
-         */
-        parse: function (base64Str) {
-            // Shortcuts
-            var base64StrLength = base64Str.length;
-            var map = this._map;
-
-            // Ignore padding
-            var paddingChar = map.charAt(64);
-            if (paddingChar) {
-                var paddingIndex = base64Str.indexOf(paddingChar);
-                if (paddingIndex != -1) {
-                    base64StrLength = paddingIndex;
-                }
-            }
-
-            // Convert
-            var words = [];
-            var nBytes = 0;
-            for (var i = 0; i < base64StrLength; i++) {
-                if (i % 4) {
-                    var bits1 = map.indexOf(base64Str.charAt(i - 1)) << i % 4 * 2;
-                    var bits2 = map.indexOf(base64Str.charAt(i)) >>> 6 - i % 4 * 2;
-                    words[nBytes >>> 2] |= (bits1 | bits2) << 24 - nBytes % 4 * 8;
-                    nBytes++;
-                }
-            }
-
-            return WordArray.create(words, nBytes);
-        },
-
-        _map: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='
-    };
-})();
-
-if (true) {
-    module.exports = CryptoJS;
-} else {
-    window.CryptoJS = CryptoJS;
-}
-
-/***/ }),
-/* 12 */
-/***/ (function(module, exports, __webpack_require__) {
-
-/* Copyright 2015 William Summers, MetaTribal LLC
- * adapted from https://developer.mozilla.org/en-US/docs/JXON
- *
- * Licensed under the MIT License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     https://opensource.org/licenses/MIT
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/**
- * @author William Summers
- * https://github.com/metatribal/xmlToJSON
- */
-var DOMParser = __webpack_require__(13).DOMParser;
-
-var xmlToJSON = function () {
-
-    this.version = "1.3.5";
-
-    var options = { // set up the default options
-        mergeCDATA: true, // extract cdata and merge with text
-        normalize: true, // collapse multiple spaces to single space
-        stripElemPrefix: true // for elements of same name in diff namespaces, you can enable namespaces and access the nskey property
-    };
-
-    var prefixMatch = new RegExp(/(?!xmlns)^.*:/);
-    var trimMatch = new RegExp(/^\s+|\s+$/g);
-
-    this.grokType = function (sValue) {
-        if (/^\s*$/.test(sValue)) {
-            return null;
-        }
-        if (/^(?:true|false)$/i.test(sValue)) {
-            return sValue.toLowerCase() === "true";
-        }
-        if (isFinite(sValue)) {
-            return parseFloat(sValue);
-        }
-        return sValue;
-    };
-
-    this.parseString = function (xmlString, opt) {
-        if (xmlString) {
-            var xml = this.stringToXML(xmlString);
-            if (xml.getElementsByTagName('parsererror').length) {
-                return null;
-            } else {
-                return this.parseXML(xml, opt);
-            }
-        } else {
-            return null;
-        }
-    };
-
-    this.parseXML = function (oXMLParent, opt) {
-
-        // initialize options
-        for (var key in opt) {
-            options[key] = opt[key];
-        }
-
-        var vResult = {},
-            nLength = 0,
-            sCollectedTxt = "";
-
-        // iterate over the children
-        var childNum = oXMLParent.childNodes.length;
-        if (childNum) {
-            for (var oNode, sProp, vContent, nItem = 0; nItem < oXMLParent.childNodes.length; nItem++) {
-                oNode = oXMLParent.childNodes.item(nItem);
-
-                if (oNode.nodeType === 4) {
-                    if (options.mergeCDATA) {
-                        sCollectedTxt += oNode.nodeValue;
-                    }
-                } /* nodeType is "CDATASection" (4) */
-                else if (oNode.nodeType === 3) {
-                        sCollectedTxt += oNode.nodeValue;
-                    } /* nodeType is "Text" (3) */
-                    else if (oNode.nodeType === 1) {
-                            /* nodeType is "Element" (1) */
-
-                            if (nLength === 0) {
-                                vResult = {};
-                            }
-
-                            // using nodeName to support browser (IE) implementation with no 'localName' property
-                            if (options.stripElemPrefix) {
-                                sProp = oNode.nodeName.replace(prefixMatch, '');
-                            } else {
-                                sProp = oNode.nodeName;
-                            }
-
-                            vContent = xmlToJSON.parseXML(oNode);
-
-                            if (vResult.hasOwnProperty(sProp)) {
-                                if (vResult[sProp].constructor !== Array) {
-                                    vResult[sProp] = [vResult[sProp]];
-                                }
-                                vResult[sProp].push(vContent);
-                            } else {
-                                vResult[sProp] = vContent;
-                                nLength++;
-                            }
-                        }
-            }
-        }
-
-        if (!Object.keys(vResult).length) {
-            // vResult = sCollectedTxt.replace(trimMatch, '') || ''; // by carsonxu 修复 getBucket返回的 Key 是 " /" 这种场景
-            vResult = sCollectedTxt || '';
-        }
-
-        return vResult;
-    };
-
-    // Convert xmlDocument to a string
-    // Returns null on failure
-    this.xmlToString = function (xmlDoc) {
-        try {
-            var xmlString = xmlDoc.xml ? xmlDoc.xml : new XMLSerializer().serializeToString(xmlDoc);
-            return xmlString;
-        } catch (err) {
-            return null;
-        }
-    };
-
-    // Convert a string to XML Node Structure
-    // Returns null on failure
-    this.stringToXML = function (xmlString) {
-        try {
-            var xmlDoc = null;
-
-            if (window.DOMParser) {
-
-                var parser = new DOMParser();
-                xmlDoc = parser.parseFromString(xmlString, "text/xml");
-
-                return xmlDoc;
-            } else {
-                xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
-                xmlDoc.async = false;
-                xmlDoc.loadXML(xmlString);
-
-                return xmlDoc;
-            }
-        } catch (e) {
-            return null;
-        }
-    };
-
-    return this;
-}.call({});
-
-var xml2json = function (xmlString) {
-    return xmlToJSON.parseString(xmlString);
-};
-
-module.exports = xml2json;
-
-/***/ }),
-/* 13 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var dom = __webpack_require__(3)
-exports.DOMImplementation = dom.DOMImplementation
-exports.XMLSerializer = dom.XMLSerializer
-exports.DOMParser = __webpack_require__(14).DOMParser
-
-
-/***/ }),
-/* 14 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var conventions = __webpack_require__(1);
-var dom = __webpack_require__(3)
-var entities = __webpack_require__(15);
-var sax = __webpack_require__(16);
-
-var DOMImplementation = dom.DOMImplementation;
-
-var NAMESPACE = conventions.NAMESPACE;
-
-var ParseError = sax.ParseError;
-var XMLReader = sax.XMLReader;
-
-/**
- * Normalizes line ending according to https://www.w3.org/TR/xml11/#sec-line-ends:
- *
- * > XML parsed entities are often stored in computer files which,
- * > for editing convenience, are organized into lines.
- * > These lines are typically separated by some combination
- * > of the characters CARRIAGE RETURN (#xD) and LINE FEED (#xA).
- * >
- * > To simplify the tasks of applications, the XML processor must behave
- * > as if it normalized all line breaks in external parsed entities (including the document entity)
- * > on input, before parsing, by translating all of the following to a single #xA character:
- * >
- * > 1. the two-character sequence #xD #xA
- * > 2. the two-character sequence #xD #x85
- * > 3. the single character #x85
- * > 4. the single character #x2028
- * > 5. any #xD character that is not immediately followed by #xA or #x85.
- *
- * @param {string} input
- * @returns {string}
- */
-function normalizeLineEndings(input) {
-	return input
-		.replace(/\r[\n\u0085]/g, '\n')
-		.replace(/[\r\u0085\u2028]/g, '\n')
-}
-
-/**
- * @typedef Locator
- * @property {number} [columnNumber]
- * @property {number} [lineNumber]
- */
-
-/**
- * @typedef DOMParserOptions
- * @property {DOMHandler} [domBuilder]
- * @property {Function} [errorHandler]
- * @property {(string) => string} [normalizeLineEndings] used to replace line endings before parsing
- * 						defaults to `normalizeLineEndings`
- * @property {Locator} [locator]
- * @property {Record<string, string>} [xmlns]
- *
- * @see normalizeLineEndings
- */
-
-/**
- * The DOMParser interface provides the ability to parse XML or HTML source code
- * from a string into a DOM `Document`.
- *
- * _xmldom is different from the spec in that it allows an `options` parameter,
- * to override the default behavior._
- *
- * @param {DOMParserOptions} [options]
- * @constructor
- *
- * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMParser
- * @see https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#dom-parsing-and-serialization
- */
-function DOMParser(options){
-	this.options = options ||{locator:{}};
-}
-
-DOMParser.prototype.parseFromString = function(source,mimeType){
-	var options = this.options;
-	var sax =  new XMLReader();
-	var domBuilder = options.domBuilder || new DOMHandler();//contentHandler and LexicalHandler
-	var errorHandler = options.errorHandler;
-	var locator = options.locator;
-	var defaultNSMap = options.xmlns||{};
-	var isHTML = /\/x?html?$/.test(mimeType);//mimeType.toLowerCase().indexOf('html') > -1;
-  	var entityMap = isHTML ? entities.HTML_ENTITIES : entities.XML_ENTITIES;
-	if(locator){
-		domBuilder.setDocumentLocator(locator)
-	}
-
-	sax.errorHandler = buildErrorHandler(errorHandler,domBuilder,locator);
-	sax.domBuilder = options.domBuilder || domBuilder;
-	if(isHTML){
-		defaultNSMap[''] = NAMESPACE.HTML;
-	}
-	defaultNSMap.xml = defaultNSMap.xml || NAMESPACE.XML;
-	var normalize = options.normalizeLineEndings || normalizeLineEndings;
-	if (source && typeof source === 'string') {
-		sax.parse(
-			normalize(source),
-			defaultNSMap,
-			entityMap
-		)
-	} else {
-		sax.errorHandler.error('invalid doc source')
-	}
-	return domBuilder.doc;
-}
-function buildErrorHandler(errorImpl,domBuilder,locator){
-	if(!errorImpl){
-		if(domBuilder instanceof DOMHandler){
-			return domBuilder;
-		}
-		errorImpl = domBuilder ;
-	}
-	var errorHandler = {}
-	var isCallback = errorImpl instanceof Function;
-	locator = locator||{}
-	function build(key){
-		var fn = errorImpl[key];
-		if(!fn && isCallback){
-			fn = errorImpl.length == 2?function(msg){errorImpl(key,msg)}:errorImpl;
-		}
-		errorHandler[key] = fn && function(msg){
-			fn('[xmldom '+key+']\t'+msg+_locator(locator));
-		}||function(){};
-	}
-	build('warning');
-	build('error');
-	build('fatalError');
-	return errorHandler;
-}
-
-//console.log('#\n\n\n\n\n\n\n####')
-/**
- * +ContentHandler+ErrorHandler
- * +LexicalHandler+EntityResolver2
- * -DeclHandler-DTDHandler
- *
- * DefaultHandler:EntityResolver, DTDHandler, ContentHandler, ErrorHandler
- * DefaultHandler2:DefaultHandler,LexicalHandler, DeclHandler, EntityResolver2
- * @link http://www.saxproject.org/apidoc/org/xml/sax/helpers/DefaultHandler.html
- */
-function DOMHandler() {
-    this.cdata = false;
-}
-function position(locator,node){
-	node.lineNumber = locator.lineNumber;
-	node.columnNumber = locator.columnNumber;
-}
-/**
- * @see org.xml.sax.ContentHandler#startDocument
- * @link http://www.saxproject.org/apidoc/org/xml/sax/ContentHandler.html
- */
-DOMHandler.prototype = {
-	startDocument : function() {
-    	this.doc = new DOMImplementation().createDocument(null, null, null);
-    	if (this.locator) {
-        	this.doc.documentURI = this.locator.systemId;
-    	}
-	},
-	startElement:function(namespaceURI, localName, qName, attrs) {
-		var doc = this.doc;
-	    var el = doc.createElementNS(namespaceURI, qName||localName);
-	    var len = attrs.length;
-	    appendElement(this, el);
-	    this.currentElement = el;
-
-		this.locator && position(this.locator,el)
-	    for (var i = 0 ; i < len; i++) {
-	        var namespaceURI = attrs.getURI(i);
-	        var value = attrs.getValue(i);
-	        var qName = attrs.getQName(i);
-			var attr = doc.createAttributeNS(namespaceURI, qName);
-			this.locator &&position(attrs.getLocator(i),attr);
-			attr.value = attr.nodeValue = value;
-			el.setAttributeNode(attr)
-	    }
-	},
-	endElement:function(namespaceURI, localName, qName) {
-		var current = this.currentElement
-		var tagName = current.tagName;
-		this.currentElement = current.parentNode;
-	},
-	startPrefixMapping:function(prefix, uri) {
-	},
-	endPrefixMapping:function(prefix) {
-	},
-	processingInstruction:function(target, data) {
-	    var ins = this.doc.createProcessingInstruction(target, data);
-	    this.locator && position(this.locator,ins)
-	    appendElement(this, ins);
-	},
-	ignorableWhitespace:function(ch, start, length) {
-	},
-	characters:function(chars, start, length) {
-		chars = _toString.apply(this,arguments)
-		//console.log(chars)
-		if(chars){
-			if (this.cdata) {
-				var charNode = this.doc.createCDATASection(chars);
-			} else {
-				var charNode = this.doc.createTextNode(chars);
-			}
-			if(this.currentElement){
-				this.currentElement.appendChild(charNode);
-			}else if(/^\s*$/.test(chars)){
-				this.doc.appendChild(charNode);
-				//process xml
-			}
-			this.locator && position(this.locator,charNode)
-		}
-	},
-	skippedEntity:function(name) {
-	},
-	endDocument:function() {
-		this.doc.normalize();
-	},
-	setDocumentLocator:function (locator) {
-	    if(this.locator = locator){// && !('lineNumber' in locator)){
-	    	locator.lineNumber = 0;
-	    }
-	},
-	//LexicalHandler
-	comment:function(chars, start, length) {
-		chars = _toString.apply(this,arguments)
-	    var comm = this.doc.createComment(chars);
-	    this.locator && position(this.locator,comm)
-	    appendElement(this, comm);
-	},
-
-	startCDATA:function() {
-	    //used in characters() methods
-	    this.cdata = true;
-	},
-	endCDATA:function() {
-	    this.cdata = false;
-	},
-
-	startDTD:function(name, publicId, systemId) {
-		var impl = this.doc.implementation;
-	    if (impl && impl.createDocumentType) {
-	        var dt = impl.createDocumentType(name, publicId, systemId);
-	        this.locator && position(this.locator,dt)
-	        appendElement(this, dt);
-					this.doc.doctype = dt;
-	    }
-	},
-	/**
-	 * @see org.xml.sax.ErrorHandler
-	 * @link http://www.saxproject.org/apidoc/org/xml/sax/ErrorHandler.html
-	 */
-	warning:function(error) {
-		console.warn('[xmldom warning]\t'+error,_locator(this.locator));
-	},
-	error:function(error) {
-		console.error('[xmldom error]\t'+error,_locator(this.locator));
-	},
-	fatalError:function(error) {
-		throw new ParseError(error, this.locator);
-	}
-}
-function _locator(l){
-	if(l){
-		return '\n@'+(l.systemId ||'')+'#[line:'+l.lineNumber+',col:'+l.columnNumber+']'
-	}
-}
-function _toString(chars,start,length){
-	if(typeof chars == 'string'){
-		return chars.substr(start,length)
-	}else{//java sax connect width xmldom on rhino(what about: "? && !(chars instanceof String)")
-		if(chars.length >= start+length || start){
-			return new java.lang.String(chars,start,length)+'';
-		}
-		return chars;
-	}
-}
-
-/*
- * @link http://www.saxproject.org/apidoc/org/xml/sax/ext/LexicalHandler.html
- * used method of org.xml.sax.ext.LexicalHandler:
- *  #comment(chars, start, length)
- *  #startCDATA()
- *  #endCDATA()
- *  #startDTD(name, publicId, systemId)
- *
- *
- * IGNORED method of org.xml.sax.ext.LexicalHandler:
- *  #endDTD()
- *  #startEntity(name)
- *  #endEntity(name)
- *
- *
- * @link http://www.saxproject.org/apidoc/org/xml/sax/ext/DeclHandler.html
- * IGNORED method of org.xml.sax.ext.DeclHandler
- * 	#attributeDecl(eName, aName, type, mode, value)
- *  #elementDecl(name, model)
- *  #externalEntityDecl(name, publicId, systemId)
- *  #internalEntityDecl(name, value)
- * @link http://www.saxproject.org/apidoc/org/xml/sax/ext/EntityResolver2.html
- * IGNORED method of org.xml.sax.EntityResolver2
- *  #resolveEntity(String name,String publicId,String baseURI,String systemId)
- *  #resolveEntity(publicId, systemId)
- *  #getExternalSubset(name, baseURI)
- * @link http://www.saxproject.org/apidoc/org/xml/sax/DTDHandler.html
- * IGNORED method of org.xml.sax.DTDHandler
- *  #notationDecl(name, publicId, systemId) {};
- *  #unparsedEntityDecl(name, publicId, systemId, notationName) {};
- */
-"endDTD,startEntity,endEntity,attributeDecl,elementDecl,externalEntityDecl,internalEntityDecl,resolveEntity,getExternalSubset,notationDecl,unparsedEntityDecl".replace(/\w+/g,function(key){
-	DOMHandler.prototype[key] = function(){return null}
-})
-
-/* Private static helpers treated below as private instance methods, so don't need to add these to the public API; we might use a Relator to also get rid of non-standard public properties */
-function appendElement (hander,node) {
-    if (!hander.currentElement) {
-        hander.doc.appendChild(node);
-    } else {
-        hander.currentElement.appendChild(node);
-    }
-}//appendChild and setAttributeNS are preformance key
-
-exports.__DOMHandler = DOMHandler;
-exports.normalizeLineEndings = normalizeLineEndings;
-exports.DOMParser = DOMParser;
-
-
-/***/ }),
-/* 15 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var freeze = __webpack_require__(1).freeze;
+var freeze = __webpack_require__(/*! ./conventions */ "./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/conventions.js").freeze;
 
 /**
  * The entities that are predefined in every XML document.
@@ -4677,10 +6187,30 @@ exports.entityMap = exports.HTML_ENTITIES
 
 
 /***/ }),
-/* 16 */
+
+/***/ "./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/index.js":
+/*!************************************************************************!*\
+  !*** ./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/index.js ***!
+  \************************************************************************/
+/*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-var NAMESPACE = __webpack_require__(1).NAMESPACE;
+var dom = __webpack_require__(/*! ./dom */ "./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/dom.js")
+exports.DOMImplementation = dom.DOMImplementation
+exports.XMLSerializer = dom.XMLSerializer
+exports.DOMParser = __webpack_require__(/*! ./dom-parser */ "./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/dom-parser.js").DOMParser
+
+
+/***/ }),
+
+/***/ "./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/sax.js":
+/*!**********************************************************************!*\
+  !*** ./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/sax.js ***!
+  \**********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var NAMESPACE = __webpack_require__(/*! ./conventions */ "./node_modules/_@xmldom_xmldom@0.8.2@@xmldom/xmldom/lib/conventions.js").NAMESPACE;
 
 //[4]   	NameStartChar	   ::=   	":" | [A-Z] | "_" | [a-z] | [#xC0-#xD6] | [#xD8-#xF6] | [#xF8-#x2FF] | [#x370-#x37D] | [#x37F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
 //[4a]   	NameChar	   ::=   	NameStartChar | "-" | "." | [0-9] | #xB7 | [#x0300-#x036F] | [#x203F-#x2040]
@@ -5333,428 +6863,1708 @@ exports.ParseError = ParseError;
 
 
 /***/ }),
-/* 17 */
+
+/***/ "./node_modules/_process@0.11.10@process/browser.js":
+/*!**********************************************************!*\
+  !*** ./node_modules/_process@0.11.10@process/browser.js ***!
+  \**********************************************************/
+/*! no static exports found */
 /***/ (function(module, exports) {
 
-//copyright Ryan Day 2010 <http://ryanday.org>, Joscha Feth 2013 <http://www.feth.com> [MIT Licensed]
+// shim for using process in browser
+var process = module.exports = {};
 
-var element_start_char = "a-zA-Z_\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FFF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD";
-var element_non_start_char = "\-.0-9\u00B7\u0300-\u036F\u203F\u2040";
-var element_replace = new RegExp("^([^" + element_start_char + "])|^((x|X)(m|M)(l|L))|([^" + element_start_char + element_non_start_char + "])", "g");
-var not_safe_in_xml = /[^\x09\x0A\x0D\x20-\xFF\x85\xA0-\uD7FF\uE000-\uFDCF\uFDE0-\uFFFD]/gm;
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
 
-var objKeys = function (obj) {
-    var l = [];
-    if (obj instanceof Object) {
-        for (var k in obj) {
-            if (obj.hasOwnProperty(k)) {
-                l.push(k);
-            }
-        }
-    }
-    return l;
-};
-var process_to_xml = function (node_data, options) {
+var cachedSetTimeout;
+var cachedClearTimeout;
 
-    var makeNode = function (name, content, attributes, level, hasSubNodes) {
-        var indent_value = options.indent !== undefined ? options.indent : "\t";
-        var indent = options.prettyPrint ? '\n' + new Array(level).join(indent_value) : '';
-        if (options.removeIllegalNameCharacters) {
-            name = name.replace(element_replace, '_');
-        }
-
-        var node = [indent, '<', name, attributes || ''];
-        if (content && content.length > 0) {
-            node.push('>');
-            node.push(content);
-            hasSubNodes && node.push(indent);
-            node.push('</');
-            node.push(name);
-            node.push('>');
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
+}
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
+}
+(function () {
+    try {
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
         } else {
-            node.push('/>');
+            cachedSetTimeout = defaultSetTimout;
         }
-        return node.join('');
-    };
-
-    return function fn(node_data, node_descriptor, level) {
-        var type = typeof node_data;
-        if (Array.isArray ? Array.isArray(node_data) : node_data instanceof Array) {
-            type = 'array';
-        } else if (node_data instanceof Date) {
-            type = 'date';
-        }
-
-        switch (type) {
-            //if value is an array create child nodes from values
-            case 'array':
-                var ret = [];
-                node_data.map(function (v) {
-                    ret.push(fn(v, 1, level + 1));
-                    //entries that are values of an array are the only ones that can be special node descriptors
-                });
-                options.prettyPrint && ret.push('\n');
-                return ret.join('');
-                break;
-
-            case 'date':
-                // cast dates to ISO 8601 date (soap likes it)
-                return node_data.toJSON ? node_data.toJSON() : node_data + '';
-                break;
-
-            case 'object':
-                var nodes = [];
-                for (var name in node_data) {
-                    if (node_data.hasOwnProperty(name)) {
-                        if (node_data[name] instanceof Array) {
-                            for (var j = 0; j < node_data[name].length; j++) {
-                                if (node_data[name].hasOwnProperty(j)) {
-                                    nodes.push(makeNode(name, fn(node_data[name][j], 0, level + 1), null, level + 1, objKeys(node_data[name][j]).length));
-                                }
-                            }
-                        } else {
-                            nodes.push(makeNode(name, fn(node_data[name], 0, level + 1), null, level + 1));
-                        }
-                    }
-                }
-                options.prettyPrint && nodes.length > 0 && nodes.push('\n');
-                return nodes.join('');
-                break;
-
-            case 'function':
-                return node_data();
-                break;
-
-            default:
-                return options.escape ? esc(node_data) : '' + node_data;
-        }
-    }(node_data, 0, 0);
-};
-
-var xml_header = function (standalone) {
-    var ret = ['<?xml version="1.0" encoding="UTF-8"'];
-
-    if (standalone) {
-        ret.push(' standalone="yes"');
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
     }
-    ret.push('?>');
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
+        }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    // if setTimeout wasn't available but was latter defined
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
+    }
 
-    return ret.join('');
-};
 
-function esc(str) {
-    return ('' + str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&apos;').replace(/"/g, '&quot;').replace(not_safe_in_xml, '');
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    // if clearTimeout wasn't available but was latter defined
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
 }
 
-module.exports = function (obj, options) {
-    if (!options) {
-        options = {
-            xmlHeader: {
-                standalone: true
-            },
-            prettyPrint: true,
-            indent: "  ",
-            escape: true
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
+    }
+};
+
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) { return [] }
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+
+/***/ }),
+
+/***/ "./node_modules/_webpack@4.46.0@webpack/buildin/amd-options.js":
+/*!****************************************!*\
+  !*** (webpack)/buildin/amd-options.js ***!
+  \****************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/* WEBPACK VAR INJECTION */(function(__webpack_amd_options__) {/* globals __webpack_amd_options__ */
+module.exports = __webpack_amd_options__;
+
+/* WEBPACK VAR INJECTION */}.call(this, {}))
+
+/***/ }),
+
+/***/ "./node_modules/_webpack@4.46.0@webpack/buildin/global.js":
+/*!***********************************!*\
+  !*** (webpack)/buildin/global.js ***!
+  \***********************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+var g;
+
+// This works in non-strict mode
+g = (function() {
+	return this;
+})();
+
+try {
+	// This works if eval is allowed (see CSP)
+	g = g || new Function("return this")();
+} catch (e) {
+	// This works if the window reference is available
+	if (typeof window === "object") g = window;
+}
+
+// g can still be undefined, but nothing to do about it...
+// We return undefined, instead of nothing here, so it's
+// easier to handle this case. if(!global) { ...}
+
+module.exports = g;
+
+
+/***/ }),
+
+/***/ "./node_modules/_webpack@4.46.0@webpack/buildin/module.js":
+/*!***********************************!*\
+  !*** (webpack)/buildin/module.js ***!
+  \***********************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = function(module) {
+	if (!module.webpackPolyfill) {
+		module.deprecate = function() {};
+		module.paths = [];
+		// module.parent = undefined by default
+		if (!module.children) module.children = [];
+		Object.defineProperty(module, "loaded", {
+			enumerable: true,
+			get: function() {
+				return module.l;
+			}
+		});
+		Object.defineProperty(module, "id", {
+			enumerable: true,
+			get: function() {
+				return module.i;
+			}
+		});
+		module.webpackPolyfill = 1;
+	}
+	return module;
+};
+
+
+/***/ }),
+
+/***/ "./package.json":
+/*!**********************!*\
+  !*** ./package.json ***!
+  \**********************/
+/*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
+/***/ (function(module) {
+
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.4.0\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"index.js\",\"types\":\"index.d.ts\",\"scripts\":{\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"nyc\":\"node test/watcher.js && nyc report --reporter=clover --reporter=cobertura\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.2\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"nyc\":\"^15.1.0\",\"puppeteer\":\"^5.3.1\",\"puppeteer-to-istanbul\":\"^1.4.0\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\",\"terser-webpack-plugin\":\"4.2.3\"}}");
+
+/***/ }),
+
+/***/ "./src/advance.js":
+/*!************************!*\
+  !*** ./src/advance.js ***!
+  \************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+var session = __webpack_require__(/*! ./session */ "./src/session.js");
+
+var Async = __webpack_require__(/*! ./async */ "./src/async.js");
+
+var EventProxy = __webpack_require__(/*! ./event */ "./src/event.js").EventProxy;
+
+var util = __webpack_require__(/*! ./util */ "./src/util.js");
+
+var Tracker = __webpack_require__(/*! ./tracker */ "./src/tracker.js"); // 文件分块上传全过程，暴露的分块上传接口
+
+
+function sliceUploadFile(params, callback) {
+  var self = this;
+  var ep = new EventProxy();
+  var TaskId = params.TaskId;
+  var Bucket = params.Bucket;
+  var Region = params.Region;
+  var Key = params.Key;
+  var Body = params.Body;
+  var ChunkSize = params.ChunkSize || params.SliceSize || self.options.ChunkSize;
+  var AsyncLimit = params.AsyncLimit;
+  var StorageClass = params.StorageClass;
+  var ServerSideEncryption = params.ServerSideEncryption;
+  var FileSize;
+  var onProgress;
+  var onHashProgress = params.onHashProgress;
+  var tracker = params.tracker;
+  tracker && tracker.setParams({
+    chunkSize: ChunkSize
+  }); // 上传过程中出现错误，返回错误
+
+  ep.on('error', function (err) {
+    if (!self._isRunningTask(TaskId)) return;
+    err.UploadId = params.UploadData.UploadId || '';
+    return callback(err);
+  }); // 上传分块完成，开始 uploadSliceComplete 操作
+
+  ep.on('upload_complete', function (UploadCompleteData) {
+    var _UploadCompleteData = util.extend({
+      UploadId: params.UploadData.UploadId || ''
+    }, UploadCompleteData);
+
+    callback(null, _UploadCompleteData);
+  }); // 上传分块完成，开始 uploadSliceComplete 操作
+
+  ep.on('upload_slice_complete', function (UploadData) {
+    var metaHeaders = {};
+    util.each(params.Headers, function (val, k) {
+      var shortKey = k.toLowerCase();
+      if (shortKey.indexOf('x-cos-meta-') === 0 || shortKey === 'pic-operations') metaHeaders[k] = val;
+    });
+    uploadSliceComplete.call(self, {
+      Bucket: Bucket,
+      Region: Region,
+      Key: Key,
+      UploadId: UploadData.UploadId,
+      SliceList: UploadData.SliceList,
+      Headers: metaHeaders,
+      tracker: tracker
+    }, function (err, data) {
+      if (!self._isRunningTask(TaskId)) return;
+      session.removeUsing(UploadData.UploadId);
+
+      if (err) {
+        onProgress(null, true);
+        return ep.emit('error', err);
+      }
+
+      session.removeUploadId.call(self, UploadData.UploadId);
+      onProgress({
+        loaded: FileSize,
+        total: FileSize
+      }, true);
+      ep.emit('upload_complete', data);
+    });
+  }); // 获取 UploadId 完成，开始上传每个分片
+
+  ep.on('get_upload_data_finish', function (UploadData) {
+    // 处理 UploadId 缓存
+    var uuid = session.getFileId(Body, params.ChunkSize, Bucket, Key);
+    uuid && session.saveUploadId.call(self, uuid, UploadData.UploadId, self.options.UploadIdCacheLimit); // 缓存 UploadId
+
+    session.setUsing(UploadData.UploadId); // 标记 UploadId 为正在使用
+    // 获取 UploadId
+
+    onProgress(null, true); // 任务状态开始 uploading
+
+    uploadSliceList.call(self, {
+      TaskId: TaskId,
+      Bucket: Bucket,
+      Region: Region,
+      Key: Key,
+      Body: Body,
+      FileSize: FileSize,
+      SliceSize: ChunkSize,
+      AsyncLimit: AsyncLimit,
+      ServerSideEncryption: ServerSideEncryption,
+      UploadData: UploadData,
+      Headers: params.Headers,
+      onProgress: onProgress,
+      tracker: tracker
+    }, function (err, data) {
+      if (!self._isRunningTask(TaskId)) return;
+
+      if (err) {
+        onProgress(null, true);
+        return ep.emit('error', err);
+      }
+
+      ep.emit('upload_slice_complete', data);
+    });
+  }); // 开始获取文件 UploadId，里面会视情况计算 ETag，并比对，保证文件一致性，也优化上传
+
+  ep.on('get_file_size_finish', function () {
+    onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
+
+    if (params.UploadData.UploadId) {
+      ep.emit('get_upload_data_finish', params.UploadData);
+    } else {
+      var _params = util.extend({
+        TaskId: TaskId,
+        Bucket: Bucket,
+        Region: Region,
+        Key: Key,
+        Headers: params.Headers,
+        StorageClass: StorageClass,
+        Body: Body,
+        FileSize: FileSize,
+        SliceSize: ChunkSize,
+        onHashProgress: onHashProgress,
+        tracker: tracker
+      }, params);
+
+      getUploadIdAndPartList.call(self, _params, function (err, UploadData) {
+        if (!self._isRunningTask(TaskId)) return;
+        if (err) return ep.emit('error', err);
+        params.UploadData.UploadId = UploadData.UploadId;
+        params.UploadData.PartList = UploadData.PartList;
+        ep.emit('get_upload_data_finish', params.UploadData);
+      });
+    }
+  }); // 获取上传文件大小
+
+  FileSize = params.ContentLength;
+  delete params.ContentLength;
+  !params.Headers && (params.Headers = {});
+  util.each(params.Headers, function (item, key) {
+    if (key.toLowerCase() === 'content-length') {
+      delete params.Headers[key];
+    }
+  }); // 控制分片大小
+
+  (function () {
+    var SIZE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1024 * 2, 1024 * 4, 1024 * 5];
+    var AutoChunkSize = 1024 * 1024;
+
+    for (var i = 0; i < SIZE.length; i++) {
+      AutoChunkSize = SIZE[i] * 1024 * 1024;
+      if (FileSize / AutoChunkSize <= self.options.MaxPartNumber) break;
+    }
+
+    params.ChunkSize = params.SliceSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
+  })(); // 开始上传
+
+
+  if (FileSize === 0) {
+    params.Body = '';
+    params.ContentLength = 0;
+    params.SkipTask = true;
+    self.putObject(params, callback);
+  } else {
+    ep.emit('get_file_size_finish');
+  }
+} // 获取上传任务的 UploadId
+
+
+function getUploadIdAndPartList(params, callback) {
+  var TaskId = params.TaskId;
+  var Bucket = params.Bucket;
+  var Region = params.Region;
+  var Key = params.Key;
+  var StorageClass = params.StorageClass;
+  var self = this; // 计算 ETag
+
+  var ETagMap = {};
+  var FileSize = params.FileSize;
+  var SliceSize = params.SliceSize;
+  var SliceCount = Math.ceil(FileSize / SliceSize);
+  var FinishSliceCount = 0;
+  var FinishSize = 0;
+  var onHashProgress = util.throttleOnProgress.call(self, FileSize, params.onHashProgress);
+
+  var getChunkETag = function getChunkETag(PartNumber, callback) {
+    var start = SliceSize * (PartNumber - 1);
+    var end = Math.min(start + SliceSize, FileSize);
+    var ChunkSize = end - start;
+
+    if (ETagMap[PartNumber]) {
+      callback(null, {
+        PartNumber: PartNumber,
+        ETag: ETagMap[PartNumber],
+        Size: ChunkSize
+      });
+    } else {
+      util.fileSlice(params.Body, start, end, false, function (chunkItem) {
+        util.getFileMd5(chunkItem, function (err, md5) {
+          if (err) return callback(util.error(err));
+          var ETag = '"' + md5 + '"';
+          ETagMap[PartNumber] = ETag;
+          FinishSliceCount += 1;
+          FinishSize += ChunkSize;
+          onHashProgress({
+            loaded: FinishSize,
+            total: FileSize
+          });
+          callback(null, {
+            PartNumber: PartNumber,
+            ETag: ETag,
+            Size: ChunkSize
+          });
+        });
+      });
+    }
+  }; // 通过和文件的 md5 对比，判断 UploadId 是否可用
+
+
+  var isAvailableUploadList = function isAvailableUploadList(PartList, callback) {
+    var PartCount = PartList.length; // 如果没有分片，通过
+
+    if (PartCount === 0) {
+      return callback(null, true);
+    } // 检查分片数量
+
+
+    if (PartCount > SliceCount) {
+      return callback(null, false);
+    } // 检查分片大小
+
+
+    if (PartCount > 1) {
+      var PartSliceSize = Math.max(PartList[0].Size, PartList[1].Size);
+
+      if (PartSliceSize !== SliceSize) {
+        return callback(null, false);
+      }
+    } // 逐个分片计算并检查 ETag 是否一致
+
+
+    var next = function next(index) {
+      if (index < PartCount) {
+        var Part = PartList[index];
+        getChunkETag(Part.PartNumber, function (err, chunk) {
+          if (chunk && chunk.ETag === Part.ETag && chunk.Size === Part.Size) {
+            next(index + 1);
+          } else {
+            callback(null, false);
+          }
+        });
+      } else {
+        callback(null, true);
+      }
+    };
+
+    next(0);
+  };
+
+  var ep = new EventProxy();
+  ep.on('error', function (errData) {
+    if (!self._isRunningTask(TaskId)) return;
+    return callback(errData);
+  }); // 存在 UploadId
+
+  ep.on('upload_id_available', function (UploadData) {
+    // 转换成 map
+    var map = {};
+    var list = [];
+    util.each(UploadData.PartList, function (item) {
+      map[item.PartNumber] = item;
+    });
+
+    for (var PartNumber = 1; PartNumber <= SliceCount; PartNumber++) {
+      var item = map[PartNumber];
+
+      if (item) {
+        item.PartNumber = PartNumber;
+        item.Uploaded = true;
+      } else {
+        item = {
+          PartNumber: PartNumber,
+          ETag: null,
+          Uploaded: false
         };
+      }
+
+      list.push(item);
     }
 
-    if (typeof obj == 'string') {
-        try {
-            obj = JSON.parse(obj.toString());
-        } catch (e) {
-            return false;
+    UploadData.PartList = list;
+    callback(null, UploadData);
+  }); // 不存在 UploadId, 初始化生成 UploadId
+
+  ep.on('no_available_upload_id', function () {
+    if (!self._isRunningTask(TaskId)) return;
+
+    var _params = util.extend({
+      Bucket: Bucket,
+      Region: Region,
+      Key: Key,
+      Query: util.clone(params.Query),
+      StorageClass: StorageClass,
+      Body: params.Body,
+      calledBySdk: 'sliceUploadFile',
+      tracker: params.tracker
+    }, params);
+
+    var headers = util.clone(params.Headers);
+    delete headers['x-cos-mime-limit'];
+    _params.Headers = headers;
+    self.multipartInit(_params, function (err, data) {
+      if (!self._isRunningTask(TaskId)) return;
+      if (err) return ep.emit('error', err);
+      var UploadId = data.UploadId;
+
+      if (!UploadId) {
+        return callback(util.error(new Error('no such upload id')));
+      }
+
+      ep.emit('upload_id_available', {
+        UploadId: UploadId,
+        PartList: []
+      });
+    });
+  }); // 如果已存在 UploadId，找一个可以用的 UploadId
+
+  ep.on('has_and_check_upload_id', function (UploadIdList) {
+    // 串行地，找一个内容一致的 UploadId
+    UploadIdList = UploadIdList.reverse();
+    Async.eachLimit(UploadIdList, 1, function (UploadId, asyncCallback) {
+      if (!self._isRunningTask(TaskId)) return; // 如果正在上传，跳过
+
+      if (session.using[UploadId]) {
+        asyncCallback(); // 检查下一个 UploadId
+
+        return;
+      } // 判断 UploadId 是否可用
+
+
+      wholeMultipartListPart.call(self, {
+        Bucket: Bucket,
+        Region: Region,
+        Key: Key,
+        UploadId: UploadId,
+        tracker: params.tracker
+      }, function (err, PartListData) {
+        if (!self._isRunningTask(TaskId)) return;
+
+        if (err) {
+          session.removeUsing(UploadId);
+          return ep.emit('error', err);
         }
+
+        var PartList = PartListData.PartList;
+        PartList.forEach(function (item) {
+          item.PartNumber *= 1;
+          item.Size *= 1;
+          item.ETag = item.ETag || '';
+        });
+        isAvailableUploadList(PartList, function (err, isAvailable) {
+          if (!self._isRunningTask(TaskId)) return;
+          if (err) return ep.emit('error', err);
+
+          if (isAvailable) {
+            asyncCallback({
+              UploadId: UploadId,
+              PartList: PartList
+            }); // 马上结束
+          } else {
+            asyncCallback(); // 检查下一个 UploadId
+          }
+        });
+      });
+    }, function (AvailableUploadData) {
+      if (!self._isRunningTask(TaskId)) return;
+      onHashProgress(null, true);
+
+      if (AvailableUploadData && AvailableUploadData.UploadId) {
+        ep.emit('upload_id_available', AvailableUploadData);
+      } else {
+        ep.emit('no_available_upload_id');
+      }
+    });
+  }); // 在本地缓存找可用的 UploadId
+
+  ep.on('seek_local_avail_upload_id', function (RemoteUploadIdList) {
+    // 在本地找可用的 UploadId
+    var uuid = session.getFileId(params.Body, params.ChunkSize, Bucket, Key);
+    var LocalUploadIdList = session.getUploadIdList.call(self, uuid);
+
+    if (!uuid || !LocalUploadIdList) {
+      ep.emit('has_and_check_upload_id', RemoteUploadIdList);
+      return;
     }
 
-    var xmlheader = '';
-    var docType = '';
-    if (options) {
-        if (typeof options == 'object') {
-            // our config is an object
+    var next = function next(index) {
+      // 如果本地找不到可用 UploadId，再一个个遍历校验远端
+      if (index >= LocalUploadIdList.length) {
+        ep.emit('has_and_check_upload_id', RemoteUploadIdList);
+        return;
+      }
 
-            if (options.xmlHeader) {
-                // the user wants an xml header
-                xmlheader = xml_header(!!options.xmlHeader.standalone);
-            }
+      var UploadId = LocalUploadIdList[index]; // 如果不在远端 UploadId 列表里，跳过并删除
 
-            if (typeof options.docType != 'undefined') {
-                docType = '<!DOCTYPE ' + options.docType + '>';
-            }
+      if (!util.isInArray(RemoteUploadIdList, UploadId)) {
+        session.removeUploadId.call(self, UploadId);
+        next(index + 1);
+        return;
+      } // 如果正在上传，跳过
+
+
+      if (session.using[UploadId]) {
+        next(index + 1);
+        return;
+      } // 判断 UploadId 是否存在线上
+
+
+      wholeMultipartListPart.call(self, {
+        Bucket: Bucket,
+        Region: Region,
+        Key: Key,
+        UploadId: UploadId,
+        tracker: params.tracker
+      }, function (err, PartListData) {
+        if (!self._isRunningTask(TaskId)) return;
+
+        if (err) {
+          // 如果 UploadId 获取会出错，跳过并删除
+          session.removeUploadId.call(self, UploadId);
+          next(index + 1);
         } else {
-            // our config is a boolean value, so just add xml header
-            xmlheader = xml_header();
+          // 找到可用 UploadId
+          ep.emit('upload_id_available', {
+            UploadId: UploadId,
+            PartList: PartListData.PartList
+          });
         }
-    }
-    options = options || {};
+      });
+    };
 
-    var ret = [xmlheader, options.prettyPrint && docType ? '\n' : '', docType, process_to_xml(obj, options)];
-    return ret.join('').replace(/\n{2,}/g, '\n').replace(/\s+$/g, '');
+    next(0);
+  }); // 获取线上 UploadId 列表
+
+  ep.on('get_remote_upload_id_list', function () {
+    // 获取符合条件的 UploadId 列表，因为同一个文件可以有多个上传任务。
+    wholeMultipartList.call(self, {
+      Bucket: Bucket,
+      Region: Region,
+      Key: Key,
+      tracker: params.tracker
+    }, function (err, data) {
+      if (!self._isRunningTask(TaskId)) return;
+      if (err) return ep.emit('error', err); // 整理远端 UploadId 列表
+
+      var RemoteUploadIdList = util.filter(data.UploadList, function (item) {
+        return item.Key === Key && (!StorageClass || item.StorageClass.toUpperCase() === StorageClass.toUpperCase());
+      }).reverse().map(function (item) {
+        return item.UploadId || item.UploadID;
+      });
+
+      if (RemoteUploadIdList.length) {
+        ep.emit('seek_local_avail_upload_id', RemoteUploadIdList);
+      } else {
+        // 远端没有 UploadId，清理缓存的 UploadId
+        var uuid = session.getFileId(params.Body, params.ChunkSize, Bucket, Key),
+            LocalUploadIdList;
+
+        if (uuid && (LocalUploadIdList = session.getUploadIdList.call(self, uuid))) {
+          util.each(LocalUploadIdList, function (UploadId) {
+            session.removeUploadId.call(self, UploadId);
+          });
+        }
+
+        ep.emit('no_available_upload_id');
+      }
+    });
+  }); // 开始找可用 UploadId
+
+  ep.emit('get_remote_upload_id_list');
+} // 获取符合条件的全部上传任务 (条件包括 Bucket, Region, Prefix)
+
+
+function wholeMultipartList(params, callback) {
+  var self = this;
+  var UploadList = [];
+  var sendParams = {
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Prefix: params.Key,
+    calledBySdk: params.calledBySdk || 'sliceUploadFile',
+    tracker: params.tracker
+  };
+
+  var next = function next() {
+    self.multipartList(sendParams, function (err, data) {
+      if (err) return callback(err);
+      UploadList.push.apply(UploadList, data.Upload || []);
+
+      if (data.IsTruncated === 'true') {
+        // 列表不完整
+        sendParams.KeyMarker = data.NextKeyMarker;
+        sendParams.UploadIdMarker = data.NextUploadIdMarker;
+        next();
+      } else {
+        callback(null, {
+          UploadList: UploadList
+        });
+      }
+    });
+  };
+
+  next();
+} // 获取指定上传任务的分块列表
+
+
+function wholeMultipartListPart(params, callback) {
+  var self = this;
+  var PartList = [];
+  var sendParams = {
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    UploadId: params.UploadId,
+    calledBySdk: 'sliceUploadFile',
+    tracker: params.tracker
+  };
+
+  var next = function next() {
+    self.multipartListPart(sendParams, function (err, data) {
+      if (err) return callback(err);
+      PartList.push.apply(PartList, data.Part || []);
+
+      if (data.IsTruncated === 'true') {
+        // 列表不完整
+        sendParams.PartNumberMarker = data.NextPartNumberMarker;
+        next();
+      } else {
+        callback(null, {
+          PartList: PartList
+        });
+      }
+    });
+  };
+
+  next();
+} // 上传文件分块，包括
+
+/*
+ UploadId (上传任务编号)
+ AsyncLimit (并发量)，
+ SliceList (上传的分块数组)，
+ FilePath (本地文件的位置)，
+ SliceSize (文件分块大小)
+ FileSize (文件大小)
+ onProgress (上传成功之后的回调函数)
+ */
+
+
+function uploadSliceList(params, cb) {
+  var self = this;
+  var TaskId = params.TaskId;
+  var Bucket = params.Bucket;
+  var Region = params.Region;
+  var Key = params.Key;
+  var UploadData = params.UploadData;
+  var FileSize = params.FileSize;
+  var SliceSize = params.SliceSize;
+  var ChunkParallel = Math.min(params.AsyncLimit || self.options.ChunkParallelLimit || 1, 256);
+  var Body = params.Body;
+  var SliceCount = Math.ceil(FileSize / SliceSize);
+  var FinishSize = 0;
+  var ServerSideEncryption = params.ServerSideEncryption;
+  var Headers = params.Headers;
+  var needUploadSlices = util.filter(UploadData.PartList, function (SliceItem) {
+    if (SliceItem['Uploaded']) {
+      FinishSize += SliceItem['PartNumber'] >= SliceCount ? FileSize % SliceSize || SliceSize : SliceSize;
+    }
+
+    return !SliceItem['Uploaded'];
+  });
+  var _onProgress2 = params.onProgress;
+  Async.eachLimit(needUploadSlices, ChunkParallel, function (SliceItem, asyncCallback) {
+    if (!self._isRunningTask(TaskId)) return;
+    var PartNumber = SliceItem['PartNumber'];
+    var currentSize = Math.min(FileSize, SliceItem['PartNumber'] * SliceSize) - (SliceItem['PartNumber'] - 1) * SliceSize;
+    var preAddSize = 0;
+    uploadSliceItem.call(self, {
+      TaskId: TaskId,
+      Bucket: Bucket,
+      Region: Region,
+      Key: Key,
+      SliceSize: SliceSize,
+      FileSize: FileSize,
+      PartNumber: PartNumber,
+      ServerSideEncryption: ServerSideEncryption,
+      Body: Body,
+      UploadData: UploadData,
+      Headers: Headers,
+      onProgress: function onProgress(data) {
+        FinishSize += data.loaded - preAddSize;
+        preAddSize = data.loaded;
+
+        _onProgress2({
+          loaded: FinishSize,
+          total: FileSize
+        });
+      },
+      tracker: params.tracker
+    }, function (err, data) {
+      if (!self._isRunningTask(TaskId)) return;
+      if (!err && !data.ETag) err = 'get ETag error, please add "ETag" to CORS ExposeHeader setting.( 获取ETag失败，请在CORS ExposeHeader设置中添加ETag，请参考文档：https://cloud.tencent.com/document/product/436/13318 )';
+
+      if (err) {
+        FinishSize -= preAddSize;
+      } else {
+        FinishSize += currentSize - preAddSize;
+        SliceItem.ETag = data.ETag;
+      }
+
+      _onProgress2({
+        loaded: FinishSize,
+        total: FileSize
+      });
+
+      asyncCallback(err || null, data);
+    });
+  }, function (err) {
+    if (!self._isRunningTask(TaskId)) return;
+    if (err) return cb(err);
+    cb(null, {
+      UploadId: UploadData.UploadId,
+      SliceList: UploadData.PartList
+    });
+  });
+} // 上传指定分片
+
+
+function uploadSliceItem(params, callback) {
+  var self = this;
+  var TaskId = params.TaskId;
+  var Bucket = params.Bucket;
+  var Region = params.Region;
+  var Key = params.Key;
+  var FileSize = params.FileSize;
+  var FileBody = params.Body;
+  var PartNumber = params.PartNumber * 1;
+  var SliceSize = params.SliceSize;
+  var ServerSideEncryption = params.ServerSideEncryption;
+  var UploadData = params.UploadData;
+  var Headers = params.Headers || {};
+  var ChunkRetryTimes = self.options.ChunkRetryTimes + 1;
+  var start = SliceSize * (PartNumber - 1);
+  var ContentLength = SliceSize;
+  var end = start + SliceSize;
+
+  if (end > FileSize) {
+    end = FileSize;
+    ContentLength = end - start;
+  }
+
+  var headersWhiteList = ['x-cos-traffic-limit', 'x-cos-mime-limit'];
+  var headers = {};
+  util.each(Headers, function (v, k) {
+    if (headersWhiteList.indexOf(k) > -1) {
+      headers[k] = v;
+    }
+  });
+  var PartItem = UploadData.PartList[PartNumber - 1];
+  Async.retry(ChunkRetryTimes, function (tryCallback) {
+    if (!self._isRunningTask(TaskId)) return;
+    util.fileSlice(FileBody, start, end, true, function (Body) {
+      self.multipartUpload({
+        TaskId: TaskId,
+        Bucket: Bucket,
+        Region: Region,
+        Key: Key,
+        ContentLength: ContentLength,
+        PartNumber: PartNumber,
+        UploadId: UploadData.UploadId,
+        ServerSideEncryption: ServerSideEncryption,
+        Body: Body,
+        Headers: headers,
+        onProgress: params.onProgress,
+        calledBySdk: 'sliceUploadFile',
+        tracker: params.tracker
+      }, function (err, data) {
+        if (!self._isRunningTask(TaskId)) return;
+        if (err) return tryCallback(err);
+        PartItem.Uploaded = true;
+        return tryCallback(null, data);
+      });
+    });
+  }, function (err, data) {
+    if (!self._isRunningTask(TaskId)) return;
+    return callback(err, data);
+  });
+} // 完成分块上传
+
+
+function uploadSliceComplete(params, callback) {
+  var Bucket = params.Bucket;
+  var Region = params.Region;
+  var Key = params.Key;
+  var UploadId = params.UploadId;
+  var SliceList = params.SliceList;
+  var self = this;
+  var ChunkRetryTimes = this.options.ChunkRetryTimes + 1;
+  var Headers = params.Headers;
+  var Parts = SliceList.map(function (item) {
+    return {
+      PartNumber: item.PartNumber,
+      ETag: item.ETag
+    };
+  }); // 完成上传的请求也做重试
+
+  Async.retry(ChunkRetryTimes, function (tryCallback) {
+    self.multipartComplete({
+      Bucket: Bucket,
+      Region: Region,
+      Key: Key,
+      UploadId: UploadId,
+      Parts: Parts,
+      Headers: Headers,
+      calledBySdk: 'sliceUploadFile',
+      tracker: params.tracker
+    }, tryCallback);
+  }, function (err, data) {
+    callback(err, data);
+  });
+} // 抛弃分块上传任务
+
+/*
+ AsyncLimit (抛弃上传任务的并发量)，
+ UploadId (上传任务的编号，当 Level 为 task 时候需要)
+ Level (抛弃分块上传任务的级别，task : 抛弃指定的上传任务，file ： 抛弃指定的文件对应的上传任务，其他值 ：抛弃指定Bucket 的全部上传任务)
+ */
+
+
+function abortUploadTask(params, callback) {
+  var Bucket = params.Bucket;
+  var Region = params.Region;
+  var Key = params.Key;
+  var UploadId = params.UploadId;
+  var Level = params.Level || 'task';
+  var AsyncLimit = params.AsyncLimit;
+  var self = this;
+  var ep = new EventProxy();
+  ep.on('error', function (errData) {
+    return callback(errData);
+  }); // 已经获取到需要抛弃的任务列表
+
+  ep.on('get_abort_array', function (AbortArray) {
+    abortUploadTaskArray.call(self, {
+      Bucket: Bucket,
+      Region: Region,
+      Key: Key,
+      Headers: params.Headers,
+      AsyncLimit: AsyncLimit,
+      AbortArray: AbortArray
+    }, callback);
+  });
+
+  if (Level === 'bucket') {
+    // Bucket 级别的任务抛弃，抛弃该 Bucket 下的全部上传任务
+    wholeMultipartList.call(self, {
+      Bucket: Bucket,
+      Region: Region,
+      calledBySdk: 'abortUploadTask'
+    }, function (err, data) {
+      if (err) return callback(err);
+      ep.emit('get_abort_array', data.UploadList || []);
+    });
+  } else if (Level === 'file') {
+    // 文件级别的任务抛弃，抛弃该文件的全部上传任务
+    if (!Key) return callback(util.error(new Error('abort_upload_task_no_key')));
+    wholeMultipartList.call(self, {
+      Bucket: Bucket,
+      Region: Region,
+      Key: Key,
+      calledBySdk: 'abortUploadTask'
+    }, function (err, data) {
+      if (err) return callback(err);
+      ep.emit('get_abort_array', data.UploadList || []);
+    });
+  } else if (Level === 'task') {
+    // 单个任务级别的任务抛弃，抛弃指定 UploadId 的上传任务
+    if (!UploadId) return callback(util.error(new Error('abort_upload_task_no_id')));
+    if (!Key) return callback(util.error(new Error('abort_upload_task_no_key')));
+    ep.emit('get_abort_array', [{
+      Key: Key,
+      UploadId: UploadId
+    }]);
+  } else {
+    return callback(util.error(new Error('abort_unknown_level')));
+  }
+} // 批量抛弃分块上传任务
+
+
+function abortUploadTaskArray(params, callback) {
+  var Bucket = params.Bucket;
+  var Region = params.Region;
+  var Key = params.Key;
+  var AbortArray = params.AbortArray;
+  var AsyncLimit = params.AsyncLimit || 1;
+  var self = this;
+  var index = 0;
+  var resultList = new Array(AbortArray.length);
+  Async.eachLimit(AbortArray, AsyncLimit, function (AbortItem, nextItem) {
+    var eachIndex = index;
+
+    if (Key && Key !== AbortItem.Key) {
+      resultList[eachIndex] = {
+        error: {
+          KeyNotMatch: true
+        }
+      };
+      nextItem(null);
+      return;
+    }
+
+    var UploadId = AbortItem.UploadId || AbortItem.UploadID;
+    self.multipartAbort({
+      Bucket: Bucket,
+      Region: Region,
+      Key: AbortItem.Key,
+      Headers: params.Headers,
+      UploadId: UploadId
+    }, function (err) {
+      var task = {
+        Bucket: Bucket,
+        Region: Region,
+        Key: AbortItem.Key,
+        UploadId: UploadId
+      };
+      resultList[eachIndex] = {
+        error: err,
+        task: task
+      };
+      nextItem(null);
+    });
+    index++;
+  }, function (err) {
+    if (err) return callback(err);
+    var successList = [];
+    var errorList = [];
+
+    for (var i = 0, len = resultList.length; i < len; i++) {
+      var item = resultList[i];
+
+      if (item['task']) {
+        if (item['error']) {
+          errorList.push(item['task']);
+        } else {
+          successList.push(item['task']);
+        }
+      }
+    }
+
+    return callback(null, {
+      successList: successList,
+      errorList: errorList
+    });
+  });
+} // 高级上传
+
+
+function uploadFile(params, callback) {
+  var self = this; // 判断多大的文件使用分片上传
+
+  var SliceSize = params.SliceSize === undefined ? self.options.SliceSize : params.SliceSize;
+  var taskList = [];
+  var Body = params.Body;
+  var FileSize = Body.size || Body.length || 0;
+  var fileInfo = {
+    TaskId: ''
+  }; // 上传链路
+
+  if (self.options.EnableTracker) {
+    var accelerate = self.options.UseAccelerate || self.options.Domain.includes('accelerate.');
+    params.tracker = new Tracker({
+      bucket: params.Bucket,
+      region: params.Region,
+      apiName: 'uploadFile',
+      fileKey: params.Key,
+      fileSize: FileSize,
+      accelerate: accelerate,
+      deepTracker: self.options.DeepTracker,
+      customId: self.options.CustomId,
+      delay: self.options.TrackerDelay
+    });
+  } // 整理 option，用于返回给回调
+
+
+  util.each(params, function (v, k) {
+    if (_typeof(v) !== 'object' && typeof v !== 'function') {
+      fileInfo[k] = v;
+    }
+  }); // 处理文件 TaskReady
+
+  var _onTaskReady = params.onTaskReady;
+
+  var onTaskReady = function onTaskReady(tid) {
+    fileInfo.TaskId = tid;
+    _onTaskReady && _onTaskReady(tid);
+  };
+
+  params.onTaskReady = onTaskReady; // 添加上传任务,超过阈值使用分块上传，小于等于则简单上传
+
+  var api = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject'; // 处理文件完成
+
+  var _onFileFinish = params.onFileFinish;
+
+  var onFileFinish = function onFileFinish(err, data) {
+    // 格式化上报参数并上报
+    params.tracker && params.tracker.formatResult(err, data);
+    _onFileFinish && _onFileFinish(err, data, fileInfo);
+    callback && callback(err, data);
+  };
+
+  taskList.push({
+    api: api,
+    params: params,
+    callback: onFileFinish
+  });
+
+  self._addTasks(taskList);
+} // 批量上传文件
+
+
+function uploadFiles(params, callback) {
+  var self = this; // 判断多大的文件使用分片上传
+
+  var SliceSize = params.SliceSize === undefined ? self.options.SliceSize : params.SliceSize; // 汇总返回进度
+
+  var TotalSize = 0;
+  var TotalFinish = 0;
+  var onTotalProgress = util.throttleOnProgress.call(self, TotalFinish, params.onProgress); // 汇总返回回调
+
+  var unFinishCount = params.files.length;
+  var _onTotalFileFinish = params.onFileFinish;
+  var resultList = Array(unFinishCount);
+
+  var onTotalFileFinish = function onTotalFileFinish(err, data, options) {
+    onTotalProgress(null, true);
+    _onTotalFileFinish && _onTotalFileFinish(err, data, options);
+    resultList[options.Index] = {
+      options: options,
+      error: err,
+      data: data
+    };
+
+    if (--unFinishCount <= 0 && callback) {
+      callback(null, {
+        files: resultList
+      });
+    }
+  }; // 开始处理每个文件
+
+
+  var taskList = [];
+  util.each(params.files, function (fileParams, index) {
+    (function () {
+      // 对齐 nodejs 缩进
+      var Body = fileParams.Body;
+      var FileSize = Body.size || Body.length || 0;
+      var fileInfo = {
+        Index: index,
+        TaskId: ''
+      }; // 更新文件总大小
+
+      TotalSize += FileSize; // 单个文件上传链路
+
+      if (self.options.EnableTracker) {
+        var accelerate = self.options.UseAccelerate || self.options.Domain.includes('accelerate.');
+        fileParams.tracker = new Tracker({
+          bucket: fileParams.Bucket,
+          region: fileParams.Region,
+          apiName: 'uploadFiles',
+          fileKey: fileParams.Key,
+          fileSize: FileSize,
+          accelerate: accelerate,
+          deepTracker: self.options.DeepTracker,
+          customId: self.options.CustomId,
+          delay: self.options.TrackerDelay
+        });
+      } // 整理 option，用于返回给回调
+
+
+      util.each(fileParams, function (v, k) {
+        if (_typeof(v) !== 'object' && typeof v !== 'function') {
+          fileInfo[k] = v;
+        }
+      }); // 处理单个文件 TaskReady
+
+      var _onTaskReady = fileParams.onTaskReady;
+
+      var onTaskReady = function onTaskReady(tid) {
+        fileInfo.TaskId = tid;
+        _onTaskReady && _onTaskReady(tid);
+      };
+
+      fileParams.onTaskReady = onTaskReady; // 处理单个文件进度
+
+      var PreAddSize = 0;
+      var _onProgress = fileParams.onProgress;
+
+      var onProgress = function onProgress(info) {
+        TotalFinish = TotalFinish - PreAddSize + info.loaded;
+        PreAddSize = info.loaded;
+        _onProgress && _onProgress(info);
+        onTotalProgress({
+          loaded: TotalFinish,
+          total: TotalSize
+        });
+      };
+
+      fileParams.onProgress = onProgress; // 添加上传任务
+
+      var api = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject'; // 处理单个文件完成
+
+      var _onFileFinish = fileParams.onFileFinish;
+
+      var onFileFinish = function onFileFinish(err, data) {
+        // 格式化上报参数并上报
+        fileParams.tracker && fileParams.tracker.formatResult(err, data);
+        _onFileFinish && _onFileFinish(err, data);
+        onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
+      };
+
+      taskList.push({
+        api: api,
+        params: fileParams,
+        callback: onFileFinish
+      });
+    })();
+  });
+
+  self._addTasks(taskList);
+} // 分片复制文件
+
+
+function sliceCopyFile(params, callback) {
+  var ep = new EventProxy();
+  var self = this;
+  var Bucket = params.Bucket;
+  var Region = params.Region;
+  var Key = params.Key;
+  var CopySource = params.CopySource;
+  var m = util.getSourceParams.call(this, CopySource);
+
+  if (!m) {
+    callback(util.error(new Error('CopySource format error')));
+    return;
+  }
+
+  var SourceBucket = m.Bucket;
+  var SourceRegion = m.Region;
+  var SourceKey = decodeURIComponent(m.Key);
+  var CopySliceSize = params.CopySliceSize === undefined ? self.options.CopySliceSize : params.CopySliceSize;
+  CopySliceSize = Math.max(0, CopySliceSize);
+  var ChunkSize = params.CopyChunkSize || this.options.CopyChunkSize;
+  var ChunkParallel = this.options.CopyChunkParallelLimit;
+  var FinishSize = 0;
+  var FileSize;
+  var onProgress; // 分片复制完成，开始 multipartComplete 操作
+
+  ep.on('copy_slice_complete', function (UploadData) {
+    var metaHeaders = {};
+    util.each(params.Headers, function (val, k) {
+      if (k.toLowerCase().indexOf('x-cos-meta-') === 0) metaHeaders[k] = val;
+    });
+    var Parts = util.map(UploadData.PartList, function (item) {
+      return {
+        PartNumber: item.PartNumber,
+        ETag: item.ETag
+      };
+    });
+    self.multipartComplete({
+      Bucket: Bucket,
+      Region: Region,
+      Key: Key,
+      UploadId: UploadData.UploadId,
+      Parts: Parts,
+      calledBySdk: 'sliceCopyFile'
+    }, function (err, data) {
+      if (err) {
+        onProgress(null, true);
+        return callback(err);
+      }
+
+      onProgress({
+        loaded: FileSize,
+        total: FileSize
+      }, true);
+      callback(null, data);
+    });
+  });
+  ep.on('get_copy_data_finish', function (UploadData) {
+    Async.eachLimit(UploadData.PartList, ChunkParallel, function (SliceItem, asyncCallback) {
+      var PartNumber = SliceItem.PartNumber;
+      var CopySourceRange = SliceItem.CopySourceRange;
+      var currentSize = SliceItem.end - SliceItem.start;
+      copySliceItem.call(self, {
+        Bucket: Bucket,
+        Region: Region,
+        Key: Key,
+        CopySource: CopySource,
+        UploadId: UploadData.UploadId,
+        PartNumber: PartNumber,
+        CopySourceRange: CopySourceRange
+      }, function (err, data) {
+        if (err) return asyncCallback(err);
+        FinishSize += currentSize;
+        onProgress({
+          loaded: FinishSize,
+          total: FileSize
+        });
+        SliceItem.ETag = data.ETag;
+        asyncCallback(err || null, data);
+      });
+    }, function (err) {
+      if (err) {
+        onProgress(null, true);
+        return callback(err);
+      }
+
+      ep.emit('copy_slice_complete', UploadData);
+    });
+  });
+  ep.on('get_file_size_finish', function (SourceHeaders) {
+    // 控制分片大小
+    (function () {
+      var SIZE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1024 * 2, 1024 * 4, 1024 * 5];
+      var AutoChunkSize = 1024 * 1024;
+
+      for (var i = 0; i < SIZE.length; i++) {
+        AutoChunkSize = SIZE[i] * 1024 * 1024;
+        if (FileSize / AutoChunkSize <= self.options.MaxPartNumber) break;
+      }
+
+      params.ChunkSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
+      var ChunkCount = Math.ceil(FileSize / ChunkSize);
+      var list = [];
+
+      for (var partNumber = 1; partNumber <= ChunkCount; partNumber++) {
+        var start = (partNumber - 1) * ChunkSize;
+        var end = partNumber * ChunkSize < FileSize ? partNumber * ChunkSize - 1 : FileSize - 1;
+        var item = {
+          PartNumber: partNumber,
+          start: start,
+          end: end,
+          CopySourceRange: "bytes=" + start + "-" + end
+        };
+        list.push(item);
+      }
+
+      params.PartList = list;
+    })();
+
+    var TargetHeader;
+
+    if (params.Headers['x-cos-metadata-directive'] === 'Replaced') {
+      TargetHeader = params.Headers;
+    } else {
+      TargetHeader = SourceHeaders;
+    }
+
+    TargetHeader['x-cos-storage-class'] = params.Headers['x-cos-storage-class'] || SourceHeaders['x-cos-storage-class'];
+    TargetHeader = util.clearKey(TargetHeader);
+    /**
+     * 对于归档存储的对象，如果未恢复副本，则不允许 Copy
+     */
+
+    if (SourceHeaders['x-cos-storage-class'] === 'ARCHIVE' || SourceHeaders['x-cos-storage-class'] === 'DEEP_ARCHIVE') {
+      var restoreHeader = SourceHeaders['x-cos-restore'];
+
+      if (!restoreHeader || restoreHeader === 'ongoing-request="true"') {
+        callback(util.error(new Error('Unrestored archive object is not allowed to be copied')));
+        return;
+      }
+    }
+    /**
+     * 去除一些无用的头部，规避 multipartInit 出错
+     * 这些头部通常是在 putObjectCopy 时才使用
+     */
+
+
+    delete TargetHeader['x-cos-copy-source'];
+    delete TargetHeader['x-cos-metadata-directive'];
+    delete TargetHeader['x-cos-copy-source-If-Modified-Since'];
+    delete TargetHeader['x-cos-copy-source-If-Unmodified-Since'];
+    delete TargetHeader['x-cos-copy-source-If-Match'];
+    delete TargetHeader['x-cos-copy-source-If-None-Match'];
+    self.multipartInit({
+      Bucket: Bucket,
+      Region: Region,
+      Key: Key,
+      Headers: TargetHeader,
+      calledBySdk: 'sliceCopyFile'
+    }, function (err, data) {
+      if (err) return callback(err);
+      params.UploadId = data.UploadId;
+      ep.emit('get_copy_data_finish', params);
+    });
+  }); // 获取远端复制源文件的大小
+
+  self.headObject({
+    Bucket: SourceBucket,
+    Region: SourceRegion,
+    Key: SourceKey
+  }, function (err, data) {
+    if (err) {
+      if (err.statusCode && err.statusCode === 404) {
+        callback(util.error(err, {
+          ErrorStatus: SourceKey + ' Not Exist'
+        }));
+      } else {
+        callback(err);
+      }
+
+      return;
+    }
+
+    FileSize = params.FileSize = data.headers['content-length'];
+
+    if (FileSize === undefined || !FileSize) {
+      callback(util.error(new Error('get Content-Length error, please add "Content-Length" to CORS ExposeHeader setting.（ 获取Content-Length失败，请在CORS ExposeHeader设置中添加Content-Length，请参考文档：https://cloud.tencent.com/document/product/436/13318 ）')));
+      return;
+    }
+
+    onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress); // 开始上传
+
+    if (FileSize <= CopySliceSize) {
+      if (!params.Headers['x-cos-metadata-directive']) {
+        params.Headers['x-cos-metadata-directive'] = 'Copy';
+      }
+
+      self.putObjectCopy(params, function (err, data) {
+        if (err) {
+          onProgress(null, true);
+          return callback(err);
+        }
+
+        onProgress({
+          loaded: FileSize,
+          total: FileSize
+        }, true);
+        callback(err, data);
+      });
+    } else {
+      var resHeaders = data.headers;
+      var SourceHeaders = {
+        'Cache-Control': resHeaders['cache-control'],
+        'Content-Disposition': resHeaders['content-disposition'],
+        'Content-Encoding': resHeaders['content-encoding'],
+        'Content-Type': resHeaders['content-type'],
+        'Expires': resHeaders['expires'],
+        'x-cos-storage-class': resHeaders['x-cos-storage-class']
+      };
+      util.each(resHeaders, function (v, k) {
+        var metaPrefix = 'x-cos-meta-';
+
+        if (k.indexOf(metaPrefix) === 0 && k.length > metaPrefix.length) {
+          SourceHeaders[k] = v;
+        }
+      });
+      ep.emit('get_file_size_finish', SourceHeaders);
+    }
+  });
+} // 复制指定分片
+
+
+function copySliceItem(params, callback) {
+  var TaskId = params.TaskId;
+  var Bucket = params.Bucket;
+  var Region = params.Region;
+  var Key = params.Key;
+  var CopySource = params.CopySource;
+  var UploadId = params.UploadId;
+  var PartNumber = params.PartNumber * 1;
+  var CopySourceRange = params.CopySourceRange;
+  var ChunkRetryTimes = this.options.ChunkRetryTimes + 1;
+  var self = this;
+  Async.retry(ChunkRetryTimes, function (tryCallback) {
+    self.uploadPartCopy({
+      TaskId: TaskId,
+      Bucket: Bucket,
+      Region: Region,
+      Key: Key,
+      CopySource: CopySource,
+      UploadId: UploadId,
+      PartNumber: PartNumber,
+      CopySourceRange: CopySourceRange
+    }, function (err, data) {
+      tryCallback(err || null, data);
+    });
+  }, function (err, data) {
+    return callback(err, data);
+  });
+}
+
+var API_MAP = {
+  sliceUploadFile: sliceUploadFile,
+  abortUploadTask: abortUploadTask,
+  uploadFile: uploadFile,
+  uploadFiles: uploadFiles,
+  sliceCopyFile: sliceCopyFile
+};
+
+module.exports.init = function (COS, task) {
+  task.transferToTaskMethod(API_MAP, 'sliceUploadFile');
+  util.each(API_MAP, function (fn, apiName) {
+    COS.prototype[apiName] = util.apiWrapper(apiName, fn);
+  });
 };
 
 /***/ }),
-/* 18 */
-/***/ (function(module, exports, __webpack_require__) {
 
-var session = __webpack_require__(5);
-var util = __webpack_require__(0);
+/***/ "./src/async.js":
+/*!**********************!*\
+  !*** ./src/async.js ***!
+  \**********************/
+/*! no static exports found */
+/***/ (function(module, exports) {
 
-var originApiMap = {};
-var transferToTaskMethod = function (apiMap, apiName) {
-    originApiMap[apiName] = apiMap[apiName];
-    apiMap[apiName] = function (params, callback) {
-        if (params.SkipTask) {
-            originApiMap[apiName].call(this, params, callback);
+var eachLimit = function eachLimit(arr, limit, iterator, callback) {
+  callback = callback || function () {};
+
+  if (!arr.length || limit <= 0) {
+    return callback();
+  }
+
+  var completed = 0;
+  var started = 0;
+  var running = 0;
+
+  (function replenish() {
+    if (completed >= arr.length) {
+      return callback();
+    }
+
+    while (running < limit && started < arr.length) {
+      started += 1;
+      running += 1;
+      iterator(arr[started - 1], function (err) {
+        if (err) {
+          callback(err);
+
+          callback = function callback() {};
         } else {
-            this._addTask(apiName, params, callback);
+          completed += 1;
+          running -= 1;
+
+          if (completed >= arr.length) {
+            callback();
+          } else {
+            replenish();
+          }
         }
-    };
+      });
+    }
+  })();
 };
 
-var initTask = function (cos) {
+var retry = function retry(times, iterator, callback) {
+  var next = function next(index) {
+    iterator(function (err, data) {
+      if (err && index < times) {
+        next(index + 1);
+      } else {
+        callback(err, data);
+      }
+    });
+  };
 
-    var queue = [];
-    var tasks = {};
-    var uploadingFileCount = 0;
-    var nextUploadIndex = 0;
-
-    // 接口返回简略的任务信息
-    var formatTask = function (task) {
-        var t = {
-            id: task.id,
-            Bucket: task.Bucket,
-            Region: task.Region,
-            Key: task.Key,
-            FilePath: task.FilePath,
-            state: task.state,
-            loaded: task.loaded,
-            size: task.size,
-            speed: task.speed,
-            percent: task.percent,
-            hashPercent: task.hashPercent,
-            error: task.error
-        };
-        if (task.FilePath) t.FilePath = task.FilePath;
-        if (task._custom) t._custom = task._custom; // 控制台使用
-        return t;
-    };
-
-    var emitListUpdate = function () {
-        var timer;
-        var emit = function () {
-            timer = 0;
-            cos.emit('task-list-update', { list: util.map(queue, formatTask) });
-            cos.emit('list-update', { list: util.map(queue, formatTask) });
-        };
-        return function () {
-            if (!timer) timer = setTimeout(emit);
-        };
-    }();
-
-    var clearQueue = function () {
-        if (queue.length <= cos.options.UploadQueueSize) return;
-        for (var i = 0; i < nextUploadIndex && // 小于当前操作的 index 才清理
-        i < queue.length && // 大于队列才清理
-        queue.length > cos.options.UploadQueueSize // 如果还太多，才继续清理
-        ;) {
-            var isActive = queue[i].state === 'waiting' || queue[i].state === 'checking' || queue[i].state === 'uploading';
-            if (!queue[i] || !isActive) {
-                tasks[queue[i].id] && delete tasks[queue[i].id];
-                queue.splice(i, 1);
-                nextUploadIndex--;
-            } else {
-                i++;
-            }
-        }
-        emitListUpdate();
-    };
-
-    var startNextTask = function () {
-        // 检查是否允许增加执行进程
-        if (uploadingFileCount >= cos.options.FileParallelLimit) return;
-        // 跳过不可执行的任务
-        while (queue[nextUploadIndex] && queue[nextUploadIndex].state !== 'waiting') nextUploadIndex++;
-        // 检查是否已遍历结束
-        if (nextUploadIndex >= queue.length) return;
-        // 上传该遍历到的任务
-        var task = queue[nextUploadIndex];
-        nextUploadIndex++;
-        uploadingFileCount++;
-        task.state = 'checking';
-        task.params.onTaskStart && task.params.onTaskStart(formatTask(task));
-        !task.params.UploadData && (task.params.UploadData = {});
-        var apiParams = util.formatParams(task.api, task.params);
-        originApiMap[task.api].call(cos, apiParams, function (err, data) {
-            if (!cos._isRunningTask(task.id)) return;
-            if (task.state === 'checking' || task.state === 'uploading') {
-                task.state = err ? 'error' : 'success';
-                err && (task.error = err);
-                uploadingFileCount--;
-                emitListUpdate();
-                startNextTask();
-                task.callback && task.callback(err, data);
-                if (task.state === 'success') {
-                    if (task.params) {
-                        delete task.params.UploadData;
-                        delete task.params.Body;
-                        delete task.params;
-                    }
-                    delete task.callback;
-                }
-            }
-            clearQueue();
-        });
-        emitListUpdate();
-        // 异步执行下一个任务
-        setTimeout(startNextTask);
-    };
-
-    var killTask = function (id, switchToState) {
-        var task = tasks[id];
-        if (!task) return;
-        var waiting = task && task.state === 'waiting';
-        var running = task && (task.state === 'checking' || task.state === 'uploading');
-        if (switchToState === 'canceled' && task.state !== 'canceled' || switchToState === 'paused' && waiting || switchToState === 'paused' && running) {
-            if (switchToState === 'paused' && task.params.Body && typeof task.params.Body.pipe === 'function') {
-                console.error('stream not support pause');
-                return;
-            }
-            task.state = switchToState;
-            cos.emit('inner-kill-task', { TaskId: id, toState: switchToState });
-            try {
-                var UploadId = task && task.params && task.params.UploadData.UploadId;
-            } catch (e) {}
-            if (switchToState === 'canceled' && UploadId) session.removeUsing(UploadId);
-            emitListUpdate();
-            if (running) {
-                uploadingFileCount--;
-                startNextTask();
-            }
-            if (switchToState === 'canceled') {
-                if (task.params) {
-                    delete task.params.UploadData;
-                    delete task.params.Body;
-                    delete task.params;
-                }
-                delete task.callback;
-            }
-        }
-        clearQueue();
-    };
-
-    cos._addTasks = function (taskList) {
-        util.each(taskList, function (task) {
-            cos._addTask(task.api, task.params, task.callback, true);
-        });
-        emitListUpdate();
-    };
-
-    var isTaskReadyWarning = true;
-    cos._addTask = function (api, params, callback, ignoreAddEvent) {
-
-        // 复制参数对象
-        params = util.formatParams(api, params);
-
-        // 生成 id
-        var id = util.uuid();
-        params.TaskId = id;
-        params.onTaskReady && params.onTaskReady(id);
-        if (params.TaskReady) {
-            params.TaskReady(id);
-            isTaskReadyWarning && console.warn('warning: Param "TaskReady" has been deprecated. Please use "onTaskReady" instead.');
-            isTaskReadyWarning = false;
-        }
-
-        var task = {
-            // env
-            params: params,
-            callback: callback,
-            api: api,
-            index: queue.length,
-            // task
-            id: id,
-            Bucket: params.Bucket,
-            Region: params.Region,
-            Key: params.Key,
-            FilePath: params.FilePath || '',
-            state: 'waiting',
-            loaded: 0,
-            size: 0,
-            speed: 0,
-            percent: 0,
-            hashPercent: 0,
-            error: null,
-            _custom: params._custom
-        };
-        var onHashProgress = params.onHashProgress;
-        params.onHashProgress = function (info) {
-            if (!cos._isRunningTask(task.id)) return;
-            task.hashPercent = info.percent;
-            onHashProgress && onHashProgress(info);
-            emitListUpdate();
-        };
-        var onProgress = params.onProgress;
-        params.onProgress = function (info) {
-            if (!cos._isRunningTask(task.id)) return;
-            task.state === 'checking' && (task.state = 'uploading');
-            task.loaded = info.loaded;
-            task.speed = info.speed;
-            task.percent = info.percent;
-            onProgress && onProgress(info);
-            emitListUpdate();
-        };
-
-        // 异步获取 filesize
-        util.getFileSize(api, params, function (err, size) {
-            // 开始处理上传
-            if (err) return callback(util.error(err)); // 如果获取大小出错，不加入队列
-            // 获取完文件大小再把任务加入队列
-            tasks[id] = task;
-            queue.push(task);
-            task.size = size;
-            !ignoreAddEvent && emitListUpdate();
-            startNextTask();
-            clearQueue();
-        });
-        return id;
-    };
-    cos._isRunningTask = function (id) {
-        var task = tasks[id];
-        return !!(task && (task.state === 'checking' || task.state === 'uploading'));
-    };
-    cos.getTaskList = function () {
-        return util.map(queue, formatTask);
-    };
-    cos.cancelTask = function (id) {
-        killTask(id, 'canceled');
-    };
-    cos.pauseTask = function (id) {
-        killTask(id, 'paused');
-    };
-    cos.restartTask = function (id) {
-        var task = tasks[id];
-        if (task && (task.state === 'paused' || task.state === 'error')) {
-            task.state = 'waiting';
-            emitListUpdate();
-            nextUploadIndex = Math.min(nextUploadIndex, task.index);
-            startNextTask();
-        }
-    };
-    cos.isUploadRunning = function () {
-        return uploadingFileCount || nextUploadIndex < queue.length;
-    };
+  if (times < 1) {
+    callback();
+  } else {
+    next(1);
+  }
 };
 
-module.exports.transferToTaskMethod = transferToTaskMethod;
-module.exports.init = initTask;
+var async = {
+  eachLimit: eachLimit,
+  retry: retry
+};
+module.exports = async;
 
 /***/ }),
-/* 19 */
+
+/***/ "./src/base.js":
+/*!*********************!*\
+  !*** ./src/base.js ***!
+  \*********************/
+/*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-var REQUEST = __webpack_require__(20);
-var util = __webpack_require__(0);
+var REQUEST = __webpack_require__(/*! ../lib/request */ "./lib/request.js");
 
-// Bucket 相关
+var util = __webpack_require__(/*! ./util */ "./src/util.js"); // Bucket 相关
 
 /**
  * 获取用户的 bucket 列表
@@ -5762,55 +8572,58 @@ var util = __webpack_require__(0);
  * 无特殊参数
  * @param  {Function}  callback     回调函数，必须
  */
+
+
 function getService(params, callback) {
+  if (typeof params === 'function') {
+    callback = params;
+    params = {};
+  }
 
-    if (typeof params === 'function') {
-        callback = params;
-        params = {};
-    }
-    var protocol = this.options.Protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
-    var domain = this.options.ServiceDomain;
-    var appId = params.AppId || this.options.appId;
-    var region = params.Region;
-    if (domain) {
-        domain = domain.replace(/\{\{AppId\}\}/ig, appId || '').replace(/\{\{Region\}\}/ig, region || '').replace(/\{\{.*?\}\}/ig, '');
-        if (!/^[a-zA-Z]+:\/\//.test(domain)) {
-            domain = protocol + '//' + domain;
-        }
-        if (domain.slice(-1) === '/') {
-            domain = domain.slice(0, -1);
-        }
-    } else if (region) {
-        domain = protocol + '//cos.' + region + '.myqcloud.com';
-    } else {
-        domain = protocol + '//service.cos.myqcloud.com';
+  var protocol = this.options.Protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
+  var domain = this.options.ServiceDomain;
+  var appId = params.AppId || this.options.appId;
+  var region = params.Region;
+
+  if (domain) {
+    domain = domain.replace(/\{\{AppId\}\}/ig, appId || '').replace(/\{\{Region\}\}/ig, region || '').replace(/\{\{.*?\}\}/ig, '');
+
+    if (!/^[a-zA-Z]+:\/\//.test(domain)) {
+      domain = protocol + '//' + domain;
     }
 
-    var SignHost = '';
-    var standardHost = region ? 'cos.' + region + '.myqcloud.com' : 'service.cos.myqcloud.com';
-    var urlHost = domain.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
-    if (standardHost === urlHost) SignHost = standardHost;
+    if (domain.slice(-1) === '/') {
+      domain = domain.slice(0, -1);
+    }
+  } else if (region) {
+    domain = protocol + '//cos.' + region + '.myqcloud.com';
+  } else {
+    domain = protocol + '//service.cos.myqcloud.com';
+  }
 
-    submitRequest.call(this, {
-        Action: 'name/cos:GetService',
-        url: domain,
-        method: 'GET',
-        headers: params.Headers,
-        SignHost: SignHost
-    }, function (err, data) {
-        if (err) return callback(err);
-        var buckets = data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Buckets && data.ListAllMyBucketsResult.Buckets.Bucket || [];
-        buckets = util.isArray(buckets) ? buckets : [buckets];
-        var owner = data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Owner || {};
-        callback(null, {
-            Buckets: buckets,
-            Owner: owner,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+  var SignHost = '';
+  var standardHost = region ? 'cos.' + region + '.myqcloud.com' : 'service.cos.myqcloud.com';
+  var urlHost = domain.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
+  if (standardHost === urlHost) SignHost = standardHost;
+  submitRequest.call(this, {
+    Action: 'name/cos:GetService',
+    url: domain,
+    method: 'GET',
+    headers: params.Headers,
+    SignHost: SignHost
+  }, function (err, data) {
+    if (err) return callback(err);
+    var buckets = data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Buckets && data.ListAllMyBucketsResult.Buckets.Bucket || [];
+    buckets = util.isArray(buckets) ? buckets : [buckets];
+    var owner = data && data.ListAllMyBucketsResult && data.ListAllMyBucketsResult.Owner || {};
+    callback(null, {
+      Buckets: buckets,
+      Owner: owner,
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 创建 Bucket，并初始化访问权限
  * @param  {Object}  params                         参数对象，必须
@@ -5825,42 +8638,44 @@ function getService(params, callback) {
  * @return  {Object}  data                          返回的数据
  *     @return  {String}  data.Location             操作地址
  */
+
+
 function putBucket(params, callback) {
+  var self = this;
+  var xml = '';
 
-    var self = this;
-
-    var xml = '';
-    if (params['BucketAZConfig']) {
-        var CreateBucketConfiguration = {
-            BucketAZConfig: params.BucketAZConfig
-        };
-        xml = util.json2xml({ CreateBucketConfiguration: CreateBucketConfiguration });
-    }
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutBucket',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        body: xml
-    }, function (err, data) {
-        if (err) return callback(err);
-        var url = getUrl({
-            protocol: self.options.Protocol,
-            domain: self.options.Domain,
-            bucket: params.Bucket,
-            region: params.Region,
-            isLocation: true
-        });
-        callback(null, {
-            Location: url,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+  if (params['BucketAZConfig']) {
+    var CreateBucketConfiguration = {
+      BucketAZConfig: params.BucketAZConfig
+    };
+    xml = util.json2xml({
+      CreateBucketConfiguration: CreateBucketConfiguration
     });
-}
+  }
 
+  submitRequest.call(this, {
+    Action: 'name/cos:PutBucket',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    body: xml
+  }, function (err, data) {
+    if (err) return callback(err);
+    var url = getUrl({
+      protocol: self.options.Protocol,
+      domain: self.options.Domain,
+      bucket: params.Bucket,
+      region: params.Region,
+      isLocation: true
+    });
+    callback(null, {
+      Location: url,
+      statusCode: data.statusCode,
+      headers: data.headers
+    });
+  });
+}
 /**
  * 查看是否存在该Bucket，是否有权限访问
  * @param  {Object}  params                     参数对象，必须
@@ -5872,16 +8687,17 @@ function putBucket(params, callback) {
  *     @return  {Boolean}  data.BucketExist     Bucket是否存在
  *     @return  {Boolean}  data.BucketAuth      是否有 Bucket 的访问权限
  */
-function headBucket(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:HeadBucket',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        method: 'HEAD'
-    }, callback);
-}
 
+
+function headBucket(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:HeadBucket',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    method: 'HEAD'
+  }, callback);
+}
 /**
  * 获取 Bucket 下的 object 列表
  * @param  {Object}  params                         参数对象，必须
@@ -5897,43 +8713,40 @@ function headBucket(params, callback) {
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.ListBucketResult     返回的 object 列表信息
  */
+
+
 function getBucket(params, callback) {
-    var reqParams = {};
-    reqParams['prefix'] = params['Prefix'] || '';
-    reqParams['delimiter'] = params['Delimiter'];
-    reqParams['marker'] = params['Marker'];
-    reqParams['max-keys'] = params['MaxKeys'];
-    reqParams['encoding-type'] = params['EncodingType'];
-
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucket',
-        ResourceKey: reqParams['prefix'],
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        qs: reqParams
-    }, function (err, data) {
-        if (err) return callback(err);
-        var ListBucketResult = data.ListBucketResult || {};
-        var Contents = ListBucketResult.Contents || [];
-        var CommonPrefixes = ListBucketResult.CommonPrefixes || [];
-
-        Contents = util.isArray(Contents) ? Contents : [Contents];
-        CommonPrefixes = util.isArray(CommonPrefixes) ? CommonPrefixes : [CommonPrefixes];
-
-        var result = util.clone(ListBucketResult);
-        util.extend(result, {
-            Contents: Contents,
-            CommonPrefixes: CommonPrefixes,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-
-        callback(null, result);
+  var reqParams = {};
+  reqParams['prefix'] = params['Prefix'] || '';
+  reqParams['delimiter'] = params['Delimiter'];
+  reqParams['marker'] = params['Marker'];
+  reqParams['max-keys'] = params['MaxKeys'];
+  reqParams['encoding-type'] = params['EncodingType'];
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucket',
+    ResourceKey: reqParams['prefix'],
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    qs: reqParams
+  }, function (err, data) {
+    if (err) return callback(err);
+    var ListBucketResult = data.ListBucketResult || {};
+    var Contents = ListBucketResult.Contents || [];
+    var CommonPrefixes = ListBucketResult.CommonPrefixes || [];
+    Contents = util.isArray(Contents) ? Contents : [Contents];
+    CommonPrefixes = util.isArray(CommonPrefixes) ? CommonPrefixes : [CommonPrefixes];
+    var result = util.clone(ListBucketResult);
+    util.extend(result, {
+      Contents: Contents,
+      CommonPrefixes: CommonPrefixes,
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+    callback(null, result);
+  });
 }
-
 /**
  * 删除 Bucket
  * @param  {Object}  params                 参数对象，必须
@@ -5944,26 +8757,30 @@ function getBucket(params, callback) {
  * @return  {Object}  data                  返回的数据
  *     @return  {String}  data.Location     操作地址
  */
-function deleteBucket(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:DeleteBucket',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        method: 'DELETE'
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-    });
-}
 
+
+function deleteBucket(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:DeleteBucket',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    method: 'DELETE'
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
+
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
+    });
+  });
+}
 /**
  * 设置 Bucket 的 权限列表
  * @param  {Object}  params                         参数对象，必须
@@ -5977,47 +8794,50 @@ function deleteBucket(params, callback) {
  * @return  {Object}  err                           请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                          返回的数据
  */
+
+
 function putBucketAcl(params, callback) {
-    var headers = params.Headers;
+  var headers = params.Headers;
+  var xml = '';
 
-    var xml = '';
-    if (params['AccessControlPolicy']) {
-        var AccessControlPolicy = util.clone(params['AccessControlPolicy'] || {});
-        var Grants = AccessControlPolicy.Grants || AccessControlPolicy.Grant;
-        Grants = util.isArray(Grants) ? Grants : [Grants];
-        delete AccessControlPolicy.Grant;
-        delete AccessControlPolicy.Grants;
-        AccessControlPolicy.AccessControlList = { Grant: Grants };
-        xml = util.json2xml({ AccessControlPolicy: AccessControlPolicy });
+  if (params['AccessControlPolicy']) {
+    var AccessControlPolicy = util.clone(params['AccessControlPolicy'] || {});
+    var Grants = AccessControlPolicy.Grants || AccessControlPolicy.Grant;
+    Grants = util.isArray(Grants) ? Grants : [Grants];
+    delete AccessControlPolicy.Grant;
+    delete AccessControlPolicy.Grants;
+    AccessControlPolicy.AccessControlList = {
+      Grant: Grants
+    };
+    xml = util.json2xml({
+      AccessControlPolicy: AccessControlPolicy
+    });
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  } // Grant Header 去重
 
-        headers['Content-Type'] = 'application/xml';
-        headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+  util.each(headers, function (val, key) {
+    if (key.indexOf('x-cos-grant-') === 0) {
+      headers[key] = uniqGrant(headers[key]);
     }
-
-    // Grant Header 去重
-    util.each(headers, function (val, key) {
-        if (key.indexOf('x-cos-grant-') === 0) {
-            headers[key] = uniqGrant(headers[key]);
-        }
+  });
+  submitRequest.call(this, {
+    Action: 'name/cos:PutBucketACL',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: headers,
+    action: 'acl',
+    body: xml
+  }, function (err, data) {
+    if (err) return callback(err);
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutBucketACL',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: headers,
-        action: 'acl',
-        body: xml
-    }, function (err, data) {
-        if (err) return callback(err);
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-    });
+  });
 }
-
 /**
  * 获取 Bucket 的 权限列表
  * @param  {Object}  params                         参数对象，必须
@@ -6028,35 +8848,37 @@ function putBucketAcl(params, callback) {
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.AccessControlPolicy  访问权限信息
  */
+
+
 function getBucketAcl(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketACL',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'acl'
+  }, function (err, data) {
+    if (err) return callback(err);
+    var AccessControlPolicy = data.AccessControlPolicy || {};
+    var Owner = AccessControlPolicy.Owner || {};
+    var Grant = AccessControlPolicy.AccessControlList.Grant || [];
+    Grant = util.isArray(Grant) ? Grant : [Grant];
+    var result = decodeAcl(AccessControlPolicy);
 
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketACL',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'acl'
-    }, function (err, data) {
-        if (err) return callback(err);
-        var AccessControlPolicy = data.AccessControlPolicy || {};
-        var Owner = AccessControlPolicy.Owner || {};
-        var Grant = AccessControlPolicy.AccessControlList.Grant || [];
-        Grant = util.isArray(Grant) ? Grant : [Grant];
-        var result = decodeAcl(AccessControlPolicy);
-        if (data.headers && data.headers['x-cos-acl']) {
-            result.ACL = data.headers['x-cos-acl'];
-        }
-        result = util.extend(result, {
-            Owner: Owner,
-            Grants: Grant,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-        callback(null, result);
+    if (data.headers && data.headers['x-cos-acl']) {
+      result.ACL = data.headers['x-cos-acl'];
+    }
+
+    result = util.extend(result, {
+      Owner: Owner,
+      Grants: Grant,
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+    callback(null, result);
+  });
 }
-
 /**
  * 设置 Bucket 的 跨域设置
  * @param  {Object}  params                             参数对象，必须
@@ -6068,46 +8890,46 @@ function getBucketAcl(params, callback) {
  * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                              返回的数据
  */
+
+
 function putBucketCors(params, callback) {
-
-    var CORSConfiguration = params['CORSConfiguration'] || {};
-    var CORSRules = CORSConfiguration['CORSRules'] || params['CORSRules'] || [];
-    CORSRules = util.clone(util.isArray(CORSRules) ? CORSRules : [CORSRules]);
-    util.each(CORSRules, function (rule) {
-        util.each(['AllowedOrigin', 'AllowedHeader', 'AllowedMethod', 'ExposeHeader'], function (key) {
-            var sKey = key + 's';
-            var val = rule[sKey] || rule[key] || [];
-            delete rule[sKey];
-            rule[key] = util.isArray(val) ? val : [val];
-        });
+  var CORSConfiguration = params['CORSConfiguration'] || {};
+  var CORSRules = CORSConfiguration['CORSRules'] || params['CORSRules'] || [];
+  CORSRules = util.clone(util.isArray(CORSRules) ? CORSRules : [CORSRules]);
+  util.each(CORSRules, function (rule) {
+    util.each(['AllowedOrigin', 'AllowedHeader', 'AllowedMethod', 'ExposeHeader'], function (key) {
+      var sKey = key + 's';
+      var val = rule[sKey] || rule[key] || [];
+      delete rule[sKey];
+      rule[key] = util.isArray(val) ? val : [val];
     });
-
-    var Conf = { CORSRule: CORSRules };
-    if (params.ResponseVary) Conf.ResponseVary = params.ResponseVary;
-
-    var xml = util.json2xml({ CORSConfiguration: Conf });
-
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutBucketCORS',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        body: xml,
-        action: 'cors',
-        headers: headers
-    }, function (err, data) {
-        if (err) return callback(err);
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+  });
+  var Conf = {
+    CORSRule: CORSRules
+  };
+  if (params.ResponseVary) Conf.ResponseVary = params.ResponseVary;
+  var xml = util.json2xml({
+    CORSConfiguration: Conf
+  });
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:PutBucketCORS',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    body: xml,
+    action: 'cors',
+    headers: headers
+  }, function (err, data) {
+    if (err) return callback(err);
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 获取 Bucket 的 跨域设置
  * @param  {Object}  params                         参数对象，必须
@@ -6118,51 +8940,52 @@ function putBucketCors(params, callback) {
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.CORSRules            Bucket的跨域设置
  */
+
+
 function getBucketCors(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketCORS',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'cors'
-    }, function (err, data) {
-        if (err) {
-            if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchCORSConfiguration') {
-                var result = {
-                    CORSRules: [],
-                    statusCode: err.statusCode
-                };
-                err.headers && (result.headers = err.headers);
-                callback(null, result);
-            } else {
-                callback(err);
-            }
-            return;
-        }
-        var CORSConfiguration = data.CORSConfiguration || {};
-        var CORSRules = CORSConfiguration.CORSRules || CORSConfiguration.CORSRule || [];
-        CORSRules = util.clone(util.isArray(CORSRules) ? CORSRules : [CORSRules]);
-        var ResponseVary = CORSConfiguration.ResponseVary;
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketCORS',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'cors'
+  }, function (err, data) {
+    if (err) {
+      if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchCORSConfiguration') {
+        var result = {
+          CORSRules: [],
+          statusCode: err.statusCode
+        };
+        err.headers && (result.headers = err.headers);
+        callback(null, result);
+      } else {
+        callback(err);
+      }
 
-        util.each(CORSRules, function (rule) {
-            util.each(['AllowedOrigin', 'AllowedHeader', 'AllowedMethod', 'ExposeHeader'], function (key) {
-                var sKey = key + 's';
-                var val = rule[sKey] || rule[key] || [];
-                delete rule[key];
-                rule[sKey] = util.isArray(val) ? val : [val];
-            });
-        });
+      return;
+    }
 
-        callback(null, {
-            CORSRules: CORSRules,
-            ResponseVary: ResponseVary,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    var CORSConfiguration = data.CORSConfiguration || {};
+    var CORSRules = CORSConfiguration.CORSRules || CORSConfiguration.CORSRule || [];
+    CORSRules = util.clone(util.isArray(CORSRules) ? CORSRules : [CORSRules]);
+    var ResponseVary = CORSConfiguration.ResponseVary;
+    util.each(CORSRules, function (rule) {
+      util.each(['AllowedOrigin', 'AllowedHeader', 'AllowedMethod', 'ExposeHeader'], function (key) {
+        var sKey = key + 's';
+        var val = rule[sKey] || rule[key] || [];
+        delete rule[key];
+        rule[sKey] = util.isArray(val) ? val : [val];
+      });
     });
+    callback(null, {
+      CORSRules: CORSRules,
+      ResponseVary: ResponseVary,
+      statusCode: data.statusCode,
+      headers: data.headers
+    });
+  });
 }
-
 /**
  * 删除 Bucket 的 跨域设置
  * @param  {Object}  params                 参数对象，必须
@@ -6172,27 +8995,31 @@ function getBucketCors(params, callback) {
  * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                  返回的数据
  */
-function deleteBucketCors(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:DeleteBucketCORS',
-        method: 'DELETE',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'cors'
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode || err.statusCode,
-            headers: data.headers
-        });
-    });
-}
 
+
+function deleteBucketCors(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:DeleteBucketCORS',
+    method: 'DELETE',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'cors'
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
+
+    callback(null, {
+      statusCode: data.statusCode || err.statusCode,
+      headers: data.headers
+    });
+  });
+}
 /**
  * 获取 Bucket 的 地域信息
  * @param  {Object}  params             参数对象，必须
@@ -6202,51 +9029,55 @@ function deleteBucketCors(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据，包含地域信息 LocationConstraint
  */
+
+
 function getBucketLocation(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketLocation',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'location'
-    }, callback);
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketLocation',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'location'
+  }, callback);
 }
 
 function putBucketPolicy(params, callback) {
-    var Policy = params['Policy'];
-    try {
-        if (typeof Policy === 'string') Policy = JSON.parse(Policy);
-    } catch (e) {}
-    if (!Policy || typeof Policy === 'string') return callback(util.error(new Error('Policy format error')));
-    var PolicyStr = JSON.stringify(Policy);
-    if (!Policy.version) Policy.version = '2.0';
+  var Policy = params['Policy'];
 
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/json';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(PolicyStr));
+  try {
+    if (typeof Policy === 'string') Policy = JSON.parse(Policy);
+  } catch (e) {}
 
-    submitRequest.call(this, {
-        Action: 'name/cos:PutBucketPolicy',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        action: 'policy',
-        body: PolicyStr,
-        headers: headers
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+  if (!Policy || typeof Policy === 'string') return callback(util.error(new Error('Policy format error')));
+  var PolicyStr = JSON.stringify(Policy);
+  if (!Policy.version) Policy.version = '2.0';
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/json';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(PolicyStr));
+  submitRequest.call(this, {
+    Action: 'name/cos:PutBucketPolicy',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    action: 'policy',
+    body: PolicyStr,
+    headers: headers
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
+
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 获取 Bucket 的读取权限策略
  * @param  {Object}  params             参数对象，必须
@@ -6256,40 +9087,53 @@ function putBucketPolicy(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
-function getBucketPolicy(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketPolicy',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'policy',
-        rawBody: true
-    }, function (err, data) {
-        if (err) {
-            if (err.statusCode && err.statusCode === 403) {
-                return callback(util.error(err, { ErrorStatus: 'Access Denied' }));
-            }
-            if (err.statusCode && err.statusCode === 405) {
-                return callback(util.error(err, { ErrorStatus: 'Method Not Allowed' }));
-            }
-            if (err.statusCode && err.statusCode === 404) {
-                return callback(util.error(err, { ErrorStatus: 'Policy Not Found' }));
-            }
-            return callback(err);
-        }
-        var Policy = {};
-        try {
-            Policy = JSON.parse(data.body);
-        } catch (e) {}
-        callback(null, {
-            Policy: Policy,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-    });
-}
 
+
+function getBucketPolicy(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketPolicy',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'policy',
+    rawBody: true
+  }, function (err, data) {
+    if (err) {
+      if (err.statusCode && err.statusCode === 403) {
+        return callback(util.error(err, {
+          ErrorStatus: 'Access Denied'
+        }));
+      }
+
+      if (err.statusCode && err.statusCode === 405) {
+        return callback(util.error(err, {
+          ErrorStatus: 'Method Not Allowed'
+        }));
+      }
+
+      if (err.statusCode && err.statusCode === 404) {
+        return callback(util.error(err, {
+          ErrorStatus: 'Policy Not Found'
+        }));
+      }
+
+      return callback(err);
+    }
+
+    var Policy = {};
+
+    try {
+      Policy = JSON.parse(data.body);
+    } catch (e) {}
+
+    callback(null, {
+      Policy: Policy,
+      statusCode: data.statusCode,
+      headers: data.headers
+    });
+  });
+}
 /**
  * 删除 Bucket 的 跨域设置
  * @param  {Object}  params                 参数对象，必须
@@ -6299,27 +9143,31 @@ function getBucketPolicy(params, callback) {
  * @return  {Object}  err                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                  返回的数据
  */
-function deleteBucketPolicy(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:DeleteBucketPolicy',
-        method: 'DELETE',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'policy'
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode || err.statusCode,
-            headers: data.headers
-        });
-    });
-}
 
+
+function deleteBucketPolicy(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:DeleteBucketPolicy',
+    method: 'DELETE',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'policy'
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
+
+    callback(null, {
+      statusCode: data.statusCode || err.statusCode,
+      headers: data.headers
+    });
+  });
+}
 /**
  * 设置 Bucket 的标签
  * @param  {Object}  params             参数对象，必须
@@ -6330,38 +9178,45 @@ function deleteBucketPolicy(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
+
+
 function putBucketTagging(params, callback) {
+  var Tagging = params['Tagging'] || {};
+  var Tags = Tagging.TagSet || Tagging.Tags || params['Tags'] || [];
+  Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
+  var xml = util.json2xml({
+    Tagging: {
+      TagSet: {
+        Tag: Tags
+      }
+    }
+  });
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:PutBucketTagging',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    body: xml,
+    action: 'tagging',
+    headers: headers
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
 
-    var Tagging = params['Tagging'] || {};
-    var Tags = Tagging.TagSet || Tagging.Tags || params['Tags'] || [];
-    Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
-    var xml = util.json2xml({ Tagging: { TagSet: { Tag: Tags } } });
-
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutBucketTagging',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        body: xml,
-        action: 'tagging',
-        headers: headers
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 获取 Bucket 的标签设置
  * @param  {Object}  params             参数对象，必须
@@ -6371,42 +9226,46 @@ function putBucketTagging(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
+
+
 function getBucketTagging(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketTagging',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'tagging'
+  }, function (err, data) {
+    if (err) {
+      if (err.statusCode === 404 && err.error && (err.error === "Not Found" || err.error.Code === 'NoSuchTagSet')) {
+        var result = {
+          Tags: [],
+          statusCode: err.statusCode
+        };
+        err.headers && (result.headers = err.headers);
+        callback(null, result);
+      } else {
+        callback(err);
+      }
 
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketTagging',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'tagging'
-    }, function (err, data) {
-        if (err) {
-            if (err.statusCode === 404 && err.error && (err.error === "Not Found" || err.error.Code === 'NoSuchTagSet')) {
-                var result = {
-                    Tags: [],
-                    statusCode: err.statusCode
-                };
-                err.headers && (result.headers = err.headers);
-                callback(null, result);
-            } else {
-                callback(err);
-            }
-            return;
-        }
-        var Tags = [];
-        try {
-            Tags = data.Tagging.TagSet.Tag || [];
-        } catch (e) {}
-        Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
-        callback(null, {
-            Tags: Tags,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+      return;
+    }
+
+    var Tags = [];
+
+    try {
+      Tags = data.Tagging.TagSet.Tag || [];
+    } catch (e) {}
+
+    Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
+    callback(null, {
+      Tags: Tags,
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 删除 Bucket 的 标签设置
  * @param  {Object}  params             参数对象，必须
@@ -6416,248 +9275,279 @@ function getBucketTagging(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回的数据
  */
+
+
 function deleteBucketTagging(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:DeleteBucketTagging',
-        method: 'DELETE',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'tagging'
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+  submitRequest.call(this, {
+    Action: 'name/cos:DeleteBucketTagging',
+    method: 'DELETE',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'tagging'
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
+
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
 
 function putBucketLifecycle(params, callback) {
+  var LifecycleConfiguration = params['LifecycleConfiguration'] || {};
+  var Rules = LifecycleConfiguration.Rules || params.Rules || [];
+  Rules = util.clone(Rules);
+  var xml = util.json2xml({
+    LifecycleConfiguration: {
+      Rule: Rules
+    }
+  });
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:PutBucketLifecycle',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    body: xml,
+    action: 'lifecycle',
+    headers: headers
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
 
-    var LifecycleConfiguration = params['LifecycleConfiguration'] || {};
-    var Rules = LifecycleConfiguration.Rules || params.Rules || [];
-    Rules = util.clone(Rules);
-    var xml = util.json2xml({ LifecycleConfiguration: { Rule: Rules } });
-
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutBucketLifecycle',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        body: xml,
-        action: 'lifecycle',
-        headers: headers
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
 
 function getBucketLifecycle(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketLifecycle',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'lifecycle'
-    }, function (err, data) {
-        if (err) {
-            if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchLifecycleConfiguration') {
-                var result = {
-                    Rules: [],
-                    statusCode: err.statusCode
-                };
-                err.headers && (result.headers = err.headers);
-                callback(null, result);
-            } else {
-                callback(err);
-            }
-            return;
-        }
-        var Rules = [];
-        try {
-            Rules = data.LifecycleConfiguration.Rule || [];
-        } catch (e) {}
-        Rules = util.clone(util.isArray(Rules) ? Rules : [Rules]);
-        callback(null, {
-            Rules: Rules,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketLifecycle',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'lifecycle'
+  }, function (err, data) {
+    if (err) {
+      if (err.statusCode === 404 && err.error && err.error.Code === 'NoSuchLifecycleConfiguration') {
+        var result = {
+          Rules: [],
+          statusCode: err.statusCode
+        };
+        err.headers && (result.headers = err.headers);
+        callback(null, result);
+      } else {
+        callback(err);
+      }
+
+      return;
+    }
+
+    var Rules = [];
+
+    try {
+      Rules = data.LifecycleConfiguration.Rule || [];
+    } catch (e) {}
+
+    Rules = util.clone(util.isArray(Rules) ? Rules : [Rules]);
+    callback(null, {
+      Rules: Rules,
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
 
 function deleteBucketLifecycle(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:DeleteBucketLifecycle',
-        method: 'DELETE',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'lifecycle'
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+  submitRequest.call(this, {
+    Action: 'name/cos:DeleteBucketLifecycle',
+    method: 'DELETE',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'lifecycle'
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
+
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
 
 function putBucketVersioning(params, callback) {
+  if (!params['VersioningConfiguration']) {
+    callback(util.error(new Error('missing param VersioningConfiguration')));
+    return;
+  }
 
-    if (!params['VersioningConfiguration']) {
-        callback(util.error(new Error('missing param VersioningConfiguration')));
-        return;
+  var VersioningConfiguration = params['VersioningConfiguration'] || {};
+  var xml = util.json2xml({
+    VersioningConfiguration: VersioningConfiguration
+  });
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:PutBucketVersioning',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    body: xml,
+    action: 'versioning',
+    headers: headers
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
     }
-    var VersioningConfiguration = params['VersioningConfiguration'] || {};
-    var xml = util.json2xml({ VersioningConfiguration: VersioningConfiguration });
 
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutBucketVersioning',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        body: xml,
-        action: 'versioning',
-        headers: headers
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
 
 function getBucketVersioning(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketVersioning',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'versioning'
-    }, function (err, data) {
-        if (!err) {
-            !data.VersioningConfiguration && (data.VersioningConfiguration = {});
-        }
-        callback(err, data);
-    });
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketVersioning',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'versioning'
+  }, function (err, data) {
+    if (!err) {
+      !data.VersioningConfiguration && (data.VersioningConfiguration = {});
+    }
+
+    callback(err, data);
+  });
 }
 
 function putBucketReplication(params, callback) {
-    var ReplicationConfiguration = util.clone(params.ReplicationConfiguration);
-    var xml = util.json2xml({ ReplicationConfiguration: ReplicationConfiguration });
-    xml = xml.replace(/<(\/?)Rules>/ig, '<$1Rule>');
-    xml = xml.replace(/<(\/?)Tags>/ig, '<$1Tag>');
+  var ReplicationConfiguration = util.clone(params.ReplicationConfiguration);
+  var xml = util.json2xml({
+    ReplicationConfiguration: ReplicationConfiguration
+  });
+  xml = xml.replace(/<(\/?)Rules>/ig, '<$1Rule>');
+  xml = xml.replace(/<(\/?)Tags>/ig, '<$1Tag>');
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:PutBucketReplication',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    body: xml,
+    action: 'replication',
+    headers: headers
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
 
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutBucketReplication',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        body: xml,
-        action: 'replication',
-        headers: headers
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
 
 function getBucketReplication(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketReplication',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'replication'
-    }, function (err, data) {
-        if (err) {
-            if (err.statusCode === 404 && err.error && (err.error === 'Not Found' || err.error.Code === 'ReplicationConfigurationnotFoundError')) {
-                var result = {
-                    ReplicationConfiguration: { Rules: [] },
-                    statusCode: err.statusCode
-                };
-                err.headers && (result.headers = err.headers);
-                callback(null, result);
-            } else {
-                callback(err);
-            }
-            return;
-        }
-        !data.ReplicationConfiguration && (data.ReplicationConfiguration = {});
-        if (data.ReplicationConfiguration.Rule) {
-            data.ReplicationConfiguration.Rules = util.makeArray(data.ReplicationConfiguration.Rule);
-            delete data.ReplicationConfiguration.Rule;
-        }
-        callback(err, data);
-    });
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketReplication',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'replication'
+  }, function (err, data) {
+    if (err) {
+      if (err.statusCode === 404 && err.error && (err.error === 'Not Found' || err.error.Code === 'ReplicationConfigurationnotFoundError')) {
+        var result = {
+          ReplicationConfiguration: {
+            Rules: []
+          },
+          statusCode: err.statusCode
+        };
+        err.headers && (result.headers = err.headers);
+        callback(null, result);
+      } else {
+        callback(err);
+      }
+
+      return;
+    }
+
+    !data.ReplicationConfiguration && (data.ReplicationConfiguration = {});
+
+    if (data.ReplicationConfiguration.Rule) {
+      data.ReplicationConfiguration.Rules = util.makeArray(data.ReplicationConfiguration.Rule);
+      delete data.ReplicationConfiguration.Rule;
+    }
+
+    callback(err, data);
+  });
 }
 
 function deleteBucketReplication(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:DeleteBucketReplication',
-        method: 'DELETE',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'replication'
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-    });
-}
+  submitRequest.call(this, {
+    Action: 'name/cos:DeleteBucketReplication',
+    method: 'DELETE',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'replication'
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
 
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
+    });
+  });
+}
 /**
  * 设置 Bucket 静态网站配置信息
  * @param  {Object}  params                                                 参数对象，必须
@@ -6672,46 +9562,51 @@ function deleteBucketReplication(params, callback) {
  * @return  {Object}  err                                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                                  返回数据
  */
-function putBucketWebsite(params, callback) {
 
-    if (!params['WebsiteConfiguration']) {
-        callback(util.error(new Error('missing param WebsiteConfiguration')));
-        return;
+
+function putBucketWebsite(params, callback) {
+  if (!params['WebsiteConfiguration']) {
+    callback(util.error(new Error('missing param WebsiteConfiguration')));
+    return;
+  }
+
+  var WebsiteConfiguration = util.clone(params['WebsiteConfiguration'] || {});
+  var RoutingRules = WebsiteConfiguration['RoutingRules'] || WebsiteConfiguration['RoutingRule'] || [];
+  RoutingRules = util.isArray(RoutingRules) ? RoutingRules : [RoutingRules];
+  delete WebsiteConfiguration.RoutingRule;
+  delete WebsiteConfiguration.RoutingRules;
+  if (RoutingRules.length) WebsiteConfiguration.RoutingRules = {
+    RoutingRule: RoutingRules
+  };
+  var xml = util.json2xml({
+    WebsiteConfiguration: WebsiteConfiguration
+  });
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:PutBucketWebsite',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    body: xml,
+    action: 'website',
+    headers: headers
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
     }
 
-    var WebsiteConfiguration = util.clone(params['WebsiteConfiguration'] || {});
-    var RoutingRules = WebsiteConfiguration['RoutingRules'] || WebsiteConfiguration['RoutingRule'] || [];
-    RoutingRules = util.isArray(RoutingRules) ? RoutingRules : [RoutingRules];
-    delete WebsiteConfiguration.RoutingRule;
-    delete WebsiteConfiguration.RoutingRules;
-    if (RoutingRules.length) WebsiteConfiguration.RoutingRules = { RoutingRule: RoutingRules };
-    var xml = util.json2xml({ WebsiteConfiguration: WebsiteConfiguration });
-
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutBucketWebsite',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        body: xml,
-        action: 'website',
-        headers: headers
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 获取 Bucket 的静态网站配置信息
  * @param  {Object}  params             参数对象，必须
@@ -6721,46 +9616,48 @@ function putBucketWebsite(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
+
+
 function getBucketWebsite(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketWebsite',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    headers: params.Headers,
+    action: 'website'
+  }, function (err, data) {
+    if (err) {
+      if (err.statusCode === 404 && err.error.Code === 'NoSuchWebsiteConfiguration') {
+        var result = {
+          WebsiteConfiguration: {},
+          statusCode: err.statusCode
+        };
+        err.headers && (result.headers = err.headers);
+        callback(null, result);
+      } else {
+        callback(err);
+      }
 
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketWebsite',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        headers: params.Headers,
-        action: 'website'
-    }, function (err, data) {
-        if (err) {
-            if (err.statusCode === 404 && err.error.Code === 'NoSuchWebsiteConfiguration') {
-                var result = {
-                    WebsiteConfiguration: {},
-                    statusCode: err.statusCode
-                };
-                err.headers && (result.headers = err.headers);
-                callback(null, result);
-            } else {
-                callback(err);
-            }
-            return;
-        }
+      return;
+    }
 
-        var WebsiteConfiguration = data.WebsiteConfiguration || {};
-        if (WebsiteConfiguration['RoutingRules']) {
-            var RoutingRules = util.clone(WebsiteConfiguration['RoutingRules'].RoutingRule || []);
-            RoutingRules = util.makeArray(RoutingRules);
-            WebsiteConfiguration.RoutingRules = RoutingRules;
-        }
+    var WebsiteConfiguration = data.WebsiteConfiguration || {};
 
-        callback(null, {
-            WebsiteConfiguration: WebsiteConfiguration,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    if (WebsiteConfiguration['RoutingRules']) {
+      var RoutingRules = util.clone(WebsiteConfiguration['RoutingRules'].RoutingRule || []);
+      RoutingRules = util.makeArray(RoutingRules);
+      WebsiteConfiguration.RoutingRules = RoutingRules;
+    }
+
+    callback(null, {
+      WebsiteConfiguration: WebsiteConfiguration,
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 删除 Bucket 的静态网站配置
  * @param  {Object}  params             参数对象，必须
@@ -6770,28 +9667,31 @@ function getBucketWebsite(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
+
+
 function deleteBucketWebsite(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:DeleteBucketWebsite',
+    method: 'DELETE',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'website'
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
 
-    submitRequest.call(this, {
-        Action: 'name/cos:DeleteBucketWebsite',
-        method: 'DELETE',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'website'
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 设置 Bucket 的防盗链白名单或者黑名单
  * @param  {Object}  params                                                 参数对象，必须
@@ -6806,45 +9706,50 @@ function deleteBucketWebsite(params, callback) {
  * @return  {Object}  err                                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                                  返回数据
  */
-function putBucketReferer(params, callback) {
 
-    if (!params['RefererConfiguration']) {
-        callback(util.error(new Error('missing param RefererConfiguration')));
-        return;
+
+function putBucketReferer(params, callback) {
+  if (!params['RefererConfiguration']) {
+    callback(util.error(new Error('missing param RefererConfiguration')));
+    return;
+  }
+
+  var RefererConfiguration = util.clone(params['RefererConfiguration'] || {});
+  var DomainList = RefererConfiguration['DomainList'] || {};
+  var Domains = DomainList['Domains'] || DomainList['Domain'] || [];
+  Domains = util.isArray(Domains) ? Domains : [Domains];
+  if (Domains.length) RefererConfiguration.DomainList = {
+    Domain: Domains
+  };
+  var xml = util.json2xml({
+    RefererConfiguration: RefererConfiguration
+  });
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:PutBucketReferer',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    body: xml,
+    action: 'referer',
+    headers: headers
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
     }
 
-    var RefererConfiguration = util.clone(params['RefererConfiguration'] || {});
-    var DomainList = RefererConfiguration['DomainList'] || {};
-    var Domains = DomainList['Domains'] || DomainList['Domain'] || [];
-    Domains = util.isArray(Domains) ? Domains : [Domains];
-    if (Domains.length) RefererConfiguration.DomainList = { Domain: Domains };
-    var xml = util.json2xml({ RefererConfiguration: RefererConfiguration });
-
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutBucketReferer',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        body: xml,
-        action: 'referer',
-        headers: headers
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 获取 Bucket 的防盗链白名单或者黑名单
  * @param  {Object}  params             参数对象，必须
@@ -6854,45 +9759,49 @@ function putBucketReferer(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
+
+
 function getBucketReferer(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketReferer',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    headers: params.Headers,
+    action: 'referer'
+  }, function (err, data) {
+    if (err) {
+      if (err.statusCode === 404 && err.error.Code === 'NoSuchRefererConfiguration') {
+        var result = {
+          WebsiteConfiguration: {},
+          statusCode: err.statusCode
+        };
+        err.headers && (result.headers = err.headers);
+        callback(null, result);
+      } else {
+        callback(err);
+      }
 
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketReferer',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        headers: params.Headers,
-        action: 'referer'
-    }, function (err, data) {
-        if (err) {
-            if (err.statusCode === 404 && err.error.Code === 'NoSuchRefererConfiguration') {
-                var result = {
-                    WebsiteConfiguration: {},
-                    statusCode: err.statusCode
-                };
-                err.headers && (result.headers = err.headers);
-                callback(null, result);
-            } else {
-                callback(err);
-            }
-            return;
-        }
+      return;
+    }
 
-        var RefererConfiguration = data.RefererConfiguration || {};
-        if (RefererConfiguration['DomainList']) {
-            var Domains = util.makeArray(RefererConfiguration['DomainList'].Domain || []);
-            RefererConfiguration.DomainList = { Domains: Domains };
-        }
+    var RefererConfiguration = data.RefererConfiguration || {};
 
-        callback(null, {
-            RefererConfiguration: RefererConfiguration,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    if (RefererConfiguration['DomainList']) {
+      var Domains = util.makeArray(RefererConfiguration['DomainList'].Domain || []);
+      RefererConfiguration.DomainList = {
+        Domains: Domains
+      };
+    }
+
+    callback(null, {
+      RefererConfiguration: RefererConfiguration,
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 设置 Bucket 自定义域名
  * @param  {Object}  params                                                 参数对象，必须
@@ -6902,38 +9811,43 @@ function getBucketReferer(params, callback) {
  * @return  {Object}  err                                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                                  返回数据
  */
+
+
 function putBucketDomain(params, callback) {
+  var DomainConfiguration = params['DomainConfiguration'] || {};
+  var DomainRule = DomainConfiguration.DomainRule || params.DomainRule || [];
+  DomainRule = util.clone(DomainRule);
+  var xml = util.json2xml({
+    DomainConfiguration: {
+      DomainRule: DomainRule
+    }
+  });
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:PutBucketDomain',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    body: xml,
+    action: 'domain',
+    headers: headers
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
 
-    var DomainConfiguration = params['DomainConfiguration'] || {};
-    var DomainRule = DomainConfiguration.DomainRule || params.DomainRule || [];
-    DomainRule = util.clone(DomainRule);
-    var xml = util.json2xml({ DomainConfiguration: { DomainRule: DomainRule } });
-
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutBucketDomain',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        body: xml,
-        action: 'domain',
-        headers: headers
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 获取 Bucket 的自定义域名
  * @param  {Object}  params             参数对象，必须
@@ -6943,31 +9857,32 @@ function putBucketDomain(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
+
+
 function getBucketDomain(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketDomain',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'domain'
+  }, function (err, data) {
+    if (err) return callback(err);
+    var DomainRule = [];
 
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketDomain',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'domain'
-    }, function (err, data) {
-        if (err) return callback(err);
+    try {
+      DomainRule = data.DomainConfiguration.DomainRule || [];
+    } catch (e) {}
 
-        var DomainRule = [];
-        try {
-            DomainRule = data.DomainConfiguration.DomainRule || [];
-        } catch (e) {}
-        DomainRule = util.clone(util.isArray(DomainRule) ? DomainRule : [DomainRule]);
-        callback(null, {
-            DomainRule: DomainRule,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    DomainRule = util.clone(util.isArray(DomainRule) ? DomainRule : [DomainRule]);
+    callback(null, {
+      DomainRule: DomainRule,
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 删除 Bucket 自定义域名
  * @param  {Object}  params             参数对象，必须
@@ -6977,28 +9892,31 @@ function getBucketDomain(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
+
+
 function deleteBucketDomain(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:DeleteBucketDomain',
+    method: 'DELETE',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'domain'
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
 
-    submitRequest.call(this, {
-        Action: 'name/cos:DeleteBucketDomain',
-        method: 'DELETE',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'domain'
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 设置 Bucket 的回源
  * @param  {Object}  params                                                 参数对象，必须
@@ -7008,37 +9926,43 @@ function deleteBucketDomain(params, callback) {
  * @return  {Object}  err                                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                                  返回数据
  */
+
+
 function putBucketOrigin(params, callback) {
-    var OriginConfiguration = params['OriginConfiguration'] || {};
-    var OriginRule = OriginConfiguration.OriginRule || params.OriginRule || [];
-    OriginRule = util.clone(OriginRule);
-    var xml = util.json2xml({ OriginConfiguration: { OriginRule: OriginRule } });
+  var OriginConfiguration = params['OriginConfiguration'] || {};
+  var OriginRule = OriginConfiguration.OriginRule || params.OriginRule || [];
+  OriginRule = util.clone(OriginRule);
+  var xml = util.json2xml({
+    OriginConfiguration: {
+      OriginRule: OriginRule
+    }
+  });
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:PutBucketOrigin',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    body: xml,
+    action: 'origin',
+    headers: headers
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
 
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutBucketOrigin',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        body: xml,
-        action: 'origin',
-        headers: headers
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 获取 Bucket 的回源
  * @param  {Object}  params             参数对象，必须
@@ -7048,31 +9972,32 @@ function putBucketOrigin(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
+
+
 function getBucketOrigin(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketOrigin',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'origin'
+  }, function (err, data) {
+    if (err) return callback(err);
+    var OriginRule = [];
 
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketOrigin',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'origin'
-    }, function (err, data) {
-        if (err) return callback(err);
+    try {
+      OriginRule = data.OriginConfiguration.OriginRule || [];
+    } catch (e) {}
 
-        var OriginRule = [];
-        try {
-            OriginRule = data.OriginConfiguration.OriginRule || [];
-        } catch (e) {}
-        OriginRule = util.clone(util.isArray(OriginRule) ? OriginRule : [OriginRule]);
-        callback(null, {
-            OriginRule: OriginRule,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    OriginRule = util.clone(util.isArray(OriginRule) ? OriginRule : [OriginRule]);
+    callback(null, {
+      OriginRule: OriginRule,
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 删除 Bucket 的回源
  * @param  {Object}  params             参数对象，必须
@@ -7082,28 +10007,31 @@ function getBucketOrigin(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
+
+
 function deleteBucketOrigin(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:DeleteBucketOrigin',
+    method: 'DELETE',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'origin'
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
 
-    submitRequest.call(this, {
-        Action: 'name/cos:DeleteBucketOrigin',
-        method: 'DELETE',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'origin'
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 设置 Bucket 的日志记录
  * @param  {Object}  params                                                 参数对象，必须
@@ -7114,36 +10042,38 @@ function deleteBucketOrigin(params, callback) {
  * @return  {Object}  err                                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                                  返回数据
  */
+
+
 function putBucketLogging(params, callback) {
-    var xml = util.json2xml({
-        BucketLoggingStatus: params['BucketLoggingStatus'] || ''
-    });
+  var xml = util.json2xml({
+    BucketLoggingStatus: params['BucketLoggingStatus'] || ''
+  });
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:PutBucketLogging',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    body: xml,
+    action: 'logging',
+    headers: headers
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
 
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutBucketLogging',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        body: xml,
-        action: 'logging',
-        headers: headers
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 获取 Bucket 的日志记录
  * @param  {Object}  params             参数对象，必须
@@ -7153,24 +10083,25 @@ function putBucketLogging(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
-function getBucketLogging(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketLogging',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'logging'
-    }, function (err, data) {
-        if (err) return callback(err);
-        callback(null, {
-            BucketLoggingStatus: data.BucketLoggingStatus,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-    });
-}
 
+
+function getBucketLogging(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketLogging',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'logging'
+  }, function (err, data) {
+    if (err) return callback(err);
+    callback(null, {
+      BucketLoggingStatus: data.BucketLoggingStatus,
+      statusCode: data.statusCode,
+      headers: data.headers
+    });
+  });
+}
 /**
  * 创建/编辑 Bucket 的清单任务
  * @param  {Object}  params                                                 参数对象，必须
@@ -7182,56 +10113,59 @@ function getBucketLogging(params, callback) {
  * @return  {Object}  err                                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                                  返回数据
  */
+
+
 function putBucketInventory(params, callback) {
-    var InventoryConfiguration = util.clone(params['InventoryConfiguration']);
+  var InventoryConfiguration = util.clone(params['InventoryConfiguration']);
 
-    if (InventoryConfiguration.OptionalFields) {
-        var Field = InventoryConfiguration.OptionalFields || [];
-        InventoryConfiguration.OptionalFields = {
-            Field: Field
-        };
+  if (InventoryConfiguration.OptionalFields) {
+    var Field = InventoryConfiguration.OptionalFields || [];
+    InventoryConfiguration.OptionalFields = {
+      Field: Field
+    };
+  }
+
+  if (InventoryConfiguration.Destination && InventoryConfiguration.Destination.COSBucketDestination && InventoryConfiguration.Destination.COSBucketDestination.Encryption) {
+    var Encryption = InventoryConfiguration.Destination.COSBucketDestination.Encryption;
+
+    if (Object.keys(Encryption).indexOf('SSECOS') > -1) {
+      Encryption['SSE-COS'] = Encryption['SSECOS'];
+      delete Encryption['SSECOS'];
+    }
+  }
+
+  var xml = util.json2xml({
+    InventoryConfiguration: InventoryConfiguration
+  });
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:PutBucketInventory',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    body: xml,
+    action: 'inventory',
+    qs: {
+      id: params['Id']
+    },
+    headers: headers
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
     }
 
-    if (InventoryConfiguration.Destination && InventoryConfiguration.Destination.COSBucketDestination && InventoryConfiguration.Destination.COSBucketDestination.Encryption) {
-        var Encryption = InventoryConfiguration.Destination.COSBucketDestination.Encryption;
-        if (Object.keys(Encryption).indexOf('SSECOS') > -1) {
-            Encryption['SSE-COS'] = Encryption['SSECOS'];
-            delete Encryption['SSECOS'];
-        }
-    }
-
-    var xml = util.json2xml({
-        InventoryConfiguration: InventoryConfiguration
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
-
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutBucketInventory',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        body: xml,
-        action: 'inventory',
-        qs: {
-            id: params['Id']
-        },
-        headers: headers
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-    });
+  });
 }
-
 /**
  * 获取 Bucket 的清单任务信息
  * @param  {Object}  params             参数对象，必须
@@ -7242,44 +10176,49 @@ function putBucketInventory(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
+
+
 function getBucketInventory(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketInventory',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'inventory',
-        qs: {
-            id: params['Id']
-        }
-    }, function (err, data) {
-        if (err) return callback(err);
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketInventory',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'inventory',
+    qs: {
+      id: params['Id']
+    }
+  }, function (err, data) {
+    if (err) return callback(err);
+    var InventoryConfiguration = data['InventoryConfiguration'];
 
-        var InventoryConfiguration = data['InventoryConfiguration'];
-        if (InventoryConfiguration && InventoryConfiguration.OptionalFields && InventoryConfiguration.OptionalFields.Field) {
-            var Field = InventoryConfiguration.OptionalFields.Field;
-            if (!util.isArray(Field)) {
-                Field = [Field];
-            }
-            InventoryConfiguration.OptionalFields = Field;
-        }
-        if (InventoryConfiguration.Destination && InventoryConfiguration.Destination.COSBucketDestination && InventoryConfiguration.Destination.COSBucketDestination.Encryption) {
-            var Encryption = InventoryConfiguration.Destination.COSBucketDestination.Encryption;
-            if (Object.keys(Encryption).indexOf('SSE-COS') > -1) {
-                Encryption['SSECOS'] = Encryption['SSE-COS'];
-                delete Encryption['SSE-COS'];
-            }
-        }
+    if (InventoryConfiguration && InventoryConfiguration.OptionalFields && InventoryConfiguration.OptionalFields.Field) {
+      var Field = InventoryConfiguration.OptionalFields.Field;
 
-        callback(null, {
-            InventoryConfiguration: InventoryConfiguration,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+      if (!util.isArray(Field)) {
+        Field = [Field];
+      }
+
+      InventoryConfiguration.OptionalFields = Field;
+    }
+
+    if (InventoryConfiguration.Destination && InventoryConfiguration.Destination.COSBucketDestination && InventoryConfiguration.Destination.COSBucketDestination.Encryption) {
+      var Encryption = InventoryConfiguration.Destination.COSBucketDestination.Encryption;
+
+      if (Object.keys(Encryption).indexOf('SSE-COS') > -1) {
+        Encryption['SSECOS'] = Encryption['SSE-COS'];
+        delete Encryption['SSE-COS'];
+      }
+    }
+
+    callback(null, {
+      InventoryConfiguration: InventoryConfiguration,
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 获取 Bucket 的清单任务信息
  * @param  {Object}  params                             参数对象，必须
@@ -7290,49 +10229,53 @@ function getBucketInventory(params, callback) {
  * @return  {Object}  err                               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                              返回数据
  */
+
+
 function listBucketInventory(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:ListBucketInventory',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'inventory',
-        qs: {
-            'continuation-token': params['ContinuationToken']
+  submitRequest.call(this, {
+    Action: 'name/cos:ListBucketInventory',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'inventory',
+    qs: {
+      'continuation-token': params['ContinuationToken']
+    }
+  }, function (err, data) {
+    if (err) return callback(err);
+    var ListInventoryConfigurationResult = data['ListInventoryConfigurationResult'];
+    var InventoryConfigurations = ListInventoryConfigurationResult.InventoryConfiguration || [];
+    InventoryConfigurations = util.isArray(InventoryConfigurations) ? InventoryConfigurations : [InventoryConfigurations];
+    delete ListInventoryConfigurationResult['InventoryConfiguration'];
+    util.each(InventoryConfigurations, function (InventoryConfiguration) {
+      if (InventoryConfiguration && InventoryConfiguration.OptionalFields && InventoryConfiguration.OptionalFields.Field) {
+        var Field = InventoryConfiguration.OptionalFields.Field;
+
+        if (!util.isArray(Field)) {
+          Field = [Field];
         }
-    }, function (err, data) {
-        if (err) return callback(err);
-        var ListInventoryConfigurationResult = data['ListInventoryConfigurationResult'];
-        var InventoryConfigurations = ListInventoryConfigurationResult.InventoryConfiguration || [];
-        InventoryConfigurations = util.isArray(InventoryConfigurations) ? InventoryConfigurations : [InventoryConfigurations];
-        delete ListInventoryConfigurationResult['InventoryConfiguration'];
-        util.each(InventoryConfigurations, function (InventoryConfiguration) {
-            if (InventoryConfiguration && InventoryConfiguration.OptionalFields && InventoryConfiguration.OptionalFields.Field) {
-                var Field = InventoryConfiguration.OptionalFields.Field;
-                if (!util.isArray(Field)) {
-                    Field = [Field];
-                }
-                InventoryConfiguration.OptionalFields = Field;
-            }
 
-            if (InventoryConfiguration.Destination && InventoryConfiguration.Destination.COSBucketDestination && InventoryConfiguration.Destination.COSBucketDestination.Encryption) {
-                var Encryption = InventoryConfiguration.Destination.COSBucketDestination.Encryption;
-                if (Object.keys(Encryption).indexOf('SSE-COS') > -1) {
-                    Encryption['SSECOS'] = Encryption['SSE-COS'];
-                    delete Encryption['SSE-COS'];
-                }
-            }
-        });
-        ListInventoryConfigurationResult.InventoryConfigurations = InventoryConfigurations;
-        util.extend(ListInventoryConfigurationResult, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-        callback(null, ListInventoryConfigurationResult);
+        InventoryConfiguration.OptionalFields = Field;
+      }
+
+      if (InventoryConfiguration.Destination && InventoryConfiguration.Destination.COSBucketDestination && InventoryConfiguration.Destination.COSBucketDestination.Encryption) {
+        var Encryption = InventoryConfiguration.Destination.COSBucketDestination.Encryption;
+
+        if (Object.keys(Encryption).indexOf('SSE-COS') > -1) {
+          Encryption['SSECOS'] = Encryption['SSE-COS'];
+          delete Encryption['SSE-COS'];
+        }
+      }
     });
+    ListInventoryConfigurationResult.InventoryConfigurations = InventoryConfigurations;
+    util.extend(ListInventoryConfigurationResult, {
+      statusCode: data.statusCode,
+      headers: data.headers
+    });
+    callback(null, ListInventoryConfigurationResult);
+  });
 }
-
 /**
  * 删除 Bucket 的清单任务
  * @param  {Object}  params             参数对象，必须
@@ -7343,158 +10286,175 @@ function listBucketInventory(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回数据
  */
+
+
 function deleteBucketInventory(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:DeleteBucketInventory',
-        method: 'DELETE',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'inventory',
-        qs: {
-            id: params['Id']
-        }
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-    });
-}
-
-/* 全球加速 */
-function putBucketAccelerate(params, callback) {
-
-    if (!params['AccelerateConfiguration']) {
-        callback(util.error(new Error('missing param AccelerateConfiguration')));
-        return;
+  submitRequest.call(this, {
+    Action: 'name/cos:DeleteBucketInventory',
+    method: 'DELETE',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'inventory',
+    qs: {
+      id: params['Id']
+    }
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
     }
 
-    var configuration = { AccelerateConfiguration: params.AccelerateConfiguration || {} };
-
-    var xml = util.json2xml(configuration);
-
-    var headers = {};
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutBucketAccelerate',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        body: xml,
-        action: 'accelerate',
-        headers: headers
-    }, function (err, data) {
-        if (err) return callback(err);
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
+}
+/* 全球加速 */
+
+
+function putBucketAccelerate(params, callback) {
+  if (!params['AccelerateConfiguration']) {
+    callback(util.error(new Error('missing param AccelerateConfiguration')));
+    return;
+  }
+
+  var configuration = {
+    AccelerateConfiguration: params.AccelerateConfiguration || {}
+  };
+  var xml = util.json2xml(configuration);
+  var headers = {};
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:PutBucketAccelerate',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    body: xml,
+    action: 'accelerate',
+    headers: headers
+  }, function (err, data) {
+    if (err) return callback(err);
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
+    });
+  });
 }
 
 function getBucketAccelerate(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketAccelerate',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        action: 'accelerate'
-    }, function (err, data) {
-        if (!err) {
-            !data.AccelerateConfiguration && (data.AccelerateConfiguration = {});
-        }
-        callback(err, data);
-    });
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketAccelerate',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    action: 'accelerate'
+  }, function (err, data) {
+    if (!err) {
+      !data.AccelerateConfiguration && (data.AccelerateConfiguration = {});
+    }
+
+    callback(err, data);
+  });
 }
 
 function putBucketEncryption(params, callback) {
-    var conf = params.ServerSideEncryptionConfiguration || {};
-    var Rules = conf.Rule || conf.Rules || [];
-    var xml = util.json2xml({ ServerSideEncryptionConfiguration: { Rule: Rules } });
+  var conf = params.ServerSideEncryptionConfiguration || {};
+  var Rules = conf.Rule || conf.Rules || [];
+  var xml = util.json2xml({
+    ServerSideEncryptionConfiguration: {
+      Rule: Rules
+    }
+  });
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:PutBucketEncryption',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    body: xml,
+    action: 'encryption',
+    headers: headers
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
 
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutBucketEncryption',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        body: xml,
-        action: 'encryption',
-        headers: headers
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
 
 function getBucketEncryption(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketEncryption',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'encryption'
-    }, function (err, data) {
-        if (err) {
-            if (err.statusCode === 404 && err.code === 'NoSuchEncryptionConfiguration') {
-                var result = {
-                    EncryptionConfiguration: { Rules: [] },
-                    statusCode: err.statusCode
-                };
-                err.headers && (result.headers = err.headers);
-                callback(null, result);
-            } else {
-                callback(err);
-            }
-            return;
-        }
-        var Rules = util.makeArray(data.EncryptionConfiguration && data.EncryptionConfiguration.Rule || []);
-        data.EncryptionConfiguration = { Rules: Rules };
-        callback(err, data);
-    });
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketEncryption',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'encryption'
+  }, function (err, data) {
+    if (err) {
+      if (err.statusCode === 404 && err.code === 'NoSuchEncryptionConfiguration') {
+        var result = {
+          EncryptionConfiguration: {
+            Rules: []
+          },
+          statusCode: err.statusCode
+        };
+        err.headers && (result.headers = err.headers);
+        callback(null, result);
+      } else {
+        callback(err);
+      }
+
+      return;
+    }
+
+    var Rules = util.makeArray(data.EncryptionConfiguration && data.EncryptionConfiguration.Rule || []);
+    data.EncryptionConfiguration = {
+      Rules: Rules
+    };
+    callback(err, data);
+  });
 }
 
 function deleteBucketEncryption(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:DeleteBucketReplication',
-        method: 'DELETE',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'encryption'
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-    });
-}
+  submitRequest.call(this, {
+    Action: 'name/cos:DeleteBucketReplication',
+    method: 'DELETE',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'encryption'
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
 
-// Object 相关
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
+    });
+  });
+} // Object 相关
 
 /**
  * 取回对应Object的元数据，Head的权限与Get的权限一致
@@ -7508,71 +10468,72 @@ function deleteBucketEncryption(params, callback) {
  * @return  {Object}  data                          为指定 object 的元数据，如果设置了 IfModifiedSince ，且文件未修改，则返回一个对象，NotModified 属性为 true
  *     @return  {Boolean}  data.NotModified         是否在 IfModifiedSince 时间点之后未修改该 object，则为 true
  */
+
+
 function headObject(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:HeadObject',
-        method: 'HEAD',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        VersionId: params.VersionId,
-        headers: params.Headers
-    }, function (err, data) {
-        if (err) {
-            var statusCode = err.statusCode;
-            if (params.Headers['If-Modified-Since'] && statusCode && statusCode === 304) {
-                return callback(null, {
-                    NotModified: true,
-                    statusCode: statusCode
-                });
-            }
-            return callback(err);
-        }
-        data.ETag = util.attr(data.headers, 'etag', '');
-        callback(null, data);
-    });
+  submitRequest.call(this, {
+    Action: 'name/cos:HeadObject',
+    method: 'HEAD',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    VersionId: params.VersionId,
+    headers: params.Headers
+  }, function (err, data) {
+    if (err) {
+      var statusCode = err.statusCode;
+
+      if (params.Headers['If-Modified-Since'] && statusCode && statusCode === 304) {
+        return callback(null, {
+          NotModified: true,
+          statusCode: statusCode
+        });
+      }
+
+      return callback(err);
+    }
+
+    data.ETag = util.attr(data.headers, 'etag', '');
+    callback(null, data);
+  });
 }
 
 function listObjectVersions(params, callback) {
-    var reqParams = {};
-    reqParams['prefix'] = params['Prefix'] || '';
-    reqParams['delimiter'] = params['Delimiter'];
-    reqParams['key-marker'] = params['KeyMarker'];
-    reqParams['version-id-marker'] = params['VersionIdMarker'];
-    reqParams['max-keys'] = params['MaxKeys'];
-    reqParams['encoding-type'] = params['EncodingType'];
-
-    submitRequest.call(this, {
-        Action: 'name/cos:GetBucketObjectVersions',
-        ResourceKey: reqParams['prefix'],
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        qs: reqParams,
-        action: 'versions'
-    }, function (err, data) {
-        if (err) return callback(err);
-        var ListVersionsResult = data.ListVersionsResult || {};
-        var DeleteMarkers = ListVersionsResult.DeleteMarker || [];
-        DeleteMarkers = util.isArray(DeleteMarkers) ? DeleteMarkers : [DeleteMarkers];
-        var Versions = ListVersionsResult.Version || [];
-        Versions = util.isArray(Versions) ? Versions : [Versions];
-
-        var result = util.clone(ListVersionsResult);
-        delete result.DeleteMarker;
-        delete result.Version;
-        util.extend(result, {
-            DeleteMarkers: DeleteMarkers,
-            Versions: Versions,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-
-        callback(null, result);
+  var reqParams = {};
+  reqParams['prefix'] = params['Prefix'] || '';
+  reqParams['delimiter'] = params['Delimiter'];
+  reqParams['key-marker'] = params['KeyMarker'];
+  reqParams['version-id-marker'] = params['VersionIdMarker'];
+  reqParams['max-keys'] = params['MaxKeys'];
+  reqParams['encoding-type'] = params['EncodingType'];
+  submitRequest.call(this, {
+    Action: 'name/cos:GetBucketObjectVersions',
+    ResourceKey: reqParams['prefix'],
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    qs: reqParams,
+    action: 'versions'
+  }, function (err, data) {
+    if (err) return callback(err);
+    var ListVersionsResult = data.ListVersionsResult || {};
+    var DeleteMarkers = ListVersionsResult.DeleteMarker || [];
+    DeleteMarkers = util.isArray(DeleteMarkers) ? DeleteMarkers : [DeleteMarkers];
+    var Versions = ListVersionsResult.Version || [];
+    Versions = util.isArray(Versions) ? Versions : [Versions];
+    var result = util.clone(ListVersionsResult);
+    delete result.DeleteMarker;
+    delete result.Version;
+    util.extend(result, {
+      DeleteMarkers: DeleteMarkers,
+      Versions: Versions,
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+    callback(null, result);
+  });
 }
-
 /**
  * 下载 object
  * @param  {Object}  params                                 参数对象，必须
@@ -7594,52 +10555,60 @@ function listObjectVersions(params, callback) {
  * @param  {Object}  err                                    请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
+
+
 function getObject(params, callback) {
-    var reqParams = params.Query || {};
-    var reqParamsStr = params.QueryString || '';
-    var onProgress = util.throttleOnProgress.call(this, 0, params.onProgress);
+  var reqParams = params.Query || {};
+  var reqParamsStr = params.QueryString || '';
+  var onProgress = util.throttleOnProgress.call(this, 0, params.onProgress);
+  var tracker = params.tracker;
+  tracker && tracker.setParams({
+    signStartTime: new Date().getTime()
+  });
+  reqParams['response-content-type'] = params['ResponseContentType'];
+  reqParams['response-content-language'] = params['ResponseContentLanguage'];
+  reqParams['response-expires'] = params['ResponseExpires'];
+  reqParams['response-cache-control'] = params['ResponseCacheControl'];
+  reqParams['response-content-disposition'] = params['ResponseContentDisposition'];
+  reqParams['response-content-encoding'] = params['ResponseContentEncoding']; // 如果用户自己传入了 output
 
-    reqParams['response-content-type'] = params['ResponseContentType'];
-    reqParams['response-content-language'] = params['ResponseContentLanguage'];
-    reqParams['response-expires'] = params['ResponseExpires'];
-    reqParams['response-cache-control'] = params['ResponseCacheControl'];
-    reqParams['response-content-disposition'] = params['ResponseContentDisposition'];
-    reqParams['response-content-encoding'] = params['ResponseContentEncoding'];
+  submitRequest.call(this, {
+    Action: 'name/cos:GetObject',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    VersionId: params.VersionId,
+    DataType: params.DataType,
+    headers: params.Headers,
+    qs: reqParams,
+    qsStr: reqParamsStr,
+    rawBody: true,
+    onDownloadProgress: onProgress,
+    tracker: tracker
+  }, function (err, data) {
+    onProgress(null, true);
 
-    // 如果用户自己传入了 output
-    submitRequest.call(this, {
-        Action: 'name/cos:GetObject',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        VersionId: params.VersionId,
-        DataType: params.DataType,
-        headers: params.Headers,
-        qs: reqParams,
-        qsStr: reqParamsStr,
-        rawBody: true,
-        onDownloadProgress: onProgress
-    }, function (err, data) {
-        onProgress(null, true);
-        if (err) {
-            var statusCode = err.statusCode;
-            if (params.Headers['If-Modified-Since'] && statusCode && statusCode === 304) {
-                return callback(null, {
-                    NotModified: true
-                });
-            }
-            return callback(err);
-        }
-        callback(null, {
-            Body: data.body,
-            ETag: util.attr(data.headers, 'etag', ''),
-            statusCode: data.statusCode,
-            headers: data.headers
+    if (err) {
+      var statusCode = err.statusCode;
+
+      if (params.Headers['If-Modified-Since'] && statusCode && statusCode === 304) {
+        return callback(null, {
+          NotModified: true
         });
-    });
-}
+      }
 
+      return callback(err);
+    }
+
+    callback(null, {
+      Body: data.body,
+      ETag: util.attr(data.headers, 'etag', ''),
+      statusCode: data.statusCode,
+      headers: data.headers
+    });
+  });
+}
 /**
  * 上传 object
  * @param  {Object} params                                          参数对象，必须
@@ -7669,56 +10638,70 @@ function getObject(params, callback) {
  * @return  {Object}  data                                          为对应的 object 数据
  *     @return  {String}  data.ETag                                 为对应上传文件的 ETag 值
  */
+
+
 function putObject(params, callback) {
-    var self = this;
-    var FileSize = params.ContentLength;
-    var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
+  var self = this;
+  var FileSize = params.ContentLength;
+  var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress); // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
 
-    // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
-    var headers = params.Headers;
-    if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-    if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
-    var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
-    util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
-        if (md5) {
-            if (self.options.UploadCheckContentMd5) headers['Content-MD5'] = util.binaryBase64(md5);
-            if (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5) headers['x-cos-meta-md5'] = md5;
-        }
-        if (params.ContentLength !== undefined) headers['Content-Length'] = params.ContentLength;
-        onProgress(null, true); // 任务状态开始 uploading
-        submitRequest.call(self, {
-            Action: 'name/cos:PutObject',
-            TaskId: params.TaskId,
-            method: 'PUT',
-            Bucket: params.Bucket,
-            Region: params.Region,
-            Key: params.Key,
-            headers: params.Headers,
-            qs: params.Query,
-            body: params.Body,
-            onProgress: onProgress
-        }, function (err, data) {
-            if (err) {
-                onProgress(null, true);
-                return callback(err);
-            }
-            onProgress({ loaded: FileSize, total: FileSize }, true);
-            var url = getUrl({
-                ForcePathStyle: self.options.ForcePathStyle,
-                protocol: self.options.Protocol,
-                domain: self.options.Domain,
-                bucket: params.Bucket,
-                region: !self.options.UseAccelerate ? params.Region : 'accelerate',
-                object: params.Key
-            });
-            url = url.substr(url.indexOf('://') + 3);
-            data.Location = url;
-            data.ETag = util.attr(data.headers, 'etag', '');
-            callback(null, data);
-        });
-    }, params.onHashProgress);
+  var headers = params.Headers;
+  if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
+  if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
+  var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
+  var tracker = params.tracker;
+  needCalcMd5 && tracker && tracker.setParams({
+    md5StartTime: new Date().getTime()
+  });
+  util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
+    if (md5) {
+      tracker && tracker.setParams({
+        md5EndTime: new Date().getTime()
+      });
+      if (self.options.UploadCheckContentMd5) headers['Content-MD5'] = util.binaryBase64(md5);
+      if (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5) headers['x-cos-meta-md5'] = md5;
+    }
+
+    if (params.ContentLength !== undefined) headers['Content-Length'] = params.ContentLength;
+    onProgress(null, true); // 任务状态开始 uploading
+
+    submitRequest.call(self, {
+      Action: 'name/cos:PutObject',
+      TaskId: params.TaskId,
+      method: 'PUT',
+      Bucket: params.Bucket,
+      Region: params.Region,
+      Key: params.Key,
+      headers: params.Headers,
+      qs: params.Query,
+      body: params.Body,
+      onProgress: onProgress,
+      tracker: tracker
+    }, function (err, data) {
+      if (err) {
+        onProgress(null, true);
+        return callback(err);
+      }
+
+      onProgress({
+        loaded: FileSize,
+        total: FileSize
+      }, true);
+      var url = getUrl({
+        ForcePathStyle: self.options.ForcePathStyle,
+        protocol: self.options.Protocol,
+        domain: self.options.Domain,
+        bucket: params.Bucket,
+        region: !self.options.UseAccelerate ? params.Region : 'accelerate',
+        object: params.Key
+      });
+      url = url.substr(url.indexOf('://') + 3);
+      data.Location = url;
+      data.ETag = util.attr(data.headers, 'etag', '');
+      callback(null, data);
+    });
+  }, params.onHashProgress);
 }
-
 /**
  * 删除 object
  * @param  {Object}  params                     参数对象，必须
@@ -7729,32 +10712,38 @@ function putObject(params, callback) {
  * @param  {Object}  err                        请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @param  {Object}  data                       删除操作成功之后返回的数据
  */
-function deleteObject(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:DeleteObject',
-        method: 'DELETE',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        headers: params.Headers,
-        VersionId: params.VersionId,
-        action: params.Recursive ? 'recursive' : ''
-    }, function (err, data) {
-        if (err) {
-            var statusCode = err.statusCode;
-            if (statusCode && statusCode === 404) {
-                return callback(null, { BucketNotFound: true, statusCode: statusCode });
-            } else {
-                return callback(err);
-            }
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-    });
-}
 
+
+function deleteObject(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:DeleteObject',
+    method: 'DELETE',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    headers: params.Headers,
+    VersionId: params.VersionId,
+    action: params.Recursive ? 'recursive' : ''
+  }, function (err, data) {
+    if (err) {
+      var statusCode = err.statusCode;
+
+      if (statusCode && statusCode === 404) {
+        return callback(null, {
+          BucketNotFound: true,
+          statusCode: statusCode
+        });
+      } else {
+        return callback(err);
+      }
+    }
+
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
+    });
+  });
+}
 /**
  * 获取 object 的 权限列表
  * @param  {Object}  params                         参数对象，必须
@@ -7766,37 +10755,39 @@ function deleteObject(params, callback) {
  * @return  {Object}  data                          返回的数据
  *     @return  {Object}  data.AccessControlPolicy  权限列表
  */
+
+
 function getObjectAcl(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:GetObjectACL',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    headers: params.Headers,
+    action: 'acl'
+  }, function (err, data) {
+    if (err) return callback(err);
+    var AccessControlPolicy = data.AccessControlPolicy || {};
+    var Owner = AccessControlPolicy.Owner || {};
+    var Grant = AccessControlPolicy.AccessControlList && AccessControlPolicy.AccessControlList.Grant || [];
+    Grant = util.isArray(Grant) ? Grant : [Grant];
+    var result = decodeAcl(AccessControlPolicy);
+    delete result.GrantWrite;
 
-    submitRequest.call(this, {
-        Action: 'name/cos:GetObjectACL',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        headers: params.Headers,
-        action: 'acl'
-    }, function (err, data) {
-        if (err) return callback(err);
-        var AccessControlPolicy = data.AccessControlPolicy || {};
-        var Owner = AccessControlPolicy.Owner || {};
-        var Grant = AccessControlPolicy.AccessControlList && AccessControlPolicy.AccessControlList.Grant || [];
-        Grant = util.isArray(Grant) ? Grant : [Grant];
-        var result = decodeAcl(AccessControlPolicy);
-        delete result.GrantWrite;
-        if (data.headers && data.headers['x-cos-acl']) {
-            result.ACL = data.headers['x-cos-acl'];
-        }
-        result = util.extend(result, {
-            Owner: Owner,
-            Grants: Grant,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-        callback(null, result);
+    if (data.headers && data.headers['x-cos-acl']) {
+      result.ACL = data.headers['x-cos-acl'];
+    }
+
+    result = util.extend(result, {
+      Owner: Owner,
+      Grants: Grant,
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+    callback(null, result);
+  });
 }
-
 /**
  * 设置 object 的 权限列表
  * @param  {Object}  params             参数对象，必须
@@ -7807,48 +10798,51 @@ function getObjectAcl(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回的数据
  */
+
+
 function putObjectAcl(params, callback) {
-    var headers = params.Headers;
+  var headers = params.Headers;
+  var xml = '';
 
-    var xml = '';
-    if (params['AccessControlPolicy']) {
-        var AccessControlPolicy = util.clone(params['AccessControlPolicy'] || {});
-        var Grants = AccessControlPolicy.Grants || AccessControlPolicy.Grant;
-        Grants = util.isArray(Grants) ? Grants : [Grants];
-        delete AccessControlPolicy.Grant;
-        delete AccessControlPolicy.Grants;
-        AccessControlPolicy.AccessControlList = { Grant: Grants };
-        xml = util.json2xml({ AccessControlPolicy: AccessControlPolicy });
+  if (params['AccessControlPolicy']) {
+    var AccessControlPolicy = util.clone(params['AccessControlPolicy'] || {});
+    var Grants = AccessControlPolicy.Grants || AccessControlPolicy.Grant;
+    Grants = util.isArray(Grants) ? Grants : [Grants];
+    delete AccessControlPolicy.Grant;
+    delete AccessControlPolicy.Grants;
+    AccessControlPolicy.AccessControlList = {
+      Grant: Grants
+    };
+    xml = util.json2xml({
+      AccessControlPolicy: AccessControlPolicy
+    });
+    headers['Content-Type'] = 'application/xml';
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  } // Grant Header 去重
 
-        headers['Content-Type'] = 'application/xml';
-        headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+
+  util.each(headers, function (val, key) {
+    if (key.indexOf('x-cos-grant-') === 0) {
+      headers[key] = uniqGrant(headers[key]);
     }
-
-    // Grant Header 去重
-    util.each(headers, function (val, key) {
-        if (key.indexOf('x-cos-grant-') === 0) {
-            headers[key] = uniqGrant(headers[key]);
-        }
+  });
+  submitRequest.call(this, {
+    Action: 'name/cos:PutObjectACL',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    action: 'acl',
+    headers: headers,
+    body: xml
+  }, function (err, data) {
+    if (err) return callback(err);
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutObjectACL',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        action: 'acl',
-        headers: headers,
-        body: xml
-    }, function (err, data) {
-        if (err) return callback(err);
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-    });
+  });
 }
-
 /**
  * Options Object请求实现跨域访问的预请求。即发出一个 OPTIONS 请求给服务器以确认是否可以进行跨域操作。
  * @param  {Object}  params             参数对象，必须
@@ -7859,44 +10853,44 @@ function putObjectAcl(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data              返回的数据
  */
+
+
 function optionsObject(params, callback) {
-
-    var headers = params.Headers;
-    headers['Origin'] = params['Origin'];
-    headers['Access-Control-Request-Method'] = params['AccessControlRequestMethod'];
-    headers['Access-Control-Request-Headers'] = params['AccessControlRequestHeaders'];
-
-    submitRequest.call(this, {
-        Action: 'name/cos:OptionsObject',
-        method: 'OPTIONS',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        headers: headers
-    }, function (err, data) {
-        if (err) {
-            if (err.statusCode && err.statusCode === 403) {
-                return callback(null, {
-                    OptionsForbidden: true,
-                    statusCode: err.statusCode
-                });
-            }
-            return callback(err);
-        }
-
-        var headers = data.headers || {};
-        callback(null, {
-            AccessControlAllowOrigin: headers['access-control-allow-origin'],
-            AccessControlAllowMethods: headers['access-control-allow-methods'],
-            AccessControlAllowHeaders: headers['access-control-allow-headers'],
-            AccessControlExposeHeaders: headers['access-control-expose-headers'],
-            AccessControlMaxAge: headers['access-control-max-age'],
-            statusCode: data.statusCode,
-            headers: data.headers
+  var headers = params.Headers;
+  headers['Origin'] = params['Origin'];
+  headers['Access-Control-Request-Method'] = params['AccessControlRequestMethod'];
+  headers['Access-Control-Request-Headers'] = params['AccessControlRequestHeaders'];
+  submitRequest.call(this, {
+    Action: 'name/cos:OptionsObject',
+    method: 'OPTIONS',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    headers: headers
+  }, function (err, data) {
+    if (err) {
+      if (err.statusCode && err.statusCode === 403) {
+        return callback(null, {
+          OptionsForbidden: true,
+          statusCode: err.statusCode
         });
-    });
-}
+      }
 
+      return callback(err);
+    }
+
+    var headers = data.headers || {};
+    callback(null, {
+      AccessControlAllowOrigin: headers['access-control-allow-origin'],
+      AccessControlAllowMethods: headers['access-control-allow-methods'],
+      AccessControlAllowHeaders: headers['access-control-allow-headers'],
+      AccessControlExposeHeaders: headers['access-control-expose-headers'],
+      AccessControlMaxAge: headers['access-control-max-age'],
+      statusCode: data.statusCode,
+      headers: data.headers
+    });
+  });
+}
 /**
  * @param  {Object}                                     参数列表
  *     @param  {String}  Bucket                         Bucket 名称
@@ -7924,183 +10918,181 @@ function optionsObject(params, callback) {
  *     @param  {String}  ContentLanguage                指定内容语言
  *     @param  {String}  x-cos-meta-*                   允许用户自定义的头部信息，将作为 Object 元数据返回。大小限制2K。
  */
+
+
 function putObjectCopy(params, callback) {
+  // 特殊处理 Cache-Control
+  var self = this;
+  var headers = params.Headers;
+  if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
+  var CopySource = params.CopySource || '';
+  var m = util.getSourceParams.call(this, CopySource);
 
-    // 特殊处理 Cache-Control
-    var self = this;
-    var headers = params.Headers;
-    if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
+  if (!m) {
+    callback(util.error(new Error('CopySource format error')));
+    return;
+  }
 
-    var CopySource = params.CopySource || '';
-    var m = util.getSourceParams.call(this, CopySource);
-    if (!m) {
-        callback(util.error(new Error('CopySource format error')));
-        return;
-    }
-
-    var SourceBucket = m[1];
-    var SourceRegion = m[3];
-    var SourceKey = decodeURIComponent(m[4]);
-
-    submitRequest.call(this, {
-        Scope: [{
-            action: 'name/cos:GetObject',
-            bucket: SourceBucket,
-            region: SourceRegion,
-            prefix: SourceKey
-        }, {
-            action: 'name/cos:PutObject',
-            bucket: params.Bucket,
-            region: params.Region,
-            prefix: params.Key
-        }],
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        VersionId: params.VersionId,
-        headers: params.Headers
-    }, function (err, data) {
-        if (err) return callback(err);
-        var result = util.clone(data.CopyObjectResult || {});
-        var url = getUrl({
-            ForcePathStyle: self.options.ForcePathStyle,
-            protocol: self.options.Protocol,
-            domain: self.options.Domain,
-            bucket: params.Bucket,
-            region: params.Region,
-            object: params.Key,
-            isLocation: true
-        });
-        util.extend(result, {
-            Location: url,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-        callback(null, result);
+  var SourceBucket = m[1];
+  var SourceRegion = m[3];
+  var SourceKey = decodeURIComponent(m[4]);
+  submitRequest.call(this, {
+    Scope: [{
+      action: 'name/cos:GetObject',
+      bucket: SourceBucket,
+      region: SourceRegion,
+      prefix: SourceKey
+    }, {
+      action: 'name/cos:PutObject',
+      bucket: params.Bucket,
+      region: params.Region,
+      prefix: params.Key
+    }],
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    VersionId: params.VersionId,
+    headers: params.Headers
+  }, function (err, data) {
+    if (err) return callback(err);
+    var result = util.clone(data.CopyObjectResult || {});
+    var url = getUrl({
+      ForcePathStyle: self.options.ForcePathStyle,
+      protocol: self.options.Protocol,
+      domain: self.options.Domain,
+      bucket: params.Bucket,
+      region: params.Region,
+      object: params.Key,
+      isLocation: true
     });
+    util.extend(result, {
+      Location: url,
+      statusCode: data.statusCode,
+      headers: data.headers
+    });
+    callback(null, result);
+  });
 }
 
 function uploadPartCopy(params, callback) {
+  var CopySource = params.CopySource || '';
+  var m = util.getSourceParams.call(this, CopySource);
 
-    var CopySource = params.CopySource || '';
-    var m = util.getSourceParams.call(this, CopySource);
-    if (!m) {
-        callback(util.error(new Error('CopySource format error')));
-        return;
-    }
+  if (!m) {
+    callback(util.error(new Error('CopySource format error')));
+    return;
+  }
 
-    var SourceBucket = m[1];
-    var SourceRegion = m[3];
-    var SourceKey = decodeURIComponent(m[4]);
-
-    submitRequest.call(this, {
-        Scope: [{
-            action: 'name/cos:GetObject',
-            bucket: SourceBucket,
-            region: SourceRegion,
-            prefix: SourceKey
-        }, {
-            action: 'name/cos:PutObject',
-            bucket: params.Bucket,
-            region: params.Region,
-            prefix: params.Key
-        }],
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        VersionId: params.VersionId,
-        qs: {
-            partNumber: params['PartNumber'],
-            uploadId: params['UploadId']
-        },
-        headers: params.Headers
-    }, function (err, data) {
-        if (err) return callback(err);
-        var result = util.clone(data.CopyPartResult || {});
-        util.extend(result, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-        callback(null, result);
+  var SourceBucket = m[1];
+  var SourceRegion = m[3];
+  var SourceKey = decodeURIComponent(m[4]);
+  submitRequest.call(this, {
+    Scope: [{
+      action: 'name/cos:GetObject',
+      bucket: SourceBucket,
+      region: SourceRegion,
+      prefix: SourceKey
+    }, {
+      action: 'name/cos:PutObject',
+      bucket: params.Bucket,
+      region: params.Region,
+      prefix: params.Key
+    }],
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    VersionId: params.VersionId,
+    qs: {
+      partNumber: params['PartNumber'],
+      uploadId: params['UploadId']
+    },
+    headers: params.Headers
+  }, function (err, data) {
+    if (err) return callback(err);
+    var result = util.clone(data.CopyPartResult || {});
+    util.extend(result, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+    callback(null, result);
+  });
 }
 
 function deleteMultipleObject(params, callback) {
-    var Objects = params.Objects || [];
-    var Quiet = params.Quiet;
-    Objects = util.isArray(Objects) ? Objects : [Objects];
-
-    var xml = util.json2xml({ Delete: { Object: Objects, Quiet: Quiet || false } });
-
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    var Scope = util.map(Objects, function (v) {
-        return {
-            action: 'name/cos:DeleteObject',
-            bucket: params.Bucket,
-            region: params.Region,
-            prefix: v.Key
-        };
+  var Objects = params.Objects || [];
+  var Quiet = params.Quiet;
+  Objects = util.isArray(Objects) ? Objects : [Objects];
+  var xml = util.json2xml({
+    Delete: {
+      Object: Objects,
+      Quiet: Quiet || false
+    }
+  });
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  var Scope = util.map(Objects, function (v) {
+    return {
+      action: 'name/cos:DeleteObject',
+      bucket: params.Bucket,
+      region: params.Region,
+      prefix: v.Key
+    };
+  });
+  submitRequest.call(this, {
+    Scope: Scope,
+    method: 'POST',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    body: xml,
+    action: 'delete',
+    headers: headers
+  }, function (err, data) {
+    if (err) return callback(err);
+    var DeleteResult = data.DeleteResult || {};
+    var Deleted = DeleteResult.Deleted || [];
+    var Errors = DeleteResult.Error || [];
+    Deleted = util.isArray(Deleted) ? Deleted : [Deleted];
+    Errors = util.isArray(Errors) ? Errors : [Errors];
+    var result = util.clone(DeleteResult);
+    util.extend(result, {
+      Error: Errors,
+      Deleted: Deleted,
+      statusCode: data.statusCode,
+      headers: data.headers
     });
-
-    submitRequest.call(this, {
-        Scope: Scope,
-        method: 'POST',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        body: xml,
-        action: 'delete',
-        headers: headers
-    }, function (err, data) {
-        if (err) return callback(err);
-        var DeleteResult = data.DeleteResult || {};
-        var Deleted = DeleteResult.Deleted || [];
-        var Errors = DeleteResult.Error || [];
-
-        Deleted = util.isArray(Deleted) ? Deleted : [Deleted];
-        Errors = util.isArray(Errors) ? Errors : [Errors];
-
-        var result = util.clone(DeleteResult);
-        util.extend(result, {
-            Error: Errors,
-            Deleted: Deleted,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-        callback(null, result);
-    });
+    callback(null, result);
+  });
 }
 
 function restoreObject(params, callback) {
-    var headers = params.Headers;
-    if (!params['RestoreRequest']) {
-        callback(util.error(new Error('missing param RestoreRequest')));
-        return;
-    }
+  var headers = params.Headers;
 
-    var RestoreRequest = params.RestoreRequest || {};
-    var xml = util.json2xml({ RestoreRequest: RestoreRequest });
+  if (!params['RestoreRequest']) {
+    callback(util.error(new Error('missing param RestoreRequest')));
+    return;
+  }
 
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    submitRequest.call(this, {
-        Action: 'name/cos:RestoreObject',
-        method: 'POST',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        VersionId: params.VersionId,
-        body: xml,
-        action: 'restore',
-        headers: headers
-    }, callback);
+  var RestoreRequest = params.RestoreRequest || {};
+  var xml = util.json2xml({
+    RestoreRequest: RestoreRequest
+  });
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:RestoreObject',
+    method: 'POST',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    VersionId: params.VersionId,
+    body: xml,
+    action: 'restore',
+    headers: headers
+  }, callback);
 }
-
 /**
  * 设置 Object 的标签
  * @param  {Object}  params             参数对象，必须
@@ -8111,40 +11103,47 @@ function restoreObject(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/42998
  * @return  {Object}  data              返回数据
  */
+
+
 function putObjectTagging(params, callback) {
+  var Tagging = params['Tagging'] || {};
+  var Tags = Tagging.TagSet || Tagging.Tags || params['Tags'] || [];
+  Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
+  var xml = util.json2xml({
+    Tagging: {
+      TagSet: {
+        Tag: Tags
+      }
+    }
+  });
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:PutObjectTagging',
+    method: 'PUT',
+    Bucket: params.Bucket,
+    Key: params.Key,
+    Region: params.Region,
+    body: xml,
+    action: 'tagging',
+    headers: headers,
+    VersionId: params.VersionId
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
 
-    var Tagging = params['Tagging'] || {};
-    var Tags = Tagging.TagSet || Tagging.Tags || params['Tags'] || [];
-    Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
-    var xml = util.json2xml({ Tagging: { TagSet: { Tag: Tags } } });
-
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    submitRequest.call(this, {
-        Action: 'name/cos:PutObjectTagging',
-        method: 'PUT',
-        Bucket: params.Bucket,
-        Key: params.Key,
-        Region: params.Region,
-        body: xml,
-        action: 'tagging',
-        headers: headers,
-        VersionId: params.VersionId
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 获取 Object 的标签设置
  * @param  {Object}  params             参数对象，必须
@@ -8154,44 +11153,48 @@ function putObjectTagging(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/42998
  * @return  {Object}  data              返回数据
  */
+
+
 function getObjectTagging(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:GetObjectTagging',
+    method: 'GET',
+    Key: params.Key,
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    action: 'tagging',
+    VersionId: params.VersionId
+  }, function (err, data) {
+    if (err) {
+      if (err.statusCode === 404 && err.error && (err.error === "Not Found" || err.error.Code === 'NoSuchTagSet')) {
+        var result = {
+          Tags: [],
+          statusCode: err.statusCode
+        };
+        err.headers && (result.headers = err.headers);
+        callback(null, result);
+      } else {
+        callback(err);
+      }
 
-    submitRequest.call(this, {
-        Action: 'name/cos:GetObjectTagging',
-        method: 'GET',
-        Key: params.Key,
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        action: 'tagging',
-        VersionId: params.VersionId
-    }, function (err, data) {
-        if (err) {
-            if (err.statusCode === 404 && err.error && (err.error === "Not Found" || err.error.Code === 'NoSuchTagSet')) {
-                var result = {
-                    Tags: [],
-                    statusCode: err.statusCode
-                };
-                err.headers && (result.headers = err.headers);
-                callback(null, result);
-            } else {
-                callback(err);
-            }
-            return;
-        }
-        var Tags = [];
-        try {
-            Tags = data.Tagging.TagSet.Tag || [];
-        } catch (e) {}
-        Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
-        callback(null, {
-            Tags: Tags,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+      return;
+    }
+
+    var Tags = [];
+
+    try {
+      Tags = data.Tagging.TagSet.Tag || [];
+    } catch (e) {}
+
+    Tags = util.clone(util.isArray(Tags) ? Tags : [Tags]);
+    callback(null, {
+      Tags: Tags,
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 删除 Object 的 标签设置
  * @param  {Object}  params             参数对象，必须
@@ -8201,29 +11204,33 @@ function getObjectTagging(params, callback) {
  * @return  {Object}  err               请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/42998
  * @return  {Object}  data              返回的数据
  */
-function deleteObjectTagging(params, callback) {
-    submitRequest.call(this, {
-        Action: 'name/cos:DeleteObjectTagging',
-        method: 'DELETE',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        headers: params.Headers,
-        action: 'tagging',
-        VersionId: params.VersionId
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-    });
-}
 
+
+function deleteObjectTagging(params, callback) {
+  submitRequest.call(this, {
+    Action: 'name/cos:DeleteObjectTagging',
+    method: 'DELETE',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    headers: params.Headers,
+    action: 'tagging',
+    VersionId: params.VersionId
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
+
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
+    });
+  });
+}
 /**
  * 使用 SQL 语句从指定对象（CSV 格式或者 JSON 格式）中检索内容
  * @param  {Object}  params                   参数对象，必须
@@ -8234,50 +11241,51 @@ function deleteObjectTagging(params, callback) {
  * @return  {Object}  err                     请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/42998
  * @return  {Object}  data                    返回的数据
  */
+
+
 function selectObjectContent(params, callback) {
-    var SelectType = params['SelectType'];
-    if (!SelectType) return callback(util.error(new Error('missing param SelectType')));
+  var SelectType = params['SelectType'];
+  if (!SelectType) return callback(util.error(new Error('missing param SelectType')));
+  var SelectRequest = params['SelectRequest'] || {};
+  var xml = util.json2xml({
+    SelectRequest: SelectRequest
+  });
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:GetObject',
+    method: 'POST',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    headers: params.Headers,
+    action: 'select',
+    qs: {
+      'select-type': params['SelectType']
+    },
+    VersionId: params.VersionId,
+    body: xml,
+    DataType: 'arraybuffer',
+    rawBody: true
+  }, function (err, data) {
+    if (err && err.statusCode === 204) {
+      return callback(null, {
+        statusCode: err.statusCode
+      });
+    } else if (err) {
+      return callback(err);
+    }
 
-    var SelectRequest = params['SelectRequest'] || {};
-    var xml = util.json2xml({ SelectRequest: SelectRequest });
-
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
-
-    submitRequest.call(this, {
-        Action: 'name/cos:GetObject',
-        method: 'POST',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        headers: params.Headers,
-        action: 'select',
-        qs: {
-            'select-type': params['SelectType']
-        },
-        VersionId: params.VersionId,
-        body: xml,
-        DataType: 'arraybuffer',
-        rawBody: true
-    }, function (err, data) {
-        if (err && err.statusCode === 204) {
-            return callback(null, { statusCode: err.statusCode });
-        } else if (err) {
-            return callback(err);
-        }
-        var result = util.parseSelectPayload(data.body);
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers,
-            Body: result.body,
-            Payload: result.payload
-        });
+    var result = util.parseSelectPayload(data.body);
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers,
+      Body: result.body,
+      Payload: result.payload
     });
-}
-
-// 分块上传
-
+  });
+} // 分块上传
 
 /**
  * 初始化分块上传
@@ -8301,41 +11309,56 @@ function selectObjectContent(params, callback) {
  * @return  {Object}  err                                       请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                      返回的数据
  */
+
+
 function multipartInit(params, callback) {
+  var self = this; // 特殊处理 Cache-Control
 
-    var self = this;
-    // 特殊处理 Cache-Control
-    var headers = params.Headers;
+  var headers = params.Headers;
+  var tracker = params.tracker; // 特殊处理 Cache-Control、Content-Type
 
-    // 特殊处理 Cache-Control、Content-Type
-    if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-    if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
-
-    util.getBodyMd5(params.Body && (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5), params.Body, function (md5) {
-        if (md5) params.Headers['x-cos-meta-md5'] = md5;
-        submitRequest.call(self, {
-            Action: 'name/cos:InitiateMultipartUpload',
-            method: 'POST',
-            Bucket: params.Bucket,
-            Region: params.Region,
-            Key: params.Key,
-            action: 'uploads',
-            headers: params.Headers,
-            qs: params.Query
-        }, function (err, data) {
-            if (err) return callback(err);
-            data = util.clone(data || {});
-            if (data && data.InitiateMultipartUploadResult) {
-                return callback(null, util.extend(data.InitiateMultipartUploadResult, {
-                    statusCode: data.statusCode,
-                    headers: data.headers
-                }));
-            }
-            callback(null, data);
+  if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
+  if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
+  var needCalcMd5 = params.Body && (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5);
+  needCalcMd5 && tracker && tracker.setParams({
+    md5StartTime: new Date().getTime()
+  });
+  util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
+    if (md5) params.Headers['x-cos-meta-md5'] = md5;
+    needCalcMd5 && tracker && tracker.setParams({
+      md5EndTime: new Date().getTime()
+    });
+    submitRequest.call(self, {
+      Action: 'name/cos:InitiateMultipartUpload',
+      method: 'POST',
+      Bucket: params.Bucket,
+      Region: params.Region,
+      Key: params.Key,
+      action: 'uploads',
+      headers: params.Headers,
+      qs: params.Query,
+      tracker: tracker
+    }, function (err, data) {
+      if (err) {
+        tracker && tracker.parent && tracker.parent.setParams({
+          errorNode: 'multipartInit'
         });
-    }, params.onHashProgress);
-}
+        return callback(err);
+      }
 
+      data = util.clone(data || {});
+
+      if (data && data.InitiateMultipartUploadResult) {
+        return callback(null, util.extend(data.InitiateMultipartUploadResult, {
+          statusCode: data.statusCode,
+          headers: data.headers
+        }));
+      }
+
+      callback(null, data);
+    });
+  }, params.onHashProgress);
+}
 /**
  * 分块上传
  * @param  {Object}  params                                 参数对象，必须
@@ -8352,38 +11375,56 @@ function multipartInit(params, callback) {
  *     @return  {Object}  data                              返回的数据
  *     @return  {Object}  data.ETag                         返回的文件分块 sha1 值
  */
+
+
 function multipartUpload(params, callback) {
-
-    var self = this;
-    util.getFileSize('multipartUpload', params, function () {
-        util.getBodyMd5(self.options.UploadCheckContentMd5, params.Body, function (md5) {
-            if (md5) params.Headers['Content-MD5'] = util.binaryBase64(md5);
-            submitRequest.call(self, {
-                Action: 'name/cos:UploadPart',
-                TaskId: params.TaskId,
-                method: 'PUT',
-                Bucket: params.Bucket,
-                Region: params.Region,
-                Key: params.Key,
-                qs: {
-                    partNumber: params['PartNumber'],
-                    uploadId: params['UploadId']
-                },
-                headers: params.Headers,
-                onProgress: params.onProgress,
-                body: params.Body || null
-            }, function (err, data) {
-                if (err) return callback(err);
-                callback(null, {
-                    ETag: util.attr(data.headers, 'etag', ''),
-                    statusCode: data.statusCode,
-                    headers: data.headers
-                });
-            });
-        });
+  var self = this;
+  util.getFileSize('multipartUpload', params, function () {
+    var tracker = params.tracker;
+    var needCalcMd5 = self.options.UploadCheckContentMd5;
+    needCalcMd5 && tracker && tracker.setParams({
+      md5StartTime: new Date().getTime()
     });
-}
+    util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
+      if (md5) params.Headers['Content-MD5'] = util.binaryBase64(md5);
+      needCalcMd5 && tracker && tracker.setParams({
+        md5EndTime: new Date().getTime()
+      });
+      tracker && tracker.setParams({
+        partNumber: params.PartNumber
+      });
+      submitRequest.call(self, {
+        Action: 'name/cos:UploadPart',
+        TaskId: params.TaskId,
+        method: 'PUT',
+        Bucket: params.Bucket,
+        Region: params.Region,
+        Key: params.Key,
+        qs: {
+          partNumber: params['PartNumber'],
+          uploadId: params['UploadId']
+        },
+        headers: params.Headers,
+        onProgress: params.onProgress,
+        body: params.Body || null,
+        tracker: tracker
+      }, function (err, data) {
+        if (err) {
+          tracker && tracker.parent && tracker.parent.setParams({
+            errorNode: 'multipartUpload'
+          });
+          return callback(err);
+        }
 
+        callback(null, {
+          ETag: util.attr(data.headers, 'etag', ''),
+          statusCode: data.statusCode,
+          headers: data.headers
+        });
+      });
+    });
+  });
+}
 /**
  * 完成分块上传
  * @param  {Object}  params                             参数对象，必须
@@ -8398,75 +11439,87 @@ function multipartUpload(params, callback) {
  * @return  {Object}  data                              返回的数据
  *     @return  {Object}  data.CompleteMultipartUpload  完成分块上传后的文件信息，包括Location, Bucket, Key 和 ETag
  */
+
+
 function multipartComplete(params, callback) {
-    var self = this;
+  var self = this;
+  var UploadId = params.UploadId;
+  var Parts = params['Parts'];
+  var tracker = params.tracker;
 
-    var UploadId = params.UploadId;
-
-    var Parts = params['Parts'];
-
-    for (var i = 0, len = Parts.length; i < len; i++) {
-        if (Parts[i]['ETag'] && Parts[i]['ETag'].indexOf('"') === 0) {
-            continue;
-        }
-        Parts[i]['ETag'] = '"' + Parts[i]['ETag'] + '"';
+  for (var i = 0, len = Parts.length; i < len; i++) {
+    if (Parts[i]['ETag'] && Parts[i]['ETag'].indexOf('"') === 0) {
+      continue;
     }
 
-    var xml = util.json2xml({ CompleteMultipartUpload: { Part: Parts } });
-    // CSP/ceph CompleteMultipartUpload 接口 body 写死了限制 1MB，这里醉倒 10000 片时，xml 字符串去掉空格853KB
-    xml = xml.replace(/\n\s*/g, '');
+    Parts[i]['ETag'] = '"' + Parts[i]['ETag'] + '"';
+  }
 
-    var headers = params.Headers;
-    headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  var xml = util.json2xml({
+    CompleteMultipartUpload: {
+      Part: Parts
+    }
+  }); // CSP/ceph CompleteMultipartUpload 接口 body 写死了限制 1MB，这里醉倒 10000 片时，xml 字符串去掉空格853KB
 
-    submitRequest.call(this, {
-        Action: 'name/cos:CompleteMultipartUpload',
-        method: 'POST',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        qs: {
-            uploadId: UploadId
-        },
-        body: xml,
-        headers: headers
-    }, function (err, data) {
-        if (err) return callback(err);
-        var url = getUrl({
-            ForcePathStyle: self.options.ForcePathStyle,
-            protocol: self.options.Protocol,
-            domain: self.options.Domain,
-            bucket: params.Bucket,
-            region: params.Region,
-            object: params.Key,
-            isLocation: true
-        });
-        var res = data.CompleteMultipartUploadResult || {};
-        if (res.ProcessResults) {
-            if (res && res.ProcessResults) {
-                res.UploadResult = {
-                    OriginalInfo: {
-                        Key: res.Key,
-                        Location: url,
-                        ETag: res.ETag,
-                        ImageInfo: res.ImageInfo
-                    },
-                    ProcessResults: res.ProcessResults
-                };
-                delete res.ImageInfo;
-                delete res.ProcessResults;
-            }
-        }
-        var result = util.extend(res, {
-            Location: url,
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-        callback(null, result);
+  xml = xml.replace(/\n\s*/g, '');
+  var headers = params.Headers;
+  headers['Content-Type'] = 'application/xml';
+  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  submitRequest.call(this, {
+    Action: 'name/cos:CompleteMultipartUpload',
+    method: 'POST',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    qs: {
+      uploadId: UploadId
+    },
+    body: xml,
+    headers: headers,
+    tracker: tracker
+  }, function (err, data) {
+    if (err) {
+      tracker && tracker.parent && tracker.parent.setParams({
+        errorNode: 'multipartComplete'
+      });
+      return callback(err);
+    }
+
+    var url = getUrl({
+      ForcePathStyle: self.options.ForcePathStyle,
+      protocol: self.options.Protocol,
+      domain: self.options.Domain,
+      bucket: params.Bucket,
+      region: params.Region,
+      object: params.Key,
+      isLocation: true
     });
-}
+    var res = data.CompleteMultipartUploadResult || {};
 
+    if (res.ProcessResults) {
+      if (res && res.ProcessResults) {
+        res.UploadResult = {
+          OriginalInfo: {
+            Key: res.Key,
+            Location: url,
+            ETag: res.ETag,
+            ImageInfo: res.ImageInfo
+          },
+          ProcessResults: res.ProcessResults
+        };
+        delete res.ImageInfo;
+        delete res.ProcessResults;
+      }
+    }
+
+    var result = util.extend(res, {
+      Location: url,
+      statusCode: data.statusCode,
+      headers: data.headers
+    });
+    callback(null, result);
+  });
+}
 /**
  * 分块上传任务列表查询
  * @param  {Object}  params                                 参数对象，必须
@@ -8483,46 +11536,53 @@ function multipartComplete(params, callback) {
  * @return  {Object}  data                                  返回的数据
  *     @return  {Object}  data.ListMultipartUploadsResult   分块上传任务信息
  */
+
+
 function multipartList(params, callback) {
-    var reqParams = {};
+  var reqParams = {};
+  reqParams['delimiter'] = params['Delimiter'];
+  reqParams['encoding-type'] = params['EncodingType'];
+  reqParams['prefix'] = params['Prefix'] || '';
+  reqParams['max-uploads'] = params['MaxUploads'];
+  reqParams['key-marker'] = params['KeyMarker'];
+  reqParams['upload-id-marker'] = params['UploadIdMarker'];
+  reqParams = util.clearKey(reqParams);
+  var tracker = params.tracker;
+  tracker && tracker.setParams({
+    signStartTime: new Date().getTime()
+  });
+  submitRequest.call(this, {
+    Action: 'name/cos:ListMultipartUploads',
+    ResourceKey: reqParams['prefix'],
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    headers: params.Headers,
+    qs: reqParams,
+    action: 'uploads',
+    tracker: tracker
+  }, function (err, data) {
+    if (err) {
+      tracker && tracker.parent && tracker.parent.setParams({
+        errorNode: 'multipartList'
+      });
+      return callback(err);
+    }
 
-    reqParams['delimiter'] = params['Delimiter'];
-    reqParams['encoding-type'] = params['EncodingType'];
-    reqParams['prefix'] = params['Prefix'] || '';
+    if (data && data.ListMultipartUploadsResult) {
+      var Upload = data.ListMultipartUploadsResult.Upload || [];
+      Upload = util.isArray(Upload) ? Upload : [Upload];
+      data.ListMultipartUploadsResult.Upload = Upload;
+    }
 
-    reqParams['max-uploads'] = params['MaxUploads'];
-
-    reqParams['key-marker'] = params['KeyMarker'];
-    reqParams['upload-id-marker'] = params['UploadIdMarker'];
-
-    reqParams = util.clearKey(reqParams);
-
-    submitRequest.call(this, {
-        Action: 'name/cos:ListMultipartUploads',
-        ResourceKey: reqParams['prefix'],
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        headers: params.Headers,
-        qs: reqParams,
-        action: 'uploads'
-    }, function (err, data) {
-        if (err) return callback(err);
-
-        if (data && data.ListMultipartUploadsResult) {
-            var Upload = data.ListMultipartUploadsResult.Upload || [];
-            Upload = util.isArray(Upload) ? Upload : [Upload];
-            data.ListMultipartUploadsResult.Upload = Upload;
-        }
-        var result = util.clone(data.ListMultipartUploadsResult || {});
-        util.extend(result, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-        callback(null, result);
+    var result = util.clone(data.ListMultipartUploadsResult || {});
+    util.extend(result, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+    callback(null, result);
+  });
 }
-
 /**
  * 上传的分块列表查询
  * @param  {Object}  params                                 参数对象，必须
@@ -8538,38 +11598,42 @@ function multipartList(params, callback) {
  * @return  {Object}  data                                  返回的数据
  *     @return  {Object}  data.ListMultipartUploadsResult   分块信息
  */
+
+
 function multipartListPart(params, callback) {
-    var reqParams = {};
+  var reqParams = {};
+  reqParams['uploadId'] = params['UploadId'];
+  reqParams['encoding-type'] = params['EncodingType'];
+  reqParams['max-parts'] = params['MaxParts'];
+  reqParams['part-number-marker'] = params['PartNumberMarker'];
+  submitRequest.call(this, {
+    Action: 'name/cos:ListParts',
+    method: 'GET',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    headers: params.Headers,
+    qs: reqParams
+  }, function (err, data) {
+    if (err) {
+      tracker && tracker.parent && tracker.parent.setParams({
+        errorNode: 'multipartListPart'
+      });
+      return callback(err);
+    }
 
-    reqParams['uploadId'] = params['UploadId'];
-    reqParams['encoding-type'] = params['EncodingType'];
-    reqParams['max-parts'] = params['MaxParts'];
-    reqParams['part-number-marker'] = params['PartNumberMarker'];
-
-    submitRequest.call(this, {
-        Action: 'name/cos:ListParts',
-        method: 'GET',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        headers: params.Headers,
-        qs: reqParams
-    }, function (err, data) {
-        if (err) return callback(err);
-        var ListPartsResult = data.ListPartsResult || {};
-        var Part = ListPartsResult.Part || [];
-        Part = util.isArray(Part) ? Part : [Part];
-
-        ListPartsResult.Part = Part;
-        var result = util.clone(ListPartsResult);
-        util.extend(result, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
-        callback(null, result);
+    var ListPartsResult = data.ListPartsResult || {};
+    var Part = ListPartsResult.Part || [];
+    Part = util.isArray(Part) ? Part : [Part];
+    ListPartsResult.Part = Part;
+    var result = util.clone(ListPartsResult);
+    util.extend(result, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+    callback(null, result);
+  });
 }
-
 /**
  * 抛弃分块上传
  * @param  {Object}  params                 参数对象，必须
@@ -8581,27 +11645,27 @@ function multipartListPart(params, callback) {
  *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  *     @return  {Object}    data            返回的数据
  */
+
+
 function multipartAbort(params, callback) {
-    var reqParams = {};
-
-    reqParams['uploadId'] = params['UploadId'];
-    submitRequest.call(this, {
-        Action: 'name/cos:AbortMultipartUpload',
-        method: 'DELETE',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        headers: params.Headers,
-        qs: reqParams
-    }, function (err, data) {
-        if (err) return callback(err);
-        callback(null, {
-            statusCode: data.statusCode,
-            headers: data.headers
-        });
+  var reqParams = {};
+  reqParams['uploadId'] = params['UploadId'];
+  submitRequest.call(this, {
+    Action: 'name/cos:AbortMultipartUpload',
+    method: 'DELETE',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    headers: params.Headers,
+    qs: reqParams
+  }, function (err, data) {
+    if (err) return callback(err);
+    callback(null, {
+      statusCode: data.statusCode,
+      headers: data.headers
     });
+  });
 }
-
 /**
  * 抛弃分块上传
  * @param  {Object}  params                 参数对象，必须
@@ -8613,29 +11677,32 @@ function multipartAbort(params, callback) {
  *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  *     @return  {Object}    data            返回的数据
  */
-function request(params, callback) {
-    submitRequest.call(this, {
-        method: params.Method,
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        action: params.Action,
-        headers: params.Headers,
-        qs: params.Query,
-        body: params.Body,
-        Url: params.Url,
-        rawBody: params.RawBody,
-        DataType: params.DataType
-    }, function (err, data) {
-        if (err) return callback(err);
-        if (data && data.body) {
-            data.Body = data.body;
-            delete data.body;
-        }
-        callback(err, data);
-    });
-}
 
+
+function request(params, callback) {
+  submitRequest.call(this, {
+    method: params.Method,
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Key: params.Key,
+    action: params.Action,
+    headers: params.Headers,
+    qs: params.Query,
+    body: params.Body,
+    Url: params.Url,
+    rawBody: params.RawBody,
+    DataType: params.DataType
+  }, function (err, data) {
+    if (err) return callback(err);
+
+    if (data && data.body) {
+      data.Body = data.body;
+      delete data.body;
+    }
+
+    callback(err, data);
+  });
+}
 /**
  * 追加上传
  * @param  {Object}  params                                         参数对象，必须
@@ -8664,29 +11731,30 @@ function request(params, callback) {
  *     @return  {Object}    err                                     请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  *     @return  {Object}    data                                    返回的数据
  */
-function appendObject(params, callback) {
-    // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
-    var headers = params.Headers;
-    if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-    if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
-    submitRequest.call(this, {
-        Action: 'name/cos:AppendObject',
-        method: 'POST',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        action: 'append',
-        Key: params.Key,
-        body: params.Body,
-        qs: {
-            position: params.Position
-        },
-        headers: params.Headers
-    }, function (err, data) {
-        if (err) return callback(err);
-        callback(null, data);
-    });
-}
 
+
+function appendObject(params, callback) {
+  // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
+  var headers = params.Headers;
+  if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
+  if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
+  submitRequest.call(this, {
+    Action: 'name/cos:AppendObject',
+    method: 'POST',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    action: 'append',
+    Key: params.Key,
+    body: params.Body,
+    qs: {
+      position: params.Position
+    },
+    headers: params.Headers
+  }, function (err, data) {
+    if (err) return callback(err);
+    callback(null, data);
+  });
+}
 /**
  * 获取签名
  * @param  {Object}  params             参数对象，必须
@@ -8695,23 +11763,24 @@ function appendObject(params, callback) {
  *     @param  {String}  params.Expires 名超时时间，单位秒，可选
  * @return  {String}  data              返回签名字符串
  */
-function getAuth(params) {
-    var self = this;
-    return util.getAuth({
-        SecretId: params.SecretId || this.options.SecretId || '',
-        SecretKey: params.SecretKey || this.options.SecretKey || '',
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Method: params.Method,
-        Key: params.Key,
-        Query: params.Query,
-        Headers: params.Headers,
-        Expires: params.Expires,
-        UseRawKey: self.options.UseRawKey,
-        SystemClockOffset: self.options.SystemClockOffset
-    });
-}
 
+
+function getAuth(params) {
+  var self = this;
+  return util.getAuth({
+    SecretId: params.SecretId || this.options.SecretId || '',
+    SecretKey: params.SecretKey || this.options.SecretKey || '',
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Method: params.Method,
+    Key: params.Key,
+    Query: params.Query,
+    Headers: params.Headers,
+    Expires: params.Expires,
+    UseRawKey: self.options.UseRawKey,
+    SystemClockOffset: self.options.SystemClockOffset
+  });
+}
 /**
  * 获取文件下载链接
  * @param  {Object}  params                 参数对象，必须
@@ -8724,2165 +11793,2813 @@ function getAuth(params) {
  *     @return  {Object}    err             请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  *     @return  {Object}    data            返回的数据
  */
+
+
 function getObjectUrl(params, callback) {
-    var self = this;
-    var useAccelerate = params.UseAccelerate === undefined ? self.options.UseAccelerate : params.UseAccelerate;
-    var url = getUrl({
-        ForcePathStyle: self.options.ForcePathStyle,
-        protocol: params.Protocol || self.options.Protocol,
-        domain: params.Domain || self.options.Domain,
-        bucket: params.Bucket,
-        region: useAccelerate ? 'accelerate' : params.Region,
-        object: params.Key
+  var self = this;
+  var useAccelerate = params.UseAccelerate === undefined ? self.options.UseAccelerate : params.UseAccelerate;
+  var url = getUrl({
+    ForcePathStyle: self.options.ForcePathStyle,
+    protocol: params.Protocol || self.options.Protocol,
+    domain: params.Domain || self.options.Domain,
+    bucket: params.Bucket,
+    region: useAccelerate ? 'accelerate' : params.Region,
+    object: params.Key
+  });
+  var queryParamsStr = '';
+
+  if (params.Query) {
+    queryParamsStr += util.obj2str(params.Query);
+  }
+
+  if (params.QueryString) {
+    queryParamsStr += (queryParamsStr ? '&' : '') + params.QueryString;
+  }
+
+  var syncUrl = url;
+
+  if (params.Sign !== undefined && !params.Sign) {
+    queryParamsStr && (syncUrl += '?' + queryParamsStr);
+    callback(null, {
+      Url: syncUrl
     });
-
-    var queryParamsStr = '';
-    if (params.Query) {
-        queryParamsStr += util.obj2str(params.Query);
-    }
-    if (params.QueryString) {
-        queryParamsStr += (queryParamsStr ? '&' : '') + params.QueryString;
-    }
-
-    var syncUrl = url;
-    if (params.Sign !== undefined && !params.Sign) {
-        queryParamsStr && (syncUrl += '?' + queryParamsStr);
-        callback(null, { Url: syncUrl });
-        return syncUrl;
-    }
-
-    // 签名加上 Host，避免跨桶访问
-    var SignHost = getSignHost.call(this, { Bucket: params.Bucket, Region: params.Region, UseAccelerate: params.UseAccelerate, Url: url });
-    var AuthData = getAuthorizationAsync.call(this, {
-        Action: (params.Method || '').toUpperCase() === 'PUT' ? 'name/cos:PutObject' : 'name/cos:GetObject',
-        Bucket: params.Bucket || '',
-        Region: params.Region || '',
-        Method: params.Method || 'get',
-        Key: params.Key,
-        Expires: params.Expires,
-        Headers: params.Headers,
-        Query: params.Query,
-        SignHost: SignHost,
-        ForceSignHost: params.ForceSignHost === false ? false : self.options.ForceSignHost // getObjectUrl支持传参ForceSignHost
-    }, function (err, AuthData) {
-        if (!callback) return;
-        if (err) {
-            callback(err);
-            return;
-        }
-
-        // 兼容万象url qUrlParamList需要再encode一次
-        var replaceUrlParamList = function (url) {
-            var urlParams = url.match(/q-url-param-list.*?(?=&)/g)[0];
-            var encodedParams = 'q-url-param-list=' + encodeURIComponent(urlParams.replace(/q-url-param-list=/, '')).toLowerCase();
-            var reg = new RegExp(urlParams, 'g');
-            var replacedUrl = url.replace(reg, encodedParams);
-            return replacedUrl;
-        };
-
-        var signUrl = url;
-        signUrl += '?' + (AuthData.Authorization.indexOf('q-signature') > -1 ? replaceUrlParamList(AuthData.Authorization) : 'sign=' + encodeURIComponent(AuthData.Authorization));
-        AuthData.SecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.SecurityToken);
-        AuthData.ClientIP && (signUrl += '&clientIP=' + AuthData.ClientIP);
-        AuthData.ClientUA && (signUrl += '&clientUA=' + AuthData.ClientUA);
-        AuthData.Token && (signUrl += '&token=' + AuthData.Token);
-        queryParamsStr && (signUrl += '&' + queryParamsStr);
-        setTimeout(function () {
-            callback(null, { Url: signUrl });
-        });
-    });
-    if (AuthData) {
-        syncUrl += '?' + AuthData.Authorization + (AuthData.SecurityToken ? '&x-cos-security-token=' + AuthData.SecurityToken : '');
-        queryParamsStr && (syncUrl += '&' + queryParamsStr);
-    } else {
-        queryParamsStr && (syncUrl += '?' + queryParamsStr);
-    }
     return syncUrl;
-}
+  } // 签名加上 Host，避免跨桶访问
 
+
+  var SignHost = getSignHost.call(this, {
+    Bucket: params.Bucket,
+    Region: params.Region,
+    UseAccelerate: params.UseAccelerate,
+    Url: url
+  });
+  var AuthData = getAuthorizationAsync.call(this, {
+    Action: (params.Method || '').toUpperCase() === 'PUT' ? 'name/cos:PutObject' : 'name/cos:GetObject',
+    Bucket: params.Bucket || '',
+    Region: params.Region || '',
+    Method: params.Method || 'get',
+    Key: params.Key,
+    Expires: params.Expires,
+    Headers: params.Headers,
+    Query: params.Query,
+    SignHost: SignHost,
+    ForceSignHost: params.ForceSignHost === false ? false : self.options.ForceSignHost // getObjectUrl支持传参ForceSignHost
+
+  }, function (err, AuthData) {
+    if (!callback) return;
+
+    if (err) {
+      callback(err);
+      return;
+    } // 兼容万象url qUrlParamList需要再encode一次
+
+
+    var replaceUrlParamList = function replaceUrlParamList(url) {
+      var urlParams = url.match(/q-url-param-list.*?(?=&)/g)[0];
+      var encodedParams = 'q-url-param-list=' + encodeURIComponent(urlParams.replace(/q-url-param-list=/, '')).toLowerCase();
+      var reg = new RegExp(urlParams, 'g');
+      var replacedUrl = url.replace(reg, encodedParams);
+      return replacedUrl;
+    };
+
+    var signUrl = url;
+    signUrl += '?' + (AuthData.Authorization.indexOf('q-signature') > -1 ? replaceUrlParamList(AuthData.Authorization) : 'sign=' + encodeURIComponent(AuthData.Authorization));
+    AuthData.SecurityToken && (signUrl += '&x-cos-security-token=' + AuthData.SecurityToken);
+    AuthData.ClientIP && (signUrl += '&clientIP=' + AuthData.ClientIP);
+    AuthData.ClientUA && (signUrl += '&clientUA=' + AuthData.ClientUA);
+    AuthData.Token && (signUrl += '&token=' + AuthData.Token);
+    queryParamsStr && (signUrl += '&' + queryParamsStr);
+    setTimeout(function () {
+      callback(null, {
+        Url: signUrl
+      });
+    });
+  });
+
+  if (AuthData) {
+    syncUrl += '?' + AuthData.Authorization + (AuthData.SecurityToken ? '&x-cos-security-token=' + AuthData.SecurityToken : '');
+    queryParamsStr && (syncUrl += '&' + queryParamsStr);
+  } else {
+    queryParamsStr && (syncUrl += '?' + queryParamsStr);
+  }
+
+  return syncUrl;
+}
 /**
  * 私有方法
  */
+
+
 function decodeAcl(AccessControlPolicy) {
-    var result = {
-        GrantFullControl: [],
-        GrantWrite: [],
-        GrantRead: [],
-        GrantReadAcp: [],
-        GrantWriteAcp: [],
-        ACL: ''
-    };
-    var GrantMap = {
-        'FULL_CONTROL': 'GrantFullControl',
-        'WRITE': 'GrantWrite',
-        'READ': 'GrantRead',
-        'READ_ACP': 'GrantReadAcp',
-        'WRITE_ACP': 'GrantWriteAcp'
-    };
-    var AccessControlList = AccessControlPolicy && AccessControlPolicy.AccessControlList || {};
-    var Grant = AccessControlList.Grant;
-    if (Grant) {
-        Grant = util.isArray(Grant) ? Grant : [Grant];
-    }
-    var PublicAcl = { READ: 0, WRITE: 0, FULL_CONTROL: 0 };
-    Grant && Grant.length && util.each(Grant, function (item) {
-        if (item.Grantee.ID === 'qcs::cam::anyone:anyone' || item.Grantee.URI === 'http://cam.qcloud.com/groups/global/AllUsers') {
-            PublicAcl[item.Permission] = 1;
-        } else if (item.Grantee.ID !== AccessControlPolicy.Owner.ID) {
-            result[GrantMap[item.Permission]].push('id="' + item.Grantee.ID + '"');
-        }
-    });
-    if (PublicAcl.FULL_CONTROL || PublicAcl.WRITE && PublicAcl.READ) {
-        result.ACL = 'public-read-write';
-    } else if (PublicAcl.READ) {
-        result.ACL = 'public-read';
-    } else {
-        result.ACL = 'private';
-    }
-    util.each(GrantMap, function (item) {
-        result[item] = uniqGrant(result[item].join(','));
-    });
-    return result;
-}
+  var result = {
+    GrantFullControl: [],
+    GrantWrite: [],
+    GrantRead: [],
+    GrantReadAcp: [],
+    GrantWriteAcp: [],
+    ACL: ''
+  };
+  var GrantMap = {
+    'FULL_CONTROL': 'GrantFullControl',
+    'WRITE': 'GrantWrite',
+    'READ': 'GrantRead',
+    'READ_ACP': 'GrantReadAcp',
+    'WRITE_ACP': 'GrantWriteAcp'
+  };
+  var AccessControlList = AccessControlPolicy && AccessControlPolicy.AccessControlList || {};
+  var Grant = AccessControlList.Grant;
 
-// Grant 去重
+  if (Grant) {
+    Grant = util.isArray(Grant) ? Grant : [Grant];
+  }
+
+  var PublicAcl = {
+    READ: 0,
+    WRITE: 0,
+    FULL_CONTROL: 0
+  };
+  Grant && Grant.length && util.each(Grant, function (item) {
+    if (item.Grantee.ID === 'qcs::cam::anyone:anyone' || item.Grantee.URI === 'http://cam.qcloud.com/groups/global/AllUsers') {
+      PublicAcl[item.Permission] = 1;
+    } else if (item.Grantee.ID !== AccessControlPolicy.Owner.ID) {
+      result[GrantMap[item.Permission]].push('id="' + item.Grantee.ID + '"');
+    }
+  });
+
+  if (PublicAcl.FULL_CONTROL || PublicAcl.WRITE && PublicAcl.READ) {
+    result.ACL = 'public-read-write';
+  } else if (PublicAcl.READ) {
+    result.ACL = 'public-read';
+  } else {
+    result.ACL = 'private';
+  }
+
+  util.each(GrantMap, function (item) {
+    result[item] = uniqGrant(result[item].join(','));
+  });
+  return result;
+} // Grant 去重
+
+
 function uniqGrant(str) {
-    var arr = str.split(',');
-    var exist = {};
-    var i, item;
-    for (i = 0; i < arr.length;) {
-        item = arr[i].trim();
-        if (exist[item]) {
-            arr.splice(i, 1);
-        } else {
-            exist[item] = true;
-            arr[i] = item;
-            i++;
-        }
-    }
-    return arr.join(',');
-}
+  var arr = str.split(',');
+  var exist = {};
+  var i, item;
 
-// 生成操作 url
-function getUrl(params) {
-    var region = params.region || '';
-    var longBucket = params.bucket || '';
-    var shortBucket = longBucket.substr(0, longBucket.lastIndexOf('-'));
-    var appId = longBucket.substr(longBucket.lastIndexOf('-') + 1);
-    var domain = params.domain;
-    var object = params.object;
-    if (typeof domain === 'function') {
-        domain = domain({ Bucket: longBucket, Region: region });
-    }
-    var protocol = params.protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
-    if (!domain) {
-        if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
-            domain = '{Region}.myqcloud.com';
-        } else {
-            domain = 'cos.{Region}.myqcloud.com';
-        }
-        if (!params.ForcePathStyle) {
-            domain = '{Bucket}.' + domain;
-        }
-    }
-    domain = domain.replace(/\{\{AppId\}\}/ig, appId).replace(/\{\{Bucket\}\}/ig, shortBucket).replace(/\{\{Region\}\}/ig, region).replace(/\{\{.*?\}\}/ig, '');
-    domain = domain.replace(/\{AppId\}/ig, appId).replace(/\{BucketName\}/ig, shortBucket).replace(/\{Bucket\}/ig, longBucket).replace(/\{Region\}/ig, region).replace(/\{.*?\}/ig, '');
-    if (!/^[a-zA-Z]+:\/\//.test(domain)) {
-        domain = protocol + '//' + domain;
-    }
+  for (i = 0; i < arr.length;) {
+    item = arr[i].trim();
 
-    // 去掉域名最后的斜杆
-    if (domain.slice(-1) === '/') {
-        domain = domain.slice(0, -1);
-    }
-    var url = domain;
-
-    if (params.ForcePathStyle) {
-        url += '/' + longBucket;
-    }
-    url += '/';
-    if (object) {
-        url += util.camSafeUrlEncode(object).replace(/%2F/g, '/');
-    }
-
-    if (params.isLocation) {
-        url = url.replace(/^https?:\/\//, '');
-    }
-    return url;
-}
-
-var getSignHost = function (opt) {
-    if (!opt.Bucket || !opt.Region) return '';
-    var useAccelerate = opt.UseAccelerate === undefined ? this.options.UseAccelerate : opt.UseAccelerate;
-    var url = opt.Url || getUrl({
-        ForcePathStyle: this.options.ForcePathStyle,
-        protocol: this.options.Protocol,
-        domain: this.options.Domain,
-        bucket: opt.Bucket,
-        region: useAccelerate ? 'accelerate' : opt.Region
-    });
-    var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
-    var standardHostReg = new RegExp('^([a-z\\d-]+-\\d+\\.)?(cos|cosv6|ci|pic)\\.([a-z\\d-]+)\\.myqcloud\\.com$');
-    if (standardHostReg.test(urlHost)) return urlHost;
-    return '';
-};
-
-// 异步获取签名
-function getAuthorizationAsync(params, callback) {
-    var headers = util.clone(params.Headers);
-    var headerHost = '';
-    util.each(headers, function (v, k) {
-        (v === '' || ['content-type', 'cache-control', 'expires'].indexOf(k.toLowerCase()) > -1) && delete headers[k];
-        if (k.toLowerCase() === 'host') headerHost = v;
-    });
-    // ForceSignHost明确传入false才不加入host签名
-    var forceSignHost = params.ForceSignHost === false ? false : true;
-
-    // Host 加入签名计算
-    if (!headerHost && params.SignHost && forceSignHost) headers.Host = params.SignHost;
-
-    // 获取凭证的回调，避免用户 callback 多次
-    var cbDone = false;
-    var cb = function (err, AuthData) {
-        if (cbDone) return;
-        cbDone = true;
-        if (AuthData && AuthData.XCosSecurityToken && !AuthData.SecurityToken) {
-            AuthData = util.clone(AuthData);
-            AuthData.SecurityToken = AuthData.XCosSecurityToken;
-            delete AuthData.XCosSecurityToken;
-        }
-        callback && callback(err, AuthData);
-    };
-
-    var self = this;
-    var Bucket = params.Bucket || '';
-    var Region = params.Region || '';
-
-    // PathName
-    var KeyName = params.Key || '';
-    if (self.options.ForcePathStyle && Bucket) {
-        KeyName = Bucket + '/' + KeyName;
-    }
-    var Pathname = '/' + KeyName;
-
-    // Action、ResourceKey
-    var StsData = {};
-    var Scope = params.Scope;
-    if (!Scope) {
-        var Action = params.Action || '';
-        var ResourceKey = params.ResourceKey || params.Key || '';
-        Scope = params.Scope || [{
-            action: Action,
-            bucket: Bucket,
-            region: Region,
-            prefix: ResourceKey
-        }];
-    }
-    var ScopeKey = util.md5(JSON.stringify(Scope));
-
-    // STS
-    self._StsCache = self._StsCache || [];
-    (function () {
-        var i, AuthData;
-        for (i = self._StsCache.length - 1; i >= 0; i--) {
-            AuthData = self._StsCache[i];
-            var compareTime = Math.round(util.getSkewTime(self.options.SystemClockOffset) / 1000) + 30;
-            if (AuthData.StartTime && compareTime < AuthData.StartTime || compareTime >= AuthData.ExpiredTime) {
-                self._StsCache.splice(i, 1);
-                continue;
-            }
-            if (!AuthData.ScopeLimit || AuthData.ScopeLimit && AuthData.ScopeKey === ScopeKey) {
-                StsData = AuthData;
-                break;
-            }
-        }
-    })();
-
-    var calcAuthByTmpKey = function () {
-        var KeyTime = '';
-        if (StsData.StartTime && params.Expires) KeyTime = StsData.StartTime + ';' + (StsData.StartTime + params.Expires * 1);else if (StsData.StartTime && StsData.ExpiredTime) KeyTime = StsData.StartTime + ';' + StsData.ExpiredTime;
-        var Authorization = util.getAuth({
-            SecretId: StsData.TmpSecretId,
-            SecretKey: StsData.TmpSecretKey,
-            Method: params.Method,
-            Pathname: Pathname,
-            Query: params.Query,
-            Headers: headers,
-            Expires: params.Expires,
-            UseRawKey: self.options.UseRawKey,
-            SystemClockOffset: self.options.SystemClockOffset,
-            KeyTime: KeyTime,
-            ForceSignHost: forceSignHost
-        });
-        var AuthData = {
-            Authorization: Authorization,
-            SecurityToken: StsData.SecurityToken || StsData.XCosSecurityToken || '',
-            Token: StsData.Token || '',
-            ClientIP: StsData.ClientIP || '',
-            ClientUA: StsData.ClientUA || ''
-        };
-        cb(null, AuthData);
-    };
-    var checkAuthError = function (AuthData) {
-        if (AuthData.Authorization) {
-            // 检查签名格式
-            var formatAllow = false;
-            var auth = AuthData.Authorization;
-            if (auth) {
-                if (auth.indexOf(' ') > -1) {
-                    formatAllow = false;
-                } else if (auth.indexOf('q-sign-algorithm=') > -1 && auth.indexOf('q-ak=') > -1 && auth.indexOf('q-sign-time=') > -1 && auth.indexOf('q-key-time=') > -1 && auth.indexOf('q-url-param-list=') > -1) {
-                    formatAllow = true;
-                } else {
-                    try {
-                        auth = atob(auth);
-                        if (auth.indexOf('a=') > -1 && auth.indexOf('k=') > -1 && auth.indexOf('t=') > -1 && auth.indexOf('r=') > -1 && auth.indexOf('b=') > -1) {
-                            formatAllow = true;
-                        }
-                    } catch (e) {}
-                }
-            }
-            if (!formatAllow) return util.error(new Error('getAuthorization callback params format error'));
-        } else {
-            if (!AuthData.TmpSecretId) return util.error(new Error('getAuthorization callback params missing "TmpSecretId"'));
-            if (!AuthData.TmpSecretKey) return util.error(new Error('getAuthorization callback params missing "TmpSecretKey"'));
-            if (!AuthData.SecurityToken && !AuthData.XCosSecurityToken) return util.error(new Error('getAuthorization callback params missing "SecurityToken"'));
-            if (!AuthData.ExpiredTime) return util.error(new Error('getAuthorization callback params missing "ExpiredTime"'));
-            if (AuthData.ExpiredTime && AuthData.ExpiredTime.toString().length !== 10) return util.error(new Error('getAuthorization callback params "ExpiredTime" should be 10 digits'));
-            if (AuthData.StartTime && AuthData.StartTime.toString().length !== 10) return util.error(new Error('getAuthorization callback params "StartTime" should be 10 StartTime'));
-        }
-        return false;
-    };
-
-    // 先判断是否有临时密钥
-    if (StsData.ExpiredTime && StsData.ExpiredTime - util.getSkewTime(self.options.SystemClockOffset) / 1000 > 60) {
-        // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
-        calcAuthByTmpKey();
-    } else if (self.options.getAuthorization) {
-        // 外部计算签名或获取临时密钥
-        self.options.getAuthorization.call(self, {
-            Bucket: Bucket,
-            Region: Region,
-            Method: params.Method,
-            Key: KeyName,
-            Pathname: Pathname,
-            Query: params.Query,
-            Headers: headers,
-            Scope: Scope,
-            SystemClockOffset: self.options.SystemClockOffset,
-            ForceSignHost: forceSignHost
-        }, function (AuthData) {
-            if (typeof AuthData === 'string') AuthData = { Authorization: AuthData };
-            var AuthError = checkAuthError(AuthData);
-            if (AuthError) return cb(AuthError);
-            if (AuthData.Authorization) {
-                cb(null, AuthData);
-            } else {
-                StsData = AuthData || {};
-                StsData.Scope = Scope;
-                StsData.ScopeKey = ScopeKey;
-                self._StsCache.push(StsData);
-                calcAuthByTmpKey();
-            }
-        });
-    } else if (self.options.getSTS) {
-        // 外部获取临时密钥
-        self.options.getSTS.call(self, {
-            Bucket: Bucket,
-            Region: Region
-        }, function (data) {
-            StsData = data || {};
-            StsData.Scope = Scope;
-            StsData.ScopeKey = ScopeKey;
-            if (!StsData.TmpSecretId) StsData.TmpSecretId = StsData.SecretId;
-            if (!StsData.TmpSecretKey) StsData.TmpSecretKey = StsData.SecretKey;
-            var AuthError = checkAuthError(StsData);
-            if (AuthError) return cb(AuthError);
-            self._StsCache.push(StsData);
-            calcAuthByTmpKey();
-        });
+    if (exist[item]) {
+      arr.splice(i, 1);
     } else {
-        // 内部计算获取签名
-        return function () {
-            var Authorization = util.getAuth({
-                SecretId: params.SecretId || self.options.SecretId,
-                SecretKey: params.SecretKey || self.options.SecretKey,
-                Method: params.Method,
-                Pathname: Pathname,
-                Query: params.Query,
-                Headers: headers,
-                Expires: params.Expires,
-                UseRawKey: self.options.UseRawKey,
-                SystemClockOffset: self.options.SystemClockOffset,
-                ForceSignHost: forceSignHost
-            });
-            var AuthData = {
-                Authorization: Authorization,
-                SecurityToken: self.options.SecurityToken || self.options.XCosSecurityToken
-            };
-            cb(null, AuthData);
-            return AuthData;
-        }();
+      exist[item] = true;
+      arr[i] = item;
+      i++;
     }
-    return '';
-}
+  }
 
-// 调整时间偏差
-function allowRetry(err) {
-    var allowRetry = false;
-    var isTimeError = false;
-    var serverDate = err.headers && (err.headers.date || err.headers.Date) || err.error && err.error.ServerTime;
-    try {
-        var errorCode = err.error.Code;
-        var errorMessage = err.error.Message;
-        if (errorCode === 'RequestTimeTooSkewed' || errorCode === 'AccessDenied' && errorMessage === 'Request has expired') {
-            isTimeError = true;
-        }
-    } catch (e) {}
-    if (err) {
-        if (isTimeError && serverDate) {
-            var serverTime = Date.parse(serverDate);
-            if (this.options.CorrectClockSkew && Math.abs(util.getSkewTime(this.options.SystemClockOffset) - serverTime) >= 30000) {
-                console.error('error: Local time is too skewed.');
-                this.options.SystemClockOffset = serverTime - Date.now();
-                allowRetry = true;
-            }
-        } else if (Math.floor(err.statusCode / 100) === 5) {
-            allowRetry = true;
-        }
-    }
-    return allowRetry;
-}
+  return arr.join(',');
+} // 生成操作 url
 
-// 获取签名并发起请求
-function submitRequest(params, callback) {
-    var self = this;
 
-    // 处理 headers
-    !params.headers && (params.headers = {});
+function getUrl(params) {
+  var region = params.region || '';
+  var longBucket = params.bucket || '';
+  var shortBucket = longBucket.substr(0, longBucket.lastIndexOf('-'));
+  var appId = longBucket.substr(longBucket.lastIndexOf('-') + 1);
+  var domain = params.domain;
+  var object = params.object;
 
-    // 处理 query
-    !params.qs && (params.qs = {});
-    params.VersionId && (params.qs.versionId = params.VersionId);
-    params.qs = util.clearKey(params.qs);
-
-    // 清理 undefined 和 null 字段
-    params.headers && (params.headers = util.clearKey(params.headers));
-    params.qs && (params.qs = util.clearKey(params.qs));
-
-    var Query = util.clone(params.qs);
-    params.action && (Query[params.action] = '');
-
-    var paramsUrl = params.url || params.Url;
-    var SignHost = params.SignHost || getSignHost.call(this, { Bucket: params.Bucket, Region: params.Region, Url: paramsUrl });
-    var next = function (tryTimes) {
-        var oldClockOffset = self.options.SystemClockOffset;
-        getAuthorizationAsync.call(self, {
-            Bucket: params.Bucket || '',
-            Region: params.Region || '',
-            Method: params.method,
-            Key: params.Key,
-            Query: Query,
-            Headers: params.headers,
-            SignHost: SignHost,
-            Action: params.Action,
-            ResourceKey: params.ResourceKey,
-            Scope: params.Scope,
-            ForceSignHost: self.options.ForceSignHost
-        }, function (err, AuthData) {
-            if (err) {
-                callback(err);
-                return;
-            }
-            params.AuthData = AuthData;
-            _submitRequest.call(self, params, function (err, data) {
-                if (err && tryTimes < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
-                    if (params.headers) {
-                        delete params.headers.Authorization;
-                        delete params.headers['token'];
-                        delete params.headers['clientIP'];
-                        delete params.headers['clientUA'];
-                        params.headers['x-cos-security-token'] && delete params.headers['x-cos-security-token'];
-                        params.headers['x-ci-security-token'] && delete params.headers['x-ci-security-token'];
-                    }
-                    next(tryTimes + 1);
-                } else {
-                    callback(err, data);
-                }
-            });
-        });
-    };
-    next(1);
-}
-
-// 发起请求
-function _submitRequest(params, callback) {
-    var self = this;
-    var TaskId = params.TaskId;
-    if (TaskId && !self._isRunningTask(TaskId)) return;
-
-    var bucket = params.Bucket;
-    var region = params.Region;
-    var object = params.Key;
-    var method = params.method || 'GET';
-    var url = params.Url || params.url;
-    var body = params.body;
-    var rawBody = params.rawBody;
-
-    // url
-    if (self.options.UseAccelerate) {
-        region = 'accelerate';
-    }
-    url = url || getUrl({
-        ForcePathStyle: self.options.ForcePathStyle,
-        protocol: self.options.Protocol,
-        domain: self.options.Domain,
-        bucket: bucket,
-        region: region,
-        object: object
+  if (typeof domain === 'function') {
+    domain = domain({
+      Bucket: longBucket,
+      Region: region
     });
-    if (params.action) {
-        url = url + '?' + params.action;
+  }
+
+  var protocol = params.protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
+
+  if (!domain) {
+    if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
+      domain = '{Region}.myqcloud.com';
+    } else {
+      domain = 'cos.{Region}.myqcloud.com';
     }
-    if (params.qsStr) {
-        if (url.indexOf('?') > -1) {
-            url = url + '&' + params.qsStr;
+
+    if (!params.ForcePathStyle) {
+      domain = '{Bucket}.' + domain;
+    }
+  }
+
+  domain = domain.replace(/\{\{AppId\}\}/ig, appId).replace(/\{\{Bucket\}\}/ig, shortBucket).replace(/\{\{Region\}\}/ig, region).replace(/\{\{.*?\}\}/ig, '');
+  domain = domain.replace(/\{AppId\}/ig, appId).replace(/\{BucketName\}/ig, shortBucket).replace(/\{Bucket\}/ig, longBucket).replace(/\{Region\}/ig, region).replace(/\{.*?\}/ig, '');
+
+  if (!/^[a-zA-Z]+:\/\//.test(domain)) {
+    domain = protocol + '//' + domain;
+  } // 去掉域名最后的斜杆
+
+
+  if (domain.slice(-1) === '/') {
+    domain = domain.slice(0, -1);
+  }
+
+  var url = domain;
+
+  if (params.ForcePathStyle) {
+    url += '/' + longBucket;
+  }
+
+  url += '/';
+
+  if (object) {
+    url += util.camSafeUrlEncode(object).replace(/%2F/g, '/');
+  }
+
+  if (params.isLocation) {
+    url = url.replace(/^https?:\/\//, '');
+  }
+
+  return url;
+}
+
+var getSignHost = function getSignHost(opt) {
+  if (!opt.Bucket || !opt.Region) return '';
+  var useAccelerate = opt.UseAccelerate === undefined ? this.options.UseAccelerate : opt.UseAccelerate;
+  var url = opt.Url || getUrl({
+    ForcePathStyle: this.options.ForcePathStyle,
+    protocol: this.options.Protocol,
+    domain: this.options.Domain,
+    bucket: opt.Bucket,
+    region: useAccelerate ? 'accelerate' : opt.Region
+  });
+  var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
+  var standardHostReg = new RegExp('^([a-z\\d-]+-\\d+\\.)?(cos|cosv6|ci|pic)\\.([a-z\\d-]+)\\.myqcloud\\.com$');
+  if (standardHostReg.test(urlHost)) return urlHost;
+  return '';
+}; // 异步获取签名
+
+
+function getAuthorizationAsync(params, callback) {
+  var headers = util.clone(params.Headers);
+  var headerHost = '';
+  util.each(headers, function (v, k) {
+    (v === '' || ['content-type', 'cache-control', 'expires'].indexOf(k.toLowerCase()) > -1) && delete headers[k];
+    if (k.toLowerCase() === 'host') headerHost = v;
+  }); // ForceSignHost明确传入false才不加入host签名
+
+  var forceSignHost = params.ForceSignHost === false ? false : true; // Host 加入签名计算
+
+  if (!headerHost && params.SignHost && forceSignHost) headers.Host = params.SignHost; // 获取凭证的回调，避免用户 callback 多次
+
+  var cbDone = false;
+
+  var cb = function cb(err, AuthData) {
+    if (cbDone) return;
+    cbDone = true;
+
+    if (AuthData && AuthData.XCosSecurityToken && !AuthData.SecurityToken) {
+      AuthData = util.clone(AuthData);
+      AuthData.SecurityToken = AuthData.XCosSecurityToken;
+      delete AuthData.XCosSecurityToken;
+    }
+
+    callback && callback(err, AuthData);
+  };
+
+  var self = this;
+  var Bucket = params.Bucket || '';
+  var Region = params.Region || ''; // PathName
+
+  var KeyName = params.Key || '';
+
+  if (self.options.ForcePathStyle && Bucket) {
+    KeyName = Bucket + '/' + KeyName;
+  }
+
+  var Pathname = '/' + KeyName; // Action、ResourceKey
+
+  var StsData = {};
+  var Scope = params.Scope;
+
+  if (!Scope) {
+    var Action = params.Action || '';
+    var ResourceKey = params.ResourceKey || params.Key || '';
+    Scope = params.Scope || [{
+      action: Action,
+      bucket: Bucket,
+      region: Region,
+      prefix: ResourceKey
+    }];
+  }
+
+  var ScopeKey = util.md5(JSON.stringify(Scope)); // STS
+
+  self._StsCache = self._StsCache || [];
+
+  (function () {
+    var i, AuthData;
+
+    for (i = self._StsCache.length - 1; i >= 0; i--) {
+      AuthData = self._StsCache[i];
+      var compareTime = Math.round(util.getSkewTime(self.options.SystemClockOffset) / 1000) + 30;
+
+      if (AuthData.StartTime && compareTime < AuthData.StartTime || compareTime >= AuthData.ExpiredTime) {
+        self._StsCache.splice(i, 1);
+
+        continue;
+      }
+
+      if (!AuthData.ScopeLimit || AuthData.ScopeLimit && AuthData.ScopeKey === ScopeKey) {
+        StsData = AuthData;
+        break;
+      }
+    }
+  })();
+
+  var calcAuthByTmpKey = function calcAuthByTmpKey() {
+    var KeyTime = '';
+    if (StsData.StartTime && params.Expires) KeyTime = StsData.StartTime + ';' + (StsData.StartTime + params.Expires * 1);else if (StsData.StartTime && StsData.ExpiredTime) KeyTime = StsData.StartTime + ';' + StsData.ExpiredTime;
+    var Authorization = util.getAuth({
+      SecretId: StsData.TmpSecretId,
+      SecretKey: StsData.TmpSecretKey,
+      Method: params.Method,
+      Pathname: Pathname,
+      Query: params.Query,
+      Headers: headers,
+      Expires: params.Expires,
+      UseRawKey: self.options.UseRawKey,
+      SystemClockOffset: self.options.SystemClockOffset,
+      KeyTime: KeyTime,
+      ForceSignHost: forceSignHost
+    });
+    var AuthData = {
+      Authorization: Authorization,
+      SecurityToken: StsData.SecurityToken || StsData.XCosSecurityToken || '',
+      Token: StsData.Token || '',
+      ClientIP: StsData.ClientIP || '',
+      ClientUA: StsData.ClientUA || ''
+    };
+    cb(null, AuthData);
+  };
+
+  var checkAuthError = function checkAuthError(AuthData) {
+    if (AuthData.Authorization) {
+      // 检查签名格式
+      var formatAllow = false;
+      var auth = AuthData.Authorization;
+
+      if (auth) {
+        if (auth.indexOf(' ') > -1) {
+          formatAllow = false;
+        } else if (auth.indexOf('q-sign-algorithm=') > -1 && auth.indexOf('q-ak=') > -1 && auth.indexOf('q-sign-time=') > -1 && auth.indexOf('q-key-time=') > -1 && auth.indexOf('q-url-param-list=') > -1) {
+          formatAllow = true;
         } else {
-            url = url + '?' + params.qsStr;
-        }
-    }
+          try {
+            auth = atob(auth);
 
-    var opt = {
-        method: method,
-        url: url,
-        headers: params.headers,
-        qs: params.qs,
-        body: body
-    };
-
-    // 兼容ci接口
-    var token = 'x-cos-security-token';
-    if (util.isCIHost(url)) {
-        token = 'x-ci-security-token';
-    }
-
-    // 获取签名
-    opt.headers.Authorization = params.AuthData.Authorization;
-    params.AuthData.Token && (opt.headers['token'] = params.AuthData.Token);
-    params.AuthData.ClientIP && (opt.headers['clientIP'] = params.AuthData.ClientIP);
-    params.AuthData.ClientUA && (opt.headers['clientUA'] = params.AuthData.ClientUA);
-    params.AuthData.SecurityToken && (opt.headers[token] = params.AuthData.SecurityToken);
-
-    // 清理 undefined 和 null 字段
-    opt.headers && (opt.headers = util.clearKey(opt.headers));
-    opt = util.clearKey(opt);
-
-    // progress
-    if (params.onProgress && typeof params.onProgress === 'function') {
-        var contentLength = body && (body.size || body.length) || 0;
-        opt.onProgress = function (e) {
-            if (TaskId && !self._isRunningTask(TaskId)) return;
-            var loaded = e ? e.loaded : 0;
-            params.onProgress({ loaded: loaded, total: contentLength });
-        };
-    }
-    if (params.onDownloadProgress) {
-        opt.onDownloadProgress = params.onDownloadProgress;
-    }
-    if (params.DataType) {
-        opt.dataType = params.DataType;
-    }
-    if (this.options.Timeout) {
-        opt.timeout = this.options.Timeout;
-    }
-
-    self.options.ForcePathStyle && (opt.pathStyle = self.options.ForcePathStyle);
-    self.emit('before-send', opt);
-    var sender = (self.options.Request || REQUEST)(opt, function (r) {
-        if (r.error === 'abort') return;
-
-        var receive = {
-            options: opt,
-            error: err,
-            statusCode: response && response.statusCode || 0,
-            headers: response && response.headers || {},
-            body: body
-        };
-        self.emit('after-receive', receive);
-        err = receive.error;
-        body = receive.body;
-        response = {
-            statusCode: receive.statusCode,
-            headers: receive.headers
-        };
-
-        // 抛出事件，允许修改返回值的 error、statusCode、statusMessage、body
-        self.emit('after-receive', r);
-        var response = { statusCode: r.statusCode, statusMessage: r.statusMessage, headers: r.headers };
-        var err = r.error;
-        var body = r.body;
-
-        // 返回内容添加 状态码 和 headers
-        var hasReturned;
-        var cb = function (err, data) {
-            TaskId && self.off('inner-kill-task', killTask);
-            if (hasReturned) return;
-            hasReturned = true;
-            var attrs = {};
-            response && response.statusCode && (attrs.statusCode = response.statusCode);
-            response && response.headers && (attrs.headers = response.headers);
-
-            if (err) {
-                err = util.extend(err || {}, attrs);
-                callback(err, null);
-            } else {
-                data = util.extend(data || {}, attrs);
-                callback(null, data);
+            if (auth.indexOf('a=') > -1 && auth.indexOf('k=') > -1 && auth.indexOf('t=') > -1 && auth.indexOf('r=') > -1 && auth.indexOf('b=') > -1) {
+              formatAllow = true;
             }
-            sender = null;
-        };
-
-        // 请求错误，发生网络错误
-        if (err) return cb(util.error(err));
-
-        // 请求返回码不为 200
-        var statusCode = response.statusCode;
-        var statusSuccess = Math.floor(statusCode / 100) === 2; // 200 202 204 206
-
-        // 不对 body 进行转换，body 直接挂载返回
-        if (rawBody && statusSuccess) return cb(null, { body: body });
-
-        // 解析 xml body
-        var json;
-        try {
-            json = body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body) || {};
-        } catch (e) {
-            json = {};
+          } catch (e) {}
         }
+      }
 
-        // 处理返回值
-        var xmlError = json && json.Error;
-        if (statusSuccess) {
-            // 正确返回，状态码 2xx 时，body 不会有 Error
-            cb(null, json);
-        } else if (xmlError) {
-            // 正常返回了 xml body，且有 Error 节点
-            cb(util.error(new Error(xmlError.Message), { code: xmlError.Code, error: xmlError }));
-        } else if (statusCode) {
-            // 有错误的状态码
-            cb(util.error(new Error(response.statusMessage), { code: '' + statusCode }));
-        } else if (statusCode) {
-            // 无状态码，或者获取不到状态码
-            cb(util.error(new Error('statusCode error')));
-        }
+      if (!formatAllow) return util.error(new Error('getAuthorization callback params format error'));
+    } else {
+      if (!AuthData.TmpSecretId) return util.error(new Error('getAuthorization callback params missing "TmpSecretId"'));
+      if (!AuthData.TmpSecretKey) return util.error(new Error('getAuthorization callback params missing "TmpSecretKey"'));
+      if (!AuthData.SecurityToken && !AuthData.XCosSecurityToken) return util.error(new Error('getAuthorization callback params missing "SecurityToken"'));
+      if (!AuthData.ExpiredTime) return util.error(new Error('getAuthorization callback params missing "ExpiredTime"'));
+      if (AuthData.ExpiredTime && AuthData.ExpiredTime.toString().length !== 10) return util.error(new Error('getAuthorization callback params "ExpiredTime" should be 10 digits'));
+      if (AuthData.StartTime && AuthData.StartTime.toString().length !== 10) return util.error(new Error('getAuthorization callback params "StartTime" should be 10 StartTime'));
+    }
+
+    return false;
+  }; // 先判断是否有临时密钥
+
+
+  if (StsData.ExpiredTime && StsData.ExpiredTime - util.getSkewTime(self.options.SystemClockOffset) / 1000 > 60) {
+    // 如果缓存的临时密钥有效，并还有超过60秒有效期就直接使用
+    calcAuthByTmpKey();
+  } else if (self.options.getAuthorization) {
+    // 外部计算签名或获取临时密钥
+    self.options.getAuthorization.call(self, {
+      Bucket: Bucket,
+      Region: Region,
+      Method: params.Method,
+      Key: KeyName,
+      Pathname: Pathname,
+      Query: params.Query,
+      Headers: headers,
+      Scope: Scope,
+      SystemClockOffset: self.options.SystemClockOffset,
+      ForceSignHost: forceSignHost
+    }, function (AuthData) {
+      if (typeof AuthData === 'string') AuthData = {
+        Authorization: AuthData
+      };
+      var AuthError = checkAuthError(AuthData);
+      if (AuthError) return cb(AuthError);
+
+      if (AuthData.Authorization) {
+        cb(null, AuthData);
+      } else {
+        StsData = AuthData || {};
+        StsData.Scope = Scope;
+        StsData.ScopeKey = ScopeKey;
+
+        self._StsCache.push(StsData);
+
+        calcAuthByTmpKey();
+      }
     });
+  } else if (self.options.getSTS) {
+    // 外部获取临时密钥
+    self.options.getSTS.call(self, {
+      Bucket: Bucket,
+      Region: Region
+    }, function (data) {
+      StsData = data || {};
+      StsData.Scope = Scope;
+      StsData.ScopeKey = ScopeKey;
+      if (!StsData.TmpSecretId) StsData.TmpSecretId = StsData.SecretId;
+      if (!StsData.TmpSecretKey) StsData.TmpSecretKey = StsData.SecretKey;
+      var AuthError = checkAuthError(StsData);
+      if (AuthError) return cb(AuthError);
 
-    // kill task
-    var killTask = function (data) {
-        if (data.TaskId === TaskId) {
-            sender && sender.abort && sender.abort();
-            self.off('inner-kill-task', killTask);
+      self._StsCache.push(StsData);
+
+      calcAuthByTmpKey();
+    });
+  } else {
+    // 内部计算获取签名
+    return function () {
+      var Authorization = util.getAuth({
+        SecretId: params.SecretId || self.options.SecretId,
+        SecretKey: params.SecretKey || self.options.SecretKey,
+        Method: params.Method,
+        Pathname: Pathname,
+        Query: params.Query,
+        Headers: headers,
+        Expires: params.Expires,
+        UseRawKey: self.options.UseRawKey,
+        SystemClockOffset: self.options.SystemClockOffset,
+        ForceSignHost: forceSignHost
+      });
+      var AuthData = {
+        Authorization: Authorization,
+        SecurityToken: self.options.SecurityToken || self.options.XCosSecurityToken
+      };
+      cb(null, AuthData);
+      return AuthData;
+    }();
+  }
+
+  return '';
+} // 调整时间偏差
+
+
+function allowRetry(err) {
+  var allowRetry = false;
+  var isTimeError = false;
+  var serverDate = err.headers && (err.headers.date || err.headers.Date) || err.error && err.error.ServerTime;
+
+  try {
+    var errorCode = err.error.Code;
+    var errorMessage = err.error.Message;
+
+    if (errorCode === 'RequestTimeTooSkewed' || errorCode === 'AccessDenied' && errorMessage === 'Request has expired') {
+      isTimeError = true;
+    }
+  } catch (e) {}
+
+  if (err) {
+    if (isTimeError && serverDate) {
+      var serverTime = Date.parse(serverDate);
+
+      if (this.options.CorrectClockSkew && Math.abs(util.getSkewTime(this.options.SystemClockOffset) - serverTime) >= 30000) {
+        console.error('error: Local time is too skewed.');
+        this.options.SystemClockOffset = serverTime - Date.now();
+        allowRetry = true;
+      }
+    } else if (Math.floor(err.statusCode / 100) === 5) {
+      allowRetry = true;
+    }
+  }
+
+  return allowRetry;
+} // 获取签名并发起请求
+
+
+function submitRequest(params, callback) {
+  var self = this; // 处理 headers
+
+  !params.headers && (params.headers = {}); // 处理 query
+
+  !params.qs && (params.qs = {});
+  params.VersionId && (params.qs.versionId = params.VersionId);
+  params.qs = util.clearKey(params.qs); // 清理 undefined 和 null 字段
+
+  params.headers && (params.headers = util.clearKey(params.headers));
+  params.qs && (params.qs = util.clearKey(params.qs));
+  var Query = util.clone(params.qs);
+  params.action && (Query[params.action] = '');
+  var paramsUrl = params.url || params.Url;
+  var SignHost = params.SignHost || getSignHost.call(this, {
+    Bucket: params.Bucket,
+    Region: params.Region,
+    Url: paramsUrl
+  });
+  var tracker = params.tracker;
+
+  var next = function next(tryTimes) {
+    var oldClockOffset = self.options.SystemClockOffset;
+    tracker && tracker.setParams({
+      signStartTime: new Date().getTime(),
+      retryTimes: tryTimes - 1
+    });
+    getAuthorizationAsync.call(self, {
+      Bucket: params.Bucket || '',
+      Region: params.Region || '',
+      Method: params.method,
+      Key: params.Key,
+      Query: Query,
+      Headers: params.headers,
+      SignHost: SignHost,
+      Action: params.Action,
+      ResourceKey: params.ResourceKey,
+      Scope: params.Scope,
+      ForceSignHost: self.options.ForceSignHost
+    }, function (err, AuthData) {
+      if (err) {
+        callback(err);
+        return;
+      }
+
+      tracker && tracker.setParams({
+        signEndTime: new Date().getTime(),
+        httpStartTime: new Date().getTime()
+      });
+      params.AuthData = AuthData;
+
+      _submitRequest.call(self, params, function (err, data) {
+        tracker && tracker.setParams({
+          httpEndTime: new Date().getTime()
+        });
+
+        if (err && tryTimes < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
+          if (params.headers) {
+            delete params.headers.Authorization;
+            delete params.headers['token'];
+            delete params.headers['clientIP'];
+            delete params.headers['clientUA'];
+            params.headers['x-cos-security-token'] && delete params.headers['x-cos-security-token'];
+            params.headers['x-ci-security-token'] && delete params.headers['x-ci-security-token'];
+          }
+
+          next(tryTimes + 1);
+        } else {
+          callback(err, data);
         }
+      });
+    });
+  };
+
+  next(1);
+} // 发起请求
+
+
+function _submitRequest(params, callback) {
+  var self = this;
+  var TaskId = params.TaskId;
+  if (TaskId && !self._isRunningTask(TaskId)) return;
+  var bucket = params.Bucket;
+  var region = params.Region;
+  var object = params.Key;
+  var method = params.method || 'GET';
+  var url = params.Url || params.url;
+  var body = params.body;
+  var rawBody = params.rawBody; // url
+
+  if (self.options.UseAccelerate) {
+    region = 'accelerate';
+  }
+
+  url = url || getUrl({
+    ForcePathStyle: self.options.ForcePathStyle,
+    protocol: self.options.Protocol,
+    domain: self.options.Domain,
+    bucket: bucket,
+    region: region,
+    object: object
+  });
+
+  if (params.action) {
+    url = url + '?' + params.action;
+  }
+
+  if (params.qsStr) {
+    if (url.indexOf('?') > -1) {
+      url = url + '&' + params.qsStr;
+    } else {
+      url = url + '?' + params.qsStr;
+    }
+  }
+
+  var opt = {
+    method: method,
+    url: url,
+    headers: params.headers,
+    qs: params.qs,
+    body: body
+  }; // 兼容ci接口
+
+  var token = 'x-cos-security-token';
+
+  if (util.isCIHost(url)) {
+    token = 'x-ci-security-token';
+  } // 获取签名
+
+
+  opt.headers.Authorization = params.AuthData.Authorization;
+  params.AuthData.Token && (opt.headers['token'] = params.AuthData.Token);
+  params.AuthData.ClientIP && (opt.headers['clientIP'] = params.AuthData.ClientIP);
+  params.AuthData.ClientUA && (opt.headers['clientUA'] = params.AuthData.ClientUA);
+  params.AuthData.SecurityToken && (opt.headers[token] = params.AuthData.SecurityToken); // 清理 undefined 和 null 字段
+
+  opt.headers && (opt.headers = util.clearKey(opt.headers));
+  opt = util.clearKey(opt); // progress
+
+  if (params.onProgress && typeof params.onProgress === 'function') {
+    var contentLength = body && (body.size || body.length) || 0;
+
+    opt.onProgress = function (e) {
+      if (TaskId && !self._isRunningTask(TaskId)) return;
+      var loaded = e ? e.loaded : 0;
+      params.onProgress({
+        loaded: loaded,
+        total: contentLength
+      });
     };
-    TaskId && self.on('inner-kill-task', killTask);
+  }
+
+  if (params.onDownloadProgress) {
+    opt.onDownloadProgress = params.onDownloadProgress;
+  }
+
+  if (params.DataType) {
+    opt.dataType = params.DataType;
+  }
+
+  if (this.options.Timeout) {
+    opt.timeout = this.options.Timeout;
+  }
+
+  self.options.ForcePathStyle && (opt.pathStyle = self.options.ForcePathStyle);
+  self.emit('before-send', opt);
+  var useAccelerate = opt.url.includes('accelerate.');
+  var queryString = Object.keys(opt.qs).map(function (key) {
+    return "".concat(key, "=").concat(opt.qs[key]);
+  }).join('&');
+  var fullUrl = queryString ? opt.url + '?' + queryString : opt.url;
+  params.tracker && params.tracker.setParams({
+    reqUrl: fullUrl,
+    accelerate: useAccelerate ? 'Y' : 'N'
+  }); // 分块上传时给父级tracker设置url信息
+
+  params.tracker && params.tracker.parent && params.tracker.parent.setParams({
+    reqUrl: fullUrl,
+    accelerate: useAccelerate ? 'Y' : 'N'
+  });
+  var sender = (self.options.Request || REQUEST)(opt, function (r) {
+    if (r.error === 'abort') return;
+    var receive = {
+      options: opt,
+      error: err,
+      statusCode: response && response.statusCode || 0,
+      headers: response && response.headers || {},
+      body: body
+    };
+    self.emit('after-receive', receive);
+    err = receive.error;
+    body = receive.body;
+    response = {
+      statusCode: receive.statusCode,
+      headers: receive.headers
+    }; // 抛出事件，允许修改返回值的 error、statusCode、statusMessage、body
+
+    self.emit('after-receive', r);
+    var response = {
+      statusCode: r.statusCode,
+      statusMessage: r.statusMessage,
+      headers: r.headers
+    };
+    var err = r.error;
+    var body = r.body; // 返回内容添加 状态码 和 headers
+
+    var hasReturned;
+
+    var cb = function cb(err, data) {
+      TaskId && self.off('inner-kill-task', killTask);
+      if (hasReturned) return;
+      hasReturned = true;
+      var attrs = {};
+      response && response.statusCode && (attrs.statusCode = response.statusCode);
+      response && response.headers && (attrs.headers = response.headers);
+
+      if (err) {
+        err = util.extend(err || {}, attrs);
+        callback(err, null);
+      } else {
+        data = util.extend(data || {}, attrs);
+        callback(null, data);
+      }
+
+      sender = null;
+    }; // 请求错误，发生网络错误
+
+
+    if (err) return cb(util.error(err)); // 请求返回码不为 200
+
+    var statusCode = response.statusCode;
+    var statusSuccess = Math.floor(statusCode / 100) === 2; // 200 202 204 206
+    // 不对 body 进行转换，body 直接挂载返回
+
+    if (rawBody && statusSuccess) return cb(null, {
+      body: body
+    }); // 解析 xml body
+
+    var json;
+
+    try {
+      json = body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body) || {};
+    } catch (e) {
+      json = {};
+    } // 处理返回值
+
+
+    var xmlError = json && json.Error;
+
+    if (statusSuccess) {
+      // 正确返回，状态码 2xx 时，body 不会有 Error
+      cb(null, json);
+    } else if (xmlError) {
+      // 正常返回了 xml body，且有 Error 节点
+      cb(util.error(new Error(xmlError.Message), {
+        code: xmlError.Code,
+        error: xmlError
+      }));
+    } else if (statusCode) {
+      // 有错误的状态码
+      cb(util.error(new Error(response.statusMessage), {
+        code: '' + statusCode
+      }));
+    } else if (statusCode) {
+      // 无状态码，或者获取不到状态码
+      cb(util.error(new Error('statusCode error')));
+    }
+  }); // kill task
+
+  var killTask = function killTask(data) {
+    if (data.TaskId === TaskId) {
+      sender && sender.abort && sender.abort();
+      self.off('inner-kill-task', killTask);
+    }
+  };
+
+  TaskId && self.on('inner-kill-task', killTask);
 }
 
 var API_MAP = {
-    // Bucket 相关方法
-    getService: getService, // Bucket
-    putBucket: putBucket,
-    headBucket: headBucket, // Bucket
-    getBucket: getBucket,
-    deleteBucket: deleteBucket,
-    putBucketAcl: putBucketAcl, // BucketACL
-    getBucketAcl: getBucketAcl,
-    putBucketCors: putBucketCors, // BucketCors
-    getBucketCors: getBucketCors,
-    deleteBucketCors: deleteBucketCors,
-    getBucketLocation: getBucketLocation, // BucketLocation
-    getBucketPolicy: getBucketPolicy, // BucketPolicy
-    putBucketPolicy: putBucketPolicy,
-    deleteBucketPolicy: deleteBucketPolicy,
-    putBucketTagging: putBucketTagging, // BucketTagging
-    getBucketTagging: getBucketTagging,
-    deleteBucketTagging: deleteBucketTagging,
-    putBucketLifecycle: putBucketLifecycle, // BucketLifecycle
-    getBucketLifecycle: getBucketLifecycle,
-    deleteBucketLifecycle: deleteBucketLifecycle,
-    putBucketVersioning: putBucketVersioning, // BucketVersioning
-    getBucketVersioning: getBucketVersioning,
-    putBucketReplication: putBucketReplication, // BucketReplication
-    getBucketReplication: getBucketReplication,
-    deleteBucketReplication: deleteBucketReplication,
-    putBucketWebsite: putBucketWebsite, // BucketWebsite
-    getBucketWebsite: getBucketWebsite,
-    deleteBucketWebsite: deleteBucketWebsite,
-    putBucketReferer: putBucketReferer, // BucketReferer
-    getBucketReferer: getBucketReferer,
-    putBucketDomain: putBucketDomain, // BucketDomain
-    getBucketDomain: getBucketDomain,
-    deleteBucketDomain: deleteBucketDomain,
-    putBucketOrigin: putBucketOrigin, // BucketOrigin
-    getBucketOrigin: getBucketOrigin,
-    deleteBucketOrigin: deleteBucketOrigin,
-    putBucketLogging: putBucketLogging, // BucketLogging
-    getBucketLogging: getBucketLogging,
-    putBucketInventory: putBucketInventory, // BucketInventory
-    getBucketInventory: getBucketInventory,
-    listBucketInventory: listBucketInventory,
-    deleteBucketInventory: deleteBucketInventory,
-    putBucketAccelerate: putBucketAccelerate,
-    getBucketAccelerate: getBucketAccelerate,
-    putBucketEncryption: putBucketEncryption,
-    getBucketEncryption: getBucketEncryption,
-    deleteBucketEncryption: deleteBucketEncryption,
-
-    // Object 相关方法
-    getObject: getObject,
-    headObject: headObject,
-    listObjectVersions: listObjectVersions,
-    putObject: putObject,
-    deleteObject: deleteObject,
-    getObjectAcl: getObjectAcl,
-    putObjectAcl: putObjectAcl,
-    optionsObject: optionsObject,
-    putObjectCopy: putObjectCopy,
-    deleteMultipleObject: deleteMultipleObject,
-    restoreObject: restoreObject,
-    putObjectTagging: putObjectTagging,
-    getObjectTagging: getObjectTagging,
-    deleteObjectTagging: deleteObjectTagging,
-    selectObjectContent: selectObjectContent,
-    appendObject: appendObject,
-
-    // 分块上传相关方法
-    uploadPartCopy: uploadPartCopy,
-    multipartInit: multipartInit,
-    multipartUpload: multipartUpload,
-    multipartComplete: multipartComplete,
-    multipartList: multipartList,
-    multipartListPart: multipartListPart,
-    multipartAbort: multipartAbort,
-
-    // 工具方法
-    request: request,
-    getObjectUrl: getObjectUrl,
-    getAuth: getAuth
+  // Bucket 相关方法
+  getService: getService,
+  // Bucket
+  putBucket: putBucket,
+  headBucket: headBucket,
+  // Bucket
+  getBucket: getBucket,
+  deleteBucket: deleteBucket,
+  putBucketAcl: putBucketAcl,
+  // BucketACL
+  getBucketAcl: getBucketAcl,
+  putBucketCors: putBucketCors,
+  // BucketCors
+  getBucketCors: getBucketCors,
+  deleteBucketCors: deleteBucketCors,
+  getBucketLocation: getBucketLocation,
+  // BucketLocation
+  getBucketPolicy: getBucketPolicy,
+  // BucketPolicy
+  putBucketPolicy: putBucketPolicy,
+  deleteBucketPolicy: deleteBucketPolicy,
+  putBucketTagging: putBucketTagging,
+  // BucketTagging
+  getBucketTagging: getBucketTagging,
+  deleteBucketTagging: deleteBucketTagging,
+  putBucketLifecycle: putBucketLifecycle,
+  // BucketLifecycle
+  getBucketLifecycle: getBucketLifecycle,
+  deleteBucketLifecycle: deleteBucketLifecycle,
+  putBucketVersioning: putBucketVersioning,
+  // BucketVersioning
+  getBucketVersioning: getBucketVersioning,
+  putBucketReplication: putBucketReplication,
+  // BucketReplication
+  getBucketReplication: getBucketReplication,
+  deleteBucketReplication: deleteBucketReplication,
+  putBucketWebsite: putBucketWebsite,
+  // BucketWebsite
+  getBucketWebsite: getBucketWebsite,
+  deleteBucketWebsite: deleteBucketWebsite,
+  putBucketReferer: putBucketReferer,
+  // BucketReferer
+  getBucketReferer: getBucketReferer,
+  putBucketDomain: putBucketDomain,
+  // BucketDomain
+  getBucketDomain: getBucketDomain,
+  deleteBucketDomain: deleteBucketDomain,
+  putBucketOrigin: putBucketOrigin,
+  // BucketOrigin
+  getBucketOrigin: getBucketOrigin,
+  deleteBucketOrigin: deleteBucketOrigin,
+  putBucketLogging: putBucketLogging,
+  // BucketLogging
+  getBucketLogging: getBucketLogging,
+  putBucketInventory: putBucketInventory,
+  // BucketInventory
+  getBucketInventory: getBucketInventory,
+  listBucketInventory: listBucketInventory,
+  deleteBucketInventory: deleteBucketInventory,
+  putBucketAccelerate: putBucketAccelerate,
+  getBucketAccelerate: getBucketAccelerate,
+  putBucketEncryption: putBucketEncryption,
+  getBucketEncryption: getBucketEncryption,
+  deleteBucketEncryption: deleteBucketEncryption,
+  // Object 相关方法
+  getObject: getObject,
+  headObject: headObject,
+  listObjectVersions: listObjectVersions,
+  putObject: putObject,
+  deleteObject: deleteObject,
+  getObjectAcl: getObjectAcl,
+  putObjectAcl: putObjectAcl,
+  optionsObject: optionsObject,
+  putObjectCopy: putObjectCopy,
+  deleteMultipleObject: deleteMultipleObject,
+  restoreObject: restoreObject,
+  putObjectTagging: putObjectTagging,
+  getObjectTagging: getObjectTagging,
+  deleteObjectTagging: deleteObjectTagging,
+  selectObjectContent: selectObjectContent,
+  appendObject: appendObject,
+  // 分块上传相关方法
+  uploadPartCopy: uploadPartCopy,
+  multipartInit: multipartInit,
+  multipartUpload: multipartUpload,
+  multipartComplete: multipartComplete,
+  multipartList: multipartList,
+  multipartListPart: multipartListPart,
+  multipartAbort: multipartAbort,
+  // 工具方法
+  request: request,
+  getObjectUrl: getObjectUrl,
+  getAuth: getAuth
 };
 
 function warnOldApi(apiName, fn, proto) {
-    util.each(['Cors', 'Acl'], function (suffix) {
-        if (apiName.slice(-suffix.length) === suffix) {
-            var oldName = apiName.slice(0, -suffix.length) + suffix.toUpperCase();
-            var apiFn = util.apiWrapper(apiName, fn);
-            var warned = false;
-            proto[oldName] = function () {
-                !warned && console.warn('warning: cos.' + oldName + ' has been deprecated. Please Use cos.' + apiName + ' instead.');
-                warned = true;
-                apiFn.apply(this, arguments);
-            };
-        }
-    });
+  util.each(['Cors', 'Acl'], function (suffix) {
+    if (apiName.slice(-suffix.length) === suffix) {
+      var oldName = apiName.slice(0, -suffix.length) + suffix.toUpperCase();
+      var apiFn = util.apiWrapper(apiName, fn);
+      var warned = false;
+
+      proto[oldName] = function () {
+        !warned && console.warn('warning: cos.' + oldName + ' has been deprecated. Please Use cos.' + apiName + ' instead.');
+        warned = true;
+        apiFn.apply(this, arguments);
+      };
+    }
+  });
 }
 
 module.exports.init = function (COS, task) {
-    task.transferToTaskMethod(API_MAP, 'putObject');
-    util.each(API_MAP, function (fn, apiName) {
-        COS.prototype[apiName] = util.apiWrapper(apiName, fn);
-        warnOldApi(apiName, fn, COS.prototype);
-    });
+  task.transferToTaskMethod(API_MAP, 'putObject');
+  util.each(API_MAP, function (fn, apiName) {
+    COS.prototype[apiName] = util.apiWrapper(apiName, fn);
+    warnOldApi(apiName, fn, COS.prototype);
+  });
 };
 
 /***/ }),
-/* 20 */
-/***/ (function(module, exports) {
 
-var stringifyPrimitive = function (v) {
-    switch (typeof v) {
-        case 'string':
-            return v;
-        case 'boolean':
-            return v ? 'true' : 'false';
-        case 'number':
-            return isFinite(v) ? v : '';
-        default:
-            return '';
-    }
-};
-
-var queryStringify = function (obj, sep, eq, name) {
-    sep = sep || '&';
-    eq = eq || '=';
-    if (obj === null) {
-        obj = undefined;
-    }
-    if (typeof obj === 'object') {
-        return Object.keys(obj).map(function (k) {
-            var ks = encodeURIComponent(stringifyPrimitive(k)) + eq;
-            if (Array.isArray(obj[k])) {
-                return obj[k].map(function (v) {
-                    return ks + encodeURIComponent(stringifyPrimitive(v));
-                }).join(sep);
-            } else {
-                return ks + encodeURIComponent(stringifyPrimitive(obj[k]));
-            }
-        }).filter(Boolean).join(sep);
-    }
-    if (!name) return '';
-    return encodeURIComponent(stringifyPrimitive(name)) + eq + encodeURIComponent(stringifyPrimitive(obj));
-};
-
-var xhrRes = function (err, xhr, body) {
-    var headers = {};
-    xhr.getAllResponseHeaders().trim().split('\n').forEach(function (item) {
-        if (item) {
-            var index = item.indexOf(':');
-            var key = item.substr(0, index).trim().toLowerCase();
-            var val = item.substr(index + 1).trim();
-            headers[key] = val;
-        }
-    });
-    return {
-        error: err,
-        statusCode: xhr.status,
-        statusMessage: xhr.statusText,
-        headers: headers,
-        body: body
-    };
-};
-
-var xhrBody = function (xhr, dataType) {
-    return !dataType && dataType === 'text' ? xhr.responseText : xhr.response;
-};
-
-var request = function (opt, callback) {
-
-    // method
-    var method = (opt.method || 'GET').toUpperCase();
-
-    // url、qs
-    var url = opt.url;
-    if (opt.qs) {
-        var qsStr = queryStringify(opt.qs);
-        if (qsStr) {
-            url += (url.indexOf('?') === -1 ? '?' : '&') + qsStr;
-        }
-    }
-
-    // 创建 ajax 实例
-    var xhr = new XMLHttpRequest();
-    xhr.open(method, url, true);
-    xhr.responseType = opt.dataType || 'text';
-
-    // 处理 xhrFields 属性
-    if (opt.xhrFields) {
-        for (var xhrField in opt.xhrFields) {
-            xhr[xhrField] = opt.xhrFields[xhrField];
-        }
-    }
-
-    // 处理 headers
-    var headers = opt.headers;
-    if (headers) {
-        for (var key in headers) {
-            if (headers.hasOwnProperty(key) && key.toLowerCase() !== 'content-length' && key.toLowerCase() !== 'user-agent' && key.toLowerCase() !== 'origin' && key.toLowerCase() !== 'host') {
-                xhr.setRequestHeader(key, headers[key]);
-            }
-        }
-    }
-
-    // onprogress
-    if (opt.onProgress && xhr.upload) xhr.upload.onprogress = opt.onProgress;
-    if (opt.onDownloadProgress) xhr.onprogress = opt.onDownloadProgress;
-
-    // timeout
-    if (opt.timeout) xhr.timeout = opt.timeout;
-    xhr.ontimeout = function (event) {
-        var error = new Error('timeout');
-        callback(xhrRes(error, xhr));
-    };
-
-    // success 2xx/3xx/4xx
-    xhr.onload = function () {
-        callback(xhrRes(null, xhr, xhrBody(xhr, opt.dataType)));
-    };
-
-    // error 5xx/0 (网络错误、跨域报错、Https connect-src 限制的报错时 statusCode 为 0)
-    xhr.onerror = function (err) {
-        var body = xhrBody(xhr, opt.dataType);
-        if (body) {
-            // 5xx
-            callback(xhrRes(null, xhr, body));
-        } else {
-            // 0
-            var error = xhr.statusText;
-            if (!error && xhr.status === 0) error = new Error('CORS blocked or network error');
-            callback(xhrRes(error, xhr, body));
-        }
-    };
-
-    // send
-    xhr.send(opt.body || '');
-
-    // 返回 ajax 实例，用于外部调用 xhr.abort
-    return xhr;
-};
-
-module.exports = request;
-
-/***/ }),
-/* 21 */
+/***/ "./src/cos.js":
+/*!********************!*\
+  !*** ./src/cos.js ***!
+  \********************/
+/*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-var session = __webpack_require__(5);
-var Async = __webpack_require__(22);
-var EventProxy = __webpack_require__(4).EventProxy;
-var util = __webpack_require__(0);
-
-// 文件分块上传全过程，暴露的分块上传接口
-function sliceUploadFile(params, callback) {
-    var self = this;
-    var ep = new EventProxy();
-    var TaskId = params.TaskId;
-    var Bucket = params.Bucket;
-    var Region = params.Region;
-    var Key = params.Key;
-    var Body = params.Body;
-    var ChunkSize = params.ChunkSize || params.SliceSize || self.options.ChunkSize;
-    var AsyncLimit = params.AsyncLimit;
-    var StorageClass = params.StorageClass;
-    var ServerSideEncryption = params.ServerSideEncryption;
-    var FileSize;
-
-    var onProgress;
-    var onHashProgress = params.onHashProgress;
-
-    // 上传过程中出现错误，返回错误
-    ep.on('error', function (err) {
-        if (!self._isRunningTask(TaskId)) return;
-        err.UploadId = params.UploadData.UploadId || '';
-        return callback(err);
-    });
-
-    // 上传分块完成，开始 uploadSliceComplete 操作
-    ep.on('upload_complete', function (UploadCompleteData) {
-        var _UploadCompleteData = util.extend({
-            UploadId: params.UploadData.UploadId || ''
-        }, UploadCompleteData);
-        callback(null, _UploadCompleteData);
-    });
-
-    // 上传分块完成，开始 uploadSliceComplete 操作
-    ep.on('upload_slice_complete', function (UploadData) {
-        var metaHeaders = {};
-        util.each(params.Headers, function (val, k) {
-            var shortKey = k.toLowerCase();
-            if (shortKey.indexOf('x-cos-meta-') === 0 || shortKey === 'pic-operations') metaHeaders[k] = val;
-        });
-        uploadSliceComplete.call(self, {
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key,
-            UploadId: UploadData.UploadId,
-            SliceList: UploadData.SliceList,
-            Headers: metaHeaders
-        }, function (err, data) {
-            if (!self._isRunningTask(TaskId)) return;
-            session.removeUsing(UploadData.UploadId);
-            if (err) {
-                onProgress(null, true);
-                return ep.emit('error', err);
-            }
-            session.removeUploadId.call(self, UploadData.UploadId);
-            onProgress({ loaded: FileSize, total: FileSize }, true);
-            ep.emit('upload_complete', data);
-        });
-    });
-
-    // 获取 UploadId 完成，开始上传每个分片
-    ep.on('get_upload_data_finish', function (UploadData) {
-
-        // 处理 UploadId 缓存
-        var uuid = session.getFileId(Body, params.ChunkSize, Bucket, Key);
-        uuid && session.saveUploadId.call(self, uuid, UploadData.UploadId, self.options.UploadIdCacheLimit); // 缓存 UploadId
-        session.setUsing(UploadData.UploadId); // 标记 UploadId 为正在使用
-
-        // 获取 UploadId
-        onProgress(null, true); // 任务状态开始 uploading
-        uploadSliceList.call(self, {
-            TaskId: TaskId,
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key,
-            Body: Body,
-            FileSize: FileSize,
-            SliceSize: ChunkSize,
-            AsyncLimit: AsyncLimit,
-            ServerSideEncryption: ServerSideEncryption,
-            UploadData: UploadData,
-            Headers: params.Headers,
-            onProgress: onProgress
-        }, function (err, data) {
-            if (!self._isRunningTask(TaskId)) return;
-            if (err) {
-                onProgress(null, true);
-                return ep.emit('error', err);
-            }
-            ep.emit('upload_slice_complete', data);
-        });
-    });
-
-    // 开始获取文件 UploadId，里面会视情况计算 ETag，并比对，保证文件一致性，也优化上传
-    ep.on('get_file_size_finish', function () {
-
-        onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
-
-        if (params.UploadData.UploadId) {
-            ep.emit('get_upload_data_finish', params.UploadData);
-        } else {
-            var _params = util.extend({
-                TaskId: TaskId,
-                Bucket: Bucket,
-                Region: Region,
-                Key: Key,
-                Headers: params.Headers,
-                StorageClass: StorageClass,
-                Body: Body,
-                FileSize: FileSize,
-                SliceSize: ChunkSize,
-                onHashProgress: onHashProgress
-            }, params);
-            getUploadIdAndPartList.call(self, _params, function (err, UploadData) {
-                if (!self._isRunningTask(TaskId)) return;
-                if (err) return ep.emit('error', err);
-                params.UploadData.UploadId = UploadData.UploadId;
-                params.UploadData.PartList = UploadData.PartList;
-                ep.emit('get_upload_data_finish', params.UploadData);
-            });
-        }
-    });
-
-    // 获取上传文件大小
-    FileSize = params.ContentLength;
-    delete params.ContentLength;
-    !params.Headers && (params.Headers = {});
-    util.each(params.Headers, function (item, key) {
-        if (key.toLowerCase() === 'content-length') {
-            delete params.Headers[key];
-        }
-    });
-
-    // 控制分片大小
-    (function () {
-        var SIZE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1024 * 2, 1024 * 4, 1024 * 5];
-        var AutoChunkSize = 1024 * 1024;
-        for (var i = 0; i < SIZE.length; i++) {
-            AutoChunkSize = SIZE[i] * 1024 * 1024;
-            if (FileSize / AutoChunkSize <= self.options.MaxPartNumber) break;
-        }
-        params.ChunkSize = params.SliceSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
-    })();
-
-    // 开始上传
-    if (FileSize === 0) {
-        params.Body = '';
-        params.ContentLength = 0;
-        params.SkipTask = true;
-        self.putObject(params, callback);
-    } else {
-        ep.emit('get_file_size_finish');
-    }
-}
-
-// 获取上传任务的 UploadId
-function getUploadIdAndPartList(params, callback) {
-    var TaskId = params.TaskId;
-    var Bucket = params.Bucket;
-    var Region = params.Region;
-    var Key = params.Key;
-    var StorageClass = params.StorageClass;
-    var self = this;
-
-    // 计算 ETag
-    var ETagMap = {};
-    var FileSize = params.FileSize;
-    var SliceSize = params.SliceSize;
-    var SliceCount = Math.ceil(FileSize / SliceSize);
-    var FinishSliceCount = 0;
-    var FinishSize = 0;
-    var onHashProgress = util.throttleOnProgress.call(self, FileSize, params.onHashProgress);
-    var getChunkETag = function (PartNumber, callback) {
-        var start = SliceSize * (PartNumber - 1);
-        var end = Math.min(start + SliceSize, FileSize);
-        var ChunkSize = end - start;
-
-        if (ETagMap[PartNumber]) {
-            callback(null, {
-                PartNumber: PartNumber,
-                ETag: ETagMap[PartNumber],
-                Size: ChunkSize
-            });
-        } else {
-            util.fileSlice(params.Body, start, end, false, function (chunkItem) {
-                util.getFileMd5(chunkItem, function (err, md5) {
-                    if (err) return callback(util.error(err));
-                    var ETag = '"' + md5 + '"';
-                    ETagMap[PartNumber] = ETag;
-                    FinishSliceCount += 1;
-                    FinishSize += ChunkSize;
-                    onHashProgress({ loaded: FinishSize, total: FileSize });
-                    callback(null, {
-                        PartNumber: PartNumber,
-                        ETag: ETag,
-                        Size: ChunkSize
-                    });
-                });
-            });
-        }
-    };
-
-    // 通过和文件的 md5 对比，判断 UploadId 是否可用
-    var isAvailableUploadList = function (PartList, callback) {
-        var PartCount = PartList.length;
-        // 如果没有分片，通过
-        if (PartCount === 0) {
-            return callback(null, true);
-        }
-        // 检查分片数量
-        if (PartCount > SliceCount) {
-            return callback(null, false);
-        }
-        // 检查分片大小
-        if (PartCount > 1) {
-            var PartSliceSize = Math.max(PartList[0].Size, PartList[1].Size);
-            if (PartSliceSize !== SliceSize) {
-                return callback(null, false);
-            }
-        }
-        // 逐个分片计算并检查 ETag 是否一致
-        var next = function (index) {
-            if (index < PartCount) {
-                var Part = PartList[index];
-                getChunkETag(Part.PartNumber, function (err, chunk) {
-                    if (chunk && chunk.ETag === Part.ETag && chunk.Size === Part.Size) {
-                        next(index + 1);
-                    } else {
-                        callback(null, false);
-                    }
-                });
-            } else {
-                callback(null, true);
-            }
-        };
-        next(0);
-    };
-
-    var ep = new EventProxy();
-    ep.on('error', function (errData) {
-        if (!self._isRunningTask(TaskId)) return;
-        return callback(errData);
-    });
-
-    // 存在 UploadId
-    ep.on('upload_id_available', function (UploadData) {
-        // 转换成 map
-        var map = {};
-        var list = [];
-        util.each(UploadData.PartList, function (item) {
-            map[item.PartNumber] = item;
-        });
-        for (var PartNumber = 1; PartNumber <= SliceCount; PartNumber++) {
-            var item = map[PartNumber];
-            if (item) {
-                item.PartNumber = PartNumber;
-                item.Uploaded = true;
-            } else {
-                item = {
-                    PartNumber: PartNumber,
-                    ETag: null,
-                    Uploaded: false
-                };
-            }
-            list.push(item);
-        }
-        UploadData.PartList = list;
-        callback(null, UploadData);
-    });
-
-    // 不存在 UploadId, 初始化生成 UploadId
-    ep.on('no_available_upload_id', function () {
-        if (!self._isRunningTask(TaskId)) return;
-        var _params = util.extend({
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key,
-            Query: util.clone(params.Query),
-            StorageClass: StorageClass,
-            Body: params.Body
-        }, params);
-        var headers = util.clone(params.Headers);
-        delete headers['x-cos-mime-limit'];
-        _params.Headers = headers;
-        self.multipartInit(_params, function (err, data) {
-            if (!self._isRunningTask(TaskId)) return;
-            if (err) return ep.emit('error', err);
-            var UploadId = data.UploadId;
-            if (!UploadId) {
-                return callback(util.error(new Error('no such upload id')));
-            }
-            ep.emit('upload_id_available', { UploadId: UploadId, PartList: [] });
-        });
-    });
-
-    // 如果已存在 UploadId，找一个可以用的 UploadId
-    ep.on('has_and_check_upload_id', function (UploadIdList) {
-        // 串行地，找一个内容一致的 UploadId
-        UploadIdList = UploadIdList.reverse();
-        Async.eachLimit(UploadIdList, 1, function (UploadId, asyncCallback) {
-            if (!self._isRunningTask(TaskId)) return;
-            // 如果正在上传，跳过
-            if (session.using[UploadId]) {
-                asyncCallback(); // 检查下一个 UploadId
-                return;
-            }
-            // 判断 UploadId 是否可用
-            wholeMultipartListPart.call(self, {
-                Bucket: Bucket,
-                Region: Region,
-                Key: Key,
-                UploadId: UploadId
-            }, function (err, PartListData) {
-                if (!self._isRunningTask(TaskId)) return;
-                if (err) {
-                    session.removeUsing(UploadId);
-                    return ep.emit('error', err);
-                }
-                var PartList = PartListData.PartList;
-                PartList.forEach(function (item) {
-                    item.PartNumber *= 1;
-                    item.Size *= 1;
-                    item.ETag = item.ETag || '';
-                });
-                isAvailableUploadList(PartList, function (err, isAvailable) {
-                    if (!self._isRunningTask(TaskId)) return;
-                    if (err) return ep.emit('error', err);
-                    if (isAvailable) {
-                        asyncCallback({
-                            UploadId: UploadId,
-                            PartList: PartList
-                        }); // 马上结束
-                    } else {
-                        asyncCallback(); // 检查下一个 UploadId
-                    }
-                });
-            });
-        }, function (AvailableUploadData) {
-            if (!self._isRunningTask(TaskId)) return;
-            onHashProgress(null, true);
-            if (AvailableUploadData && AvailableUploadData.UploadId) {
-                ep.emit('upload_id_available', AvailableUploadData);
-            } else {
-                ep.emit('no_available_upload_id');
-            }
-        });
-    });
-
-    // 在本地缓存找可用的 UploadId
-    ep.on('seek_local_avail_upload_id', function (RemoteUploadIdList) {
-        // 在本地找可用的 UploadId
-        var uuid = session.getFileId(params.Body, params.ChunkSize, Bucket, Key);
-        var LocalUploadIdList = session.getUploadIdList.call(self, uuid);
-        if (!uuid || !LocalUploadIdList) {
-            ep.emit('has_and_check_upload_id', RemoteUploadIdList);
-            return;
-        }
-        var next = function (index) {
-            // 如果本地找不到可用 UploadId，再一个个遍历校验远端
-            if (index >= LocalUploadIdList.length) {
-                ep.emit('has_and_check_upload_id', RemoteUploadIdList);
-                return;
-            }
-            var UploadId = LocalUploadIdList[index];
-            // 如果不在远端 UploadId 列表里，跳过并删除
-            if (!util.isInArray(RemoteUploadIdList, UploadId)) {
-                session.removeUploadId.call(self, UploadId);
-                next(index + 1);
-                return;
-            }
-            // 如果正在上传，跳过
-            if (session.using[UploadId]) {
-                next(index + 1);
-                return;
-            }
-            // 判断 UploadId 是否存在线上
-            wholeMultipartListPart.call(self, {
-                Bucket: Bucket,
-                Region: Region,
-                Key: Key,
-                UploadId: UploadId
-            }, function (err, PartListData) {
-                if (!self._isRunningTask(TaskId)) return;
-                if (err) {
-                    // 如果 UploadId 获取会出错，跳过并删除
-                    session.removeUploadId.call(self, UploadId);
-                    next(index + 1);
-                } else {
-                    // 找到可用 UploadId
-                    ep.emit('upload_id_available', {
-                        UploadId: UploadId,
-                        PartList: PartListData.PartList
-                    });
-                }
-            });
-        };
-        next(0);
-    });
-
-    // 获取线上 UploadId 列表
-    ep.on('get_remote_upload_id_list', function () {
-        // 获取符合条件的 UploadId 列表，因为同一个文件可以有多个上传任务。
-        wholeMultipartList.call(self, {
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key
-        }, function (err, data) {
-            if (!self._isRunningTask(TaskId)) return;
-            if (err) return ep.emit('error', err);
-            // 整理远端 UploadId 列表
-            var RemoteUploadIdList = util.filter(data.UploadList, function (item) {
-                return item.Key === Key && (!StorageClass || item.StorageClass.toUpperCase() === StorageClass.toUpperCase());
-            }).reverse().map(function (item) {
-                return item.UploadId || item.UploadID;
-            });
-            if (RemoteUploadIdList.length) {
-                ep.emit('seek_local_avail_upload_id', RemoteUploadIdList);
-            } else {
-                // 远端没有 UploadId，清理缓存的 UploadId
-                var uuid = session.getFileId(params.Body, params.ChunkSize, Bucket, Key),
-                    LocalUploadIdList;
-                if (uuid && (LocalUploadIdList = session.getUploadIdList.call(self, uuid))) {
-                    util.each(LocalUploadIdList, function (UploadId) {
-                        session.removeUploadId.call(self, UploadId);
-                    });
-                }
-                ep.emit('no_available_upload_id');
-            }
-        });
-    });
-
-    // 开始找可用 UploadId
-    ep.emit('get_remote_upload_id_list');
-}
-
-// 获取符合条件的全部上传任务 (条件包括 Bucket, Region, Prefix)
-function wholeMultipartList(params, callback) {
-    var self = this;
-    var UploadList = [];
-    var sendParams = {
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Prefix: params.Key
-    };
-    var next = function () {
-        self.multipartList(sendParams, function (err, data) {
-            if (err) return callback(err);
-            UploadList.push.apply(UploadList, data.Upload || []);
-            if (data.IsTruncated === 'true') {
-                // 列表不完整
-                sendParams.KeyMarker = data.NextKeyMarker;
-                sendParams.UploadIdMarker = data.NextUploadIdMarker;
-                next();
-            } else {
-                callback(null, { UploadList: UploadList });
-            }
-        });
-    };
-    next();
-}
-
-// 获取指定上传任务的分块列表
-function wholeMultipartListPart(params, callback) {
-    var self = this;
-    var PartList = [];
-    var sendParams = {
-        Bucket: params.Bucket,
-        Region: params.Region,
-        Key: params.Key,
-        UploadId: params.UploadId
-    };
-    var next = function () {
-        self.multipartListPart(sendParams, function (err, data) {
-            if (err) return callback(err);
-            PartList.push.apply(PartList, data.Part || []);
-            if (data.IsTruncated === 'true') {
-                // 列表不完整
-                sendParams.PartNumberMarker = data.NextPartNumberMarker;
-                next();
-            } else {
-                callback(null, { PartList: PartList });
-            }
-        });
-    };
-    next();
-}
-
-// 上传文件分块，包括
-/*
- UploadId (上传任务编号)
- AsyncLimit (并发量)，
- SliceList (上传的分块数组)，
- FilePath (本地文件的位置)，
- SliceSize (文件分块大小)
- FileSize (文件大小)
- onProgress (上传成功之后的回调函数)
- */
-function uploadSliceList(params, cb) {
-    var self = this;
-    var TaskId = params.TaskId;
-    var Bucket = params.Bucket;
-    var Region = params.Region;
-    var Key = params.Key;
-    var UploadData = params.UploadData;
-    var FileSize = params.FileSize;
-    var SliceSize = params.SliceSize;
-    var ChunkParallel = Math.min(params.AsyncLimit || self.options.ChunkParallelLimit || 1, 256);
-    var Body = params.Body;
-    var SliceCount = Math.ceil(FileSize / SliceSize);
-    var FinishSize = 0;
-    var ServerSideEncryption = params.ServerSideEncryption;
-    var Headers = params.Headers;
-    var needUploadSlices = util.filter(UploadData.PartList, function (SliceItem) {
-        if (SliceItem['Uploaded']) {
-            FinishSize += SliceItem['PartNumber'] >= SliceCount ? FileSize % SliceSize || SliceSize : SliceSize;
-        }
-        return !SliceItem['Uploaded'];
-    });
-    var onProgress = params.onProgress;
-
-    Async.eachLimit(needUploadSlices, ChunkParallel, function (SliceItem, asyncCallback) {
-        if (!self._isRunningTask(TaskId)) return;
-        var PartNumber = SliceItem['PartNumber'];
-        var currentSize = Math.min(FileSize, SliceItem['PartNumber'] * SliceSize) - (SliceItem['PartNumber'] - 1) * SliceSize;
-        var preAddSize = 0;
-        uploadSliceItem.call(self, {
-            TaskId: TaskId,
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key,
-            SliceSize: SliceSize,
-            FileSize: FileSize,
-            PartNumber: PartNumber,
-            ServerSideEncryption: ServerSideEncryption,
-            Body: Body,
-            UploadData: UploadData,
-            Headers: Headers,
-            onProgress: function (data) {
-                FinishSize += data.loaded - preAddSize;
-                preAddSize = data.loaded;
-                onProgress({ loaded: FinishSize, total: FileSize });
-            }
-        }, function (err, data) {
-            if (!self._isRunningTask(TaskId)) return;
-            if (!err && !data.ETag) err = 'get ETag error, please add "ETag" to CORS ExposeHeader setting.( 获取ETag失败，请在CORS ExposeHeader设置中添加ETag，请参考文档：https://cloud.tencent.com/document/product/436/13318 )';
-            if (err) {
-                FinishSize -= preAddSize;
-            } else {
-                FinishSize += currentSize - preAddSize;
-                SliceItem.ETag = data.ETag;
-            }
-            onProgress({ loaded: FinishSize, total: FileSize });
-            asyncCallback(err || null, data);
-        });
-    }, function (err) {
-        if (!self._isRunningTask(TaskId)) return;
-        if (err) return cb(err);
-        cb(null, {
-            UploadId: UploadData.UploadId,
-            SliceList: UploadData.PartList
-        });
-    });
-}
-
-// 上传指定分片
-function uploadSliceItem(params, callback) {
-    var self = this;
-    var TaskId = params.TaskId;
-    var Bucket = params.Bucket;
-    var Region = params.Region;
-    var Key = params.Key;
-    var FileSize = params.FileSize;
-    var FileBody = params.Body;
-    var PartNumber = params.PartNumber * 1;
-    var SliceSize = params.SliceSize;
-    var ServerSideEncryption = params.ServerSideEncryption;
-    var UploadData = params.UploadData;
-    var Headers = params.Headers || {};
-    var ChunkRetryTimes = self.options.ChunkRetryTimes + 1;
-
-    var start = SliceSize * (PartNumber - 1);
-
-    var ContentLength = SliceSize;
-
-    var end = start + SliceSize;
-
-    if (end > FileSize) {
-        end = FileSize;
-        ContentLength = end - start;
-    }
-
-    var headersWhiteList = ['x-cos-traffic-limit', 'x-cos-mime-limit'];
-    var headers = {};
-    util.each(Headers, function (v, k) {
-        if (headersWhiteList.indexOf(k) > -1) {
-            headers[k] = v;
-        }
-    });
-
-    var PartItem = UploadData.PartList[PartNumber - 1];
-    Async.retry(ChunkRetryTimes, function (tryCallback) {
-        if (!self._isRunningTask(TaskId)) return;
-        util.fileSlice(FileBody, start, end, true, function (Body) {
-            self.multipartUpload({
-                TaskId: TaskId,
-                Bucket: Bucket,
-                Region: Region,
-                Key: Key,
-                ContentLength: ContentLength,
-                PartNumber: PartNumber,
-                UploadId: UploadData.UploadId,
-                ServerSideEncryption: ServerSideEncryption,
-                Body: Body,
-                Headers: headers,
-                onProgress: params.onProgress
-            }, function (err, data) {
-                if (!self._isRunningTask(TaskId)) return;
-                if (err) return tryCallback(err);
-                PartItem.Uploaded = true;
-                return tryCallback(null, data);
-            });
-        });
-    }, function (err, data) {
-        if (!self._isRunningTask(TaskId)) return;
-        return callback(err, data);
-    });
-}
-
-// 完成分块上传
-function uploadSliceComplete(params, callback) {
-    var Bucket = params.Bucket;
-    var Region = params.Region;
-    var Key = params.Key;
-    var UploadId = params.UploadId;
-    var SliceList = params.SliceList;
-    var self = this;
-    var ChunkRetryTimes = this.options.ChunkRetryTimes + 1;
-    var Headers = params.Headers;
-    var Parts = SliceList.map(function (item) {
-        return {
-            PartNumber: item.PartNumber,
-            ETag: item.ETag
-        };
-    });
-    // 完成上传的请求也做重试
-    Async.retry(ChunkRetryTimes, function (tryCallback) {
-        self.multipartComplete({
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key,
-            UploadId: UploadId,
-            Parts: Parts,
-            Headers: Headers
-        }, tryCallback);
-    }, function (err, data) {
-        callback(err, data);
-    });
-}
-
-// 抛弃分块上传任务
-/*
- AsyncLimit (抛弃上传任务的并发量)，
- UploadId (上传任务的编号，当 Level 为 task 时候需要)
- Level (抛弃分块上传任务的级别，task : 抛弃指定的上传任务，file ： 抛弃指定的文件对应的上传任务，其他值 ：抛弃指定Bucket 的全部上传任务)
- */
-function abortUploadTask(params, callback) {
-    var Bucket = params.Bucket;
-    var Region = params.Region;
-    var Key = params.Key;
-    var UploadId = params.UploadId;
-    var Level = params.Level || 'task';
-    var AsyncLimit = params.AsyncLimit;
-    var self = this;
-
-    var ep = new EventProxy();
-
-    ep.on('error', function (errData) {
-        return callback(errData);
-    });
-
-    // 已经获取到需要抛弃的任务列表
-    ep.on('get_abort_array', function (AbortArray) {
-        abortUploadTaskArray.call(self, {
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key,
-            Headers: params.Headers,
-            AsyncLimit: AsyncLimit,
-            AbortArray: AbortArray
-        }, callback);
-    });
-
-    if (Level === 'bucket') {
-        // Bucket 级别的任务抛弃，抛弃该 Bucket 下的全部上传任务
-        wholeMultipartList.call(self, {
-            Bucket: Bucket,
-            Region: Region
-        }, function (err, data) {
-            if (err) return callback(err);
-            ep.emit('get_abort_array', data.UploadList || []);
-        });
-    } else if (Level === 'file') {
-        // 文件级别的任务抛弃，抛弃该文件的全部上传任务
-        if (!Key) return callback(util.error(new Error('abort_upload_task_no_key')));
-        wholeMultipartList.call(self, {
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key
-        }, function (err, data) {
-            if (err) return callback(err);
-            ep.emit('get_abort_array', data.UploadList || []);
-        });
-    } else if (Level === 'task') {
-        // 单个任务级别的任务抛弃，抛弃指定 UploadId 的上传任务
-        if (!UploadId) return callback(util.error(new Error('abort_upload_task_no_id')));
-        if (!Key) return callback(util.error(new Error('abort_upload_task_no_key')));
-        ep.emit('get_abort_array', [{
-            Key: Key,
-            UploadId: UploadId
-        }]);
-    } else {
-        return callback(util.error(new Error('abort_unknown_level')));
-    }
-}
-
-// 批量抛弃分块上传任务
-function abortUploadTaskArray(params, callback) {
-
-    var Bucket = params.Bucket;
-    var Region = params.Region;
-    var Key = params.Key;
-    var AbortArray = params.AbortArray;
-    var AsyncLimit = params.AsyncLimit || 1;
-    var self = this;
-
-    var index = 0;
-    var resultList = new Array(AbortArray.length);
-    Async.eachLimit(AbortArray, AsyncLimit, function (AbortItem, nextItem) {
-        var eachIndex = index;
-        if (Key && Key !== AbortItem.Key) {
-            resultList[eachIndex] = { error: { KeyNotMatch: true } };
-            nextItem(null);
-            return;
-        }
-        var UploadId = AbortItem.UploadId || AbortItem.UploadID;
-
-        self.multipartAbort({
-            Bucket: Bucket,
-            Region: Region,
-            Key: AbortItem.Key,
-            Headers: params.Headers,
-            UploadId: UploadId
-        }, function (err) {
-            var task = {
-                Bucket: Bucket,
-                Region: Region,
-                Key: AbortItem.Key,
-                UploadId: UploadId
-            };
-            resultList[eachIndex] = { error: err, task: task };
-            nextItem(null);
-        });
-        index++;
-    }, function (err) {
-        if (err) return callback(err);
-
-        var successList = [];
-        var errorList = [];
-
-        for (var i = 0, len = resultList.length; i < len; i++) {
-            var item = resultList[i];
-            if (item['task']) {
-                if (item['error']) {
-                    errorList.push(item['task']);
-                } else {
-                    successList.push(item['task']);
-                }
-            }
-        }
-
-        return callback(null, {
-            successList: successList,
-            errorList: errorList
-        });
-    });
-}
-
-// 高级上传
-function uploadFile(params, callback) {
-    var self = this;
-
-    // 判断多大的文件使用分片上传
-    var SliceSize = params.SliceSize === undefined ? self.options.SliceSize : params.SliceSize;
-
-    var taskList = [];
-
-    var Body = params.Body;
-    var FileSize = Body.size || Body.length || 0;
-    var fileInfo = { TaskId: '' };
-
-    // 整理 option，用于返回给回调
-    util.each(params, function (v, k) {
-        if (typeof v !== 'object' && typeof v !== 'function') {
-            fileInfo[k] = v;
-        }
-    });
-
-    // 处理文件 TaskReady
-    var _onTaskReady = params.onTaskReady;
-    var onTaskReady = function (tid) {
-        fileInfo.TaskId = tid;
-        _onTaskReady && _onTaskReady(tid);
-    };
-    params.onTaskReady = onTaskReady;
-
-    // 处理文件完成
-    var _onFileFinish = params.onFileFinish;
-    var onFileFinish = function (err, data) {
-        _onFileFinish && _onFileFinish(err, data, fileInfo);
-        callback && callback(err, data);
-    };
-
-    // 添加上传任务,超过阈值使用分块上传，小于等于则简单上传
-    var api = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
-    taskList.push({
-        api: api,
-        params: params,
-        callback: onFileFinish
-    });
-
-    self._addTasks(taskList);
-}
-
-// 批量上传文件
-function uploadFiles(params, callback) {
-    var self = this;
-
-    // 判断多大的文件使用分片上传
-    var SliceSize = params.SliceSize === undefined ? self.options.SliceSize : params.SliceSize;
-
-    // 汇总返回进度
-    var TotalSize = 0;
-    var TotalFinish = 0;
-    var onTotalProgress = util.throttleOnProgress.call(self, TotalFinish, params.onProgress);
-
-    // 汇总返回回调
-    var unFinishCount = params.files.length;
-    var _onTotalFileFinish = params.onFileFinish;
-    var resultList = Array(unFinishCount);
-    var onTotalFileFinish = function (err, data, options) {
-        onTotalProgress(null, true);
-        _onTotalFileFinish && _onTotalFileFinish(err, data, options);
-        resultList[options.Index] = {
-            options: options,
-            error: err,
-            data: data
-        };
-        if (--unFinishCount <= 0 && callback) {
-            callback(null, { files: resultList });
-        }
-    };
-
-    // 开始处理每个文件
-    var taskList = [];
-    util.each(params.files, function (fileParams, index) {
-        (function () {
-            // 对齐 nodejs 缩进
-
-            var Body = fileParams.Body;
-            var FileSize = Body.size || Body.length || 0;
-            var fileInfo = { Index: index, TaskId: '' };
-
-            // 更新文件总大小
-            TotalSize += FileSize;
-
-            // 整理 option，用于返回给回调
-            util.each(fileParams, function (v, k) {
-                if (typeof v !== 'object' && typeof v !== 'function') {
-                    fileInfo[k] = v;
-                }
-            });
-
-            // 处理单个文件 TaskReady
-            var _onTaskReady = fileParams.onTaskReady;
-            var onTaskReady = function (tid) {
-                fileInfo.TaskId = tid;
-                _onTaskReady && _onTaskReady(tid);
-            };
-            fileParams.onTaskReady = onTaskReady;
-
-            // 处理单个文件进度
-            var PreAddSize = 0;
-            var _onProgress = fileParams.onProgress;
-            var onProgress = function (info) {
-                TotalFinish = TotalFinish - PreAddSize + info.loaded;
-                PreAddSize = info.loaded;
-                _onProgress && _onProgress(info);
-                onTotalProgress({ loaded: TotalFinish, total: TotalSize });
-            };
-            fileParams.onProgress = onProgress;
-
-            // 处理单个文件完成
-            var _onFileFinish = fileParams.onFileFinish;
-            var onFileFinish = function (err, data) {
-                _onFileFinish && _onFileFinish(err, data);
-                onTotalFileFinish && onTotalFileFinish(err, data, fileInfo);
-            };
-
-            // 添加上传任务
-            var api = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
-            taskList.push({
-                api: api,
-                params: fileParams,
-                callback: onFileFinish
-            });
-        })();
-    });
-    self._addTasks(taskList);
-}
-
-// 分片复制文件
-function sliceCopyFile(params, callback) {
-    var ep = new EventProxy();
-
-    var self = this;
-    var Bucket = params.Bucket;
-    var Region = params.Region;
-    var Key = params.Key;
-    var CopySource = params.CopySource;
-    var m = util.getSourceParams.call(this, CopySource);
-    if (!m) {
-        callback(util.error(new Error('CopySource format error')));
-        return;
-    }
-
-    var SourceBucket = m.Bucket;
-    var SourceRegion = m.Region;
-    var SourceKey = decodeURIComponent(m.Key);
-    var CopySliceSize = params.CopySliceSize === undefined ? self.options.CopySliceSize : params.CopySliceSize;
-    CopySliceSize = Math.max(0, CopySliceSize);
-
-    var ChunkSize = params.CopyChunkSize || this.options.CopyChunkSize;
-    var ChunkParallel = this.options.CopyChunkParallelLimit;
-
-    var FinishSize = 0;
-    var FileSize;
-    var onProgress;
-
-    // 分片复制完成，开始 multipartComplete 操作
-    ep.on('copy_slice_complete', function (UploadData) {
-        var metaHeaders = {};
-        util.each(params.Headers, function (val, k) {
-            if (k.toLowerCase().indexOf('x-cos-meta-') === 0) metaHeaders[k] = val;
-        });
-        var Parts = util.map(UploadData.PartList, function (item) {
-            return {
-                PartNumber: item.PartNumber,
-                ETag: item.ETag
-            };
-        });
-        self.multipartComplete({
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key,
-            UploadId: UploadData.UploadId,
-            Parts: Parts
-        }, function (err, data) {
-            if (err) {
-                onProgress(null, true);
-                return callback(err);
-            }
-            onProgress({ loaded: FileSize, total: FileSize }, true);
-            callback(null, data);
-        });
-    });
-
-    ep.on('get_copy_data_finish', function (UploadData) {
-        Async.eachLimit(UploadData.PartList, ChunkParallel, function (SliceItem, asyncCallback) {
-            var PartNumber = SliceItem.PartNumber;
-            var CopySourceRange = SliceItem.CopySourceRange;
-            var currentSize = SliceItem.end - SliceItem.start;
-
-            copySliceItem.call(self, {
-                Bucket: Bucket,
-                Region: Region,
-                Key: Key,
-                CopySource: CopySource,
-                UploadId: UploadData.UploadId,
-                PartNumber: PartNumber,
-                CopySourceRange: CopySourceRange
-            }, function (err, data) {
-                if (err) return asyncCallback(err);
-                FinishSize += currentSize;
-                onProgress({ loaded: FinishSize, total: FileSize });
-                SliceItem.ETag = data.ETag;
-                asyncCallback(err || null, data);
-            });
-        }, function (err) {
-            if (err) {
-                onProgress(null, true);
-                return callback(err);
-            }
-
-            ep.emit('copy_slice_complete', UploadData);
-        });
-    });
-
-    ep.on('get_file_size_finish', function (SourceHeaders) {
-        // 控制分片大小
-        (function () {
-            var SIZE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1024 * 2, 1024 * 4, 1024 * 5];
-            var AutoChunkSize = 1024 * 1024;
-            for (var i = 0; i < SIZE.length; i++) {
-                AutoChunkSize = SIZE[i] * 1024 * 1024;
-                if (FileSize / AutoChunkSize <= self.options.MaxPartNumber) break;
-            }
-            params.ChunkSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
-
-            var ChunkCount = Math.ceil(FileSize / ChunkSize);
-
-            var list = [];
-            for (var partNumber = 1; partNumber <= ChunkCount; partNumber++) {
-                var start = (partNumber - 1) * ChunkSize;
-                var end = partNumber * ChunkSize < FileSize ? partNumber * ChunkSize - 1 : FileSize - 1;
-                var item = {
-                    PartNumber: partNumber,
-                    start: start,
-                    end: end,
-                    CopySourceRange: "bytes=" + start + "-" + end
-                };
-                list.push(item);
-            }
-            params.PartList = list;
-        })();
-
-        var TargetHeader;
-        if (params.Headers['x-cos-metadata-directive'] === 'Replaced') {
-            TargetHeader = params.Headers;
-        } else {
-            TargetHeader = SourceHeaders;
-        }
-        TargetHeader['x-cos-storage-class'] = params.Headers['x-cos-storage-class'] || SourceHeaders['x-cos-storage-class'];
-        TargetHeader = util.clearKey(TargetHeader);
-        /**
-         * 对于归档存储的对象，如果未恢复副本，则不允许 Copy
-         */
-        if (SourceHeaders['x-cos-storage-class'] === 'ARCHIVE' || SourceHeaders['x-cos-storage-class'] === 'DEEP_ARCHIVE') {
-            var restoreHeader = SourceHeaders['x-cos-restore'];
-            if (!restoreHeader || restoreHeader === 'ongoing-request="true"') {
-                callback(util.error(new Error('Unrestored archive object is not allowed to be copied')));
-                return;
-            }
-        }
-        /**
-         * 去除一些无用的头部，规避 multipartInit 出错
-         * 这些头部通常是在 putObjectCopy 时才使用
-         */
-        delete TargetHeader['x-cos-copy-source'];
-        delete TargetHeader['x-cos-metadata-directive'];
-        delete TargetHeader['x-cos-copy-source-If-Modified-Since'];
-        delete TargetHeader['x-cos-copy-source-If-Unmodified-Since'];
-        delete TargetHeader['x-cos-copy-source-If-Match'];
-        delete TargetHeader['x-cos-copy-source-If-None-Match'];
-        self.multipartInit({
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key,
-            Headers: TargetHeader
-        }, function (err, data) {
-            if (err) return callback(err);
-            params.UploadId = data.UploadId;
-            ep.emit('get_copy_data_finish', params);
-        });
-    });
-
-    // 获取远端复制源文件的大小
-    self.headObject({
-        Bucket: SourceBucket,
-        Region: SourceRegion,
-        Key: SourceKey
-    }, function (err, data) {
-        if (err) {
-            if (err.statusCode && err.statusCode === 404) {
-                callback(util.error(err, { ErrorStatus: SourceKey + ' Not Exist' }));
-            } else {
-                callback(err);
-            }
-            return;
-        }
-
-        FileSize = params.FileSize = data.headers['content-length'];
-        if (FileSize === undefined || !FileSize) {
-            callback(util.error(new Error('get Content-Length error, please add "Content-Length" to CORS ExposeHeader setting.（ 获取Content-Length失败，请在CORS ExposeHeader设置中添加Content-Length，请参考文档：https://cloud.tencent.com/document/product/436/13318 ）')));
-            return;
-        }
-
-        onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
-
-        // 开始上传
-        if (FileSize <= CopySliceSize) {
-            if (!params.Headers['x-cos-metadata-directive']) {
-                params.Headers['x-cos-metadata-directive'] = 'Copy';
-            }
-            self.putObjectCopy(params, function (err, data) {
-                if (err) {
-                    onProgress(null, true);
-                    return callback(err);
-                }
-                onProgress({ loaded: FileSize, total: FileSize }, true);
-                callback(err, data);
-            });
-        } else {
-            var resHeaders = data.headers;
-            var SourceHeaders = {
-                'Cache-Control': resHeaders['cache-control'],
-                'Content-Disposition': resHeaders['content-disposition'],
-                'Content-Encoding': resHeaders['content-encoding'],
-                'Content-Type': resHeaders['content-type'],
-                'Expires': resHeaders['expires'],
-                'x-cos-storage-class': resHeaders['x-cos-storage-class']
-            };
-            util.each(resHeaders, function (v, k) {
-                var metaPrefix = 'x-cos-meta-';
-                if (k.indexOf(metaPrefix) === 0 && k.length > metaPrefix.length) {
-                    SourceHeaders[k] = v;
-                }
-            });
-            ep.emit('get_file_size_finish', SourceHeaders);
-        }
-    });
-}
-
-// 复制指定分片
-function copySliceItem(params, callback) {
-    var TaskId = params.TaskId;
-    var Bucket = params.Bucket;
-    var Region = params.Region;
-    var Key = params.Key;
-    var CopySource = params.CopySource;
-    var UploadId = params.UploadId;
-    var PartNumber = params.PartNumber * 1;
-    var CopySourceRange = params.CopySourceRange;
-
-    var ChunkRetryTimes = this.options.ChunkRetryTimes + 1;
-    var self = this;
-
-    Async.retry(ChunkRetryTimes, function (tryCallback) {
-        self.uploadPartCopy({
-            TaskId: TaskId,
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key,
-            CopySource: CopySource,
-            UploadId: UploadId,
-            PartNumber: PartNumber,
-            CopySourceRange: CopySourceRange
-        }, function (err, data) {
-            tryCallback(err || null, data);
-        });
-    }, function (err, data) {
-        return callback(err, data);
-    });
-}
-
-var API_MAP = {
-    sliceUploadFile: sliceUploadFile,
-    abortUploadTask: abortUploadTask,
-    uploadFile: uploadFile,
-    uploadFiles: uploadFiles,
-    sliceCopyFile: sliceCopyFile
+"use strict";
+
+
+var util = __webpack_require__(/*! ./util */ "./src/util.js");
+
+var event = __webpack_require__(/*! ./event */ "./src/event.js");
+
+var task = __webpack_require__(/*! ./task */ "./src/task.js");
+
+var base = __webpack_require__(/*! ./base */ "./src/base.js");
+
+var advance = __webpack_require__(/*! ./advance */ "./src/advance.js");
+
+var pkg = __webpack_require__(/*! ../package.json */ "./package.json");
+
+var defaultOptions = {
+  AppId: '',
+  // AppId 已废弃，请拼接到 Bucket 后传入，例如：test-1250000000
+  SecretId: '',
+  SecretKey: '',
+  SecurityToken: '',
+  // 使用临时密钥需要注意自行刷新 Token
+  ChunkRetryTimes: 2,
+  FileParallelLimit: 3,
+  ChunkParallelLimit: 3,
+  ChunkSize: 1024 * 1024,
+  SliceSize: 1024 * 1024,
+  CopyChunkParallelLimit: 20,
+  CopyChunkSize: 1024 * 1024 * 10,
+  CopySliceSize: 1024 * 1024 * 10,
+  MaxPartNumber: 10000,
+  ProgressInterval: 1000,
+  Domain: '',
+  ServiceDomain: '',
+  Protocol: '',
+  CompatibilityMode: false,
+  ForcePathStyle: false,
+  UseRawKey: false,
+  Timeout: 0,
+  // 单位毫秒，0 代表不设置超时时间
+  CorrectClockSkew: true,
+  SystemClockOffset: 0,
+  // 单位毫秒，ms
+  UploadCheckContentMd5: false,
+  UploadQueueSize: 10000,
+  UploadAddMetaMd5: false,
+  UploadIdCacheLimit: 50,
+  UseAccelerate: false,
+  ForceSignHost: true,
+  // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
+  EnableTracker: false,
+  // 默认关闭上报
+  DeepTracker: false,
+  // 上报时是否对每个分块上传做单独上报
+  TrackerDelay: 5000,
+  // 周期性上报，单位毫秒。0代表实时上报
+  CustomId: '' // 自定义上报id
+
+}; // 对外暴露的类
+
+var COS = function COS(options) {
+  this.options = util.extend(util.clone(defaultOptions), options || {});
+  this.options.FileParallelLimit = Math.max(1, this.options.FileParallelLimit);
+  this.options.ChunkParallelLimit = Math.max(1, this.options.ChunkParallelLimit);
+  this.options.ChunkRetryTimes = Math.max(0, this.options.ChunkRetryTimes);
+  this.options.ChunkSize = Math.max(1024 * 1024, this.options.ChunkSize);
+  this.options.CopyChunkParallelLimit = Math.max(1, this.options.CopyChunkParallelLimit);
+  this.options.CopyChunkSize = Math.max(1024 * 1024, this.options.CopyChunkSize);
+  this.options.CopySliceSize = Math.max(0, this.options.CopySliceSize);
+  this.options.MaxPartNumber = Math.max(1024, Math.min(10000, this.options.MaxPartNumber));
+  this.options.Timeout = Math.max(0, this.options.Timeout);
+
+  if (this.options.AppId) {
+    console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").');
+  }
+
+  if (this.options.SecretId && this.options.SecretId.indexOf(' ') > -1) {
+    console.error('error: SecretId格式错误，请检查');
+    console.error('error: SecretId format is incorrect. Please check');
+  }
+
+  if (this.options.SecretKey && this.options.SecretKey.indexOf(' ') > -1) {
+    console.error('error: SecretKey格式错误，请检查');
+    console.error('error: SecretKey format is incorrect. Please check');
+  }
+
+  if (util.isNode()) {
+    console.warn('warning: cos-js-sdk-v5 不支持 nodejs 环境使用，请改用 cos-nodejs-sdk-v5，参考文档： https://cloud.tencent.com/document/product/436/8629');
+    console.warn('warning: cos-js-sdk-v5 does not support nodejs environment. Please use cos-nodejs-sdk-v5 instead. See: https://cloud.tencent.com/document/product/436/8629');
+  }
+
+  event.init(this);
+  task.init(this);
 };
 
-module.exports.init = function (COS, task) {
-    task.transferToTaskMethod(API_MAP, 'sliceUploadFile');
-    util.each(API_MAP, function (fn, apiName) {
-        COS.prototype[apiName] = util.apiWrapper(apiName, fn);
-    });
+base.init(COS, task);
+advance.init(COS, task);
+COS.util = {
+  md5: util.md5,
+  xml2json: util.xml2json,
+  json2xml: util.json2xml
 };
+COS.getAuthorization = util.getAuth;
+COS.version = pkg.version;
+module.exports = COS;
 
 /***/ }),
-/* 22 */
+
+/***/ "./src/event.js":
+/*!**********************!*\
+  !*** ./src/event.js ***!
+  \**********************/
+/*! no static exports found */
 /***/ (function(module, exports) {
 
-var eachLimit = function (arr, limit, iterator, callback) {
-    callback = callback || function () {};
-    if (!arr.length || limit <= 0) {
-        return callback();
+var initEvent = function initEvent(cos) {
+  var listeners = {};
+
+  var getList = function getList(action) {
+    !listeners[action] && (listeners[action] = []);
+    return listeners[action];
+  };
+
+  cos.on = function (action, callback) {
+    if (action === 'task-list-update') {
+      console.warn('warning: Event "' + action + '" has been deprecated. Please use "list-update" instead.');
     }
 
-    var completed = 0;
-    var started = 0;
-    var running = 0;
+    getList(action).push(callback);
+  };
 
-    (function replenish() {
-        if (completed >= arr.length) {
-            return callback();
-        }
+  cos.off = function (action, callback) {
+    var list = getList(action);
 
-        while (running < limit && started < arr.length) {
-            started += 1;
-            running += 1;
-            iterator(arr[started - 1], function (err) {
+    for (var i = list.length - 1; i >= 0; i--) {
+      callback === list[i] && list.splice(i, 1);
+    }
+  };
 
-                if (err) {
-                    callback(err);
-                    callback = function () {};
-                } else {
-                    completed += 1;
-                    running -= 1;
-                    if (completed >= arr.length) {
-                        callback();
-                    } else {
-                        replenish();
-                    }
-                }
-            });
-        }
-    })();
+  cos.emit = function (action, data) {
+    var list = getList(action).map(function (cb) {
+      return cb;
+    });
+
+    for (var i = 0; i < list.length; i++) {
+      list[i](data);
+    }
+  };
 };
 
-var retry = function (times, iterator, callback) {
-    var next = function (index) {
-        iterator(function (err, data) {
-            if (err && index < times) {
-                next(index + 1);
-            } else {
-                callback(err, data);
-            }
-        });
-    };
-    if (times < 1) {
-        callback();
+var EventProxy = function EventProxy() {
+  initEvent(this);
+};
+
+module.exports.init = initEvent;
+module.exports.EventProxy = EventProxy;
+
+/***/ }),
+
+/***/ "./src/session.js":
+/*!************************!*\
+  !*** ./src/session.js ***!
+  \************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var util = __webpack_require__(/*! ./util */ "./src/util.js"); // 按照文件特征值，缓存 UploadId
+
+
+var cacheKey = 'cos_sdk_upload_cache';
+var expires = 30 * 24 * 3600;
+var cache;
+var timer;
+
+var getCache = function getCache() {
+  try {
+    var val = JSON.parse(localStorage.getItem(cacheKey));
+  } catch (e) {}
+
+  if (!val) val = [];
+  cache = val;
+};
+
+var setCache = function setCache() {
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify(cache));
+  } catch (e) {}
+};
+
+var init = function init() {
+  if (cache) return;
+  getCache.call(this); // 清理太老旧的数据
+
+  var changed = false;
+  var now = Math.round(Date.now() / 1000);
+
+  for (var i = cache.length - 1; i >= 0; i--) {
+    var mtime = cache[i][2];
+
+    if (!mtime || mtime + expires < now) {
+      cache.splice(i, 1);
+      changed = true;
+    }
+  }
+
+  changed && setCache();
+}; // 把缓存存到本地
+
+
+var save = function save() {
+  if (timer) return;
+  timer = setTimeout(function () {
+    setCache();
+    timer = null;
+  }, 400);
+};
+
+var mod = {
+  using: {},
+  // 标记 UploadId 正在使用
+  setUsing: function setUsing(uuid) {
+    mod.using[uuid] = true;
+  },
+  // 标记 UploadId 已经没在使用
+  removeUsing: function removeUsing(uuid) {
+    delete mod.using[uuid];
+  },
+  // 用上传参数生成哈希值
+  getFileId: function getFileId(file, ChunkSize, Bucket, Key) {
+    if (file.name && file.size && file.lastModifiedDate && ChunkSize) {
+      return util.md5([file.name, file.size, file.lastModifiedDate, ChunkSize, Bucket, Key].join('::'));
     } else {
-        next(1);
+      return null;
     }
+  },
+  // 获取文件对应的 UploadId 列表
+  getUploadIdList: function getUploadIdList(uuid) {
+    if (!uuid) return null;
+    init.call(this);
+    var list = [];
+
+    for (var i = 0; i < cache.length; i++) {
+      if (cache[i][0] === uuid) list.push(cache[i][1]);
+    }
+
+    return list.length ? list : null;
+  },
+  // 缓存 UploadId
+  saveUploadId: function saveUploadId(uuid, UploadId, limit) {
+    init.call(this);
+    if (!uuid) return; // 清理没用的 UploadId，js 文件没有 FilePath ，只清理相同记录
+
+    for (var i = cache.length - 1; i >= 0; i--) {
+      var item = cache[i];
+
+      if (item[0] === uuid && item[1] === UploadId) {
+        cache.splice(i, 1);
+      }
+    }
+
+    cache.unshift([uuid, UploadId, Math.round(Date.now() / 1000)]);
+    if (cache.length > limit) cache.splice(limit);
+    save();
+  },
+  // UploadId 已用完，移除掉
+  removeUploadId: function removeUploadId(UploadId) {
+    init.call(this);
+    delete mod.using[UploadId];
+
+    for (var i = cache.length - 1; i >= 0; i--) {
+      if (cache[i][1] === UploadId) cache.splice(i, 1);
+    }
+
+    save();
+  }
+};
+module.exports = mod;
+
+/***/ }),
+
+/***/ "./src/task.js":
+/*!*********************!*\
+  !*** ./src/task.js ***!
+  \*********************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var session = __webpack_require__(/*! ./session */ "./src/session.js");
+
+var util = __webpack_require__(/*! ./util */ "./src/util.js");
+
+var originApiMap = {};
+
+var transferToTaskMethod = function transferToTaskMethod(apiMap, apiName) {
+  originApiMap[apiName] = apiMap[apiName];
+
+  apiMap[apiName] = function (params, callback) {
+    if (params.SkipTask) {
+      originApiMap[apiName].call(this, params, callback);
+    } else {
+      this._addTask(apiName, params, callback);
+    }
+  };
 };
 
-var async = {
-    eachLimit: eachLimit,
-    retry: retry
+var initTask = function initTask(cos) {
+  var queue = [];
+  var tasks = {};
+  var uploadingFileCount = 0;
+  var nextUploadIndex = 0; // 接口返回简略的任务信息
+
+  var formatTask = function formatTask(task) {
+    var t = {
+      id: task.id,
+      Bucket: task.Bucket,
+      Region: task.Region,
+      Key: task.Key,
+      FilePath: task.FilePath,
+      state: task.state,
+      loaded: task.loaded,
+      size: task.size,
+      speed: task.speed,
+      percent: task.percent,
+      hashPercent: task.hashPercent,
+      error: task.error
+    };
+    if (task.FilePath) t.FilePath = task.FilePath;
+    if (task._custom) t._custom = task._custom; // 控制台使用
+
+    return t;
+  };
+
+  var emitListUpdate = function () {
+    var timer;
+
+    var emit = function emit() {
+      timer = 0;
+      cos.emit('task-list-update', {
+        list: util.map(queue, formatTask)
+      });
+      cos.emit('list-update', {
+        list: util.map(queue, formatTask)
+      });
+    };
+
+    return function () {
+      if (!timer) timer = setTimeout(emit);
+    };
+  }();
+
+  var clearQueue = function clearQueue() {
+    if (queue.length <= cos.options.UploadQueueSize) return;
+
+    for (var i = 0; i < nextUploadIndex && // 小于当前操作的 index 才清理
+    i < queue.length && // 大于队列才清理
+    queue.length > cos.options.UploadQueueSize // 如果还太多，才继续清理
+    ;) {
+      var isActive = queue[i].state === 'waiting' || queue[i].state === 'checking' || queue[i].state === 'uploading';
+
+      if (!queue[i] || !isActive) {
+        tasks[queue[i].id] && delete tasks[queue[i].id];
+        queue.splice(i, 1);
+        nextUploadIndex--;
+      } else {
+        i++;
+      }
+    }
+
+    emitListUpdate();
+  };
+
+  var startNextTask = function startNextTask() {
+    // 检查是否允许增加执行进程
+    if (uploadingFileCount >= cos.options.FileParallelLimit) return; // 跳过不可执行的任务
+
+    while (queue[nextUploadIndex] && queue[nextUploadIndex].state !== 'waiting') {
+      nextUploadIndex++;
+    } // 检查是否已遍历结束
+
+
+    if (nextUploadIndex >= queue.length) return; // 上传该遍历到的任务
+
+    var task = queue[nextUploadIndex];
+    nextUploadIndex++;
+    uploadingFileCount++;
+    task.state = 'checking';
+    task.params.onTaskStart && task.params.onTaskStart(formatTask(task));
+    !task.params.UploadData && (task.params.UploadData = {});
+    var apiParams = util.formatParams(task.api, task.params);
+    originApiMap[task.api].call(cos, apiParams, function (err, data) {
+      if (!cos._isRunningTask(task.id)) return;
+
+      if (task.state === 'checking' || task.state === 'uploading') {
+        task.state = err ? 'error' : 'success';
+        err && (task.error = err);
+        uploadingFileCount--;
+        emitListUpdate();
+        startNextTask();
+        task.callback && task.callback(err, data);
+
+        if (task.state === 'success') {
+          if (task.params) {
+            delete task.params.UploadData;
+            delete task.params.Body;
+            delete task.params;
+          }
+
+          delete task.callback;
+        }
+      }
+
+      clearQueue();
+    });
+    emitListUpdate(); // 异步执行下一个任务
+
+    setTimeout(startNextTask);
+  };
+
+  var killTask = function killTask(id, switchToState) {
+    var task = tasks[id];
+    if (!task) return;
+    var waiting = task && task.state === 'waiting';
+    var running = task && (task.state === 'checking' || task.state === 'uploading');
+
+    if (switchToState === 'canceled' && task.state !== 'canceled' || switchToState === 'paused' && waiting || switchToState === 'paused' && running) {
+      if (switchToState === 'paused' && task.params.Body && typeof task.params.Body.pipe === 'function') {
+        console.error('stream not support pause');
+        return;
+      }
+
+      task.state = switchToState;
+      cos.emit('inner-kill-task', {
+        TaskId: id,
+        toState: switchToState
+      });
+
+      try {
+        var UploadId = task && task.params && task.params.UploadData.UploadId;
+      } catch (e) {}
+
+      if (switchToState === 'canceled' && UploadId) session.removeUsing(UploadId);
+      emitListUpdate();
+
+      if (running) {
+        uploadingFileCount--;
+        startNextTask();
+      }
+
+      if (switchToState === 'canceled') {
+        if (task.params) {
+          delete task.params.UploadData;
+          delete task.params.Body;
+          delete task.params;
+        }
+
+        delete task.callback;
+      }
+    }
+
+    clearQueue();
+  };
+
+  cos._addTasks = function (taskList) {
+    util.each(taskList, function (task) {
+      cos._addTask(task.api, task.params, task.callback, true);
+    });
+    emitListUpdate();
+  };
+
+  var isTaskReadyWarning = true;
+
+  cos._addTask = function (api, params, callback, ignoreAddEvent) {
+    // 复制参数对象
+    params = util.formatParams(api, params); // 生成 id
+
+    var id = util.uuid();
+    params.TaskId = id;
+    params.onTaskReady && params.onTaskReady(id);
+
+    if (params.TaskReady) {
+      params.TaskReady(id);
+      isTaskReadyWarning && console.warn('warning: Param "TaskReady" has been deprecated. Please use "onTaskReady" instead.');
+      isTaskReadyWarning = false;
+    }
+
+    var task = {
+      // env
+      params: params,
+      callback: callback,
+      api: api,
+      index: queue.length,
+      // task
+      id: id,
+      Bucket: params.Bucket,
+      Region: params.Region,
+      Key: params.Key,
+      FilePath: params.FilePath || '',
+      state: 'waiting',
+      loaded: 0,
+      size: 0,
+      speed: 0,
+      percent: 0,
+      hashPercent: 0,
+      error: null,
+      _custom: params._custom
+    };
+    var onHashProgress = params.onHashProgress;
+
+    params.onHashProgress = function (info) {
+      if (!cos._isRunningTask(task.id)) return;
+      task.hashPercent = info.percent;
+      onHashProgress && onHashProgress(info);
+      emitListUpdate();
+    };
+
+    var onProgress = params.onProgress;
+
+    params.onProgress = function (info) {
+      if (!cos._isRunningTask(task.id)) return;
+      task.state === 'checking' && (task.state = 'uploading');
+      task.loaded = info.loaded;
+      task.speed = info.speed;
+      task.percent = info.percent;
+      onProgress && onProgress(info);
+      emitListUpdate();
+    }; // 异步获取 filesize
+
+
+    util.getFileSize(api, params, function (err, size) {
+      // 开始处理上传
+      if (err) return callback(util.error(err)); // 如果获取大小出错，不加入队列
+      // 获取完文件大小再把任务加入队列
+
+      tasks[id] = task;
+      queue.push(task);
+      task.size = size;
+      !ignoreAddEvent && emitListUpdate();
+      startNextTask();
+      clearQueue();
+    });
+    return id;
+  };
+
+  cos._isRunningTask = function (id) {
+    var task = tasks[id];
+    return !!(task && (task.state === 'checking' || task.state === 'uploading'));
+  };
+
+  cos.getTaskList = function () {
+    return util.map(queue, formatTask);
+  };
+
+  cos.cancelTask = function (id) {
+    killTask(id, 'canceled');
+  };
+
+  cos.pauseTask = function (id) {
+    killTask(id, 'paused');
+  };
+
+  cos.restartTask = function (id) {
+    var task = tasks[id];
+
+    if (task && (task.state === 'paused' || task.state === 'error')) {
+      task.state = 'waiting';
+      emitListUpdate();
+      nextUploadIndex = Math.min(nextUploadIndex, task.index);
+      startNextTask();
+    }
+  };
+
+  cos.isUploadRunning = function () {
+    return uploadingFileCount || nextUploadIndex < queue.length;
+  };
 };
 
-module.exports = async;
+module.exports.transferToTaskMethod = transferToTaskMethod;
+module.exports.init = initTask;
+
+/***/ }),
+
+/***/ "./src/tracker.js":
+/*!************************!*\
+  !*** ./src/tracker.js ***!
+  \************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+var pkg = __webpack_require__(/*! ../package.json */ "./package.json");
+
+var BeaconAction = __webpack_require__(/*! ../lib/beacon.min */ "./lib/beacon.min.js");
+
+var beacon = null;
+
+var getBeacon = function getBeacon(delay) {
+  if (!beacon) {
+    beacon = new BeaconAction({
+      appkey: "0AND0VEVB24UBGDU",
+      versionCode: pkg.version,
+      channelID: 'js_sdk',
+      //渠道,选填
+      openid: 'openid',
+      // 用户id, 选填
+      unionid: 'unid',
+      //用户unionid , 类似idfv,选填
+      strictMode: false,
+      //严苛模式开关, 打开严苛模式会主动抛出异常, 上线请务必关闭!!!
+      delay: delay,
+      // 普通事件延迟上报时间(单位毫秒), 默认1000(1秒),选填
+      sessionDuration: 60 * 1000 // session变更的时间间隔, 一个用户持续30分钟(默认值)没有任何上报则算另一次 session,每变更一次session上报一次启动事件(rqd_applaunched),使用毫秒(ms),最小值30秒,选填
+
+    });
+  }
+
+  return beacon;
+};
+
+var utils = {
+  // 生成uid 每个链路对应唯一一条uid
+  getUid: function getUid() {
+    var S4 = function S4() {
+      return ((1 + Math.random()) * 0x10000 | 0).toString(16).substring(1);
+    };
+
+    return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
+  },
+  // 获取网络类型
+  getNetType: function getNetType() {
+    if ((typeof navigator === "undefined" ? "undefined" : _typeof(navigator)) === 'object') {
+      var connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      return (connection === null || connection === void 0 ? void 0 : connection.type) || (connection === null || connection === void 0 ? void 0 : connection.effectiveType) || 'unknown';
+    }
+
+    return 'unknown';
+  },
+  // 获取pc端操作系统类型
+  getOsType: function getOsType() {
+    var agent = navigator.userAgent.toLowerCase();
+    var isMac = /macintosh|mac os x/i.test(navigator.userAgent);
+
+    if (agent.indexOf("win32") >= 0 || agent.indexOf("wow32") >= 0) {
+      return 'win32';
+    }
+
+    if (agent.indexOf("win64") >= 0 || agent.indexOf("wow64") >= 0) {
+      return 'win64';
+    }
+
+    if (isMac) {
+      return 'mac';
+    }
+
+    return 'unknown os';
+  },
+  isMobile: function isMobile() {
+    var exp = /(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i;
+
+    if ((typeof navigator === "undefined" ? "undefined" : _typeof(navigator)) === 'object' && navigator.userAgent.match(exp)) {
+      return true; // 移动端
+    }
+
+    return false; // PC端
+  },
+  isAndroid: function isAndroid() {
+    var exp = /(Android|Adr|Linux)/i;
+
+    if ((typeof navigator === "undefined" ? "undefined" : _typeof(navigator)) === 'object' && navigator.userAgent.match(exp)) {
+      return true;
+    }
+
+    return false;
+  },
+  isIOS: function isIOS() {
+    var exp = /(iPhone|iPod|iPad|iOS)/i;
+
+    if ((typeof navigator === "undefined" ? "undefined" : _typeof(navigator)) === 'object' && navigator.userAgent.match(exp)) {
+      return true;
+    }
+
+    return false;
+  },
+  isOtherMobile: function isOtherMobile() {
+    return isMobile && !isAndroid && !isIOS;
+  },
+  // 获取浏览器类型
+  getDeviceName: function getDeviceName() {
+    if ((typeof navigator === "undefined" ? "undefined" : _typeof(navigator)) !== 'object') {
+      return 'unknown device';
+    }
+
+    var explorer = navigator.userAgent.toLowerCase(); // 腾讯会议内置浏览器
+
+    if (explorer.includes('app/tencent_wemeet')) {
+      return 'tencent_wemeet';
+    } // 遨游浏览器
+
+
+    if (explorer.indexOf('maxthon') >= 0) {
+      var match = explorer.match(/maxthon\/([\d.]+)/);
+      var ver = match && match[1] || '';
+      return "\u50B2\u6E38\u6D4F\u89C8\u5668 ".concat(ver).trim();
+    } // QQ浏览器
+
+
+    if (explorer.indexOf('qqbrowser') >= 0) {
+      var _match = explorer.match(/qqbrowser\/([\d.]+)/);
+
+      var _ver = _match && _match[1] || '';
+
+      return "QQ\u6D4F\u89C8\u5668 ".concat(_ver).trim();
+    } // 搜狗浏览器
+
+
+    if (explorer.indexOf('se 2.x') >= 0) {
+      return '搜狗浏览器';
+    } // 微信浏览器
+
+
+    if (explorer.indexOf('wxwork') >= 0) {
+      return '微信内置浏览器';
+    } // ie
+
+
+    if (explorer.indexOf('msie') >= 0) {
+      var _match2 = explorer.match(/msie ([\d.]+)/);
+
+      var _ver2 = _match2 && _match2[1] || '';
+
+      return "IE ".concat(_ver2).trim();
+    } // firefox
+
+
+    if (explorer.indexOf('firefox') >= 0) {
+      var _match3 = explorer.match(/firefox\/([\d.]+)/);
+
+      var _ver3 = _match3 && _match3[1] || '';
+
+      return "Firefox ".concat(_ver3).trim();
+    } // Chrome
+
+
+    if (explorer.indexOf('chrome') >= 0) {
+      var _match4 = explorer.match(/chrome\/([\d.]+)/);
+
+      var _ver4 = _match4 && _match4[1] || '';
+
+      return "Chrome ".concat(_ver4).trim();
+    } // Opera
+
+
+    if (explorer.indexOf('opera') >= 0) {
+      var _match5 = explorer.match(/opera.([\d.]+)/);
+
+      var _ver5 = _match5 && _match5[1] || '';
+
+      return "Opera ".concat(_ver5).trim();
+    } // Safari
+
+
+    if (explorer.indexOf('safari') >= 0) {
+      var _match6 = explorer.match(/version\/([\d.]+)/);
+
+      var _ver6 = _match6 && _match6[1] || '';
+
+      return "Safari ".concat(_ver6).trim();
+    }
+
+    if (explorer.indexOf('edge') >= 0) {
+      var _match7 = explorer.match(/edge\/([\d.]+)/);
+
+      var _ver7 = _match7 && _match7[1] || '';
+
+      return "edge ".concat(_ver7).trim();
+    }
+
+    return explorer.substr(0, 200);
+  }
+};
+var constant = {
+  isMobile: utils.isMobile(),
+  isBrowser: !utils.isMobile(),
+  mobileOsType: utils.isAndroid() ? 'android' : utils.isIOS ? 'ios' : 'other_mobile',
+  pcOsType: utils.getOsType()
+}; // 设备信息，只取一次值
+
+var deviceInfo = {
+  // ↓上报项
+  deviceType: constant.isMobile ? 'mobile' : constant.isBrowser ? 'browser' : 'unknown',
+  devicePlatform: constant.isMobile ? constant.mobileOsType : constant.pcOsType,
+  deviceName: utils.getDeviceName() //浏览器名称
+
+}; // 分块上传原子方法
+
+var sliceUploadMethods = ['multipartInit', 'multipartUpload', 'multipartComplete', 'multipartList', 'multipartListPart', 'multipartAbort'];
+var uploadApi = ['putObject', 'postObject', 'appendObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].concat(sliceUploadMethods);
+var downloadApi = ['getObject'];
+
+function getEventCode(apiName) {
+  if (uploadApi.includes(apiName)) {
+    return 'cos_upload';
+  }
+
+  if (downloadApi.includes(apiName)) {
+    return 'cos_download';
+  }
+
+  return 'base_service';
+} // 上报参数驼峰改下划线
+
+
+function camel2underline(key) {
+  return key.replace(/([A-Z])/g, "_$1").toLowerCase();
+}
+
+function formatParams(params) {
+  var formattedParams = {};
+  var allReporterKeys = ['tracePlatform', 'cossdkVersion', 'region', 'networkType', 'host', 'accelerate', 'requestPath', 'size', 'httpMd5', 'httpSign', 'httpFull', 'name', 'result', 'tookTime', 'errorNode', 'errorCode', 'errorMessage', 'errorRequestId', 'errorStatusCode', 'errorServiceName', 'errorType', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError', 'deviceType', 'devicePlatform', 'deviceName'];
+  var successKeys = ['tracePlatform', 'cossdkVersion', 'region', 'bucket', 'appid', 'networkType', 'host', 'accelerate', 'requestPath', 'partNumber', 'size', 'name', 'result', 'tookTime', 'errorRequestId', 'retryTimes', 'reqUrl', 'customId', 'deviceType', 'devicePlatform', 'deviceName']; // 需要上报的参数字段
+
+  var reporterKeys = params.result === 'Success' ? successKeys : allReporterKeys;
+
+  for (var key in params) {
+    if (!reporterKeys.includes(key)) continue;
+    var formattedKey = camel2underline(key);
+    formattedParams[formattedKey] = params[key];
+  }
+
+  return formattedParams;
+} // 链路追踪器
+
+
+var Tracker = /*#__PURE__*/function () {
+  function Tracker(opt) {
+    _classCallCheck(this, Tracker);
+
+    var parent = opt.parent,
+        traceId = opt.traceId,
+        bucket = opt.bucket,
+        region = opt.region,
+        apiName = opt.apiName,
+        fileKey = opt.fileKey,
+        fileSize = opt.fileSize,
+        accelerate = opt.accelerate,
+        customId = opt.customId,
+        delay = opt.delay,
+        deepTracker = opt.deepTracker;
+    var appid = bucket && bucket.substr(bucket.lastIndexOf('-') + 1) || '';
+    this.parent = parent;
+    this.deepTracker = deepTracker; // 上报用到的字段
+
+    this.params = {
+      // 通用字段
+      cossdkVersion: pkg.version,
+      region: region,
+      networkType: '',
+      host: '',
+      accelerate: accelerate ? 'Y' : 'N',
+      requestPath: fileKey || '',
+      size: fileSize || -1,
+      httpMd5: 0,
+      // MD5耗时
+      httpSign: 0,
+      // 计算签名耗时
+      httpFull: 0,
+      // http请求耗时
+      name: apiName || '',
+      result: '',
+      // sdk api调用结果Success、Fail
+      tookTime: 0,
+      // 总耗时
+      errorNode: '',
+      errorCode: '',
+      errorMessage: '',
+      errorRequestId: '',
+      errorStatusCode: 0,
+      errorServiceName: '',
+      // js补充字段
+      tracePlatform: 'cos-js-sdk-v5',
+      // 上报平台=js
+      traceId: traceId || utils.getUid(),
+      // 每条上报唯一标识
+      bucket: bucket,
+      appid: appid,
+      partNumber: 0,
+      // 分块上传编号
+      retryTimes: 0,
+      // sdk内部发起的请求重试
+      reqUrl: '',
+      // 请求url
+      customId: customId || '',
+      // 业务id
+      deviceType: deviceInfo.deviceType,
+      // 设备类型 移动端浏览器、web浏览器
+      devicePlatform: deviceInfo.devicePlatform,
+      deviceName: deviceInfo.deviceName,
+      md5StartTime: 0,
+      // md5计算开始时间
+      md5EndTime: 0,
+      // md5计算结束时间
+      signStartTime: 0,
+      // 计算签名开始时间
+      signEndTime: 0,
+      // 计算签名结束时间
+      httpStartTime: 0,
+      // 发起网络请求开始时间
+      httpEndTime: 0,
+      // 网路请求结束时间
+      startTime: new Date().getTime(),
+      // sdk api调用起始时间，不是纯网络耗时
+      endTime: 0 //  sdk api调用结束时间，不是纯网络耗时
+
+    };
+    this.beacon = getBeacon(delay);
+  } // 格式化sdk回调
+
+
+  _createClass(Tracker, [{
+    key: "formatResult",
+    value: function formatResult(err, data) {
+      var _err$error, _err$error2, _err$error3, _err$error4, _err$error5, _err$error6;
+
+      var now = new Date().getTime();
+      var tookTime = now - this.params.startTime;
+      var networkType = utils.getNetType();
+      var errorCode = err ? (err === null || err === void 0 ? void 0 : err.code) || (err === null || err === void 0 ? void 0 : (_err$error = err.error) === null || _err$error === void 0 ? void 0 : _err$error.code) || (err === null || err === void 0 ? void 0 : (_err$error2 = err.error) === null || _err$error2 === void 0 ? void 0 : _err$error2.Code) : '';
+      var errorMessage = err ? (err === null || err === void 0 ? void 0 : err.message) || (err === null || err === void 0 ? void 0 : (_err$error3 = err.error) === null || _err$error3 === void 0 ? void 0 : _err$error3.message) || (err === null || err === void 0 ? void 0 : (_err$error4 = err.error) === null || _err$error4 === void 0 ? void 0 : _err$error4.Message) : '';
+      var errorServiceName = err ? (err === null || err === void 0 ? void 0 : err.resource) || (err === null || err === void 0 ? void 0 : (_err$error5 = err.error) === null || _err$error5 === void 0 ? void 0 : _err$error5.resource) || (err === null || err === void 0 ? void 0 : (_err$error6 = err.error) === null || _err$error6 === void 0 ? void 0 : _err$error6.Resource) : '';
+      var errorStatusCode = err ? err === null || err === void 0 ? void 0 : err.statusCode : data.statusCode;
+      var requestId = err ? (err === null || err === void 0 ? void 0 : err.headers) && (err === null || err === void 0 ? void 0 : err.headers['x-cos-request-id']) : (data === null || data === void 0 ? void 0 : data.headers) && (data === null || data === void 0 ? void 0 : data.headers['x-cos-request-id']);
+      var errorType = err ? requestId ? 'Server' : 'Client' : '';
+      Object.assign(this.params, {
+        tookTime: tookTime,
+        networkType: networkType,
+        httpMd5: this.params.md5EndTime - this.params.md5StartTime,
+        httpSign: this.params.signEndTime - this.params.signStartTime,
+        httpFull: this.params.httpEndTime - this.params.httpStartTime,
+        result: err ? 'Fail' : 'Success',
+        errorType: errorType,
+        errorCode: errorCode,
+        errorStatusCode: errorStatusCode,
+        errorMessage: errorMessage,
+        errorServiceName: errorServiceName,
+        errorRequestId: requestId
+      });
+
+      if (err && (!errorCode || !errorMessage)) {
+        // 暂存全量err一段时间 观察是否所有err格式都可被解析
+        this.params.fullError = err ? JSON.stringify(err) : '';
+      }
+
+      if (this.params.name === 'getObject') {
+        this.params.size = data ? data.headers && data.headers['content-length'] : -1;
+      }
+
+      if (this.params.reqUrl) {
+        try {
+          var execRes = /^http(s)?:\/\/(.*?)\//.exec(this.params.reqUrl);
+          this.params.host = execRes[2];
+        } catch (e) {
+          this.params.host = this.params.reqUrl;
+        }
+      }
+
+      this.sendEvents();
+    } // 设置当前链路的参数
+
+  }, {
+    key: "setParams",
+    value: function setParams(params) {
+      Object.assign(this.params, params);
+    } // 使用灯塔延时上报
+
+  }, {
+    key: "sendEvents",
+    value: function sendEvents() {
+      // DeepTracker模式下才会上报分块上传内部细节
+      if (sliceUploadMethods.includes(this.params.name) && !this.deepTracker) {
+        return;
+      }
+
+      var eventCode = getEventCode(this.params.name);
+      var formattedParams = formatParams(this.params);
+
+      if (this.params.delay === 0) {
+        // 实时上报
+        this.beacon.onDirectUserAction(eventCode, formattedParams);
+      } else {
+        // 周期性上报
+        this.beacon.onUserAction(eventCode, formattedParams);
+      } // 上报结束即销毁
+
+
+      this.destroy();
+    } // 生成子实例，与父所属一个链路，可用于分块上传内部流程上报单个分块操作
+
+  }, {
+    key: "generateSubTracker",
+    value: function generateSubTracker(subParams) {
+      Object.assign(subParams, {
+        parent: this,
+        deepTracker: this.deepTracker,
+        traceId: this.params.traceId,
+        bucket: this.params.bucket,
+        region: this.params.region,
+        fileKey: this.params.requestPath,
+        customId: this.params.customId,
+        delay: this.params.delay
+      });
+      return new Tracker(subParams);
+    } // 链路结束后销毁实例
+
+  }, {
+    key: "destroy",
+    value: function destroy() {
+      this.beacon = null;
+      this.params = {};
+    }
+  }]);
+
+  return Tracker;
+}();
+
+module.exports = Tracker;
+
+/***/ }),
+
+/***/ "./src/util.js":
+/*!*********************!*\
+  !*** ./src/util.js ***!
+  \*********************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(process) {
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+var md5 = __webpack_require__(/*! ../lib/md5 */ "./lib/md5.js");
+
+var CryptoJS = __webpack_require__(/*! ../lib/crypto */ "./lib/crypto.js");
+
+var xml2json = __webpack_require__(/*! ../lib/xml2json */ "./lib/xml2json.js");
+
+var json2xml = __webpack_require__(/*! ../lib/json2xml */ "./lib/json2xml.js");
+
+var Tracker = __webpack_require__(/*! ./tracker */ "./src/tracker.js");
+
+function camSafeUrlEncode(str) {
+  return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/\*/g, '%2A');
+}
+
+function getObjectKeys(obj, forKey) {
+  var list = [];
+
+  for (var key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      list.push(forKey ? camSafeUrlEncode(key).toLowerCase() : key);
+    }
+  }
+
+  return list.sort(function (a, b) {
+    a = a.toLowerCase();
+    b = b.toLowerCase();
+    return a === b ? 0 : a > b ? 1 : -1;
+  });
+}
+
+;
+/**
+ * obj转为string
+ * @param  {Object}  obj                需要转的对象，必须
+ * @param  {Boolean} lowerCaseKey       key是否转为小写，默认false，非必须
+ * @return {String}  data               返回字符串
+ */
+
+var obj2str = function obj2str(obj, lowerCaseKey) {
+  var i, key, val;
+  var list = [];
+  var keyList = getObjectKeys(obj);
+
+  for (i = 0; i < keyList.length; i++) {
+    key = keyList[i];
+    val = obj[key] === undefined || obj[key] === null ? '' : '' + obj[key];
+    key = lowerCaseKey ? camSafeUrlEncode(key).toLowerCase() : camSafeUrlEncode(key);
+    val = camSafeUrlEncode(val) || '';
+    list.push(key + '=' + val);
+  }
+
+  return list.join('&');
+}; // 可以签入签名的headers
+
+
+var signHeaders = ['content-disposition', 'content-encoding', 'content-length', 'content-md5', 'expect', 'host', 'if-match', 'if-modified-since', 'if-none-match', 'if-unmodified-since', 'origin', 'range', 'response-cache-control', 'response-content-disposition', 'response-content-encoding', 'response-content-language', 'response-content-type', 'response-expires', 'transfer-encoding', 'versionid'];
+
+var getSignHeaderObj = function getSignHeaderObj(headers) {
+  var signHeaderObj = {};
+
+  for (var i in headers) {
+    var key = i.toLowerCase();
+
+    if (key.indexOf('x-cos-') > -1 || signHeaders.indexOf(key) > -1) {
+      signHeaderObj[i] = headers[i];
+    }
+  }
+
+  return signHeaderObj;
+}; //测试用的key后面可以去掉
+
+
+var getAuth = function getAuth(opt) {
+  opt = opt || {};
+  var SecretId = opt.SecretId;
+  var SecretKey = opt.SecretKey;
+  var KeyTime = opt.KeyTime;
+  var method = (opt.method || opt.Method || 'get').toLowerCase();
+  var queryParams = clone(opt.Query || opt.params || {});
+  var headers = getSignHeaderObj(clone(opt.Headers || opt.headers || {}));
+  var Key = opt.Key || '';
+  var pathname;
+
+  if (opt.UseRawKey) {
+    pathname = opt.Pathname || opt.pathname || '/' + Key;
+  } else {
+    pathname = opt.Pathname || opt.pathname || Key;
+    pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
+  } // ForceSignHost明确传入false才不加入host签名
+
+
+  var forceSignHost = opt.ForceSignHost === false ? false : true; // 如果有传入存储桶且需要强制签名，那么签名默认加 Host 参与计算，避免跨桶访问
+
+  if (!headers.Host && !headers.host && opt.Bucket && opt.Region && forceSignHost) headers.Host = opt.Bucket + '.cos.' + opt.Region + '.myqcloud.com';
+  if (!SecretId) throw new Error('missing param SecretId');
+  if (!SecretKey) throw new Error('missing param SecretKey'); // 签名有效起止时间
+
+  var now = Math.round(getSkewTime(opt.SystemClockOffset) / 1000) - 1;
+  var exp = now;
+  var Expires = opt.Expires || opt.expires;
+
+  if (Expires === undefined) {
+    exp += 900; // 签名过期时间为当前 + 900s
+  } else {
+    exp += Expires * 1 || 0;
+  } // 要用到的 Authorization 参数列表
+
+
+  var qSignAlgorithm = 'sha1';
+  var qAk = SecretId;
+  var qSignTime = KeyTime || now + ';' + exp;
+  var qKeyTime = KeyTime || now + ';' + exp;
+  var qHeaderList = getObjectKeys(headers, true).join(';').toLowerCase();
+  var qUrlParamList = getObjectKeys(queryParams, true).join(';').toLowerCase(); // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
+  // 步骤一：计算 SignKey
+
+  var signKey = CryptoJS.HmacSHA1(qKeyTime, SecretKey).toString(); // 步骤二：构成 FormatString
+
+  var formatString = [method, pathname, util.obj2str(queryParams, true), util.obj2str(headers, true), ''].join('\n'); // 步骤三：计算 StringToSign
+
+  var stringToSign = ['sha1', qSignTime, CryptoJS.SHA1(formatString).toString(), ''].join('\n'); // 步骤四：计算 Signature
+
+  var qSignature = CryptoJS.HmacSHA1(stringToSign, signKey).toString(); // 步骤五：构造 Authorization
+
+  var authorization = ['q-sign-algorithm=' + qSignAlgorithm, 'q-ak=' + qAk, 'q-sign-time=' + qSignTime, 'q-key-time=' + qKeyTime, 'q-header-list=' + qHeaderList, 'q-url-param-list=' + qUrlParamList, 'q-signature=' + qSignature].join('&');
+  return authorization;
+};
+
+var readIntBE = function readIntBE(chunk, size, offset) {
+  var bytes = size / 8;
+  var buf = chunk.slice(offset, offset + bytes);
+  new Uint8Array(buf).reverse();
+  return new {
+    8: Uint8Array,
+    16: Uint16Array,
+    32: Uint32Array
+  }[size](buf)[0];
+};
+
+var buf2str = function buf2str(chunk, start, end, isUtf8) {
+  var buf = chunk.slice(start, end);
+  var str = '';
+  new Uint8Array(buf).forEach(function (charCode) {
+    str += String.fromCharCode(charCode);
+  });
+  if (isUtf8) str = decodeURIComponent(escape(str));
+  return str;
+};
+
+var parseSelectPayload = function parseSelectPayload(chunk) {
+  var header = {};
+  var body = buf2str(chunk);
+  var result = {
+    records: []
+  };
+
+  while (chunk.byteLength) {
+    var totalLength = readIntBE(chunk, 32, 0);
+    var headerLength = readIntBE(chunk, 32, 4);
+    var payloadRestLength = totalLength - headerLength - 16;
+    var offset = 0;
+    var content;
+    chunk = chunk.slice(12); // 获取 Message 的 header 信息
+
+    while (offset < headerLength) {
+      var headerNameLength = readIntBE(chunk, 8, offset);
+      var headerName = buf2str(chunk, offset + 1, offset + 1 + headerNameLength);
+      var headerValueLength = readIntBE(chunk, 16, offset + headerNameLength + 2);
+      var headerValue = buf2str(chunk, offset + headerNameLength + 4, offset + headerNameLength + 4 + headerValueLength);
+      header[headerName] = headerValue;
+      offset += headerNameLength + 4 + headerValueLength;
+    }
+
+    if (header[':event-type'] === 'Records') {
+      content = buf2str(chunk, offset, offset + payloadRestLength, true);
+      result.records.push(content);
+    } else if (header[':event-type'] === 'Stats') {
+      content = buf2str(chunk, offset, offset + payloadRestLength, true);
+      result.stats = util.xml2json(content).Stats;
+    } else if (header[':event-type'] === 'error') {
+      var errCode = header[':error-code'];
+      var errMessage = header[':error-message'];
+      var err = new Error(errMessage);
+      err.message = errMessage;
+      err.name = err.code = errCode;
+      result.error = err;
+    } else if (['Progress', 'Continuation', 'End'].includes(header[':event-type'])) {// do nothing
+    }
+
+    chunk = chunk.slice(offset + payloadRestLength + 4);
+  }
+
+  return {
+    payload: result.records.join(''),
+    body: body
+  };
+};
+
+var getSourceParams = function getSourceParams(source) {
+  var parser = this.options.CopySourceParser;
+  if (parser) return parser(source);
+  var m = source.match(/^([^.]+-\d+)\.cos(v6|-cdc)?\.([^.]+)\.myqcloud\.com\/(.+)$/);
+  if (!m) return null;
+  return {
+    Bucket: m[1],
+    Region: m[3],
+    Key: m[4]
+  };
+};
+
+var noop = function noop() {}; // 清除对象里值为的 undefined 或 null 的属性
+
+
+var clearKey = function clearKey(obj) {
+  var retObj = {};
+
+  for (var key in obj) {
+    if (obj.hasOwnProperty(key) && obj[key] !== undefined && obj[key] !== null) {
+      retObj[key] = obj[key];
+    }
+  }
+
+  return retObj;
+};
+
+var readAsBinaryString = function readAsBinaryString(blob, callback) {
+  var readFun;
+  var fr = new FileReader();
+
+  if (FileReader.prototype.readAsBinaryString) {
+    readFun = FileReader.prototype.readAsBinaryString;
+
+    fr.onload = function () {
+      callback(this.result);
+    };
+  } else if (FileReader.prototype.readAsArrayBuffer) {
+    // 在 ie11 添加 readAsBinaryString 兼容
+    readFun = function readFun(fileData) {
+      var binary = "";
+      var pt = this;
+      var reader = new FileReader();
+
+      reader.onload = function (e) {
+        var bytes = new Uint8Array(reader.result);
+        var length = bytes.byteLength;
+
+        for (var i = 0; i < length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+
+        callback(binary);
+      };
+
+      reader.readAsArrayBuffer(fileData);
+    };
+  } else {
+    console.error('FileReader not support readAsBinaryString');
+  }
+
+  readFun.call(fr, blob);
+};
+
+var fileSliceNeedCopy = function () {
+  var compareVersion = function compareVersion(a, b) {
+    a = a.split('.');
+    b = b.split('.');
+
+    for (var i = 0; i < b.length; i++) {
+      if (a[i] !== b[i]) {
+        return parseInt(a[i]) > parseInt(b[i]) ? 1 : -1;
+      }
+    }
+
+    return 0;
+  };
+
+  var check = function check(ua) {
+    if (!ua) return false;
+    var ChromeVersion = (ua.match(/Chrome\/([.\d]+)/) || [])[1];
+    var QBCoreVersion = (ua.match(/QBCore\/([.\d]+)/) || [])[1];
+    var QQBrowserVersion = (ua.match(/QQBrowser\/([.\d]+)/) || [])[1];
+    var need = ChromeVersion && compareVersion(ChromeVersion, '53.0.2785.116') < 0 && QBCoreVersion && compareVersion(QBCoreVersion, '3.53.991.400') < 0 && QQBrowserVersion && compareVersion(QQBrowserVersion, '9.0.2524.400') <= 0 || false;
+    return need;
+  };
+
+  return check(typeof navigator !== 'undefined' && navigator.userAgent);
+}(); // 获取文件分片
+
+
+var fileSlice = function fileSlice(file, start, end, isUseToUpload, callback) {
+  var blob;
+
+  if (file.slice) {
+    blob = file.slice(start, end);
+  } else if (file.mozSlice) {
+    blob = file.mozSlice(start, end);
+  } else if (file.webkitSlice) {
+    blob = file.webkitSlice(start, end);
+  }
+
+  if (isUseToUpload && fileSliceNeedCopy) {
+    var reader = new FileReader();
+
+    reader.onload = function (e) {
+      blob = null;
+      callback(new Blob([reader.result]));
+    };
+
+    reader.readAsArrayBuffer(blob);
+  } else {
+    callback(blob);
+  }
+}; // 获取文件内容的 MD5
+
+
+var getBodyMd5 = function getBodyMd5(UploadCheckContentMd5, Body, callback, onProgress) {
+  callback = callback || noop;
+
+  if (UploadCheckContentMd5) {
+    if (typeof Body === 'string') {
+      callback(util.md5(Body, true));
+    } else if (Blob && Body instanceof Blob) {
+      util.getFileMd5(Body, function (err, md5) {
+        callback(md5);
+      }, onProgress);
+    } else {
+      callback();
+    }
+  } else {
+    callback();
+  }
+}; // 获取文件 md5 值
+
+
+var md5ChunkSize = 1024 * 1024;
+
+var getFileMd5 = function getFileMd5(blob, callback, onProgress) {
+  var size = blob.size;
+  var loaded = 0;
+  var md5ctx = md5.getCtx();
+
+  var next = function next(start) {
+    if (start >= size) {
+      var hash = md5ctx.digest('hex');
+      callback(null, hash);
+      return;
+    }
+
+    var end = Math.min(size, start + md5ChunkSize);
+    util.fileSlice(blob, start, end, false, function (chunk) {
+      readAsBinaryString(chunk, function (content) {
+        chunk = null;
+        md5ctx = md5ctx.update(content, true);
+        loaded += content.length;
+        content = null;
+        if (onProgress) onProgress({
+          loaded: loaded,
+          total: size,
+          percent: Math.round(loaded / size * 10000) / 10000
+        });
+        next(start + md5ChunkSize);
+      });
+    });
+  };
+
+  next(0);
+};
+
+function clone(obj) {
+  return map(obj, function (v) {
+    return _typeof(v) === 'object' && v !== null ? clone(v) : v;
+  });
+}
+
+function attr(obj, name, defaultValue) {
+  return obj && name in obj ? obj[name] : defaultValue;
+}
+
+function extend(target, source) {
+  each(source, function (val, key) {
+    target[key] = source[key];
+  });
+  return target;
+}
+
+function isArray(arr) {
+  return arr instanceof Array;
+}
+
+function isInArray(arr, item) {
+  var flag = false;
+
+  for (var i = 0; i < arr.length; i++) {
+    if (item === arr[i]) {
+      flag = true;
+      break;
+    }
+  }
+
+  return flag;
+}
+
+function makeArray(arr) {
+  return isArray(arr) ? arr : [arr];
+}
+
+function each(obj, fn) {
+  for (var i in obj) {
+    if (obj.hasOwnProperty(i)) {
+      fn(obj[i], i);
+    }
+  }
+}
+
+function map(obj, fn) {
+  var o = isArray(obj) ? [] : {};
+
+  for (var i in obj) {
+    if (obj.hasOwnProperty(i)) {
+      o[i] = fn(obj[i], i);
+    }
+  }
+
+  return o;
+}
+
+function filter(obj, fn) {
+  var iaArr = isArray(obj);
+  var o = iaArr ? [] : {};
+
+  for (var i in obj) {
+    if (obj.hasOwnProperty(i)) {
+      if (fn(obj[i], i)) {
+        if (iaArr) {
+          o.push(obj[i]);
+        } else {
+          o[i] = obj[i];
+        }
+      }
+    }
+  }
+
+  return o;
+}
+
+var binaryBase64 = function binaryBase64(str) {
+  var i,
+      len,
+      _char,
+      res = '';
+
+  for (i = 0, len = str.length / 2; i < len; i++) {
+    _char = parseInt(str[i * 2] + str[i * 2 + 1], 16);
+    res += String.fromCharCode(_char);
+  }
+
+  return btoa(res);
+};
+
+var uuid = function uuid() {
+  var S4 = function S4() {
+    return ((1 + Math.random()) * 0x10000 | 0).toString(16).substring(1);
+  };
+
+  return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
+};
+
+var hasMissingParams = function hasMissingParams(apiName, params) {
+  var Bucket = params.Bucket;
+  var Region = params.Region;
+  var Key = params.Key;
+  var Domain = this.options.Domain;
+  var checkBucket = !Domain || typeof Domain === 'string' && Domain.indexOf('{Bucket}') > -1;
+  var checkRegion = !Domain || typeof Domain === 'string' && Domain.indexOf('{Region}') > -1;
+
+  if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList' || apiName === 'listObjectVersions') {
+    if (checkBucket && !Bucket) return 'Bucket';
+    if (checkRegion && !Region) return 'Region';
+  } else if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask') {
+    if (checkBucket && !Bucket) return 'Bucket';
+    if (checkRegion && !Region) return 'Region';
+    if (!Key) return 'Key';
+  }
+
+  return false;
+};
+
+var formatParams = function formatParams(apiName, params) {
+  // 复制参数对象
+  params = extend({}, params); // 统一处理 Headers
+
+  if (apiName !== 'getAuth' && apiName !== 'getV4Auth' && apiName !== 'getObjectUrl') {
+    var Headers = params.Headers || {};
+
+    if (params && _typeof(params) === 'object') {
+      (function () {
+        for (var key in params) {
+          if (params.hasOwnProperty(key) && key.indexOf('x-cos-') > -1) {
+            Headers[key] = params[key];
+          }
+        }
+      })();
+
+      var headerMap = {
+        // params headers
+        'x-cos-mfa': 'MFA',
+        'Content-MD5': 'ContentMD5',
+        'Content-Length': 'ContentLength',
+        'Content-Type': 'ContentType',
+        'Expect': 'Expect',
+        'Expires': 'Expires',
+        'Cache-Control': 'CacheControl',
+        'Content-Disposition': 'ContentDisposition',
+        'Content-Encoding': 'ContentEncoding',
+        'Range': 'Range',
+        'If-Modified-Since': 'IfModifiedSince',
+        'If-Unmodified-Since': 'IfUnmodifiedSince',
+        'If-Match': 'IfMatch',
+        'If-None-Match': 'IfNoneMatch',
+        'x-cos-copy-source': 'CopySource',
+        'x-cos-copy-source-Range': 'CopySourceRange',
+        'x-cos-metadata-directive': 'MetadataDirective',
+        'x-cos-copy-source-If-Modified-Since': 'CopySourceIfModifiedSince',
+        'x-cos-copy-source-If-Unmodified-Since': 'CopySourceIfUnmodifiedSince',
+        'x-cos-copy-source-If-Match': 'CopySourceIfMatch',
+        'x-cos-copy-source-If-None-Match': 'CopySourceIfNoneMatch',
+        'x-cos-acl': 'ACL',
+        'x-cos-grant-read': 'GrantRead',
+        'x-cos-grant-write': 'GrantWrite',
+        'x-cos-grant-full-control': 'GrantFullControl',
+        'x-cos-grant-read-acp': 'GrantReadAcp',
+        'x-cos-grant-write-acp': 'GrantWriteAcp',
+        'x-cos-storage-class': 'StorageClass',
+        'x-cos-traffic-limit': 'TrafficLimit',
+        'x-cos-mime-limit': 'MimeLimit',
+        // SSE-C
+        'x-cos-server-side-encryption-customer-algorithm': 'SSECustomerAlgorithm',
+        'x-cos-server-side-encryption-customer-key': 'SSECustomerKey',
+        'x-cos-server-side-encryption-customer-key-MD5': 'SSECustomerKeyMD5',
+        // SSE-COS、SSE-KMS
+        'x-cos-server-side-encryption': 'ServerSideEncryption',
+        'x-cos-server-side-encryption-cos-kms-key-id': 'SSEKMSKeyId',
+        'x-cos-server-side-encryption-context': 'SSEContext'
+      };
+      util.each(headerMap, function (paramKey, headerKey) {
+        if (params[paramKey] !== undefined) {
+          Headers[headerKey] = params[paramKey];
+        }
+      });
+      params.Headers = clearKey(Headers);
+    }
+  }
+
+  return params;
+};
+
+var apiWrapper = function apiWrapper(apiName, apiFn) {
+  return function (params, callback) {
+    var self = this; // 处理参数
+
+    if (typeof params === 'function') {
+      callback = params;
+      params = {};
+    } // 整理参数格式
+
+
+    params = formatParams(apiName, params); // tracker传递
+
+    var tracker;
+
+    if (self.options.EnableTracker) {
+      if (params.calledBySdk === 'sliceUploadFile') {
+        // 分块上传内部方法使用sliceUploadFile的子链路
+        tracker = params.tracker && params.tracker.generateSubTracker({
+          apiName: apiName
+        });
+      } else if (['uploadFile', 'uploadFiles'].includes(apiName)) {
+        // uploadFile、uploadFiles方法在内部处理，此处不处理
+        tracker = null;
+      } else {
+        var fileSize = -1;
+
+        if (params.Body) {
+          fileSize = typeof params.Body === 'string' ? params.Body.length : params.Body.size || params.Body.byteLength || -1;
+        }
+
+        tracker = new Tracker({
+          bucket: params.Bucket,
+          region: params.Region,
+          apiName: apiName,
+          fileKey: params.Key,
+          fileSize: fileSize,
+          deepTracker: self.options.DeepTracker,
+          customId: self.options.CustomId,
+          delay: self.options.TrackerDelay
+        });
+      }
+    }
+
+    params.tracker = tracker; // 代理回调函数
+
+    var formatResult = function formatResult(result) {
+      if (result && result.headers) {
+        result.headers['x-cos-request-id'] && (result.RequestId = result.headers['x-cos-request-id']);
+        result.headers['x-ci-request-id'] && (result.RequestId = result.headers['x-ci-request-id']);
+        result.headers['x-cos-version-id'] && (result.VersionId = result.headers['x-cos-version-id']);
+        result.headers['x-cos-delete-marker'] && (result.DeleteMarker = result.headers['x-cos-delete-marker']);
+      }
+
+      return result;
+    };
+
+    var _callback = function _callback(err, data) {
+      // 格式化上报参数并上报
+      tracker && tracker.formatResult(err, data);
+      callback && callback(formatResult(err), formatResult(data));
+    };
+
+    var checkParams = function checkParams() {
+      if (apiName !== 'getService' && apiName !== 'abortUploadTask') {
+        // 判断参数是否完整
+        var missingResult = hasMissingParams.call(self, apiName, params);
+
+        if (missingResult) {
+          return 'missing param ' + missingResult;
+        } // 判断 region 格式
+
+
+        if (params.Region) {
+          if (self.options.CompatibilityMode) {
+            if (!/^([a-z\d-.]+)$/.test(params.Region)) {
+              return 'Region format error.';
+            }
+          } else {
+            if (params.Region.indexOf('cos.') > -1) {
+              return 'param Region should not be start with "cos."';
+            } else if (!/^([a-z\d-]+)$/.test(params.Region)) {
+              return 'Region format error.';
+            }
+          } // 判断 region 格式
+
+
+          if (!self.options.CompatibilityMode && params.Region.indexOf('-') === -1 && params.Region !== 'yfb' && params.Region !== 'default' && params.Region !== 'accelerate') {
+            console.warn('warning: param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224');
+          }
+        } // 兼容不带 AppId 的 Bucket
+
+
+        if (params.Bucket) {
+          if (!/^([a-z\d-]+)-(\d+)$/.test(params.Bucket)) {
+            if (params.AppId) {
+              params.Bucket = params.Bucket + '-' + params.AppId;
+            } else if (self.options.AppId) {
+              params.Bucket = params.Bucket + '-' + self.options.AppId;
+            } else {
+              return 'Bucket should format as "test-1250000000".';
+            }
+          }
+
+          if (params.AppId) {
+            console.warn('warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g Bucket:"test-1250000000" ).');
+            delete params.AppId;
+          }
+        } // 如果 Key 是 / 开头，强制去掉第一个 /
+
+
+        if (!self.options.UseRawKey && params.Key && params.Key.substr(0, 1) === '/') {
+          params.Key = params.Key.substr(1);
+        }
+      }
+    };
+
+    var errMsg = checkParams();
+    var isSync = apiName === 'getAuth' || apiName === 'getObjectUrl';
+
+    if (typeof Promise === 'function' && !isSync && !callback) {
+      return new Promise(function (resolve, reject) {
+        callback = function callback(err, data) {
+          err ? reject(err) : resolve(data);
+        };
+
+        if (errMsg) return _callback(util.error(new Error(errMsg)));
+        apiFn.call(self, params, _callback);
+      });
+    } else {
+      if (errMsg) return _callback(util.error(new Error(errMsg)));
+      var res = apiFn.call(self, params, _callback);
+      if (isSync) return res;
+    }
+  };
+};
+
+var throttleOnProgress = function throttleOnProgress(total, onProgress) {
+  var self = this;
+  var size0 = 0;
+  var size1 = 0;
+  var time0 = Date.now();
+  var time1;
+  var timer;
+
+  function update() {
+    timer = 0;
+
+    if (onProgress && typeof onProgress === 'function') {
+      time1 = Date.now();
+      var speed = Math.max(0, Math.round((size1 - size0) / ((time1 - time0) / 1000) * 100) / 100) || 0;
+      var percent;
+
+      if (size1 === 0 && total === 0) {
+        percent = 1;
+      } else {
+        percent = Math.floor(size1 / total * 100) / 100 || 0;
+      }
+
+      time0 = time1;
+      size0 = size1;
+
+      try {
+        onProgress({
+          loaded: size1,
+          total: total,
+          speed: speed,
+          percent: percent
+        });
+      } catch (e) {}
+    }
+  }
+
+  return function (info, immediately) {
+    if (info) {
+      size1 = info.loaded;
+      total = info.total;
+    }
+
+    if (immediately) {
+      clearTimeout(timer);
+      update();
+    } else {
+      if (timer) return;
+      timer = setTimeout(update, self.options.ProgressInterval);
+    }
+  };
+};
+
+var getFileSize = function getFileSize(api, params, callback) {
+  var size;
+
+  if (typeof params.Body === 'string') {
+    params.Body = new Blob([params.Body], {
+      type: 'text/plain'
+    });
+  } else if (params.Body instanceof ArrayBuffer) {
+    params.Body = new Blob([params.Body]);
+  }
+
+  if (params.Body && (params.Body instanceof Blob || params.Body.toString() === '[object File]' || params.Body.toString() === '[object Blob]')) {
+    size = params.Body.size;
+  } else {
+    callback(util.error(new Error('params body format error, Only allow File|Blob|String.')));
+    return;
+  }
+
+  params.ContentLength = size;
+  callback(null, size);
+}; // 获取调正的时间戳
+
+
+var getSkewTime = function getSkewTime(offset) {
+  return Date.now() + (offset || 0);
+};
+
+var error = function error(err, opt) {
+  var sourceErr = err;
+  err.message = err.message || null;
+
+  if (typeof opt === 'string') {
+    err.error = opt;
+    err.message = opt;
+  } else if (_typeof(opt) === 'object' && opt !== null) {
+    extend(err, opt);
+    if (opt.code || opt.name) err.code = opt.code || opt.name;
+    if (opt.message) err.message = opt.message;
+    if (opt.stack) err.stack = opt.stack;
+  }
+
+  if (typeof Object.defineProperty === 'function') {
+    Object.defineProperty(err, 'name', {
+      writable: true,
+      enumerable: false
+    });
+    Object.defineProperty(err, 'message', {
+      enumerable: true
+    });
+  }
+
+  err.name = opt && opt.name || err.name || err.code || 'Error';
+  if (!err.code) err.code = err.name;
+  if (!err.error) err.error = clone(sourceErr); // 兼容老的错误格式
+
+  return err;
+};
+
+var isWebWorker = function isWebWorker() {
+  // 有限判断 worker 环境的 constructor name 其次用 worker 独有的 FileReaderSync 兜底 详细参考 https://developer.mozilla.org/zh-CN/docs/Web/API/Web_Workers_API/Using_web_workers
+  return (typeof globalThis === "undefined" ? "undefined" : _typeof(globalThis)) === 'object' && (globalThis.constructor.name === 'DedicatedWorkerGlobalScope' || globalThis.FileReaderSync);
+};
+
+var isNode = function isNode() {
+  // 得兜底 web worker 环境中 webpack 用了 process 插件之类的情况
+  return (typeof window === "undefined" ? "undefined" : _typeof(window)) !== 'object' && (typeof process === "undefined" ? "undefined" : _typeof(process)) === 'object' && "function" === 'function' && !isWebWorker();
+};
+
+var isCIHost = function isCIHost(url) {
+  return /^https?:\/\/([^/]+\.)?ci\.[^/]+/.test(url);
+};
+
+var util = {
+  noop: noop,
+  formatParams: formatParams,
+  apiWrapper: apiWrapper,
+  xml2json: xml2json,
+  json2xml: json2xml,
+  md5: md5,
+  clearKey: clearKey,
+  fileSlice: fileSlice,
+  getBodyMd5: getBodyMd5,
+  getFileMd5: getFileMd5,
+  binaryBase64: binaryBase64,
+  extend: extend,
+  isArray: isArray,
+  isInArray: isInArray,
+  makeArray: makeArray,
+  each: each,
+  map: map,
+  filter: filter,
+  clone: clone,
+  attr: attr,
+  uuid: uuid,
+  camSafeUrlEncode: camSafeUrlEncode,
+  throttleOnProgress: throttleOnProgress,
+  getFileSize: getFileSize,
+  getSkewTime: getSkewTime,
+  error: error,
+  obj2str: obj2str,
+  getAuth: getAuth,
+  parseSelectPayload: parseSelectPayload,
+  getSourceParams: getSourceParams,
+  isBrowser: true,
+  isNode: isNode,
+  isCIHost: isCIHost
+};
+module.exports = util;
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/_process@0.11.10@process/browser.js */ "./node_modules/_process@0.11.10@process/browser.js")))
 
 /***/ })
-/******/ ]);
+
+/******/ });
 });
