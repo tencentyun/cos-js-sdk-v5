@@ -7144,7 +7144,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.4.0-beta\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"index.js\",\"types\":\"index.d.ts\",\"scripts\":{\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"nyc\":\"node test/watcher.js && nyc report --reporter=clover --reporter=cobertura\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.2\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"nyc\":\"^15.1.0\",\"puppeteer\":\"^5.3.1\",\"puppeteer-to-istanbul\":\"^1.4.0\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\",\"terser-webpack-plugin\":\"4.2.3\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.4.0\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"index.js\",\"types\":\"index.d.ts\",\"scripts\":{\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"nyc\":\"node test/watcher.js && nyc report --reporter=clover --reporter=cobertura\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.2\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"nyc\":\"^15.1.0\",\"puppeteer\":\"^5.3.1\",\"puppeteer-to-istanbul\":\"^1.4.0\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\",\"terser-webpack-plugin\":\"4.2.3\"}}");
 
 /***/ }),
 
@@ -12749,11 +12749,14 @@ var defaultOptions = {
   UseAccelerate: false,
   ForceSignHost: true,
   // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
-  EnableTracker: true,
-  // 默认打开上报
+  EnableTracker: false,
+  // 默认关闭上报
   DeepTracker: false,
+  // 上报时是否对每个分块上传做单独上报
   TrackerDelay: 5000,
-  CustomId: ''
+  // 周期性上报，单位毫秒。0代表实时上报
+  CustomId: '' // 自定义上报id
+
 }; // 对外暴露的类
 
 var COS = function COS(options) {
