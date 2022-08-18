@@ -37,6 +37,9 @@ const utils = {
     },
     // 获取pc端操作系统类型
     getOsType() {
+      if (typeof navigator !== 'object') {
+        return 'unknown os';
+      }
       var agent = navigator.userAgent.toLowerCase();
       var isMac = /macintosh|mac os x/i.test(navigator.userAgent);
       if (agent.indexOf("win32") >= 0 || agent.indexOf("wow32") >= 0) {
