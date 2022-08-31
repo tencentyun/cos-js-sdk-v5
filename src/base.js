@@ -3635,7 +3635,7 @@ function _submitRequest(params, callback) {
     self.options.ForcePathStyle && (opt.pathStyle = self.options.ForcePathStyle);
     self.emit('before-send', opt);
     var useAccelerate = opt.url.includes('accelerate.');
-    var queryString = Object.keys(opt.qs).map(key => `${key}=${opt.qs[key]}`).join('&');
+    var queryString = opt.qs ? Object.keys(opt.qs).map(key => `${key}=${opt.qs[key]}`).join('&') : '';
     var fullUrl = queryString ? (opt.url + '?' + queryString) : opt.url;
     params.tracker && params.tracker.setParams({ reqUrl: fullUrl, accelerate: useAccelerate ? 'Y' : 'N' });
     // 分块上传时给父级tracker设置url信息
