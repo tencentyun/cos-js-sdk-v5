@@ -2850,6 +2850,7 @@ function multipartList(params, callback) {
  */
 function multipartListPart(params, callback) {
     var reqParams = {};
+    var tracker = params.tracker
 
     reqParams['uploadId'] = params['UploadId'];
     reqParams['encoding-type'] = params['EncodingType'];

@@ -8,8 +8,7 @@
     "server": "node server/sts.js",
     "dev": "cross-env NODE_ENV=development webpack -w --mode=development",
     "build": "cross-env NODE_ENV=production webpack --mode=production",
-    "cos-auth.min.js": "uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m",
-    "nyc": "node test/watcher.js && nyc report --reporter=clover --reporter=cobertura"
+    "cos-auth.min.js": "uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m"
   },
   "repository": {
     "type": "git",
@@ -33,9 +32,6 @@
     "body-parser": "^1.18.3",
     "cross-env": "^5.2.0",
     "express": "^4.16.4",
-    "nyc": "^15.1.0",
-    "puppeteer": "^5.3.1",
-    "puppeteer-to-istanbul": "^1.4.0",
     "qcloud-cos-sts": "^3.0.2",
     "request": "^2.87.0",
     "terser-webpack-plugin": "4.2.3",

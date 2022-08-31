@@ -1133,24 +1133,14 @@ group('sliceCopyFile()', function () {
                         Key: Key,
                     }, function (err, data2) {
                         if (err) throw err;
-                        delete data1.VersionId;
-                        delete data2.VersionId;
-                        delete data1.headers['x-cos-request-id'];
-                        delete data2.headers['x-cos-request-id'];
-                        delete data1.headers['x-cos-version-id'];
-                        delete data2.headers['x-cos-version-id'];
-                        delete data1.headers['x-cos-replication-status'];
-                        delete data2.headers['x-cos-replication-status'];
-                        delete data1.headers['last-modified'];
-                        delete data2.headers['last-modified'];
-                        delete data1.headers['date'];
-                        delete data2.headers['date'];
-                        delete data1.headers['etag'];
-                        delete data2.headers['etag'];
-                        delete data1.ETag;
-                        delete data2.ETag;
-                        delete data1.RequestId;
-                        delete data2.RequestId;
+                        ['VersionId', 'ETag', 'RequestId'].forEach(key => {
+                            delete data1[key];
+                            delete data2[key];
+                        });
+                        ['x-cos-request-id', 'x-cos-version-id', 'x-cos-replication-status', 'last-modified', 'last-modified', 'etag', 'date', 'expires'].forEach(key => {
+                            delete data1.headers[key];
+                            delete data2.headers[key];
+                        });
                         assert.ok(comparePlainObject(data1, data2));
                         done();
                     });
@@ -2225,7 +2215,7 @@ group('BucketDomain', function () {
                     Bucket: config.Bucket,
                     Region: config.Region
                 }, function (err, data) {
-                    assert.ok(comparePlainObject([], data.DomainRule));
+                    assert.ok(err.statusCode === 404);
                     done();
                 });
             }, 2000);
@@ -3725,7 +3715,7 @@ group('multipartAbort()', function () {
 });
 
 group('sliceUploadFile() 续传', function () {
-    test('multipartAbort()', function (done, assert) {
+    test('sliceUploadFile() 续传', function (done, assert) {
         var Key = '3.zip'
         cos.multipartInit({
             Bucket: config.Bucket,
@@ -3760,26 +3750,42 @@ group('sliceUploadFile() 续传', function () {
 
 group('appendObject', function () {
     test('appendObject()', function (done, assert) {
-        cos.headObject({
+        cos.deleteObject({
             Bucket: config.Bucket, // Bucket 格式：test-1250000000
             Region: config.Region,
             Key: 'append.txt', /* 必须 */
         }, function(err, data) {
             assert.ok(!err);
-            if (err) return console.log(err);
-            // 首先取到要追加的文件当前长度，即需要上送的Position
-            var position = data.headers['content-length'];
             cos.appendObject({
                 Bucket: config.Bucket, // Bucket 格式：test-1250000000
                 Region: config.Region,
                 Key: 'append.txt', /* 必须 */
-                Body: '66666',
-                Position: position,
-            },
-            function(err, data) {
+                Body: '123',
+                Position: 0,
+            }, function(err, data) {
                 assert.ok(!err);
-                done();
-            })
+                cos.headObject({
+                    Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                    Region: config.Region,
+                    Key: 'append.txt', /* 必须 */
+                }, function (err, data) {
+                    assert.ok(!err);
+                    if (err) return console.log(err);
+                    // 首先取到要追加的文件当前长度，即需要上送的Position
+                    var position = data.headers['content-length'];
+                    cos.appendObject({
+                            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                            Region: config.Region,
+                            Key: 'append.txt', /* 必须 */
+                            Body: '456',
+                            Position: position,
+                        },
+                        function (err, data) {
+                            assert.ok(!err);
+                            done();
+                        })
+                });
+            });
         });
     });
 });
