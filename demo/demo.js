@@ -1340,7 +1340,7 @@ function sliceCopyFile() {
         Region: config.Region,
         Key: Key,
         CopySource: sourcePath,
-        SliceSize: 2 * 1024 * 1024, // 大于2M的文件用分片复制，小于则用单片复制
+        SliceSize: 2 * 1024 * 1024, // 指定文件多大时用分片复制，小于数值则用单片复制
         onProgress:function (info) {
             var percent = Math.floor(info.percent * 10000) / 100;
             var speed = Math.floor(info.speed / 1024 / 1024 * 100) / 100;

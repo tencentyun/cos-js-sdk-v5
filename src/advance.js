@@ -1011,10 +1011,15 @@ function sliceCopyFile(params, callback) {
 
     var ChunkSize = params.CopyChunkSize || this.options.CopyChunkSize;
     var ChunkParallel = this.options.CopyChunkParallelLimit;
+    var ChunkRetryTimes = this.options.ChunkRetryTimes + 1;
 
+    var ChunkCount = 0;
     var FinishSize = 0;
     var FileSize;
     var onProgress;
+    var SourceResHeaders = {};
+    var SourceHeaders = {};
+    var TargetHeader = {};
 
     // 分片复制完成，开始 multipartComplete 操作
     ep.on('copy_slice_complete', function (UploadData) {
@@ -1028,38 +1033,55 @@ function sliceCopyFile(params, callback) {
                 ETag: item.ETag,
             };
         });
-        self.multipartComplete({
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key,
-            UploadId: UploadData.UploadId,
-            Parts: Parts,
-            calledBySdk: 'sliceCopyFile',
-        },function (err, data) {
+        // 完成上传的请求也做重试
+        Async.retry(ChunkRetryTimes, function (tryCallback) {
+            self.multipartComplete({
+                Bucket: Bucket,
+                Region: Region,
+                Key: Key,
+                UploadId: UploadData.UploadId,
+                Parts: Parts,
+                calledBySdk: 'sliceCopyFile',
+            }, tryCallback);
+        }, function (err, data) {
+            session.removeUsing(UploadData.UploadId); // 标记 UploadId 没被使用了，因为复制没提供重试，所以只要出错，就是 UploadId 停用了。
             if (err) {
                 onProgress(null, true);
                 return callback(err);
             }
+            session.removeUploadId(UploadData.UploadId);
             onProgress({loaded: FileSize, total: FileSize}, true);
             callback(null, data);
         });
     });
 
     ep.on('get_copy_data_finish',function (UploadData) {
-        Async.eachLimit(UploadData.PartList, ChunkParallel, function (SliceItem, asyncCallback) {
+        // 处理 UploadId 缓存
+        var uuid = session.getCopyFileId(CopySource, SourceResHeaders, ChunkSize, Bucket, Key);
+        uuid && session.saveUploadId(uuid, UploadData.UploadId, self.options.UploadIdCacheLimit); // 缓存 UploadId
+        session.setUsing(UploadData.UploadId); // 标记 UploadId 为正在使用
+
+        var needCopySlices = util.filter(UploadData.PartList, function (SliceItem) {
+            if (SliceItem['Uploaded']) {
+                FinishSize += SliceItem['PartNumber'] >= ChunkCount ? (FileSize % ChunkSize || ChunkSize) : ChunkSize;
+            }
+            return !SliceItem['Uploaded'];
+        });
+        Async.eachLimit(needCopySlices, ChunkParallel, function (SliceItem, asyncCallback) {
             var PartNumber = SliceItem.PartNumber;
             var CopySourceRange = SliceItem.CopySourceRange;
             var currentSize = SliceItem.end - SliceItem.start;
-
-            copySliceItem.call(self, {
-                Bucket: Bucket,
-                Region: Region,
-                Key: Key,
-                CopySource: CopySource,
-                UploadId: UploadData.UploadId,
-                PartNumber: PartNumber,
-                CopySourceRange: CopySourceRange,
-            },function (err,data) {
+            Async.retry(ChunkRetryTimes, function (tryCallback) {
+                copySliceItem.call(self, {
+                    Bucket: Bucket,
+                    Region: Region,
+                    Key: Key,
+                    CopySource: CopySource,
+                    UploadId: UploadData.UploadId,
+                    PartNumber: PartNumber,
+                    CopySourceRange: CopySourceRange,
+                }, tryCallback);
+            }, function (err,data) {
                 if (err) return asyncCallback(err);
                 FinishSize += currentSize;
                 onProgress({loaded: FinishSize, total: FileSize});
@@ -1068,15 +1090,77 @@ function sliceCopyFile(params, callback) {
             });
         }, function (err) {
             if (err) {
+                session.removeUsing(UploadData.UploadId); // 标记 UploadId 没被使用了，因为复制没提供重试，所以只要出错，就是 UploadId 停用了。
                 onProgress(null, true);
                 return callback(err);
             }
-
             ep.emit('copy_slice_complete', UploadData);
         });
     });
 
-    ep.on('get_file_size_finish', function (SourceHeaders) {
+    ep.on('get_chunk_size_finish', function () {
+        var createNewUploadId = function () {
+            self.multipartInit({
+                Bucket: Bucket,
+                Region: Region,
+                Key: Key,
+                Headers: TargetHeader,
+            }, function (err,data) {
+                if (err) return callback(err);
+                params.UploadId = data.UploadId;
+                ep.emit('get_copy_data_finish', {UploadId: params.UploadId, PartList: params.PartList});
+            });
+        };
+
+        // 在本地找可用的 UploadId
+        var uuid = session.getCopyFileId(CopySource, SourceResHeaders, ChunkSize, Bucket, Key);
+        var LocalUploadIdList = session.getUploadIdList(uuid);
+        if (!uuid || !LocalUploadIdList) return createNewUploadId();
+
+        var next = function (index) {
+            // 如果本地找不到可用 UploadId，再一个个遍历校验远端
+            if (index >= LocalUploadIdList.length) return createNewUploadId();
+            var UploadId = LocalUploadIdList[index];
+            // 如果正在被使用，跳过
+            if (session.using[UploadId]) return next(index + 1);
+            // 判断 UploadId 是否存在线上
+            wholeMultipartListPart.call(self, {
+                Bucket: Bucket,
+                Region: Region,
+                Key: Key,
+                UploadId: UploadId,
+            }, function (err, PartListData) {
+                if (err) {
+                    // 如果 UploadId 获取会出错，跳过并删除
+                    session.removeUploadId(UploadId);
+                    next(index + 1);
+                } else {
+                    // 如果异步回来 UploadId 已经被用了，也跳过
+                    if (session.using[UploadId]) return next(index + 1);
+                    // 找到可用 UploadId
+                    var finishETagMap = {};
+                    var offset = 0;
+                    util.each(PartListData.PartList, function (PartItem) {
+                        var size = parseInt(PartItem.Size);
+                        var end = offset + size - 1;
+                        finishETagMap[PartItem.PartNumber + '|' + offset + '|' + end] = PartItem.ETag;
+                        offset += size;
+                    });
+                    util.each(params.PartList, function (PartItem) {
+                        var ETag = finishETagMap[PartItem.PartNumber + '|' + PartItem.start + '|' + PartItem.end];
+                        if (ETag) {
+                            PartItem.ETag = ETag;
+                            PartItem.Uploaded = true;
+                        }
+                    });
+                    ep.emit('get_copy_data_finish', {UploadId: UploadId, PartList: params.PartList});
+                }
+            });
+        };
+        next(0);
+    });
+
+    ep.on('get_file_size_finish', function () {
         // 控制分片大小
         (function () {
             var SIZE = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1024 * 2, 1024 * 4, 1024 * 5];
@@ -1086,8 +1170,7 @@ function sliceCopyFile(params, callback) {
                 if (FileSize / AutoChunkSize <= self.options.MaxPartNumber) break;
             }
             params.ChunkSize = ChunkSize = Math.max(ChunkSize, AutoChunkSize);
-
-            var ChunkCount = Math.ceil(FileSize / ChunkSize);
+            ChunkCount = Math.ceil(FileSize / ChunkSize);
 
             var list = [];
             for (var partNumber = 1; partNumber <= ChunkCount; partNumber++) {
@@ -1132,17 +1215,7 @@ function sliceCopyFile(params, callback) {
         delete TargetHeader['x-cos-copy-source-If-Unmodified-Since'];
         delete TargetHeader['x-cos-copy-source-If-Match'];
         delete TargetHeader['x-cos-copy-source-If-None-Match'];
-        self.multipartInit({
-            Bucket: Bucket,
-            Region: Region,
-            Key: Key,
-            Headers: TargetHeader,
-            calledBySdk: 'sliceCopyFile',
-        },function (err,data) {
-            if (err) return callback(err);
-            params.UploadId = data.UploadId;
-            ep.emit('get_copy_data_finish', params);
-        });
+        ep.emit('get_chunk_size_finish');
     });
 
     // 获取远端复制源文件的大小
@@ -1183,7 +1256,8 @@ function sliceCopyFile(params, callback) {
             });
         } else {
             var resHeaders = data.headers;
-            var SourceHeaders = {
+            SourceResHeaders = resHeaders;
+            SourceHeaders = {
                 'Cache-Control': resHeaders['cache-control'],
                 'Content-Disposition': resHeaders['content-disposition'],
                 'Content-Encoding': resHeaders['content-encoding'],
@@ -1197,7 +1271,7 @@ function sliceCopyFile(params, callback) {
                     SourceHeaders[k] = v;
                 }
             });
-            ep.emit('get_file_size_finish', SourceHeaders);
+            ep.emit('get_file_size_finish');
         }
     });
 }
