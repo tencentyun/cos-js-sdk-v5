@@ -50,7 +50,7 @@ replaceVersion();
 module.exports = {
     mode: process.env.NODE_ENV,
     entry: path.resolve(__dirname, './index.js'),
-    devtool: process.env.NODE_ENV === 'production' ? "none" : "source-map",
+    devtool: 'none',
     output: {
         path: path.resolve(__dirname, './dist'),
         publicPath: '/dist/',
