@@ -831,7 +831,7 @@ function uploadFile(params, callback) {
 
         // 上传链路
     if (self.options.EnableTracker) {
-      const accelerate = self.options.UseAccelerate || self.options.Domain && self.options.Domain.includes('accelerate.');
+      const accelerate = self.options.UseAccelerate || typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.');
       params.tracker = new Tracker({
         bucket: params.Bucket,
         region: params.Region,
@@ -926,7 +926,7 @@ function uploadFiles(params, callback) {
 
             // 单个文件上传链路
             if (self.options.EnableTracker) {
-              const accelerate = self.options.UseAccelerate || self.options.Domain && self.options.Domain.includes('accelerate.');
+              const accelerate = self.options.UseAccelerate || typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.');
               fileParams.tracker = new Tracker({
                   bucket: fileParams.Bucket,
                   region: fileParams.Region,
