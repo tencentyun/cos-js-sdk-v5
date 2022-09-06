@@ -320,7 +320,7 @@ class Tracker {
 
     if (this.delay === 0) {
       // 实时上报
-     this.beacon && this.beacon.onDirectUserAction(eventCode, formattedParams);
+      this.beacon && this.beacon.onDirectUserAction(eventCode, formattedParams);
     } else {
       // 周期性上报
       this.beacon && this.beacon.onUserAction(eventCode, formattedParams);
