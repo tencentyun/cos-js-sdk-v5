@@ -13468,12 +13468,13 @@ var _typeof = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_m
 
 var pkg = __webpack_require__(/*! ../package.json */ "./package.json");
 
-var BeaconAction = __webpack_require__(/*! ../lib/beacon.min */ "./lib/beacon.min.js");
-
 var beacon = null;
 
 var getBeacon = function getBeacon(delay) {
   if (!beacon) {
+    // 不放在顶层是避免首次引入就被加载，从而避免在某些环境比如webworker里加载灯塔sdk内window相关对象报错
+    var BeaconAction = __webpack_require__(/*! ../lib/beacon.min */ "./lib/beacon.min.js");
+
     beacon = new BeaconAction({
       appkey: "0AND0VEVB24UBGDU",
       versionCode: pkg.version,

@@ -1,10 +1,11 @@
 
 const pkg = require('../package.json');
-const BeaconAction = require('../lib/beacon.min');
 let beacon = null;
 
 const getBeacon = (delay) => {
   if (!beacon) {
+    // 不放在顶层是避免首次引入就被加载，从而避免在某些环境比如webworker里加载灯塔sdk内window相关对象报错
+    const BeaconAction = require('../lib/beacon.min');
     beacon = new BeaconAction({
       appkey: "0AND0VEVB24UBGDU",
       versionCode: pkg.version,
