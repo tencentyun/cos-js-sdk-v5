@@ -2214,9 +2214,9 @@ function putObjectCopy(params, callback) {
         return;
     }
 
-    var SourceBucket = m[1];
-    var SourceRegion = m[3];
-    var SourceKey = decodeURIComponent(m[4]);
+    var SourceBucket = m.Bucket;
+    var SourceRegion = m.Region;
+    var SourceKey = decodeURIComponent(m.Key);
 
     submitRequest.call(this, {
         Scope: [{
@@ -2266,9 +2266,9 @@ function uploadPartCopy(params, callback) {
         return;
     }
 
-    var SourceBucket = m[1];
-    var SourceRegion = m[3];
-    var SourceKey = decodeURIComponent(m[4]);
+    var SourceBucket = m.Bucket;
+    var SourceRegion = m.Region;
+    var SourceKey = decodeURIComponent(m.Key);
 
     submitRequest.call(this, {
         Scope: [{
@@ -3189,6 +3189,10 @@ function getUrl(params) {
     var object = params.object;
     if (typeof domain === 'function') {
         domain = domain({Bucket: longBucket, Region: region});
+    }
+    // 兼容不带冒号的http、https
+    if (['http', 'https'].includes(params.protocol)) {
+      params.protocol = params.protocol + ':';
     }
     var protocol = params.protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
     if (!domain) {

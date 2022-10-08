@@ -205,9 +205,9 @@ var parseSelectPayload = function (chunk) {
 var getSourceParams = function (source) {
     var parser = this.options.CopySourceParser;
     if (parser) return parser(source);
-    var m = source.match(/^([^.]+-\d+)\.cos(v6|-cdc)?\.([^.]+)\.myqcloud\.com\/(.+)$/);
+    var m = source.match(/^([^.]+-\d+)\.cos(v6|-cdc|-internal)?\.([^.]+)\.((myqcloud\.com)|(tencentcos\.cn))\/(.+)$/);
     if (!m) return null;
-    return { Bucket: m[1], Region: m[3], Key: m[4] };
+    return { Bucket: m[1], Region: m[3], Key: m[7] };
 };
 
 var noop = function () {
@@ -631,7 +631,7 @@ var apiWrapper = function (apiName, apiFn) {
         };
 
         var errMsg = checkParams();
-        var isSync = apiName === 'getAuth' || apiName === 'getObjectUrl';
+        var isSync = apiName === 'getAuth';
         if (typeof Promise === 'function' && !isSync && !callback) {
             return new Promise(function (resolve, reject) {
                 callback = function (err, data) {

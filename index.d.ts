@@ -259,6 +259,8 @@ declare namespace COS {
     ExpiredTime: number,
     /** 该临时密钥是否仅用于相同 Scope 权限范围的请求 */
     ScopeLimit?: boolean,
+    /** 签名 */
+    Authorization?: string,
   }
 
   /** 用于发请求的签名字符串，会放在请求 Header 里的 Authorization 字段 */
@@ -1272,7 +1274,9 @@ declare namespace COS {
       Key: Key,
       /** 要删除的对象版本 ID */
       VersionId?: string
-    }[]
+    }[],
+    /** 是否启动 Quiet 模式 */
+    Quiet?: boolean,
   }
   /** deleteMultipleObject 接口返回值 */
   interface DeleteMultipleObjectResult extends GeneralResult {

@@ -7212,7 +7212,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.4.8\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.2\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.4.9\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.2\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -11087,9 +11087,9 @@ function putObjectCopy(params, callback) {
     return;
   }
 
-  var SourceBucket = m[1];
-  var SourceRegion = m[3];
-  var SourceKey = decodeURIComponent(m[4]);
+  var SourceBucket = m.Bucket;
+  var SourceRegion = m.Region;
+  var SourceKey = decodeURIComponent(m.Key);
   submitRequest.call(this, {
     Scope: [{
       action: 'name/cos:GetObject',
@@ -11138,9 +11138,9 @@ function uploadPartCopy(params, callback) {
     return;
   }
 
-  var SourceBucket = m[1];
-  var SourceRegion = m[3];
-  var SourceKey = decodeURIComponent(m[4]);
+  var SourceBucket = m.Bucket;
+  var SourceRegion = m.Region;
+  var SourceKey = decodeURIComponent(m.Key);
   submitRequest.call(this, {
     Scope: [{
       action: 'name/cos:GetObject',
@@ -12130,6 +12130,11 @@ function getUrl(params) {
       Bucket: longBucket,
       Region: region
     });
+  } // 兼容不带冒号的http、https
+
+
+  if (['http', 'https'].includes(params.protocol)) {
+    params.protocol = params.protocol + ':';
   }
 
   var protocol = params.protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
@@ -14112,12 +14117,12 @@ var parseSelectPayload = function parseSelectPayload(chunk) {
 var getSourceParams = function getSourceParams(source) {
   var parser = this.options.CopySourceParser;
   if (parser) return parser(source);
-  var m = source.match(/^([^.]+-\d+)\.cos(v6|-cdc)?\.([^.]+)\.myqcloud\.com\/(.+)$/);
+  var m = source.match(/^([^.]+-\d+)\.cos(v6|-cdc|-internal)?\.([^.]+)\.((myqcloud\.com)|(tencentcos\.cn))\/(.+)$/);
   if (!m) return null;
   return {
     Bucket: m[1],
     Region: m[3],
-    Key: m[4]
+    Key: m[7]
   };
 };
 
@@ -14584,7 +14589,7 @@ var apiWrapper = function apiWrapper(apiName, apiFn) {
     };
 
     var errMsg = checkParams();
-    var isSync = apiName === 'getAuth' || apiName === 'getObjectUrl';
+    var isSync = apiName === 'getAuth';
 
     if (typeof Promise === 'function' && !isSync && !callback) {
       return new Promise(function (resolve, reject) {
