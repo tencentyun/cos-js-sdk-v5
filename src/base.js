@@ -3582,7 +3582,8 @@ function _submitRequest(params, callback) {
         object: object,
     });
     if (params.action) {
-        url = url + '?' + params.action;
+        // 已知问题，某些版本的qq会对url自动拼接（比如/upload被拼接成/upload=(null)）导致签名错误，这里做下兼容。
+        url = url + '?' + (util.isIOS_QQ ? `${params.action}=` : params.action);
     }
     if (params.qsStr) {
         if(url.indexOf('?') > -1){

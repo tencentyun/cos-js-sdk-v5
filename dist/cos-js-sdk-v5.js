@@ -12555,7 +12555,8 @@ function _submitRequest(params, callback) {
   });
 
   if (params.action) {
-    url = url + '?' + params.action;
+    // 已知问题，某些版本的qq会对url自动拼接（比如/upload被拼接成/upload=(null)）导致签名错误，这里做下兼容。
+    url = url + '?' + (util.isIOS_QQ ? "".concat(params.action, "=") : params.action);
   }
 
   if (params.qsStr) {
@@ -14730,7 +14731,28 @@ var isNode = function isNode() {
 
 var isCIHost = function isCIHost(url) {
   return /^https?:\/\/([^/]+\.)?ci\.[^/]+/.test(url);
-};
+}; //判断是否是ios
+
+
+var isIOS = function () {
+  if ((typeof navigator === "undefined" ? "undefined" : _typeof(navigator)) !== 'object') {
+    return false;
+  }
+
+  var u = navigator.userAgent;
+  var isIOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
+
+  return isIOS;
+}(); // 判断是qq内置浏览器
+
+
+var isQQ = function () {
+  if ((typeof navigator === "undefined" ? "undefined" : _typeof(navigator)) !== 'object') {
+    return false;
+  }
+
+  return /\sQQ/i.test(navigator.userAgent);
+}();
 
 var util = {
   noop: noop,
@@ -14765,7 +14787,8 @@ var util = {
   getSourceParams: getSourceParams,
   isBrowser: true,
   isNode: isNode,
-  isCIHost: isCIHost
+  isCIHost: isCIHost,
+  isIOS_QQ: isIOS && isQQ
 };
 module.exports = util;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/process/browser.js */ "./node_modules/process/browser.js")))

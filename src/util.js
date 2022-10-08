@@ -750,11 +750,27 @@ var isNode = function () {
     return typeof window !== 'object' && typeof process === 'object' && typeof require === 'function' && !isWebWorker();
 }
 
-
-
 var isCIHost = function(url) {
     return /^https?:\/\/([^/]+\.)?ci\.[^/]+/.test(url);
 }
+
+//判断是否是ios
+var isIOS = (function(){
+  if (typeof navigator !== 'object') {
+    return false;
+  }
+  var u = navigator.userAgent;
+  var isIOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
+  return isIOS;
+})();
+
+// 判断是qq内置浏览器
+var isQQ = (function () {
+  if (typeof navigator !== 'object') {
+    return false;
+  }
+  return /\sQQ/i.test(navigator.userAgent)
+})();
 
 var util = {
     noop: noop,
@@ -790,6 +806,7 @@ var util = {
     isBrowser: true,
     isNode: isNode,
     isCIHost: isCIHost,
+    isIOS_QQ: isIOS && isQQ,
 };
 
 module.exports = util;
