@@ -2214,9 +2214,9 @@ function putObjectCopy(params, callback) {
         return;
     }
 
-    var SourceBucket = m[1];
-    var SourceRegion = m[3];
-    var SourceKey = decodeURIComponent(m[4]);
+    var SourceBucket = m.Bucket;
+    var SourceRegion = m.Region;
+    var SourceKey = decodeURIComponent(m.Key);
 
     submitRequest.call(this, {
         Scope: [{
@@ -2266,9 +2266,9 @@ function uploadPartCopy(params, callback) {
         return;
     }
 
-    var SourceBucket = m[1];
-    var SourceRegion = m[3];
-    var SourceKey = decodeURIComponent(m[4]);
+    var SourceBucket = m.Bucket;
+    var SourceRegion = m.Region;
+    var SourceKey = decodeURIComponent(m.Key);
 
     submitRequest.call(this, {
         Scope: [{
@@ -3190,6 +3190,10 @@ function getUrl(params) {
     if (typeof domain === 'function') {
         domain = domain({Bucket: longBucket, Region: region});
     }
+    // 兼容不带冒号的http、https
+    if (['http', 'https'].includes(params.protocol)) {
+      params.protocol = params.protocol + ':';
+    }
     var protocol = params.protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
     if (!domain) {
         if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
@@ -3578,7 +3582,8 @@ function _submitRequest(params, callback) {
         object: object,
     });
     if (params.action) {
-        url = url + '?' + params.action;
+        // 已知问题，某些版本的qq会对url自动拼接（比如/upload被拼接成/upload=(null)）导致签名错误，这里做下兼容。
+        url = url + '?' + (util.isIOS_QQ ? `${params.action}=` : params.action);
     }
     if (params.qsStr) {
         if(url.indexOf('?') > -1){
