@@ -631,7 +631,7 @@ var apiWrapper = function (apiName, apiFn) {
         };
 
         var errMsg = checkParams();
-        var isSync = apiName === 'getAuth';
+        var isSync = ['getAuth', 'getObjectUrl'].includes(apiName);
         if (typeof Promise === 'function' && !isSync && !callback) {
             return new Promise(function (resolve, reject) {
                 callback = function (err, data) {
