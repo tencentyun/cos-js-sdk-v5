@@ -1855,7 +1855,7 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
 
   // request
   /** request 接口参数 */
-  interface RequestParams extends BucketParams {
+  interface RequestParams {
     /** 操作方法，如 get，post，delete， head 等 HTTP 方法 */
     Method: string,
     /** 请求的对象键，最前面不带 / */
@@ -1873,6 +1873,11 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     /** 返回文件内容格式，如string、blob、arraybuffer */
     DataType?: string,
     ContentType?: string,
+    Bucket?: Bucket,
+    /** 存储桶所在地域 @see https://cloud.tencent.com/document/product/436/6224 */
+    Region?: Region,
+    /** 请求时带上的 Header 字段 */
+    Headers?: Headers,
   }
   /** Request 接口返回值 */
   interface RequestResult extends GeneralResult {
