@@ -2043,7 +2043,10 @@ function deleteObject(params, callback) {
  *     @return  {Object}  data.AccessControlPolicy  权限列表
  */
 function getObjectAcl(params, callback) {
-
+    var reqParams = {};
+    if(params.VersionId) {
+        reqParams.versionId = params.VersionId;
+    }
     submitRequest.call(this, {
         Action: 'name/cos:GetObjectACL',
         method: 'GET',
@@ -2051,6 +2054,7 @@ function getObjectAcl(params, callback) {
         Region: params.Region,
         Key: params.Key,
         headers: params.Headers,
+        qs: reqParams,
         action: 'acl',
     }, function (err, data) {
         if (err) return callback(err);
