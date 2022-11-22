@@ -116,7 +116,7 @@ module.exports = COS;
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(global) {var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;var _typeof = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_modules/@babel/runtime/helpers/typeof.js");
+var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;var _typeof = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_modules/@babel/runtime/helpers/typeof.js");
 
 !function (t, e) {
   "object" == ( false ? undefined : _typeof(exports)) && "undefined" != typeof module ? module.exports = e() :  true ? !(__WEBPACK_AMD_DEFINE_FACTORY__ = (e),
@@ -127,65 +127,65 @@ module.exports = COS;
 }(this, function () {
   "use strict";
 
-  var _t = function t(e, r) {
-    return (_t = Object.setPrototypeOf || {
+  var _t = function t(e, n) {
+    return _t = Object.setPrototypeOf || {
       __proto__: []
     } instanceof Array && function (t, e) {
       t.__proto__ = e;
     } || function (t, e) {
-      for (var r in e) {
-        Object.prototype.hasOwnProperty.call(e, r) && (t[r] = e[r]);
+      for (var n in e) {
+        Object.prototype.hasOwnProperty.call(e, n) && (t[n] = e[n]);
       }
-    })(e, r);
+    }, _t(e, n);
   };
 
   var _e = function e() {
-    return (_e = Object.assign || function (t) {
-      for (var e, r = 1, n = arguments.length; r < n; r++) {
-        for (var o in e = arguments[r]) {
+    return _e = Object.assign || function (t) {
+      for (var e, n = 1, r = arguments.length; n < r; n++) {
+        for (var o in e = arguments[n]) {
           Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
         }
       }
 
       return t;
-    }).apply(this, arguments);
+    }, _e.apply(this, arguments);
   };
 
-  function r(t, e, r, n) {
-    return new (r || (r = Promise))(function (o, i) {
-      function a(t) {
-        try {
-          c(n.next(t));
-        } catch (t) {
-          i(t);
-        }
-      }
-
+  function n(t, e, n, r) {
+    return new (n || (n = Promise))(function (o, i) {
       function s(t) {
         try {
-          c(n.throw(t));
+          u(r.next(t));
         } catch (t) {
           i(t);
         }
       }
 
-      function c(t) {
-        var e;
-        t.done ? o(t.value) : (e = t.value, e instanceof r ? e : new r(function (t) {
-          t(e);
-        })).then(a, s);
+      function a(t) {
+        try {
+          u(r.throw(t));
+        } catch (t) {
+          i(t);
+        }
       }
 
-      c((n = n.apply(t, e || [])).next());
+      function u(t) {
+        var e;
+        t.done ? o(t.value) : (e = t.value, e instanceof n ? e : new n(function (t) {
+          t(e);
+        })).then(s, a);
+      }
+
+      u((r = r.apply(t, e || [])).next());
     });
   }
 
-  function n(t, e) {
-    var r,
-        n,
+  function r(t, e) {
+    var n,
+        r,
         o,
         i,
-        a = {
+        s = {
       label: 0,
       sent: function sent() {
         if (1 & o[0]) throw o[1];
@@ -195,72 +195,72 @@ module.exports = COS;
       ops: []
     };
     return i = {
-      next: s(0),
-      throw: s(1),
-      return: s(2)
+      next: a(0),
+      throw: a(1),
+      return: a(2)
     }, "function" == typeof Symbol && (i[Symbol.iterator] = function () {
       return this;
     }), i;
 
-    function s(i) {
-      return function (s) {
+    function a(i) {
+      return function (a) {
         return function (i) {
-          if (r) throw new TypeError("Generator is already executing.");
+          if (n) throw new TypeError("Generator is already executing.");
 
-          for (; a;) {
+          for (; s;) {
             try {
-              if (r = 1, n && (o = 2 & i[0] ? n.return : i[0] ? n.throw || ((o = n.return) && o.call(n), 0) : n.next) && !(o = o.call(n, i[1])).done) return o;
+              if (n = 1, r && (o = 2 & i[0] ? r.return : i[0] ? r.throw || ((o = r.return) && o.call(r), 0) : r.next) && !(o = o.call(r, i[1])).done) return o;
 
-              switch (n = 0, o && (i = [2 & i[0], o.value]), i[0]) {
+              switch (r = 0, o && (i = [2 & i[0], o.value]), i[0]) {
                 case 0:
                 case 1:
                   o = i;
                   break;
 
                 case 4:
-                  return a.label++, {
+                  return s.label++, {
                     value: i[1],
                     done: !1
                   };
 
                 case 5:
-                  a.label++, n = i[1], i = [0];
+                  s.label++, r = i[1], i = [0];
                   continue;
 
                 case 7:
-                  i = a.ops.pop(), a.trys.pop();
+                  i = s.ops.pop(), s.trys.pop();
                   continue;
 
                 default:
-                  if (!(o = a.trys, (o = o.length > 0 && o[o.length - 1]) || 6 !== i[0] && 2 !== i[0])) {
-                    a = 0;
+                  if (!(o = s.trys, (o = o.length > 0 && o[o.length - 1]) || 6 !== i[0] && 2 !== i[0])) {
+                    s = 0;
                     continue;
                   }
 
                   if (3 === i[0] && (!o || i[1] > o[0] && i[1] < o[3])) {
-                    a.label = i[1];
+                    s.label = i[1];
                     break;
                   }
 
-                  if (6 === i[0] && a.label < o[1]) {
-                    a.label = o[1], o = i;
+                  if (6 === i[0] && s.label < o[1]) {
+                    s.label = o[1], o = i;
                     break;
                   }
 
-                  if (o && a.label < o[2]) {
-                    a.label = o[2], a.ops.push(i);
+                  if (o && s.label < o[2]) {
+                    s.label = o[2], s.ops.push(i);
                     break;
                   }
 
-                  o[2] && a.ops.pop(), a.trys.pop();
+                  o[2] && s.ops.pop(), s.trys.pop();
                   continue;
               }
 
-              i = e.call(t, a);
+              i = e.call(t, s);
             } catch (t) {
-              i = [6, t], n = 0;
+              i = [6, t], r = 0;
             } finally {
-              r = o = 0;
+              n = o = 0;
             }
           }
 
@@ -269,34 +269,34 @@ module.exports = COS;
             value: i[0] ? i[1] : void 0,
             done: !0
           };
-        }([i, s]);
+        }([i, a]);
       };
     }
   }
 
   var o = "__BEACON_",
       i = "__BEACON_deviceId",
-      a = "last_report_time",
-      s = "sending_event_ids",
-      c = "beacon_config",
-      u = "beacon_config_request_time",
+      s = "last_report_time",
+      a = "sending_event_ids",
+      u = "beacon_config",
+      c = "beacon_config_request_time",
       l = function () {
     function t() {
       var t = this;
-      this.emit = function (e, r) {
+      this.emit = function (e, n) {
         if (t) {
-          var n,
+          var r,
               o = t.__EventsList[e];
 
           if (null == o ? void 0 : o.length) {
             o = o.slice();
 
             for (var i = 0; i < o.length; i++) {
-              n = o[i];
+              r = o[i];
 
               try {
-                var a = n.callback.apply(t, [r]);
-                if (1 === n.type && t.remove(e, n.callback), !1 === a) break;
+                var s = r.callback.apply(t, [n]);
+                if (1 === r.type && t.remove(e, r.callback), !1 === s) break;
               } catch (t) {
                 throw t;
               }
@@ -309,22 +309,22 @@ module.exports = COS;
     }
 
     return t.prototype.indexOf = function (t, e) {
-      for (var r = 0; r < t.length; r++) {
-        if (t[r].callback === e) return r;
+      for (var n = 0; n < t.length; n++) {
+        if (t[n].callback === e) return n;
       }
 
       return -1;
-    }, t.prototype.on = function (t, e, r) {
-      if (void 0 === r && (r = 0), this) {
-        var n = this.__EventsList[t];
+    }, t.prototype.on = function (t, e, n) {
+      if (void 0 === n && (n = 0), this) {
+        var r = this.__EventsList[t];
 
-        if (n || (n = this.__EventsList[t] = []), -1 === this.indexOf(n, e)) {
+        if (r || (r = this.__EventsList[t] = []), -1 === this.indexOf(r, e)) {
           var o = {
             name: t,
-            type: r || 0,
+            type: n || 0,
             callback: e
           };
-          return n.push(o), this;
+          return r.push(o), this;
         }
 
         return this;
@@ -333,8 +333,8 @@ module.exports = COS;
       this.on(t, e, 1);
     }, t.prototype.remove = function (t, e) {
       if (this) {
-        var r = this.__EventsList[t];
-        if (!r) return null;
+        var n = this.__EventsList[t];
+        if (!n) return null;
 
         if (!e) {
           try {
@@ -344,9 +344,9 @@ module.exports = COS;
           return null;
         }
 
-        if (r.length) {
-          var n = this.indexOf(r, e);
-          r.splice(n, 1);
+        if (n.length) {
+          var r = this.indexOf(n, e);
+          n.splice(r, 1);
         }
 
         return this;
@@ -354,20 +354,20 @@ module.exports = COS;
     }, t;
   }();
 
-  function h(t, e) {
-    for (var r = {}, n = 0, o = Object.keys(t); n < o.length; n++) {
-      var i = o[n],
-          a = t[i];
-      if ("string" == typeof a) r[f(i)] = f(a);else {
+  function p(t, e) {
+    for (var n = {}, r = 0, o = Object.keys(t); r < o.length; r++) {
+      var i = o[r],
+          s = t[i];
+      if ("string" == typeof s) n[h(i)] = h(s);else {
         if (e) throw new Error("value mast be string  !!!!");
-        r[f(String(i))] = f(String(a));
+        n[h(String(i))] = h(String(s));
       }
     }
 
-    return r;
+    return n;
   }
 
-  function f(t) {
+  function h(t) {
     if ("string" != typeof t) return t;
 
     try {
@@ -377,7 +377,7 @@ module.exports = COS;
     }
   }
 
-  function p(t) {
+  function f(t) {
     return String(t.A99) + String(t.A100);
   }
 
@@ -385,29 +385,29 @@ module.exports = COS;
 
   var v = function () {
     function t(t) {
-      var r = this;
+      var n = this;
       this.lifeCycle = new l(), this.uploadJobQueue = [], this.additionalParams = {}, this.delayTime = 0, this._normalLogPipeline = function (t) {
         if (!t || !t.reduce || !t.length) throw new TypeError("createPipeline 方法需要传入至少有一个 pipe 的数组");
-        return 1 === t.length ? function (e, r) {
-          t[0](e, r || d);
+        return 1 === t.length ? function (e, n) {
+          t[0](e, n || d);
         } : t.reduce(function (t, e) {
-          return function (r, n) {
-            return void 0 === n && (n = d), t(r, function (t) {
-              return null == e ? void 0 : e(t, n);
+          return function (n, r) {
+            return void 0 === r && (r = d), t(n, function (t) {
+              return null == e ? void 0 : e(t, r);
             });
           };
         });
       }([function (t) {
-        r.send({
-          url: r.strategy.getUploadUrl(),
+        n.send({
+          url: n.strategy.getUploadUrl(),
           data: t,
           method: "post",
           contentType: "application/json;charset=UTF-8"
         }, function () {
-          var e = r.config.onReportSuccess;
+          var e = n.config.onReportSuccess;
           "function" == typeof e && e(JSON.stringify(t.events));
         }, function () {
-          var e = r.config.onReportFail;
+          var e = n.config.onReportFail;
           "function" == typeof e && e(JSON.stringify(t.events));
         });
       }]), function (t, e) {
@@ -419,12 +419,12 @@ module.exports = COS;
       this.preReport(t, e, !1);
     }, t.prototype.onDirectUserAction = function (t, e) {
       this.preReport(t, e, !0);
-    }, t.prototype.preReport = function (t, e, r) {
-      t ? this.strategy.isEventUpOnOff() && (this.strategy.isBlackEvent(t) || this.strategy.isSampleEvent(t) || this.onReport(t, e, r)) : this.errorReport.reportError("602", " no eventCode");
+    }, t.prototype.preReport = function (t, e, n) {
+      t ? this.strategy.isEventUpOnOff() && (this.strategy.isBlackEvent(t) || this.strategy.isSampleEvent(t) || this.onReport(t, e, n)) : this.errorReport.reportError("602", " no eventCode");
     }, t.prototype.addAdditionalParams = function (t) {
-      for (var e = 0, r = Object.keys(t); e < r.length; e++) {
-        var n = r[e];
-        this.additionalParams[n] = t[n];
+      for (var e = 0, n = Object.keys(t); e < n.length; e++) {
+        var r = n[e];
+        this.additionalParams[r] = t[r];
       }
     }, t.prototype.setChannelId = function (t) {
       this.commonInfo.channelID = String(t);
@@ -438,15 +438,15 @@ module.exports = COS;
       return this.commonInfo;
     }, t.prototype.removeSendingId = function (t) {
       try {
-        var e = JSON.parse(this.storage.getItem(s)),
-            r = e.indexOf(t);
-        -1 != r && (e.splice(r, 1), this.storage.setItem(s, JSON.stringify(e)));
+        var e = JSON.parse(this.storage.getItem(a)),
+            n = e.indexOf(t);
+        -1 != n && (e.splice(n, 1), this.storage.setItem(a, JSON.stringify(e)));
       } catch (t) {}
     }, t;
   }(),
-      y = function () {
-    function t(t, e, r, n) {
-      this.requestParams = {}, this.network = n, this.requestParams.attaid = "00400014144", this.requestParams.token = "6478159937", this.requestParams.product_id = t.appkey, this.requestParams.platform = r, this.requestParams.uin = e.deviceId, this.requestParams.model = "", this.requestParams.os = r, this.requestParams.app_version = t.appVersion, this.requestParams.sdk_version = e.sdkVersion, this.requestParams.error_stack = "", this.uploadUrl = t.isOversea ? "https://htrace.wetvinfo.com/kv" : "https://h.trace.qq.com/kv";
+      g = function () {
+    function t(t, e, n, r) {
+      this.requestParams = {}, this.network = r, this.requestParams.attaid = "00400014144", this.requestParams.token = "6478159937", this.requestParams.product_id = t.appkey, this.requestParams.platform = n, this.requestParams.uin = e.deviceId, this.requestParams.model = "", this.requestParams.os = n, this.requestParams.app_version = t.appVersion, this.requestParams.sdk_version = e.sdkVersion, this.requestParams.error_stack = "", this.uploadUrl = t.isOversea ? "https://htrace.wetvinfo.com/kv" : "https://h.trace.qq.com/kv";
     }
 
     return t.prototype.reportError = function (t, e) {
@@ -455,27 +455,27 @@ module.exports = COS;
       }).catch(function (t) {});
     }, t;
   }(),
-      g = function () {
-    function t(t, e, r, n) {
+      y = function () {
+    function t(t, e, n, r, o) {
       this.strategy = {
         isEventUpOnOff: !0,
         httpsUploadUrl: "https://otheve.beacon.qq.com/analytics/v2_upload",
         requestInterval: 30,
         blacklist: [],
         samplelist: []
-      }, this.realSample = {}, this.appkey = "", this.appkey = t.appkey, this.storage = r;
+      }, this.realSample = {}, this.appkey = "", this.needQueryConfig = !0, this.appkey = e.appkey, this.storage = r, this.needQueryConfig = t;
 
       try {
-        var o = JSON.parse(this.storage.getItem(c));
-        o && this.processData(o);
+        var i = JSON.parse(this.storage.getItem(u));
+        i && this.processData(i);
       } catch (t) {}
 
-      t.isOversea && (this.strategy.httpsUploadUrl = "https://svibeacon.onezapp.com/analytics/v2_upload"), !t.isOversea && this.needRequestConfig() && this.requestConfig(t.appVersion, e, n);
+      e.isOversea && (this.strategy.httpsUploadUrl = "https://svibeacon.onezapp.com/analytics/v2_upload"), !e.isOversea && this.needRequestConfig() && this.requestConfig(e.appVersion, n, o);
     }
 
-    return t.prototype.requestConfig = function (t, e, r) {
-      var n = this;
-      this.storage.setItem(u, Date.now().toString()), r.post("https://oth.str.beacon.qq.com/trpc.beacon.configserver.BeaconConfigService/QueryConfig", {
+    return t.prototype.requestConfig = function (t, e, n) {
+      var r = this;
+      this.storage.setItem(c, Date.now().toString()), n.post("https://oth.str.beacon.qq.com/trpc.beacon.configserver.BeaconConfigService/QueryConfig", {
         platformId: "undefined" == typeof wx ? "3" : "4",
         mainAppKey: this.appkey,
         appVersion: t,
@@ -489,19 +489,20 @@ module.exports = COS;
       }).then(function (t) {
         if (0 == t.data.ret) try {
           var e = JSON.parse(t.data.beaconConfig);
-          e && (n.processData(e), n.storage.setItem(c, t.data.beaconConfig));
-        } catch (t) {} else n.processData(null), n.storage.setItem(c, "");
+          e && (r.processData(e), r.storage.setItem(u, t.data.beaconConfig));
+        } catch (t) {} else r.processData(null), r.storage.setItem(u, "");
       }).catch(function (t) {});
     }, t.prototype.processData = function (t) {
-      var e, r, n, o, i;
-      this.strategy.isEventUpOnOff = null !== (e = null == t ? void 0 : t.isEventUpOnOff) && void 0 !== e ? e : this.strategy.isEventUpOnOff, this.strategy.httpsUploadUrl = null !== (r = null == t ? void 0 : t.httpsUploadUrl) && void 0 !== r ? r : this.strategy.httpsUploadUrl, this.strategy.requestInterval = null !== (n = null == t ? void 0 : t.requestInterval) && void 0 !== n ? n : this.strategy.requestInterval, this.strategy.blacklist = null !== (o = null == t ? void 0 : t.blacklist) && void 0 !== o ? o : this.strategy.blacklist, this.strategy.samplelist = null !== (i = null == t ? void 0 : t.samplelist) && void 0 !== i ? i : this.strategy.samplelist;
+      var e, n, r, o, i;
+      this.strategy.isEventUpOnOff = null !== (e = null == t ? void 0 : t.isEventUpOnOff) && void 0 !== e ? e : this.strategy.isEventUpOnOff, this.strategy.httpsUploadUrl = null !== (n = null == t ? void 0 : t.httpsUploadUrl) && void 0 !== n ? n : this.strategy.httpsUploadUrl, this.strategy.requestInterval = null !== (r = null == t ? void 0 : t.requestInterval) && void 0 !== r ? r : this.strategy.requestInterval, this.strategy.blacklist = null !== (o = null == t ? void 0 : t.blacklist) && void 0 !== o ? o : this.strategy.blacklist, this.strategy.samplelist = null !== (i = null == t ? void 0 : t.samplelist) && void 0 !== i ? i : this.strategy.samplelist;
 
-      for (var a = 0, s = this.strategy.samplelist; a < s.length; a++) {
-        var c = s[a].split(",");
-        2 == c.length && (this.realSample[c[0]] = c[1]);
+      for (var s = 0, a = this.strategy.samplelist; s < a.length; s++) {
+        var u = a[s].split(",");
+        2 == u.length && (this.realSample[u[0]] = u[1]);
       }
     }, t.prototype.needRequestConfig = function () {
-      var t = Number(this.storage.getItem(u));
+      if (!this.needQueryConfig) return !1;
+      var t = Number(this.storage.getItem(c));
       return Date.now() - t > 60 * this.strategy.requestInterval * 1e3;
     }, t.prototype.getUploadUrl = function () {
       return this.strategy.httpsUploadUrl + "?appkey=" + this.appkey;
@@ -515,30 +516,31 @@ module.exports = COS;
   }(),
       m = "session_storage_key",
       w = function () {
-    function t(t, e, r) {
-      this.beacon = r, this.storage = t, this.duration = e, this.appkey = r.config.appkey;
+    function t(t, e, n) {
+      this.getSessionStackDepth = 0, this.beacon = n, this.storage = t, this.duration = e, this.appkey = n.config.appkey;
     }
 
     return t.prototype.getSession = function () {
+      this.getSessionStackDepth += 1;
       var t = this.storage.getItem(m);
       if (!t) return this.createSession();
       var e = "",
-          r = 0;
+          n = 0;
 
       try {
-        var n = JSON.parse(t) || {
+        var r = JSON.parse(t) || {
           sessionId: void 0,
           sessionStart: void 0
         };
-        if (!n.sessionId || !n.sessionStart) return this.createSession();
-        var o = Number(this.storage.getItem(a));
+        if (!r.sessionId || !r.sessionStart) return this.createSession();
+        var o = Number(this.storage.getItem(s));
         if (Date.now() - o > this.duration) return this.createSession();
-        e = n.sessionId, r = n.sessionStart;
+        e = r.sessionId, n = r.sessionStart, this.getSessionStackDepth = 0;
       } catch (t) {}
 
       return {
         sessionId: e,
-        sessionStart: r
+        sessionStart: n
       };
     }, t.prototype.createSession = function () {
       var t = Date.now(),
@@ -546,20 +548,20 @@ module.exports = COS;
         sessionId: this.appkey + "_" + t.toString(),
         sessionStart: t
       };
-      this.storage.setItem(m, JSON.stringify(e)), this.storage.setItem(a, t.toString());
-      var r = "is_new_user",
-          n = this.storage.getItem(r);
-      return this.beacon.onDirectUserAction("rqd_applaunched", {
-        A21: n ? "N" : "Y"
-      }), this.storage.setItem(r, JSON.stringify(!1)), e;
+      this.storage.setItem(m, JSON.stringify(e)), this.storage.setItem(s, t.toString());
+      var n = "is_new_user",
+          r = this.storage.getItem(n);
+      return this.getSessionStackDepth <= 1 && this.beacon.onDirectUserAction("rqd_applaunched", {
+        A21: r ? "N" : "Y"
+      }), this.storage.setItem(n, JSON.stringify(!1)), e;
     }, t;
   }();
 
   function b() {
     var t = navigator.userAgent,
         e = t.indexOf("compatible") > -1 && t.indexOf("MSIE") > -1,
-        r = t.indexOf("Edge") > -1 && !e,
-        n = t.indexOf("Trident") > -1 && t.indexOf("rv:11.0") > -1;
+        n = t.indexOf("Edge") > -1 && !e,
+        r = t.indexOf("Trident") > -1 && t.indexOf("rv:11.0") > -1;
 
     if (e) {
       new RegExp("MSIE (\\d+\\.\\d+);").test(t);
@@ -567,13 +569,32 @@ module.exports = COS;
       return 7 == o ? 7 : 8 == o ? 8 : 9 == o ? 9 : 10 == o ? 10 : 6;
     }
 
-    return r ? -2 : n ? 11 : -1;
+    return n ? -2 : r ? 11 : -1;
   }
 
-  var _S = function S() {
-    return (_S = Object.assign || function (t) {
-      for (var e, r = 1, n = arguments.length; r < n; r++) {
-        for (var o in e = arguments[r]) {
+  function S(t, e) {
+    var n, r;
+    return (n = "https://tun-cos-1258344701.file.myqcloud.com/fp.js", void 0 === r && (r = Date.now() + "-" + Math.random()), new Promise(function (t, e) {
+      if (document.getElementById(r)) t(void 0);else {
+        var o = document.getElementsByTagName("head")[0],
+            i = document.createElement("script");
+        i.onload = function () {
+          return function () {
+            i.onload = null, t(void 0);
+          };
+        }, i.onerror = function (t) {
+          i.onerror = null, o.removeChild(i), e(t);
+        }, i.src = n, i.id = r, o.appendChild(i);
+      }
+    })).then(function () {
+      new Fingerprint().getQimei36(t, e);
+    }).catch(function (t) {}), "";
+  }
+
+  var _I = function I() {
+    return (_I = Object.assign || function (t) {
+      for (var e, n = 1, r = arguments.length; n < r; n++) {
+        for (var o in e = arguments[n]) {
           Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
         }
       }
@@ -583,7 +604,7 @@ module.exports = COS;
   };
 
   var E,
-      I = function () {
+      k = function () {
     function t(t, e) {
       void 0 === e && (e = {}), this.reportOptions = {}, this.config = t, this.reportOptions = e;
     }
@@ -592,43 +613,43 @@ module.exports = COS;
       return !!(null === window || void 0 === window ? void 0 : window.indexedDB);
     }, t.prototype.openDB = function () {
       var e = this;
-      return new Promise(function (r, n) {
-        if (!t.canUseDB()) return n({
+      return new Promise(function (n, r) {
+        if (!t.canUseDB()) return r({
           message: "当前不支持 indexeddb"
         });
         var o = e.config,
             i = o.name,
-            a = o.version,
-            s = o.stores,
-            c = indexedDB.open(i, a);
-        c.onsuccess = function () {
-          e.db = c.result, r(), _S({
+            s = o.version,
+            a = o.stores,
+            u = indexedDB.open(i, s);
+        u.onsuccess = function () {
+          e.db = u.result, n(), _I({
             result: 1,
             func: "open",
             params: JSON.stringify(e.config)
           }, e.reportOptions);
-        }, c.onerror = function (t) {
-          var r, o;
-          n(t), _S({
+        }, u.onerror = function (t) {
+          var n, o;
+          r(t), _I({
             result: 0,
             func: "open",
             params: JSON.stringify(e.config),
-            error_msg: null === (o = null === (r = t.target) || void 0 === r ? void 0 : r.error) || void 0 === o ? void 0 : o.message
+            error_msg: null === (o = null === (n = t.target) || void 0 === n ? void 0 : n.error) || void 0 === o ? void 0 : o.message
           }, e.reportOptions);
-        }, c.onupgradeneeded = function () {
-          e.db = c.result;
+        }, u.onupgradeneeded = function () {
+          e.db = u.result;
 
           try {
-            null == s || s.forEach(function (t) {
+            null == a || a.forEach(function (t) {
               e.createStore(t);
             });
           } catch (t) {
-            _S({
+            _I({
               result: 0,
               func: "open",
               params: JSON.stringify(e.config),
               error_msg: t.message
-            }, e.reportOptions), n(t);
+            }, e.reportOptions), r(t);
           }
         };
       });
@@ -636,95 +657,95 @@ module.exports = COS;
       return this.storeName = t, this;
     }, t.prototype.deleteDB = function () {
       var t = this;
-      return this.closeDB(), new Promise(function (e, r) {
-        var n = indexedDB.deleteDatabase(t.config.name);
-        n.onsuccess = function () {
+      return this.closeDB(), new Promise(function (e, n) {
+        var r = indexedDB.deleteDatabase(t.config.name);
+        r.onsuccess = function () {
           return e();
-        }, n.onerror = r;
+        }, r.onerror = n;
       });
     }, t.prototype.closeDB = function () {
       var t;
       null === (t = this.db) || void 0 === t || t.close(), this.db = null;
     }, t.prototype.getStoreCount = function () {
       var t = this;
-      return new Promise(function (e, r) {
-        var n = t.getStore("readonly").count();
-        n.onsuccess = function () {
-          return e(n.result);
-        }, n.onerror = r;
+      return new Promise(function (e, n) {
+        var r = t.getStore("readonly").count();
+        r.onsuccess = function () {
+          return e(r.result);
+        }, r.onerror = n;
       });
     }, t.prototype.clearStore = function () {
       var t = this;
-      return new Promise(function (e, r) {
-        var n = t.getStore("readwrite").clear();
-        n.onsuccess = function () {
+      return new Promise(function (e, n) {
+        var r = t.getStore("readwrite").clear();
+        r.onsuccess = function () {
           return e();
-        }, n.onerror = r;
+        }, r.onerror = n;
       });
     }, t.prototype.add = function (t, e) {
-      var r = this;
-      return new Promise(function (n, o) {
-        var i = r.getStore("readwrite").add(t, e);
+      var n = this;
+      return new Promise(function (r, o) {
+        var i = n.getStore("readwrite").add(t, e);
         i.onsuccess = function () {
-          n(i.result);
+          r(i.result);
         }, i.onerror = o;
       });
     }, t.prototype.put = function (t, e) {
-      var r = this;
-      return new Promise(function (n, o) {
-        var i = r.getStore("readwrite").put(t, e);
+      var n = this;
+      return new Promise(function (r, o) {
+        var i = n.getStore("readwrite").put(t, e);
         i.onsuccess = function () {
-          n(i.result);
+          r(i.result);
         }, i.onerror = o;
       });
     }, t.prototype.getStoreAllData = function () {
       var t = this;
-      return new Promise(function (e, r) {
-        var n = t.getStore("readonly").openCursor(),
+      return new Promise(function (e, n) {
+        var r = t.getStore("readonly").openCursor(),
             o = [];
-        n.onsuccess = function () {
+        r.onsuccess = function () {
           var t;
 
-          if (null === (t = n.result) || void 0 === t ? void 0 : t.value) {
-            var r = n.result.value;
-            o.push(r), n.result.continue();
+          if (null === (t = r.result) || void 0 === t ? void 0 : t.value) {
+            var n = r.result.value;
+            o.push(n), r.result.continue();
           } else e(o);
-        }, n.onerror = r;
+        }, r.onerror = n;
       });
-    }, t.prototype.getDataRangeByIndex = function (t, e, r, n, o) {
+    }, t.prototype.getDataRangeByIndex = function (t, e, n, r, o) {
       var i = this;
-      return new Promise(function (a, s) {
-        var c = i.getStore().index(t),
-            u = IDBKeyRange.bound(e, r, n, o),
+      return new Promise(function (s, a) {
+        var u = i.getStore().index(t),
+            c = IDBKeyRange.bound(e, n, r, o),
             l = [],
-            h = c.openCursor(u);
-        h.onsuccess = function () {
+            p = u.openCursor(c);
+        p.onsuccess = function () {
           var t;
-          (null === (t = null == h ? void 0 : h.result) || void 0 === t ? void 0 : t.value) ? (l.push(null == h ? void 0 : h.result.value), null == h || h.result.continue()) : a(l);
-        }, h.onerror = s;
+          (null === (t = null == p ? void 0 : p.result) || void 0 === t ? void 0 : t.value) ? (l.push(null == p ? void 0 : p.result.value), null == p || p.result.continue()) : s(l);
+        }, p.onerror = a;
       });
-    }, t.prototype.removeDataByIndex = function (t, e, r, n, o) {
+    }, t.prototype.removeDataByIndex = function (t, e, n, r, o) {
       var i = this;
-      return new Promise(function (a, s) {
-        var c = i.getStore("readwrite").index(t),
-            u = IDBKeyRange.bound(e, r, n, o),
-            l = c.openCursor(u),
-            h = 0;
+      return new Promise(function (s, a) {
+        var u = i.getStore("readwrite").index(t),
+            c = IDBKeyRange.bound(e, n, r, o),
+            l = u.openCursor(c),
+            p = 0;
         l.onsuccess = function (t) {
           var e = t.target.result;
-          e ? (h += 1, e.delete(), e.continue()) : a(h);
-        }, l.onerror = s;
+          e ? (p += 1, e.delete(), e.continue()) : s(p);
+        }, l.onerror = a;
       });
     }, t.prototype.createStore = function (t) {
       var e = t.name,
-          r = t.indexes,
-          n = void 0 === r ? [] : r,
+          n = t.indexes,
+          r = void 0 === n ? [] : n,
           o = t.options;
 
       if (this.db) {
         this.db.objectStoreNames.contains(e) && this.db.deleteObjectStore(e);
         var i = this.db.createObjectStore(e, o);
-        n.forEach(function (t) {
+        r.forEach(function (t) {
           i.createIndex(t.indexName, t.keyPath, t.options);
         });
       }
@@ -734,20 +755,20 @@ module.exports = COS;
     }, t;
   }(),
       O = "event_table_v3",
-      k = "eventId",
-      x = function () {
+      C = "eventId",
+      D = function () {
     function t(t) {
-      this.isReady = !1, this.taskQueue = Promise.resolve(), this.db = new I({
+      this.isReady = !1, this.taskQueue = Promise.resolve(), this.db = new k({
         name: "Beacon_" + t + "_V3",
         version: 1,
         stores: [{
           name: O,
           options: {
-            keyPath: k
+            keyPath: C
           },
           indexes: [{
-            indexName: k,
-            keyPath: k,
+            indexName: C,
+            keyPath: C,
             options: {
               unique: !0
             }
@@ -762,31 +783,31 @@ module.exports = COS;
         return t.db.getStoreCount();
       });
     }, t.prototype.setItem = function (t, e) {
-      var r = this;
+      var n = this;
       return this.readyExec(function () {
-        return r.db.add({
+        return n.db.add({
           eventId: t,
           value: e
         });
       });
     }, t.prototype.getItem = function (t) {
-      return r(this, void 0, void 0, function () {
+      return n(this, void 0, void 0, function () {
         var e = this;
-        return n(this, function (r) {
+        return r(this, function (n) {
           return [2, this.readyExec(function () {
-            return e.db.getDataRangeByIndex(k, t, t);
+            return e.db.getDataRangeByIndex(C, t, t);
           })];
         });
       });
     }, t.prototype.removeItem = function (t) {
       var e = this;
       return this.readyExec(function () {
-        return e.db.removeDataByIndex(k, t, t);
+        return e.db.removeDataByIndex(C, t, t);
       });
     }, t.prototype.updateItem = function (t, e) {
-      var r = this;
+      var n = this;
       return this.readyExec(function () {
-        return r.db.put({
+        return n.db.put({
           eventId: t,
           value: e
         });
@@ -801,9 +822,9 @@ module.exports = COS;
         });
       });
     }, t.prototype.open = function () {
-      return r(this, void 0, void 0, function () {
+      return n(this, void 0, void 0, function () {
         var t = this;
-        return n(this, function (e) {
+        return r(this, function (e) {
           switch (e.label) {
             case 0:
               return this.taskQueue = this.taskQueue.then(function () {
@@ -821,7 +842,7 @@ module.exports = COS;
       }), this.taskQueue);
     }, t;
   }(),
-      C = function () {
+      x = function () {
     function t(t) {
       this.keyObject = {}, this.storage = t;
     }
@@ -831,26 +852,26 @@ module.exports = COS;
     }, t.prototype.removeItem = function (t) {
       this.storage.removeItem(t), delete this.keyObject[t];
     }, t.prototype.setItem = function (t, e) {
-      var r = JSON.stringify(e);
-      this.storage.setItem(t, r), this.keyObject[t] = e;
+      var n = JSON.stringify(e);
+      this.storage.setItem(t, n), this.keyObject[t] = e;
     }, t.prototype.iterate = function (t) {
-      for (var e = Object.keys(this.keyObject), r = 0; r < e.length; r++) {
-        var n = this.storage.getItem(e[r]);
-        t(JSON.parse(n));
+      for (var e = Object.keys(this.keyObject), n = 0; n < e.length; n++) {
+        var r = this.storage.getItem(e[n]);
+        t(JSON.parse(r));
       }
     }, t;
   }(),
       _ = function () {
     function t(t, e) {
-      var r = this;
-      this.dbEventCount = 0, b() > 0 || !window.indexedDB || /X5Lite/.test(navigator.userAgent) ? (this.store = new C(e), this.dbEventCount = this.store.getCount()) : (this.store = new x(t), this.getCount().then(function (t) {
-        r.dbEventCount = t;
-      }));
+      var n = this;
+      this.dbEventCount = 0, b() > 0 || !window.indexedDB || /X5Lite/.test(navigator.userAgent) ? (this.store = new x(e), this.dbEventCount = this.store.getCount()) : (this.store = new D(t), this.getCount().then(function (t) {
+        n.dbEventCount = t;
+      }).catch(function (t) {}));
     }
 
     return t.prototype.getCount = function () {
-      return r(this, void 0, void 0, function () {
-        return n(this, function (t) {
+      return n(this, void 0, void 0, function () {
+        return r(this, function (t) {
           switch (t.label) {
             case 0:
               return t.trys.push([0, 2,, 3]), [4, this.store.getCount()];
@@ -867,22 +888,22 @@ module.exports = COS;
         });
       });
     }, t.prototype.insertEvent = function (t, e) {
-      return r(this, void 0, void 0, function () {
-        var r, o;
-        return n(this, function (n) {
-          switch (n.label) {
+      return n(this, void 0, void 0, function () {
+        var n, o;
+        return r(this, function (r) {
+          switch (r.label) {
             case 0:
               if (this.dbEventCount >= 1e4) return [2, Promise.reject()];
-              r = p(t.mapValue), n.label = 1;
+              n = f(t.mapValue), r.label = 1;
 
             case 1:
-              return n.trys.push([1, 3,, 4]), this.dbEventCount++, [4, this.store.setItem(r, t)];
+              return r.trys.push([1, 3,, 4]), this.dbEventCount++, [4, this.store.setItem(n, t)];
 
             case 2:
-              return [2, n.sent()];
+              return [2, r.sent()];
 
             case 3:
-              return o = n.sent(), e && e(o, t), this.dbEventCount--, [2, Promise.reject()];
+              return o = r.sent(), e && e(o, t), this.dbEventCount--, [2, Promise.reject()];
 
             case 4:
               return [2];
@@ -890,9 +911,9 @@ module.exports = COS;
         });
       });
     }, t.prototype.getEvents = function () {
-      return r(this, void 0, void 0, function () {
+      return n(this, void 0, void 0, function () {
         var t;
-        return n(this, function (e) {
+        return r(this, function (e) {
           switch (e.label) {
             case 0:
               t = [], e.label = 1;
@@ -914,21 +935,21 @@ module.exports = COS;
         });
       });
     }, t.prototype.removeEvent = function (t) {
-      return r(this, void 0, void 0, function () {
+      return n(this, void 0, void 0, function () {
         var e;
-        return n(this, function (r) {
-          switch (r.label) {
+        return r(this, function (n) {
+          switch (n.label) {
             case 0:
-              e = p(t.mapValue), r.label = 1;
+              e = f(t.mapValue), n.label = 1;
 
             case 1:
-              return r.trys.push([1, 3,, 4]), this.dbEventCount--, [4, this.store.removeItem(e)];
+              return n.trys.push([1, 3,, 4]), this.dbEventCount--, [4, this.store.removeItem(e)];
 
             case 2:
-              return [2, r.sent()];
+              return [2, n.sent()];
 
             case 3:
-              return r.sent(), this.dbEventCount++, [2, Promise.reject()];
+              return n.sent(), this.dbEventCount++, [2, Promise.reject()];
 
             case 4:
               return [2];
@@ -937,10 +958,10 @@ module.exports = COS;
       });
     }, t;
   }(),
-      _A = function A() {
-    return (_A = Object.assign || function (t) {
-      for (var e, r = 1, n = arguments.length; r < n; r++) {
-        for (var o in e = arguments[r]) {
+      _P = function P() {
+    return (_P = Object.assign || function (t) {
+      for (var e, n = 1, r = arguments.length; n < r; n++) {
+        for (var o in e = arguments[n]) {
           Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
         }
       }
@@ -949,7 +970,7 @@ module.exports = COS;
     }).apply(this, arguments);
   };
 
-  function P(t) {
+  function T(t) {
     try {
       return decodeURIComponent(t.replace(/\+/g, " "));
     } catch (t) {
@@ -957,90 +978,88 @@ module.exports = COS;
     }
   }
 
-  function j(t, e) {
-    var r = [null, void 0, "", NaN].includes(t);
-    if (e.isSkipEmpty && r) return null;
-    var n = !e.isSkipEmpty && r ? "" : t;
+  function U(t, e) {
+    var n = [null, void 0, "", NaN].includes(t);
+    if (e.isSkipEmpty && n) return null;
+    var r = !e.isSkipEmpty && n ? "" : t;
 
     try {
-      return e.encode ? encodeURIComponent(n) : n;
+      return e.encode ? encodeURIComponent(r) : r;
     } catch (t) {
       return null;
     }
   }
 
-  function D(t) {
-    var e = t.split("#"),
-        r = e[0],
-        n = e[1],
-        o = void 0 === n ? "" : n,
-        i = r.split("?"),
-        a = i[0],
-        s = i[1],
-        c = void 0 === s ? "" : s,
-        u = P(o),
-        l = Object.create(null);
-    return c.split("&").forEach(function (t) {
-      var e = t.split("="),
-          r = e[0],
-          n = e[1],
-          o = void 0 === n ? "" : n,
-          i = P(r),
-          a = P(o);
-      null === i || null === a || "" === i && "" === a || l[i] || (l[i] = a);
-    }), {
-      url: a,
-      query: l,
-      hash: u
-    };
-  }
-
-  function T(t, e) {
+  function N(t, e) {
     void 0 === e && (e = {
       encode: !0,
       isSkipEmpty: !1
     });
 
-    var r = t.url,
-        n = t.query,
-        o = void 0 === n ? {} : n,
+    var n = t.url,
+        r = t.query,
+        o = void 0 === r ? {} : r,
         i = t.hash,
-        a = r.split("#"),
-        s = a[0],
-        c = a[1],
-        u = void 0 === c ? "" : c,
-        l = s.split("?")[0],
-        h = [],
-        f = j(i || u, e),
-        p = _A(_A({}, D(r).query), o);
+        s = n.split("#"),
+        a = s[0],
+        u = s[1],
+        c = void 0 === u ? "" : u,
+        l = a.split("?")[0],
+        p = [],
+        h = U(i || c, e),
+        f = _P(_P({}, function (t) {
+      var e = t.split("#"),
+          n = e[0],
+          r = e[1],
+          o = void 0 === r ? "" : r,
+          i = n.split("?"),
+          s = i[0],
+          a = i[1],
+          u = void 0 === a ? "" : a,
+          c = T(o),
+          l = Object.create(null);
+      return u.split("&").forEach(function (t) {
+        var e = t.split("="),
+            n = e[0],
+            r = e[1],
+            o = void 0 === r ? "" : r,
+            i = T(n),
+            s = T(o);
+        null === i || null === s || "" === i && "" === s || l[i] || (l[i] = s);
+      }), {
+        url: s,
+        query: l,
+        hash: c
+      };
+    }(n).query), o);
 
-    return Object.keys(p).forEach(function (t) {
-      var r = j(t, e),
-          n = j(p[t], e);
-      null !== r && null !== n && h.push(r + "=" + n);
-    }), l + (h.length ? "?" + h.join("&") : "") + (f ? "#" + f : "");
+    return Object.keys(f).forEach(function (t) {
+      var n = U(t, e),
+          r = U(f[t], e);
+      null !== n && null !== r && p.push(n + "=" + r);
+    }), l + (p.length ? "?" + p.join("&") : "") + (h ? "#" + h : "");
   }
 
-  function N(t, e) {
-    return new Promise(function (r, n) {
-      if (e && document.querySelectorAll("script[data-tag=" + e + "]").length) return r();
+  function j(t, e) {
+    return new Promise(function (n, r) {
+      if (e && document.querySelectorAll("script[data-tag=" + e + "]").length) return n();
 
       var o = document.createElement("script"),
-          i = _A({
+          i = _P({
         type: "text/javascript",
         charset: "utf-8"
       }, t);
 
       Object.keys(i).forEach(function (t) {
-        return function (t, e, r) {
-          if (t) return void 0 === r ? t.getAttribute(e) : t.setAttribute(e, r);
+        return function (t, e, n) {
+          if (t) return void 0 === n ? t.getAttribute(e) : t.setAttribute(e, n);
         }(o, t, i[t]);
       }), e && (o.dataset.tag = e), o.onload = function () {
-        return r();
+        return n();
       }, o.onreadystatechange = function () {
         var t = o.readyState;
-        ["complete", "loaded"].includes(t) && (o.onreadystatechange = null, r());
-      }, o.onerror = n, document.body.appendChild(o);
+        ["complete", "loaded"].includes(t) && (o.onreadystatechange = null, n());
+      }, o.onerror = r, document.body.appendChild(o);
     });
   }
 
@@ -1048,10 +1067,10 @@ module.exports = COS;
     t[t.equal = 0] = "equal", t[t.low = -1] = "low", t[t.high = 1] = "high";
   }(E || (E = {}));
 
-  var _U = function U() {
-    return (_U = Object.assign || function (t) {
-      for (var e, r = 1, n = arguments.length; r < n; r++) {
-        for (var o in e = arguments[r]) {
+  var _q = function q() {
+    return (_q = Object.assign || function (t) {
+      for (var e, n = 1, r = arguments.length; n < r; n++) {
+        for (var o in e = arguments[n]) {
           Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
         }
       }
@@ -1060,41 +1079,41 @@ module.exports = COS;
     }).apply(this, arguments);
   };
 
-  function q(t, e, r, n) {
-    return new (r || (r = Promise))(function (o, i) {
-      function a(t) {
-        try {
-          c(n.next(t));
-        } catch (t) {
-          i(t);
-        }
-      }
-
+  function A(t, e, n, r) {
+    return new (n || (n = Promise))(function (o, i) {
       function s(t) {
         try {
-          c(n.throw(t));
+          u(r.next(t));
         } catch (t) {
           i(t);
         }
       }
 
-      function c(t) {
-        var e;
-        t.done ? o(t.value) : (e = t.value, e instanceof r ? e : new r(function (t) {
-          t(e);
-        })).then(a, s);
+      function a(t) {
+        try {
+          u(r.throw(t));
+        } catch (t) {
+          i(t);
+        }
       }
 
-      c((n = n.apply(t, e || [])).next());
+      function u(t) {
+        var e;
+        t.done ? o(t.value) : (e = t.value, e instanceof n ? e : new n(function (t) {
+          t(e);
+        })).then(s, a);
+      }
+
+      u((r = r.apply(t, e || [])).next());
     });
   }
 
   function R(t, e) {
-    var r,
-        n,
+    var n,
+        r,
         o,
         i,
-        a = {
+        s = {
       label: 0,
       sent: function sent() {
         if (1 & o[0]) throw o[1];
@@ -1104,72 +1123,72 @@ module.exports = COS;
       ops: []
     };
     return i = {
-      next: s(0),
-      throw: s(1),
-      return: s(2)
+      next: a(0),
+      throw: a(1),
+      return: a(2)
     }, "function" == typeof Symbol && (i[Symbol.iterator] = function () {
       return this;
     }), i;
 
-    function s(i) {
-      return function (s) {
+    function a(i) {
+      return function (a) {
         return function (i) {
-          if (r) throw new TypeError("Generator is already executing.");
+          if (n) throw new TypeError("Generator is already executing.");
 
-          for (; a;) {
+          for (; s;) {
             try {
-              if (r = 1, n && (o = 2 & i[0] ? n.return : i[0] ? n.throw || ((o = n.return) && o.call(n), 0) : n.next) && !(o = o.call(n, i[1])).done) return o;
+              if (n = 1, r && (o = 2 & i[0] ? r.return : i[0] ? r.throw || ((o = r.return) && o.call(r), 0) : r.next) && !(o = o.call(r, i[1])).done) return o;
 
-              switch (n = 0, o && (i = [2 & i[0], o.value]), i[0]) {
+              switch (r = 0, o && (i = [2 & i[0], o.value]), i[0]) {
                 case 0:
                 case 1:
                   o = i;
                   break;
 
                 case 4:
-                  return a.label++, {
+                  return s.label++, {
                     value: i[1],
                     done: !1
                   };
 
                 case 5:
-                  a.label++, n = i[1], i = [0];
+                  s.label++, r = i[1], i = [0];
                   continue;
 
                 case 7:
-                  i = a.ops.pop(), a.trys.pop();
+                  i = s.ops.pop(), s.trys.pop();
                   continue;
 
                 default:
-                  if (!((o = (o = a.trys).length > 0 && o[o.length - 1]) || 6 !== i[0] && 2 !== i[0])) {
-                    a = 0;
+                  if (!((o = (o = s.trys).length > 0 && o[o.length - 1]) || 6 !== i[0] && 2 !== i[0])) {
+                    s = 0;
                     continue;
                   }
 
                   if (3 === i[0] && (!o || i[1] > o[0] && i[1] < o[3])) {
-                    a.label = i[1];
+                    s.label = i[1];
                     break;
                   }
 
-                  if (6 === i[0] && a.label < o[1]) {
-                    a.label = o[1], o = i;
+                  if (6 === i[0] && s.label < o[1]) {
+                    s.label = o[1], o = i;
                     break;
                   }
 
-                  if (o && a.label < o[2]) {
-                    a.label = o[2], a.ops.push(i);
+                  if (o && s.label < o[2]) {
+                    s.label = o[2], s.ops.push(i);
                     break;
                   }
 
-                  o[2] && a.ops.pop(), a.trys.pop();
+                  o[2] && s.ops.pop(), s.trys.pop();
                   continue;
               }
 
-              i = e.call(t, a);
+              i = e.call(t, s);
             } catch (t) {
-              i = [6, t], n = 0;
+              i = [6, t], r = 0;
             } finally {
-              r = o = 0;
+              n = o = 0;
             }
           }
 
@@ -1178,12 +1197,12 @@ module.exports = COS;
             value: i[0] ? i[1] : void 0,
             done: !0
           };
-        }([i, s]);
+        }([i, a]);
       };
     }
   }
 
-  var L = function () {
+  var B = function () {
     function t() {
       this.interceptors = [];
     }
@@ -1195,21 +1214,21 @@ module.exports = COS;
       }), this.interceptors.length - 1;
     }, t.prototype.traverse = function (t, e) {
       void 0 === e && (e = !1);
-      var r = Promise.resolve(t);
+      var n = Promise.resolve(t);
       return (e ? Array.prototype.reduceRight : Array.prototype.reduce).call(this.interceptors, function (t, e) {
         if (e) {
-          var n = e.resolved,
+          var r = e.resolved,
               o = e.rejected;
-          r = r.then(n, o);
+          n = n.then(r, o);
         }
 
         return t;
-      }, ""), r;
+      }, ""), n;
     }, t.prototype.eject = function (t) {
       this.interceptors[t] && (this.interceptors[t] = null);
     }, t;
   }(),
-      B = {
+      J = {
     defaults: {
       timeout: 0,
       method: "GET",
@@ -1234,55 +1253,32 @@ module.exports = COS;
     baseURL: "",
     polyfillUrl: "https://vm.gtimg.cn/comps/script/fetch.min.js",
     interceptors: {
-      request: new L(),
-      response: new L()
+      request: new B(),
+      response: new B()
     }
   },
-      J = /^([a-z][a-z\d+\-.]*:)?\/\//i,
-      M = Object.prototype.toString;
+      V = /^([a-z][a-z\d+\-.]*:)?\/\//i,
+      Q = Object.prototype.toString;
 
-  function V(t) {
-    return q(this, void 0, void 0, function () {
+  function L(t) {
+    return A(this, void 0, void 0, function () {
       var e;
-      return R(this, function (r) {
-        switch (r.label) {
+      return R(this, function (n) {
+        switch (n.label) {
           case 0:
             if (window.fetch) return [2];
-            r.label = 1;
+            n.label = 1;
 
           case 1:
-            return r.trys.push([1, 3,, 4]), [4, N({
+            return n.trys.push([1, 3,, 4]), [4, j({
               src: t
             })];
 
           case 2:
-            return r.sent(), [3, 4];
+            return n.sent(), [3, 4];
 
           case 3:
-            throw e = r.sent(), function (t) {
-              if ("undefined" != typeof Image) {
-                var e = new Image(1, 1),
-                    r = _U({
-                  attaid: "0f400053130",
-                  token: "6552374442",
-                  comps: "@tencent/ovb-request",
-                  version: "1.1.18",
-                  ua: navigator.userAgent,
-                  url: location.href,
-                  _dc: Math.random()
-                }, t),
-                    n = Object.keys(r).map(function (t) {
-                  return t + "=" + encodeURIComponent(r[t]);
-                }).join("&");
-
-                e.src = "https://h.trace.qq.com/kv?" + n;
-              }
-            }({
-              func: "loadPolyfill",
-              result: 0,
-              params: t,
-              error_msg: e.message
-            }), new Error("加载 polyfill " + t + " 失败: " + e.message);
+            throw e = n.sent(), new Error("加载 polyfill " + t + " 失败: " + e.message);
 
           case 4:
             return [2];
@@ -1291,135 +1287,134 @@ module.exports = COS;
     });
   }
 
-  function G(t) {
+  function M(t) {
     return ["Accept", "Content-Type"].forEach(function (e) {
-      return r = e, void ((n = t.headers) && Object.keys(n).forEach(function (t) {
-        t !== r && t.toUpperCase() === r.toUpperCase() && (n[r] = n[t], delete n[t]);
+      return n = e, void ((r = t.headers) && Object.keys(r).forEach(function (t) {
+        t !== n && t.toUpperCase() === n.toUpperCase() && (r[n] = r[t], delete r[t]);
       }));
-      var r, n;
+      var n, r;
     }), function (t) {
-      if ("[object Object]" !== M.call(t)) return !1;
+      if ("[object Object]" !== Q.call(t)) return !1;
       var e = Object.getPrototypeOf(t);
       return null === e || e === Object.prototype;
     }(t.body) && (t.body = JSON.stringify(t.body), t.headers && (t.headers["Content-Type"] = "application/json;charset=utf-8")), t;
   }
 
-  function F(t) {
-    return q(this, void 0, void 0, function () {
-      var e, r, n, o, i, a, s, c, u, l, h, f, p, d, v, y, g;
+  function K(t) {
+    return A(this, void 0, void 0, function () {
+      var e, n, r, o, i, s, a, u, c, l, p, h, f, d, v, g, y;
       return R(this, function (m) {
         switch (m.label) {
           case 0:
-            return e = B.baseURL, r = B.defaults, n = B.interceptors, [4, V(B.polyfillUrl)];
+            return e = J.baseURL, n = J.defaults, r = J.interceptors, [4, L(J.polyfillUrl)];
 
           case 1:
-            return m.sent(), (o = _U(_U({}, r), t)).headers || (o.headers = function (t) {
+            return m.sent(), (o = _q(_q({}, n), t)).headers || (o.headers = function (t) {
               void 0 === t && (t = "GET");
-              var e = B.headers[t] || {};
-              return _U(_U({}, B.headers.common), e);
-            }(o.method)), G(o), [4, n.request.traverse(o, !0)];
+              var e = J.headers[t] || {};
+              return _q(_q({}, J.headers.common), e);
+            }(o.method)), M(o), [4, r.request.traverse(o, !0)];
 
           case 2:
             if ((i = m.sent()) instanceof Error) throw i;
             return i.url = function (t, e) {
-              return !t || J.test(e) ? e : t.replace(/\/+$/, "") + "/" + e.replace(/^\/+/, "");
-            }(e, i.url), a = i.url, s = i.timeout, c = i.params, u = i.method, l = ["GET", "DELETE", "OPTIONS", "HEAD"].includes(void 0 === u ? "GET" : u) && !!c, h = l ? T({
-              url: a,
-              query: c
-            }) : a, f = [], s && !i.signal && (v = new Promise(function (t) {
-              p = setTimeout(function () {
+              return !t || V.test(e) ? e : t.replace(/\/+$/, "") + "/" + e.replace(/^\/+/, "");
+            }(e, i.url), s = i.url, a = i.timeout, u = i.params, c = i.method, l = ["GET", "DELETE", "OPTIONS", "HEAD"].includes(void 0 === c ? "GET" : c) && !!u, p = l ? N({
+              url: s,
+              query: u
+            }) : s, h = [], a && !i.signal && (v = new Promise(function (t) {
+              f = setTimeout(function () {
                 t(new Error("timeout"));
-              }, s);
-            }), f.push(v), d = new AbortController(), i.signal = d.signal), f.push(fetch(h, i).catch(function (t) {
+              }, a);
+            }), h.push(v), d = new AbortController(), i.signal = d.signal), h.push(fetch(p, i).catch(function (t) {
               return t;
-            })), [4, Promise.race(f)];
+            })), [4, Promise.race(h)];
 
           case 3:
-            return y = m.sent(), p && clearTimeout(p), [4, n.response.traverse(y)];
+            return g = m.sent(), f && clearTimeout(f), [4, r.response.traverse(g)];
 
           case 4:
-            if ((g = m.sent()) instanceof Error) throw null == d || d.abort(), g;
-            return [2, g];
+            if ((y = m.sent()) instanceof Error) throw null == d || d.abort(), y;
+            return [2, y];
         }
       });
     });
   }
 
-  var Q = function () {
+  var F = function () {
     function t(t) {
-      B.interceptors.request.use(function (r) {
-        var n = r.url,
-            o = r.method,
-            i = r.body,
-            a = i;
+      J.interceptors.request.use(function (n) {
+        var r = n.url,
+            o = n.method,
+            i = n.body,
+            s = i;
 
         if (t.onReportBeforeSend) {
-          var s = t.onReportBeforeSend({
-            url: n,
+          var a = t.onReportBeforeSend({
+            url: r,
             method: o,
             data: i ? JSON.parse(i) : null
           });
-          a = (null == s ? void 0 : s.data) ? JSON.stringify(s.data) : null;
+          s = (null == a ? void 0 : a.data) ? JSON.stringify(a.data) : null;
         }
 
-        if ("GET" !== o && !a) throw new Error("No data for sdk, cancel.");
-        return _e(_e({}, r), {
-          body: a
-        });
+        return "GET" != o && s ? _e(_e({}, n), {
+          body: s
+        }) : n;
       });
     }
 
     return t.prototype.get = function (t, o) {
-      return r(this, void 0, void 0, function () {
-        var r, i;
-        return n(this, function (n) {
-          switch (n.label) {
+      return n(this, void 0, void 0, function () {
+        var n, i;
+        return r(this, function (r) {
+          switch (r.label) {
             case 0:
-              return [4, F(_e({
+              return [4, K(_e({
                 url: t
               }, o))];
 
             case 1:
-              return [4, (r = n.sent()).json()];
+              return [4, (n = r.sent()).json()];
 
             case 2:
-              return i = n.sent(), [2, Promise.resolve({
+              return i = r.sent(), [2, Promise.resolve({
                 data: i,
-                status: r.status,
-                statusText: r.statusText,
-                headers: r.headers
+                status: n.status,
+                statusText: n.statusText,
+                headers: n.headers
               })];
           }
         });
       });
     }, t.prototype.post = function (t, o, i) {
-      return r(this, void 0, void 0, function () {
-        var r, a;
-        return n(this, function (n) {
-          switch (n.label) {
+      return n(this, void 0, void 0, function () {
+        var n, s;
+        return r(this, function (r) {
+          switch (r.label) {
             case 0:
-              return [4, F(_e({
+              return [4, K(_e({
                 url: t,
                 body: o,
                 method: "POST"
               }, i))];
 
             case 1:
-              return [4, (r = n.sent()).json()];
+              return [4, (n = r.sent()).json()];
 
             case 2:
-              return a = n.sent(), [2, Promise.resolve({
-                data: a,
-                status: r.status,
-                statusText: r.statusText,
-                headers: r.headers
+              return s = r.sent(), [2, Promise.resolve({
+                data: s,
+                status: n.status,
+                statusText: n.statusText,
+                headers: n.headers
               })];
           }
         });
       });
     }, t;
   }(),
-      K = function () {
+      G = function () {
     function t(t) {
       this.appkey = t;
     }
@@ -1454,11 +1449,11 @@ module.exports = COS;
       try {
         var t = window.localStorage.getItem(i);
         return t || (t = function (t) {
-          for (var e = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz0123456789", r = "", n = 0; n < t; n++) {
-            r += e.charAt(Math.floor(Math.random() * e.length));
+          for (var e = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz0123456789", n = "", r = 0; r < t; r++) {
+            n += e.charAt(Math.floor(Math.random() * e.length));
           }
 
-          return r;
+          return n;
         }(32), window.localStorage.setItem(i, t)), t;
       } catch (t) {
         return "";
@@ -1466,8 +1461,8 @@ module.exports = COS;
     }, t.prototype.clear = function () {
       try {
         for (var t = window.localStorage.length, e = 0; e < t; e++) {
-          var r = window.localStorage.key(e);
-          (null == r ? void 0 : r.substr(0, 9)) == o && window.localStorage.removeItem(r);
+          var n = window.localStorage.key(e);
+          (null == n ? void 0 : n.substr(0, 9)) == o && window.localStorage.removeItem(n);
         }
       } catch (t) {}
     }, t.prototype.getStoreCount = function () {
@@ -1479,738 +1474,137 @@ module.exports = COS;
 
       return t;
     }, t;
-  }();
-
-  "undefined" != typeof globalThis ? globalThis : "undefined" != typeof window ? window : "undefined" != typeof global ? global : "undefined" != typeof self && self;
-
-  var W = function (t) {
-    var e = {
-      exports: {}
-    };
-    return t(e, e.exports), e.exports;
-  }(function (t, e) {
-    t.exports = function () {
-      function t(t, e, r, n, o, i, a) {
-        try {
-          var s = t[i](a),
-              c = s.value;
-        } catch (t) {
-          return void r(t);
-        }
-
-        s.done ? e(c) : Promise.resolve(c).then(n, o);
-      }
-
-      function e(t, e) {
-        for (var r = 0; r < e.length; r++) {
-          var n = e[r];
-          n.enumerable = n.enumerable || !1, n.configurable = !0, "value" in n && (n.writable = !0), Object.defineProperty(t, n.key, n);
-        }
-      }
-
-      var r,
-          n = (function (t) {
-        t = function (t) {
-          var e,
-              r = Object.prototype,
-              n = r.hasOwnProperty,
-              o = "function" == typeof Symbol ? Symbol : {},
-              i = o.iterator || "@@iterator",
-              a = o.asyncIterator || "@@asyncIterator",
-              s = o.toStringTag || "@@toStringTag";
-
-          function c(t, e, r) {
-            return Object.defineProperty(t, e, {
-              value: r,
-              enumerable: !0,
-              configurable: !0,
-              writable: !0
-            }), t[e];
-          }
-
-          try {
-            c({}, "");
-          } catch (r) {
-            c = function c(t, e, r) {
-              return t[e] = r;
-            };
-          }
-
-          function u(t, r, n, o) {
-            var i, a, s, c;
-            return r = r && r.prototype instanceof y ? r : y, r = Object.create(r.prototype), o = new k(o || []), r._invoke = (i = t, a = n, s = o, c = h, function (t, r) {
-              if (c === p) throw new Error("Generator is already running");
-
-              if (c === d) {
-                if ("throw" === t) throw r;
-                return C();
-              }
-
-              for (s.method = t, s.arg = r;;) {
-                var n = s.delegate;
-
-                if (n) {
-                  var o = function t(r, n) {
-                    var o;
-
-                    if ((o = r.iterator[n.method]) === e) {
-                      if (n.delegate = null, "throw" === n.method) {
-                        if (r.iterator.return && (n.method = "return", n.arg = e, t(r, n), "throw" === n.method)) return v;
-                        n.method = "throw", n.arg = new TypeError("The iterator does not provide a 'throw' method");
-                      }
-
-                      return v;
-                    }
-
-                    return "throw" === (o = l(o, r.iterator, n.arg)).type ? (n.method = "throw", n.arg = o.arg, n.delegate = null, v) : (o = o.arg) ? o.done ? (n[r.resultName] = o.value, n.next = r.nextLoc, "return" !== n.method && (n.method = "next", n.arg = e), n.delegate = null, v) : o : (n.method = "throw", n.arg = new TypeError("iterator result is not an object"), n.delegate = null, v);
-                  }(n, s);
-
-                  if (o) {
-                    if (o === v) continue;
-                    return o;
-                  }
-                }
-
-                if ("next" === s.method) s.sent = s._sent = s.arg;else if ("throw" === s.method) {
-                  if (c === h) throw c = d, s.arg;
-                  s.dispatchException(s.arg);
-                } else "return" === s.method && s.abrupt("return", s.arg);
-
-                if (c = p, "normal" === (o = l(i, a, s)).type) {
-                  if (c = s.done ? d : f, o.arg !== v) return {
-                    value: o.arg,
-                    done: s.done
-                  };
-                } else "throw" === o.type && (c = d, s.method = "throw", s.arg = o.arg);
-              }
-            }), r;
-          }
-
-          function l(t, e, r) {
-            try {
-              return {
-                type: "normal",
-                arg: t.call(e, r)
-              };
-            } catch (t) {
-              return {
-                type: "throw",
-                arg: t
-              };
-            }
-          }
-
-          t.wrap = u;
-          var h = "suspendedStart",
-              f = "suspendedYield",
-              p = "executing",
-              d = "completed",
-              v = {};
-
-          function y() {}
-
-          function g() {}
-
-          function m() {}
-
-          var w = {};
-          w[i] = function () {
-            return this;
-          }, (o = (o = Object.getPrototypeOf) && o(o(x([])))) && o !== r && n.call(o, i) && (w = o);
-          var b = m.prototype = y.prototype = Object.create(w);
-
-          function S(t) {
-            ["next", "throw", "return"].forEach(function (e) {
-              c(t, e, function (t) {
-                return this._invoke(e, t);
-              });
-            });
-          }
-
-          function E(t, e) {
-            var r;
-
-            this._invoke = function (o, i) {
-              function a() {
-                return new e(function (r, a) {
-                  !function r(o, i, a, s) {
-                    if ("throw" !== (o = l(t[o], t, i)).type) {
-                      var c = o.arg;
-                      return (i = c.value) && "object" == _typeof(i) && n.call(i, "__await") ? e.resolve(i.__await).then(function (t) {
-                        r("next", t, a, s);
-                      }, function (t) {
-                        r("throw", t, a, s);
-                      }) : e.resolve(i).then(function (t) {
-                        c.value = t, a(c);
-                      }, function (t) {
-                        return r("throw", t, a, s);
-                      });
-                    }
-
-                    s(o.arg);
-                  }(o, i, r, a);
-                });
-              }
-
-              return r = r ? r.then(a, a) : a();
-            };
-          }
-
-          function I(t) {
-            var e = {
-              tryLoc: t[0]
-            };
-            1 in t && (e.catchLoc = t[1]), 2 in t && (e.finallyLoc = t[2], e.afterLoc = t[3]), this.tryEntries.push(e);
-          }
-
-          function O(t) {
-            var e = t.completion || {};
-            e.type = "normal", delete e.arg, t.completion = e;
-          }
-
-          function k(t) {
-            this.tryEntries = [{
-              tryLoc: "root"
-            }], t.forEach(I, this), this.reset(!0);
-          }
-
-          function x(t) {
-            if (t) {
-              if (r = t[i]) return r.call(t);
-              if ("function" == typeof t.next) return t;
-
-              if (!isNaN(t.length)) {
-                var r,
-                    o = -1;
-                return (r = function r() {
-                  for (; ++o < t.length;) {
-                    if (n.call(t, o)) return r.value = t[o], r.done = !1, r;
-                  }
-
-                  return r.value = e, r.done = !0, r;
-                }).next = r;
-              }
-            }
-
-            return {
-              next: C
-            };
-          }
-
-          function C() {
-            return {
-              value: e,
-              done: !0
-            };
-          }
-
-          return ((g.prototype = b.constructor = m).constructor = g).displayName = c(m, s, "GeneratorFunction"), t.isGeneratorFunction = function (t) {
-            return !!(t = "function" == typeof t && t.constructor) && (t === g || "GeneratorFunction" === (t.displayName || t.name));
-          }, t.mark = function (t) {
-            return Object.setPrototypeOf ? Object.setPrototypeOf(t, m) : (t.__proto__ = m, c(t, s, "GeneratorFunction")), t.prototype = Object.create(b), t;
-          }, t.awrap = function (t) {
-            return {
-              __await: t
-            };
-          }, S(E.prototype), E.prototype[a] = function () {
-            return this;
-          }, t.AsyncIterator = E, t.async = function (e, r, n, o, i) {
-            void 0 === i && (i = Promise);
-            var a = new E(u(e, r, n, o), i);
-            return t.isGeneratorFunction(r) ? a : a.next().then(function (t) {
-              return t.done ? t.value : a.next();
-            });
-          }, S(b), c(b, s, "Generator"), b[i] = function () {
-            return this;
-          }, b.toString = function () {
-            return "[object Generator]";
-          }, t.keys = function (t) {
-            var e,
-                r = [];
-
-            for (e in t) {
-              r.push(e);
-            }
-
-            return r.reverse(), function e() {
-              for (; r.length;) {
-                var n = r.pop();
-                if (n in t) return e.value = n, e.done = !1, e;
-              }
-
-              return e.done = !0, e;
-            };
-          }, t.values = x, k.prototype = {
-            constructor: k,
-            reset: function reset(t) {
-              if (this.prev = 0, this.next = 0, this.sent = this._sent = e, this.done = !1, this.delegate = null, this.method = "next", this.arg = e, this.tryEntries.forEach(O), !t) for (var r in this) {
-                "t" === r.charAt(0) && n.call(this, r) && !isNaN(+r.slice(1)) && (this[r] = e);
-              }
-            },
-            stop: function stop() {
-              this.done = !0;
-              var t = this.tryEntries[0].completion;
-              if ("throw" === t.type) throw t.arg;
-              return this.rval;
-            },
-            dispatchException: function dispatchException(t) {
-              if (this.done) throw t;
-              var r = this;
-
-              function o(n, o) {
-                return s.type = "throw", s.arg = t, r.next = n, o && (r.method = "next", r.arg = e), !!o;
-              }
-
-              for (var i = this.tryEntries.length - 1; 0 <= i; --i) {
-                var a = this.tryEntries[i],
-                    s = a.completion;
-                if ("root" === a.tryLoc) return o("end");
-
-                if (a.tryLoc <= this.prev) {
-                  var c = n.call(a, "catchLoc"),
-                      u = n.call(a, "finallyLoc");
-
-                  if (c && u) {
-                    if (this.prev < a.catchLoc) return o(a.catchLoc, !0);
-                    if (this.prev < a.finallyLoc) return o(a.finallyLoc);
-                  } else if (c) {
-                    if (this.prev < a.catchLoc) return o(a.catchLoc, !0);
-                  } else {
-                    if (!u) throw new Error("try statement without catch or finally");
-                    if (this.prev < a.finallyLoc) return o(a.finallyLoc);
-                  }
-                }
-              }
-            },
-            abrupt: function abrupt(t, e) {
-              for (var r = this.tryEntries.length - 1; 0 <= r; --r) {
-                var o = this.tryEntries[r];
-
-                if (o.tryLoc <= this.prev && n.call(o, "finallyLoc") && this.prev < o.finallyLoc) {
-                  var i = o;
-                  break;
-                }
-              }
-
-              var a = (i = i && ("break" === t || "continue" === t) && i.tryLoc <= e && e <= i.finallyLoc ? null : i) ? i.completion : {};
-              return a.type = t, a.arg = e, i ? (this.method = "next", this.next = i.finallyLoc, v) : this.complete(a);
-            },
-            complete: function complete(t, e) {
-              if ("throw" === t.type) throw t.arg;
-              return "break" === t.type || "continue" === t.type ? this.next = t.arg : "return" === t.type ? (this.rval = this.arg = t.arg, this.method = "return", this.next = "end") : "normal" === t.type && e && (this.next = e), v;
-            },
-            finish: function finish(t) {
-              for (var e = this.tryEntries.length - 1; 0 <= e; --e) {
-                var r = this.tryEntries[e];
-                if (r.finallyLoc === t) return this.complete(r.completion, r.afterLoc), O(r), v;
-              }
-            },
-            catch: function _catch(t) {
-              for (var e = this.tryEntries.length - 1; 0 <= e; --e) {
-                var r = this.tryEntries[e];
-
-                if (r.tryLoc === t) {
-                  var n,
-                      o = r.completion;
-                  return "throw" === o.type && (n = o.arg, O(r)), n;
-                }
-              }
-
-              throw new Error("illegal catch attempt");
-            },
-            delegateYield: function delegateYield(t, r, n) {
-              return this.delegate = {
-                iterator: x(t),
-                resultName: r,
-                nextLoc: n
-              }, "next" === this.method && (this.arg = e), v;
-            }
-          }, t;
-        }(t.exports);
-
-        try {
-          regeneratorRuntime = t;
-        } catch (e) {
-          Function("r", "regeneratorRuntime = r")(t);
-        }
-      }(r = {
-        exports: {}
-      }), r.exports);
-      return function () {
-        function r(t) {
-          !function (t, e) {
-            if (!(t instanceof e)) throw new TypeError("Cannot call a class as a function");
-          }(this, r), this.version = "1.0.0";
-          var e = Array.prototype.map,
-              n = Array.prototype.forEach;
-          t && (this.hasher = t), this.each = function (t, e, r) {
-            if (null != t) if (n && t.forEach === n) t.forEach(e, r);else if (t.length === +t.length) {
-              for (var o = 0, i = t.length; o < i; o++) {
-                if (e.call(r, t[o], o, t) === {}) return;
-              }
-            } else for (var a in t) {
-              if (t.hasOwnProperty(a) && e.call(r, t[a], a, t) === {}) return;
-            }
-          }, this.map = function (t, r, n) {
-            var o = [];
-            return null == t ? o : e && t.map === e ? t.map(r, n) : (this.each(t, function (t, e, i) {
-              o[o.length] = r.call(n, t, e, i);
-            }), o);
-          };
-        }
-
-        var o, i, a, s;
-        return o = r, (i = [{
-          key: "getQimei36",
-          value: function value(t, e) {
-            var r = this;
-            this.getHid().then(function (n) {
-              var o = "3BJr" + t.substring(0, 2) + (n && n.substring(3, 7)),
-                  i = new XMLHttpRequest();
-              i.open("POST", "https://snowflake.qq.com/ola/h5", !0), i.setRequestHeader("Content-Type", "application/json"), i.onreadystatechange = function () {
-                if (i.readyState == XMLHttpRequest.DONE && 200 == i.status) try {
-                  e && e(JSON.parse(i.responseText));
-                } catch (t) {
-                  e(null);
-                }
-              }, i.send(JSON.stringify({
-                appKey: t,
-                hid: n,
-                sign: o,
-                version: r.version
-              }));
-            });
-          }
-        }, {
-          key: "getHid",
-          value: (a = n.mark(function t() {
-            var e, r;
-            return n.wrap(function (t) {
-              for (;;) {
-                switch (t.prev = t.next) {
-                  case 0:
-                    return (e = []).push((n = void 0, (n = [Math.floor(window.screen.width * window.devicePixelRatio), Math.floor(window.screen.height * window.devicePixelRatio)]).sort().reverse(), n.join("x"))), e.push((n = void 0, (n = [Math.floor(window.screen.availWidth * window.devicePixelRatio), Math.floor(window.screen.availHeight * window.devicePixelRatio)]).sort().reverse(), n.join("x"))), e.push(navigator.deviceMemory), e.push(!!window.sessionStorage), e.push(!!window.indexedDB), e.push(navigator.productSub), e.push(navigator.hardwareConcurrency), e.push(this.getWebglVendorAndRenderer()), e.push(new Date().getTimezoneOffset()), t.next = 12, this.getFactor();
-
-                  case 12:
-                    if (r = t.sent, e.push(r), this.hasher) return t.abrupt("return", this.hasher(e.join("###"), 31));
-                    t.next = 18;
-                    break;
-
-                  case 18:
-                    return t.abrupt("return", this.x64hash128(e.join("###"), 31));
-
-                  case 19:
-                  case "end":
-                    return t.stop();
-                }
-              }
-
-              var n;
-            }, t, this);
-          }), s = function s() {
-            var e = this,
-                r = arguments;
-            return new Promise(function (n, o) {
-              var i = a.apply(e, r);
-
-              function s(e) {
-                t(i, n, o, s, c, "next", e);
-              }
-
-              function c(e) {
-                t(i, n, o, s, c, "throw", e);
-              }
-
-              s(void 0);
-            });
-          }, function () {
-            return s.apply(this, arguments);
-          })
-        }, {
-          key: "getUserAgent",
-          value: function value() {
-            return navigator.userAgent;
-          }
-        }, {
-          key: "getNative",
-          value: function value() {
-            var t = this;
-            this.getHid().then(function (e) {
-              JSInterface.callback(t.version, e, t.getUserAgent());
-            });
-          }
-        }, {
-          key: "getWebglVendorAndRenderer",
-          value: function value() {
-            try {
-              var t = function () {
-                var t = document.createElement("canvas"),
-                    e = null;
-
-                try {
-                  e = t.getContext("webgl") || t.getContext("experimental-webgl");
-                } catch (t) {}
-
-                return e || null;
-              }(),
-                  e = t.getExtension("WEBGL_debug_renderer_info"),
-                  r = [t.getParameter(e.UNMASKED_VENDOR_WEBGL), t.getParameter(e.UNMASKED_RENDERER_WEBGL)].join("~"),
-                  n = t.getExtension("WEBGL_lose_context");
-
-              return null != n && n.loseContext(), r;
-            } catch (t) {
-              return null;
-            }
-          }
-        }, {
-          key: "getFactor",
-          value: function value() {
-            return new Promise(function (t, e) {
-              var r = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
-              r ? function () {
-                var e = new r({
-                  iceServers: []
-                });
-                e.createDataChannel("", {
-                  reliable: !1
-                }), e.onicecandidate = function (t) {
-                  t.candidate && i("a=".concat(t.candidate.candidate));
-                }, e.createOffer(function (t) {
-                  i(t.sdp), e.setLocalDescription(t);
-                }, function (t) {});
-                var n = Object.create(null);
-
-                function o(e) {
-                  if (!(e in n)) {
-                    n[e] = !0;
-
-                    for (var r = Object.keys(n).filter(function (t) {
-                      return n[t];
-                    }), o = 0; o < r.length; o++) {
-                      16 < r[o].length && (r.splice(o, 1), o--);
-                    }
-
-                    t(r[0]);
-                  }
-                }
-
-                function i(t) {
-                  (0 < arguments.length && void 0 !== t ? t : "").split("\r\n").forEach(function (t, e, r) {
-                    var n, i;
-                    ~t.indexOf("a=candidate") ? (i = (n = t.split(" "))[4], "host" === n[7] && o(i)) : ~t.indexOf("c=") && o(t.split(" ")[2]);
-                  });
-                }
-
-                n["0.0.0.0"] = !1;
-              }() : t(null);
-            });
-          }
-        }, {
-          key: "x64hash128",
-          value: function value(t, e) {
-            for (var r = function r(t, e) {
-              t = [t[0] >>> 16, 65535 & t[0], t[1] >>> 16, 65535 & t[1]], e = [e[0] >>> 16, 65535 & e[0], e[1] >>> 16, 65535 & e[1]];
-              var r = [0, 0, 0, 0];
-              return r[3] += t[3] + e[3], r[2] += r[3] >>> 16, r[3] &= 65535, r[2] += t[2] + e[2], r[1] += r[2] >>> 16, r[2] &= 65535, r[1] += t[1] + e[1], r[0] += r[1] >>> 16, r[1] &= 65535, r[0] += t[0] + e[0], r[0] &= 65535, [r[0] << 16 | r[1], r[2] << 16 | r[3]];
-            }, n = function n(t, e) {
-              t = [t[0] >>> 16, 65535 & t[0], t[1] >>> 16, 65535 & t[1]], e = [e[0] >>> 16, 65535 & e[0], e[1] >>> 16, 65535 & e[1]];
-              var r = [0, 0, 0, 0];
-              return r[3] += t[3] * e[3], r[2] += r[3] >>> 16, r[3] &= 65535, r[2] += t[2] * e[3], r[1] += r[2] >>> 16, r[2] &= 65535, r[2] += t[3] * e[2], r[1] += r[2] >>> 16, r[2] &= 65535, r[1] += t[1] * e[3], r[0] += r[1] >>> 16, r[1] &= 65535, r[1] += t[2] * e[2], r[0] += r[1] >>> 16, r[1] &= 65535, r[1] += t[3] * e[1], r[0] += r[1] >>> 16, r[1] &= 65535, r[0] += t[0] * e[3] + t[1] * e[2] + t[2] * e[1] + t[3] * e[0], r[0] &= 65535, [r[0] << 16 | r[1], r[2] << 16 | r[3]];
-            }, o = function o(t, e) {
-              return 32 == (e %= 64) ? [t[1], t[0]] : e < 32 ? [t[0] << e | t[1] >>> 32 - e, t[1] << e | t[0] >>> 32 - e] : [t[1] << (e -= 32) | t[0] >>> 32 - e, t[0] << e | t[1] >>> 32 - e];
-            }, i = function i(t, e) {
-              return 0 == (e %= 64) ? t : e < 32 ? [t[0] << e | t[1] >>> 32 - e, t[1] << e] : [t[1] << e - 32, 0];
-            }, a = function a(t, e) {
-              return [t[0] ^ e[0], t[1] ^ e[1]];
-            }, s = function s(t) {
-              return t = a(t, [0, t[0] >>> 1]), t = n(t, [4283543511, 3981806797]), t = a(t, [0, t[0] >>> 1]), t = n(t, [3301882366, 444984403]), a(t, [0, t[0] >>> 1]);
-            }, c = (t = t || "").length % 16, u = t.length - c, l = [0, e = e || 0], h = [0, e], f = [0, 0], p = [0, 0], d = [2277735313, 289559509], v = [1291169091, 658871167], y = 0; y < u; y += 16) {
-              f = [255 & t.charCodeAt(y + 4) | (255 & t.charCodeAt(y + 5)) << 8 | (255 & t.charCodeAt(y + 6)) << 16 | (255 & t.charCodeAt(y + 7)) << 24, 255 & t.charCodeAt(y) | (255 & t.charCodeAt(y + 1)) << 8 | (255 & t.charCodeAt(y + 2)) << 16 | (255 & t.charCodeAt(y + 3)) << 24], p = [255 & t.charCodeAt(y + 12) | (255 & t.charCodeAt(y + 13)) << 8 | (255 & t.charCodeAt(y + 14)) << 16 | (255 & t.charCodeAt(y + 15)) << 24, 255 & t.charCodeAt(y + 8) | (255 & t.charCodeAt(y + 9)) << 8 | (255 & t.charCodeAt(y + 10)) << 16 | (255 & t.charCodeAt(y + 11)) << 24], f = o(f = n(f, d), 31), f = n(f, v), l = r(l = o(l = a(l, f), 27), h), l = r(n(l, [0, 5]), [0, 1390208809]), p = o(p = n(p, v), 33), p = n(p, d), h = r(h = o(h = a(h, p), 31), l), h = r(n(h, [0, 5]), [0, 944331445]);
-            }
-
-            switch (f = [0, 0], p = [0, 0], c) {
-              case 15:
-                p = a(p, i([0, t.charCodeAt(y + 14)], 48));
-
-              case 14:
-                p = a(p, i([0, t.charCodeAt(y + 13)], 40));
-
-              case 13:
-                p = a(p, i([0, t.charCodeAt(y + 12)], 32));
-
-              case 12:
-                p = a(p, i([0, t.charCodeAt(y + 11)], 24));
-
-              case 11:
-                p = a(p, i([0, t.charCodeAt(y + 10)], 16));
-
-              case 10:
-                p = a(p, i([0, t.charCodeAt(y + 9)], 8));
-
-              case 9:
-                p = a(p, [0, t.charCodeAt(y + 8)]), p = o(p = n(p, v), 33), p = n(p, d), h = a(h, p);
-
-              case 8:
-                f = a(f, i([0, t.charCodeAt(y + 7)], 56));
-
-              case 7:
-                f = a(f, i([0, t.charCodeAt(y + 6)], 48));
-
-              case 6:
-                f = a(f, i([0, t.charCodeAt(y + 5)], 40));
-
-              case 5:
-                f = a(f, i([0, t.charCodeAt(y + 4)], 32));
-
-              case 4:
-                f = a(f, i([0, t.charCodeAt(y + 3)], 24));
-
-              case 3:
-                f = a(f, i([0, t.charCodeAt(y + 2)], 16));
-
-              case 2:
-                f = a(f, i([0, t.charCodeAt(y + 1)], 8));
-
-              case 1:
-                f = a(f, [t.charCodeAt(y)]), f = o(f = n(f, d), 31), f = n(f, v), l = a(l, f);
-            }
-
-            return l = a(l, [0, t.length]), h = r(h = a(h, [0, t.length]), l = r(l, h)), l = s(l), h = r(h = s(h), l = r(l, h)), ("00000000" + (l[0] >>> 0).toString(16)).slice(-8) + ("00000000" + (l[1] >>> 0).toString(16)).slice(-8) + ("00000000" + (h[0] >>> 0).toString(16)).slice(-8) + ("00000000" + (h[1] >>> 0).toString(16)).slice(-8);
-          }
-        }]) && e(o.prototype, i), r;
-      }();
-    }();
-  }),
-      H = "logid_start",
-      z = "4.5.6-web";
-
-  return function (r) {
-    function n(t) {
-      var e = r.call(this, t) || this;
-      e.qimei36 = "", e.uselessCycleTaskNum = 0, e.underWeakNet = !1, e.send = function (t, r, n) {
-        e.storage.setItem(a, Date.now().toString()), e.network.post(e.uploadUrl || e.strategy.getUploadUrl(), t.data).then(function (n) {
+  }(),
+      z = "logid_start",
+      W = "4.5.14-web";
+
+  return function (n) {
+    function r(t) {
+      var e = n.call(this, t) || this;
+      e.qimei36 = "", e.uselessCycleTaskNum = 0, e.underWeakNet = !1, e.pauseSearching = !1, e.send = function (t, n, r) {
+        e.storage.setItem(s, Date.now().toString()), e.network.post(e.uploadUrl || e.strategy.getUploadUrl(), t.data).then(function (r) {
           var o;
-          100 == (null === (o = null == n ? void 0 : n.data) || void 0 === o ? void 0 : o.result) ? e.delayTime = 1e3 * n.data.delayTime : e.delayTime = 0, r && r(t.data), t.data.events.forEach(function (t) {
+          100 == (null === (o = null == r ? void 0 : r.data) || void 0 === o ? void 0 : o.result) ? e.delayTime = 1e3 * r.data.delayTime : e.delayTime = 0, n && n(t.data), t.data.events.forEach(function (t) {
             e.store.removeEvent(t).then(function () {
-              e.removeSendingId(p(t.mapValue));
+              e.removeSendingId(f(t.mapValue));
             });
           }), e.doCustomCycleTask();
-        }).catch(function (r) {
+        }).catch(function (n) {
           var o = t.data.events;
-          e.errorReport.reportError(r.code ? r.code.toString() : "600", r.message), n && n(t.data);
-          var i = JSON.parse(e.storage.getItem(s));
+          e.errorReport.reportError(n.code ? n.code.toString() : "600", n.message), r && r(t.data);
+          var i = JSON.parse(e.storage.getItem(a));
           o.forEach(function (t) {
-            i && -1 != i.indexOf(p(t)) && e.store.insertEvent(t, function (t, r) {
+            i && -1 != i.indexOf(f(t)) && e.store.insertEvent(t, function (t, n) {
               t && e.errorReport.reportError("604", "insertEvent fail!");
-            }), e.removeSendingId(p(t));
+            }), e.removeSendingId(f(t));
           }), e.monitorUploadFailed();
         });
       };
-      var n,
+      var r,
           o,
           i = b();
-      return e.isUnderIE8 = i > 0 && i < 8, e.isUnderIE8 || (e.isUnderIE = i > 0, t.needInitQimei && e.initQimei(t.appkey), e.network = new Q(t), e.storage = new K(t.appkey), e.initCommonInfo(t), e.store = new _(t.appkey, e.storage), e.errorReport = new y(e.config, e.commonInfo, "web", e.network), e.strategy = new g(e.config, e.commonInfo, e.storage, e.network), e.logidStartTime = e.storage.getItem(H), e.logidStartTime || (e.logidStartTime = Date.now().toString(), e.storage.setItem(H, e.logidStartTime)), n = e.logidStartTime, o = Date.now() - Number.parseFloat(n), Math.floor(o / 864e5) >= 365 && e.storage.clear(), e.initSession(t), e.onDirectUserAction("rqd_js_init", {}), setTimeout(function () {
+      return e.isUnderIE8 = i > 0 && i < 8, e.isUnderIE8 || (e.isUnderIE = i > 0, t.needInitQimei && S(t.appkey, function (t) {
+        e.qimei36 = t.q36;
+      }), e.network = new F(t), e.storage = new G(t.appkey), e.initCommonInfo(t), e.store = new _(t.appkey, e.storage), e.errorReport = new g(e.config, e.commonInfo, "web", e.network), e.strategy = new y(null == t.needQueryConfig || t.needQueryConfig, e.config, e.commonInfo, e.storage, e.network), e.logidStartTime = e.storage.getItem(z), e.logidStartTime || (e.logidStartTime = Date.now().toString(), e.storage.setItem(z, e.logidStartTime)), r = e.logidStartTime, o = Date.now() - Number.parseFloat(r), Math.floor(o / 864e5) >= 365 && e.storage.clear(), e.initSession(t), e.onDirectUserAction("rqd_js_init", {}), setTimeout(function () {
         return e.lifeCycle.emit("init");
       }, 0), e.initDelayTime = t.delay ? t.delay : 1e3, e.cycleTask(e.initDelayTime)), e;
     }
 
-    return function (e, r) {
-      if ("function" != typeof r && null !== r) throw new TypeError("Class extends value " + String(r) + " is not a constructor or null");
+    return function (e, n) {
+      if ("function" != typeof n && null !== n) throw new TypeError("Class extends value " + String(n) + " is not a constructor or null");
 
-      function n() {
+      function r() {
         this.constructor = e;
       }
 
-      _t(e, r), e.prototype = null === r ? Object.create(r) : (n.prototype = r.prototype, new n());
-    }(n, r), n.prototype.initQimei = function (t) {
-      var e = this;
-      new W().getQimei36(t, function (t) {
-        e.qimei36 = t.q36;
-      });
-    }, n.prototype.initSession = function (t) {
+      _t(e, n), e.prototype = null === n ? Object.create(n) : (r.prototype = n.prototype, new r());
+    }(r, n), r.prototype.initSession = function (t) {
       var e = 18e5;
       t.sessionDuration && t.sessionDuration > 3e4 && (e = t.sessionDuration), this.beaconSession = new w(this.storage, e, this);
-    }, n.prototype.initCommonInfo = function (t) {
-      var e = Number(this.storage.getItem(a));
+    }, r.prototype.initCommonInfo = function (t) {
+      var e = Number(this.storage.getItem(s));
 
       try {
-        var r = JSON.parse(this.storage.getItem(s));
-        (Date.now() - e > 3e4 || !r) && this.storage.setItem(s, JSON.stringify([]));
+        var n = JSON.parse(this.storage.getItem(a));
+        (Date.now() - e > 3e4 || !n) && this.storage.setItem(a, JSON.stringify([]));
       } catch (t) {}
 
       t.uploadUrl && (this.uploadUrl = t.uploadUrl + "?appkey=" + t.appkey);
-      var n = [window.screen.width, window.screen.height];
-      window.devicePixelRatio && n.push(window.devicePixelRatio), this.commonInfo = {
+      var r = [window.screen.width, window.screen.height];
+      window.devicePixelRatio && r.push(window.devicePixelRatio), this.commonInfo = {
         deviceId: this.storage.createDeviceId(),
         language: navigator && navigator.language || "zh_CN",
         query: window.location.search,
         userAgent: navigator.userAgent,
-        pixel: n.join("*"),
+        pixel: r.join("*"),
         channelID: t.channelID ? String(t.channelID) : "",
         openid: t.openid ? String(t.openid) : "",
         unid: t.unionid ? String(t.unionid) : "",
-        sdkVersion: z
+        sdkVersion: W
       }, this.config.appVersion = t.versionCode ? String(t.versionCode) : "", this.config.strictMode = t.strictMode;
-    }, n.prototype.cycleTask = function (t) {
+    }, r.prototype.cycleTask = function (t) {
       var e = this;
       this.intervalID = window.setInterval(function () {
-        e.store.getEvents().then(function (t) {
-          var r = [],
-              n = JSON.parse(e.storage.getItem(s));
-          n || (n = []), t && t.forEach(function (t) {
-            var e = p(t.mapValue);
-            -1 == n.indexOf(e) && (r.push(t), n.push(e));
-          }), 0 != r.length && (e.storage.setItem(s, JSON.stringify(n)), e._normalLogPipeline(e.assembleData(r)));
+        e.pauseSearching || e.store.getEvents().then(function (t) {
+          0 == t.length && (e.pauseSearching = !0);
+          var n = [],
+              r = JSON.parse(e.storage.getItem(a));
+          r || (r = []), t && t.forEach(function (t) {
+            var e = f(t.mapValue);
+            -1 == r.indexOf(e) && (n.push(t), r.push(e));
+          }), 0 != n.length && (e.storage.setItem(a, JSON.stringify(r)), e._normalLogPipeline(e.assembleData(n)));
         }).catch(function (t) {});
       }, t);
-    }, n.prototype.onReport = function (t, e, r) {
-      var n = this;
+    }, r.prototype.onReport = function (t, e, n) {
+      var r = this;
       if (this.isUnderIE8) this.errorReport.reportError("601", "UnderIE8");else {
-        var o = this.generateData(t, e, r);
-        if (r && 0 == this.delayTime && !this.underWeakNet) this._normalLogPipeline(this.assembleData(o));else {
+        this.pauseSearching = !1;
+        var o = this.generateData(t, e, n);
+        if (n && 0 == this.delayTime && !this.underWeakNet) this._normalLogPipeline(this.assembleData(o));else {
           var i = o.shift();
           i && this.store.insertEvent(i, function (t) {
-            t && n.errorReport.reportError("604", "insertEvent fail!");
+            t && r.errorReport.reportError("604", "insertEvent fail!");
           }).catch(function (t) {
-            n._normalLogPipeline(n.assembleData(o));
+            r._normalLogPipeline(r.assembleData(o));
           });
         }
       }
-    }, n.prototype.onSendBeacon = function (t, e) {
+    }, r.prototype.onSendBeacon = function (t, e) {
       if (this.isUnderIE) this.errorReport.reportError("605", "UnderIE");else {
-        var r = this.assembleData(this.generateData(t, e, !0));
-        "function" == typeof navigator.sendBeacon && navigator.sendBeacon(this.uploadUrl || this.strategy.getUploadUrl(), JSON.stringify(r));
+        this.pauseSearching = !1;
+        var n = this.assembleData(this.generateData(t, e, !0));
+        "function" == typeof navigator.sendBeacon && navigator.sendBeacon(this.uploadUrl || this.strategy.getUploadUrl(), JSON.stringify(n));
       }
-    }, n.prototype.generateData = function (t, r, n) {
+    }, r.prototype.generateData = function (t, n, r) {
       var o = [],
-          i = "4.5.6-web_" + (n ? "direct_log_id" : "normal_log_id"),
-          a = Number(this.storage.getItem(i));
-      return a = a || 1, r = _e(_e({}, r), {
-        A99: n ? "Y" : "N",
-        A100: a.toString(),
-        A72: z,
+          i = "4.5.14-web_" + (r ? "direct_log_id" : "normal_log_id"),
+          s = Number(this.storage.getItem(i));
+      return s = s || 1, n = _e(_e({}, n), {
+        A99: r ? "Y" : "N",
+        A100: s.toString(),
+        A72: W,
         A88: this.logidStartTime
-      }), a++, this.storage.setItem(i, a.toString()), o.push({
+      }), s++, this.storage.setItem(i, s.toString()), o.push({
         eventCode: t,
         eventTime: Date.now().toString(),
-        mapValue: h(r, this.config.strictMode)
+        mapValue: p(n, this.config.strictMode)
       }), o;
-    }, n.prototype.assembleData = function (t) {
-      var r = this.beaconSession.getSession();
+    }, r.prototype.assembleData = function (t) {
+      var n = this.beaconSession.getSession();
       return {
-        appVersion: this.config.appVersion ? f(this.config.appVersion) : "",
+        appVersion: this.config.appVersion ? h(this.config.appVersion) : "",
         sdkId: "js",
-        sdkVersion: z,
+        sdkVersion: W,
         mainAppKey: this.config.appkey,
         platformId: 3,
-        common: h(_e(_e({}, this.additionalParams), {
+        common: p(_e(_e({}, this.additionalParams), {
           A2: this.commonInfo.deviceId,
           A8: this.commonInfo.openid,
           A12: this.commonInfo.language,
           A17: this.commonInfo.pixel,
           A23: this.commonInfo.channelID,
           A50: this.commonInfo.unid,
-          A76: r.sessionId,
+          A76: n.sessionId,
           A101: this.commonInfo.userAgent,
           A102: window.location.href,
           A104: document.referrer,
@@ -2219,14 +1613,13 @@ module.exports = COS;
         }), !1),
         events: t
       };
-    }, n.prototype.monitorUploadFailed = function () {
+    }, r.prototype.monitorUploadFailed = function () {
       this.uselessCycleTaskNum++, this.uselessCycleTaskNum >= 5 && (window.clearInterval(this.intervalID), this.cycleTask(6e4), this.underWeakNet = !0);
-    }, n.prototype.doCustomCycleTask = function () {
+    }, r.prototype.doCustomCycleTask = function () {
       this.uselessCycleTaskNum >= 5 && (window.clearInterval(this.intervalID), this.cycleTask(this.initDelayTime)), this.uselessCycleTaskNum = 0, this.underWeakNet = !1;
-    }, n;
+    }, r;
   }(v);
 });
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/webpack/buildin/global.js */ "./node_modules/webpack/buildin/global.js")))
 
 /***/ }),
 
@@ -7555,7 +6948,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.4.12\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.4.13\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
