@@ -3650,30 +3650,27 @@ function _submitRequest(params, callback) {
     // 分块上传时给父级tracker设置url信息
     params.tracker && params.tracker.parent && params.tracker.parent.setParams({ reqUrl: fullUrl, accelerate: useAccelerate ? 'Y' : 'N' });
     var sender = (self.options.Request || REQUEST)(opt, function (r) {
-        if (r.error === 'abort') return;
+        if (r && r.error === 'abort') return;
 
         var receive = {
             options: opt,
-            error: err,
-            statusCode: response && response.statusCode || 0,
-            headers: response && response.headers || {},
-            body: body,
+            error: r && r.error,
+            statusCode: r && r.statusCode || 0,
+            statusMessage: r && r.statusMessage || '',
+            headers: r && r.headers || {},
+            body: r && r.body
         };
-        self.emit('after-receive', receive);
-        err = receive.error;
-        body = receive.body;
-        response = {
-            statusCode: receive.statusCode,
-            headers: receive.headers,
-        };
-
         // 抛出事件，允许修改返回值的 error、statusCode、statusMessage、body
-        self.emit('after-receive', r);
-        var response = {statusCode: r.statusCode, statusMessage: r.statusMessage, headers: r.headers};
-        var err = r.error;
-        var body = r.body;
-
+        self.emit('after-receive', receive);
+        var err = receive.error;
+        var body = receive.body;
         // 返回内容添加 状态码 和 headers
+        var response = {
+            statusCode: receive.statusCode,
+            statusMessage: receive.statusMessage,
+            headers: receive.headers
+        };
+
         var hasReturned;
         var cb = function (err, data) {
             TaskId && self.off('inner-kill-task', killTask);
