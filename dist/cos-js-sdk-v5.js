@@ -6948,7 +6948,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.4.13\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.4.14\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -12376,30 +12376,25 @@ function _submitRequest(params, callback) {
     accelerate: useAccelerate ? 'Y' : 'N'
   });
   var sender = (self.options.Request || REQUEST)(opt, function (r) {
-    if (r.error === 'abort') return;
+    if (r && r.error === 'abort') return;
     var receive = {
       options: opt,
-      error: err,
-      statusCode: response && response.statusCode || 0,
-      headers: response && response.headers || {},
-      body: body
+      error: r && r.error,
+      statusCode: r && r.statusCode || 0,
+      statusMessage: r && r.statusMessage || '',
+      headers: r && r.headers || {},
+      body: r && r.body
     };
-    self.emit('after-receive', receive);
-    err = receive.error;
-    body = receive.body;
-    response = {
-      statusCode: receive.statusCode,
-      headers: receive.headers
-    }; // 抛出事件，允许修改返回值的 error、statusCode、statusMessage、body
+    self.emit('after-receive', receive); // 抛出事件，允许修改返回值的 error、statusCode、statusMessage、body
 
-    self.emit('after-receive', r);
+    var err = receive.error;
+    var body = receive.body; // 返回内容添加 状态码 和 headers
+
     var response = {
-      statusCode: r.statusCode,
-      statusMessage: r.statusMessage,
-      headers: r.headers
-    };
-    var err = r.error;
-    var body = r.body; // 返回内容添加 状态码 和 headers
+      statusCode: receive.statusCode,
+      statusMessage: receive.statusMessage,
+      headers: receive.headers
+    }; // 返回内容添加 状态码 和 headers
 
     var hasReturned;
 
@@ -14203,7 +14198,9 @@ var formatParams = function formatParams(apiName, params) {
         // SSE-COS、SSE-KMS
         'x-cos-server-side-encryption': 'ServerSideEncryption',
         'x-cos-server-side-encryption-cos-kms-key-id': 'SSEKMSKeyId',
-        'x-cos-server-side-encryption-context': 'SSEContext'
+        'x-cos-server-side-encryption-context': 'SSEContext',
+        // 上传时图片处理
+        'Pic-Operations': 'PicOperations'
       };
       util.each(headerMap, function (paramKey, headerKey) {
         if (params[paramKey] !== undefined) {

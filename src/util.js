@@ -506,6 +506,8 @@ var formatParams = function (apiName, params) {
                 'x-cos-server-side-encryption': 'ServerSideEncryption',
                 'x-cos-server-side-encryption-cos-kms-key-id': 'SSEKMSKeyId',
                 'x-cos-server-side-encryption-context': 'SSEContext',
+                // 上传时图片处理
+                'Pic-Operations': 'PicOperations',
             };
             util.each(headerMap, function (paramKey, headerKey) {
                 if (params[paramKey] !== undefined) {
