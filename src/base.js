@@ -3660,16 +3660,17 @@ function _submitRequest(params, callback) {
             headers: r && r.headers || {},
             body: r && r.body
         };
-        self.emit('after-receive', receive); // 抛出事件，允许修改返回值的 error、statusCode、statusMessage、body
+        // 抛出事件，允许修改返回值的 error、statusCode、statusMessage、body
+        self.emit('after-receive', receive);
         var err = receive.error;
-        var body = receive.body; // 返回内容添加 状态码 和 headers
+        var body = receive.body;
+        // 返回内容添加 状态码 和 headers
         var response = {
             statusCode: receive.statusCode,
             statusMessage: receive.statusMessage,
             headers: receive.headers
         };
 
-        // 返回内容添加 状态码 和 headers
         var hasReturned;
         var cb = function (err, data) {
             TaskId && self.off('inner-kill-task', killTask);

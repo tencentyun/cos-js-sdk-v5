@@ -12384,9 +12384,9 @@ function _submitRequest(params, callback) {
       statusMessage: r && r.statusMessage || '',
       headers: r && r.headers || {},
       body: r && r.body
-    };
-    self.emit('after-receive', receive); // 抛出事件，允许修改返回值的 error、statusCode、statusMessage、body
+    }; // 抛出事件，允许修改返回值的 error、statusCode、statusMessage、body
 
+    self.emit('after-receive', receive);
     var err = receive.error;
     var body = receive.body; // 返回内容添加 状态码 和 headers
 
@@ -12394,8 +12394,7 @@ function _submitRequest(params, callback) {
       statusCode: receive.statusCode,
       statusMessage: receive.statusMessage,
       headers: receive.headers
-    }; // 返回内容添加 状态码 和 headers
-
+    };
     var hasReturned;
 
     var cb = function cb(err, data) {
