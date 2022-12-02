@@ -13517,7 +13517,7 @@ var getFileSize = function getFileSize(api, params, callback) {
   if (typeof params.Body === 'string') {
     size = params.Body.length;
   } else if (params.Body instanceof ArrayBuffer) {
-    size = params.Body.size;
+    size = params.Body.byteLength;
   } else {
     if (params.Body && (params.Body instanceof Blob || params.Body.toString() === '[object File]' || params.Body.toString() === '[object Blob]')) {
       size = params.Body.size;
