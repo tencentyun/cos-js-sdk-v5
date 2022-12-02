@@ -742,25 +742,21 @@ var throttleOnProgress = function (total, onProgress) {
 };
 
 var getFileSize = function (api, params, callback) {
-  var size;
-  if (typeof params.Body === 'string') {
-    params.Body = new Blob([params.Body], { type: 'text/plain' });
-  } else if (params.Body instanceof ArrayBuffer) {
-    params.Body = new Blob([params.Body]);
-  }
-  if (
-    params.Body &&
-    (params.Body instanceof Blob ||
-      params.Body.toString() === '[object File]' ||
-      params.Body.toString() === '[object Blob]')
-  ) {
-    size = params.Body.size;
-  } else {
-    callback(util.error(new Error('params body format error, Only allow File|Blob|String.')));
-    return;
-  }
-  params.ContentLength = size;
-  callback(null, size);
+    var size;
+    if (typeof params.Body === 'string') {
+        size = params.Body.length;
+    } else if (params.Body instanceof ArrayBuffer) {
+        size = params.Body.byteLength;
+    } else {
+        if ((params.Body && (params.Body instanceof Blob || params.Body.toString() === '[object File]' || params.Body.toString() === '[object Blob]'))) {
+            size = params.Body.size;
+        } else {
+            callback(util.error(new Error('params body format error, Only allow File|Blob|String.')));
+            return;
+        }
+    }
+    params.ContentLength = size;
+    callback(null, size);
 };
 
 // 获取调正的时间戳

@@ -115,132 +115,1367 @@ module.exports = COS;
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-/*
- * $Id: base64.js,v 2.15 2014/04/05 12:58:57 dankogai Exp dankogai $
- *
- *  Licensed under the BSD 3-Clause License.
- *    http://opensource.org/licenses/BSD-3-Clause
- *
- *  References:
- *    http://en.wikipedia.org/wiki/Base64
- */
+var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;var _typeof = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_modules/@babel/runtime/helpers/typeof.js");
+!function (t, e) {
+  "object" == ( false ? undefined : _typeof(exports)) && "undefined" != typeof module ? module.exports = e() :  true ? !(__WEBPACK_AMD_DEFINE_FACTORY__ = (e),
+				__WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ?
+				(__WEBPACK_AMD_DEFINE_FACTORY__.call(exports, __webpack_require__, exports, module)) :
+				__WEBPACK_AMD_DEFINE_FACTORY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__)) : undefined;
+}(this, function () {
+  "use strict";
 
-var Base64 = function (global) {
-  global = global || {};
-  'use strict';
-  // existing version for noConflict()
-  var _Base64 = global.Base64;
-  var version = "2.1.9";
-  // if node.js, we use Buffer
-  var buffer;
-  // constants
-  var b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-  var b64tab = function (bin) {
-    var t = {};
-    for (var i = 0, l = bin.length; i < l; i++) t[bin.charAt(i)] = i;
-    return t;
-  }(b64chars);
-  var fromCharCode = String.fromCharCode;
-  // encoder stuff
-  var cb_utob = function cb_utob(c) {
-    if (c.length < 2) {
-      var cc = c.charCodeAt(0);
-      return cc < 0x80 ? c : cc < 0x800 ? fromCharCode(0xc0 | cc >>> 6) + fromCharCode(0x80 | cc & 0x3f) : fromCharCode(0xe0 | cc >>> 12 & 0x0f) + fromCharCode(0x80 | cc >>> 6 & 0x3f) + fromCharCode(0x80 | cc & 0x3f);
-    } else {
-      var cc = 0x10000 + (c.charCodeAt(0) - 0xD800) * 0x400 + (c.charCodeAt(1) - 0xDC00);
-      return fromCharCode(0xf0 | cc >>> 18 & 0x07) + fromCharCode(0x80 | cc >>> 12 & 0x3f) + fromCharCode(0x80 | cc >>> 6 & 0x3f) + fromCharCode(0x80 | cc & 0x3f);
+  var _t = function t(e, n) {
+    return _t = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (t, e) {
+      t.__proto__ = e;
+    } || function (t, e) {
+      for (var n in e) {
+        Object.prototype.hasOwnProperty.call(e, n) && (t[n] = e[n]);
+      }
+    }, _t(e, n);
+  };
+  var _e = function e() {
+    return _e = Object.assign || function (t) {
+      for (var e, n = 1, r = arguments.length; n < r; n++) {
+        for (var o in e = arguments[n]) {
+          Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
+        }
+      }
+      return t;
+    }, _e.apply(this, arguments);
+  };
+  function n(t, e, n, r) {
+    return new (n || (n = Promise))(function (o, i) {
+      function s(t) {
+        try {
+          u(r.next(t));
+        } catch (t) {
+          i(t);
+        }
+      }
+      function a(t) {
+        try {
+          u(r.throw(t));
+        } catch (t) {
+          i(t);
+        }
+      }
+      function u(t) {
+        var e;
+        t.done ? o(t.value) : (e = t.value, e instanceof n ? e : new n(function (t) {
+          t(e);
+        })).then(s, a);
+      }
+      u((r = r.apply(t, e || [])).next());
+    });
+  }
+  function r(t, e) {
+    var n,
+      r,
+      o,
+      i,
+      s = {
+        label: 0,
+        sent: function sent() {
+          if (1 & o[0]) throw o[1];
+          return o[1];
+        },
+        trys: [],
+        ops: []
+      };
+    return i = {
+      next: a(0),
+      throw: a(1),
+      return: a(2)
+    }, "function" == typeof Symbol && (i[Symbol.iterator] = function () {
+      return this;
+    }), i;
+    function a(i) {
+      return function (a) {
+        return function (i) {
+          if (n) throw new TypeError("Generator is already executing.");
+          for (; s;) {
+            try {
+              if (n = 1, r && (o = 2 & i[0] ? r.return : i[0] ? r.throw || ((o = r.return) && o.call(r), 0) : r.next) && !(o = o.call(r, i[1])).done) return o;
+              switch (r = 0, o && (i = [2 & i[0], o.value]), i[0]) {
+                case 0:
+                case 1:
+                  o = i;
+                  break;
+                case 4:
+                  return s.label++, {
+                    value: i[1],
+                    done: !1
+                  };
+                case 5:
+                  s.label++, r = i[1], i = [0];
+                  continue;
+                case 7:
+                  i = s.ops.pop(), s.trys.pop();
+                  continue;
+                default:
+                  if (!(o = s.trys, (o = o.length > 0 && o[o.length - 1]) || 6 !== i[0] && 2 !== i[0])) {
+                    s = 0;
+                    continue;
+                  }
+                  if (3 === i[0] && (!o || i[1] > o[0] && i[1] < o[3])) {
+                    s.label = i[1];
+                    break;
+                  }
+                  if (6 === i[0] && s.label < o[1]) {
+                    s.label = o[1], o = i;
+                    break;
+                  }
+                  if (o && s.label < o[2]) {
+                    s.label = o[2], s.ops.push(i);
+                    break;
+                  }
+                  o[2] && s.ops.pop(), s.trys.pop();
+                  continue;
+              }
+              i = e.call(t, s);
+            } catch (t) {
+              i = [6, t], r = 0;
+            } finally {
+              n = o = 0;
+            }
+          }
+          if (5 & i[0]) throw i[1];
+          return {
+            value: i[0] ? i[1] : void 0,
+            done: !0
+          };
+        }([i, a]);
+      };
     }
-  };
-  var re_utob = /[\uD800-\uDBFF][\uDC00-\uDFFFF]|[^\x00-\x7F]/g;
-  var utob = function utob(u) {
-    return u.replace(re_utob, cb_utob);
-  };
-  var cb_encode = function cb_encode(ccc) {
-    var padlen = [0, 2, 1][ccc.length % 3],
-      ord = ccc.charCodeAt(0) << 16 | (ccc.length > 1 ? ccc.charCodeAt(1) : 0) << 8 | (ccc.length > 2 ? ccc.charCodeAt(2) : 0),
-      chars = [b64chars.charAt(ord >>> 18), b64chars.charAt(ord >>> 12 & 63), padlen >= 2 ? '=' : b64chars.charAt(ord >>> 6 & 63), padlen >= 1 ? '=' : b64chars.charAt(ord & 63)];
-    return chars.join('');
-  };
-  var btoa = global.btoa ? function (b) {
-    return global.btoa(b);
-  } : function (b) {
-    return b.replace(/[\s\S]{1,3}/g, cb_encode);
-  };
-  var _encode = buffer ? function (u) {
-    return (u.constructor === buffer.constructor ? u : new buffer(u)).toString('base64');
-  } : function (u) {
-    return btoa(utob(u));
-  };
-  var encode = function encode(u, urisafe) {
-    return !urisafe ? _encode(String(u)) : _encode(String(u)).replace(/[+\/]/g, function (m0) {
-      return m0 == '+' ? '-' : '_';
-    }).replace(/=/g, '');
-  };
-  var encodeURI = function encodeURI(u) {
-    return encode(u, true);
-  };
-  // decoder stuff
-  var re_btou = new RegExp(['[\xC0-\xDF][\x80-\xBF]', '[\xE0-\xEF][\x80-\xBF]{2}', '[\xF0-\xF7][\x80-\xBF]{3}'].join('|'), 'g');
-  var cb_btou = function cb_btou(cccc) {
-    switch (cccc.length) {
-      case 4:
-        var cp = (0x07 & cccc.charCodeAt(0)) << 18 | (0x3f & cccc.charCodeAt(1)) << 12 | (0x3f & cccc.charCodeAt(2)) << 6 | 0x3f & cccc.charCodeAt(3),
-          offset = cp - 0x10000;
-        return fromCharCode((offset >>> 10) + 0xD800) + fromCharCode((offset & 0x3FF) + 0xDC00);
-      case 3:
-        return fromCharCode((0x0f & cccc.charCodeAt(0)) << 12 | (0x3f & cccc.charCodeAt(1)) << 6 | 0x3f & cccc.charCodeAt(2));
-      default:
-        return fromCharCode((0x1f & cccc.charCodeAt(0)) << 6 | 0x3f & cccc.charCodeAt(1));
+  }
+  var o = "__BEACON_",
+    i = "__BEACON_deviceId",
+    s = "last_report_time",
+    a = "sending_event_ids",
+    u = "beacon_config",
+    c = "beacon_config_request_time",
+    l = function () {
+      function t() {
+        var t = this;
+        this.emit = function (e, n) {
+          if (t) {
+            var r,
+              o = t.__EventsList[e];
+            if (null == o ? void 0 : o.length) {
+              o = o.slice();
+              for (var i = 0; i < o.length; i++) {
+                r = o[i];
+                try {
+                  var s = r.callback.apply(t, [n]);
+                  if (1 === r.type && t.remove(e, r.callback), !1 === s) break;
+                } catch (t) {
+                  throw t;
+                }
+              }
+            }
+            return t;
+          }
+        }, this.__EventsList = {};
+      }
+      return t.prototype.indexOf = function (t, e) {
+        for (var n = 0; n < t.length; n++) {
+          if (t[n].callback === e) return n;
+        }
+        return -1;
+      }, t.prototype.on = function (t, e, n) {
+        if (void 0 === n && (n = 0), this) {
+          var r = this.__EventsList[t];
+          if (r || (r = this.__EventsList[t] = []), -1 === this.indexOf(r, e)) {
+            var o = {
+              name: t,
+              type: n || 0,
+              callback: e
+            };
+            return r.push(o), this;
+          }
+          return this;
+        }
+      }, t.prototype.one = function (t, e) {
+        this.on(t, e, 1);
+      }, t.prototype.remove = function (t, e) {
+        if (this) {
+          var n = this.__EventsList[t];
+          if (!n) return null;
+          if (!e) {
+            try {
+              delete this.__EventsList[t];
+            } catch (t) {}
+            return null;
+          }
+          if (n.length) {
+            var r = this.indexOf(n, e);
+            n.splice(r, 1);
+          }
+          return this;
+        }
+      }, t;
+    }();
+  function p(t, e) {
+    for (var n = {}, r = 0, o = Object.keys(t); r < o.length; r++) {
+      var i = o[r],
+        s = t[i];
+      if ("string" == typeof s) n[h(i)] = h(s);else {
+        if (e) throw new Error("value mast be string  !!!!");
+        n[h(String(i))] = h(String(s));
+      }
     }
+    return n;
+  }
+  function h(t) {
+    if ("string" != typeof t) return t;
+    try {
+      return t.replace(new RegExp("\\|", "g"), "%7C").replace(new RegExp("\\&", "g"), "%26").replace(new RegExp("\\=", "g"), "%3D").replace(new RegExp("\\+", "g"), "%2B");
+    } catch (t) {
+      return "";
+    }
+  }
+  function f(t) {
+    return String(t.A99) + String(t.A100);
+  }
+  var d = function d() {};
+  var v = function () {
+      function t(t) {
+        var n = this;
+        this.lifeCycle = new l(), this.uploadJobQueue = [], this.additionalParams = {}, this.delayTime = 0, this._normalLogPipeline = function (t) {
+          if (!t || !t.reduce || !t.length) throw new TypeError("createPipeline 方法需要传入至少有一个 pipe 的数组");
+          return 1 === t.length ? function (e, n) {
+            t[0](e, n || d);
+          } : t.reduce(function (t, e) {
+            return function (n, r) {
+              return void 0 === r && (r = d), t(n, function (t) {
+                return null == e ? void 0 : e(t, r);
+              });
+            };
+          });
+        }([function (t) {
+          n.send({
+            url: n.strategy.getUploadUrl(),
+            data: t,
+            method: "post",
+            contentType: "application/json;charset=UTF-8"
+          }, function () {
+            var e = n.config.onReportSuccess;
+            "function" == typeof e && e(JSON.stringify(t.events));
+          }, function () {
+            var e = n.config.onReportFail;
+            "function" == typeof e && e(JSON.stringify(t.events));
+          });
+        }]), function (t, e) {
+          if (!t) throw e instanceof Error ? e : new Error(e);
+        }(Boolean(t.appkey), "appkey must be initial"), this.config = _e({}, t);
+      }
+      return t.prototype.onUserAction = function (t, e) {
+        this.preReport(t, e, !1);
+      }, t.prototype.onDirectUserAction = function (t, e) {
+        this.preReport(t, e, !0);
+      }, t.prototype.preReport = function (t, e, n) {
+        t ? this.strategy.isEventUpOnOff() && (this.strategy.isBlackEvent(t) || this.strategy.isSampleEvent(t) || this.onReport(t, e, n)) : this.errorReport.reportError("602", " no eventCode");
+      }, t.prototype.addAdditionalParams = function (t) {
+        for (var e = 0, n = Object.keys(t); e < n.length; e++) {
+          var r = n[e];
+          this.additionalParams[r] = t[r];
+        }
+      }, t.prototype.setChannelId = function (t) {
+        this.commonInfo.channelID = String(t);
+      }, t.prototype.setOpenId = function (t) {
+        this.commonInfo.openid = String(t);
+      }, t.prototype.setUnionid = function (t) {
+        this.commonInfo.unid = String(t);
+      }, t.prototype.getDeviceId = function () {
+        return this.commonInfo.deviceId;
+      }, t.prototype.getCommonInfo = function () {
+        return this.commonInfo;
+      }, t.prototype.removeSendingId = function (t) {
+        try {
+          var e = JSON.parse(this.storage.getItem(a)),
+            n = e.indexOf(t);
+          -1 != n && (e.splice(n, 1), this.storage.setItem(a, JSON.stringify(e)));
+        } catch (t) {}
+      }, t;
+    }(),
+    g = function () {
+      function t(t, e, n, r) {
+        this.requestParams = {}, this.network = r, this.requestParams.attaid = "00400014144", this.requestParams.token = "6478159937", this.requestParams.product_id = t.appkey, this.requestParams.platform = n, this.requestParams.uin = e.deviceId, this.requestParams.model = "", this.requestParams.os = n, this.requestParams.app_version = t.appVersion, this.requestParams.sdk_version = e.sdkVersion, this.requestParams.error_stack = "", this.uploadUrl = t.isOversea ? "https://htrace.wetvinfo.com/kv" : "https://h.trace.qq.com/kv";
+      }
+      return t.prototype.reportError = function (t, e) {
+        this.requestParams._dc = Math.random(), this.requestParams.error_msg = e, this.requestParams.error_code = t, this.network.get(this.uploadUrl, {
+          params: this.requestParams
+        }).catch(function (t) {});
+      }, t;
+    }(),
+    y = function () {
+      function t(t, e, n, r, o) {
+        this.strategy = {
+          isEventUpOnOff: !0,
+          httpsUploadUrl: "https://otheve.beacon.qq.com/analytics/v2_upload",
+          requestInterval: 30,
+          blacklist: [],
+          samplelist: []
+        }, this.realSample = {}, this.appkey = "", this.needQueryConfig = !0, this.appkey = e.appkey, this.storage = r, this.needQueryConfig = t;
+        try {
+          var i = JSON.parse(this.storage.getItem(u));
+          i && this.processData(i);
+        } catch (t) {}
+        e.isOversea && (this.strategy.httpsUploadUrl = "https://svibeacon.onezapp.com/analytics/v2_upload"), !e.isOversea && this.needRequestConfig() && this.requestConfig(e.appVersion, n, o);
+      }
+      return t.prototype.requestConfig = function (t, e, n) {
+        var r = this;
+        this.storage.setItem(c, Date.now().toString()), n.post("https://oth.str.beacon.qq.com/trpc.beacon.configserver.BeaconConfigService/QueryConfig", {
+          platformId: "undefined" == typeof wx ? "3" : "4",
+          mainAppKey: this.appkey,
+          appVersion: t,
+          sdkVersion: e.sdkVersion,
+          osVersion: e.userAgent,
+          model: "",
+          packageName: "",
+          params: {
+            A3: e.deviceId
+          }
+        }).then(function (t) {
+          if (0 == t.data.ret) try {
+            var e = JSON.parse(t.data.beaconConfig);
+            e && (r.processData(e), r.storage.setItem(u, t.data.beaconConfig));
+          } catch (t) {} else r.processData(null), r.storage.setItem(u, "");
+        }).catch(function (t) {});
+      }, t.prototype.processData = function (t) {
+        var e, n, r, o, i;
+        this.strategy.isEventUpOnOff = null !== (e = null == t ? void 0 : t.isEventUpOnOff) && void 0 !== e ? e : this.strategy.isEventUpOnOff, this.strategy.httpsUploadUrl = null !== (n = null == t ? void 0 : t.httpsUploadUrl) && void 0 !== n ? n : this.strategy.httpsUploadUrl, this.strategy.requestInterval = null !== (r = null == t ? void 0 : t.requestInterval) && void 0 !== r ? r : this.strategy.requestInterval, this.strategy.blacklist = null !== (o = null == t ? void 0 : t.blacklist) && void 0 !== o ? o : this.strategy.blacklist, this.strategy.samplelist = null !== (i = null == t ? void 0 : t.samplelist) && void 0 !== i ? i : this.strategy.samplelist;
+        for (var s = 0, a = this.strategy.samplelist; s < a.length; s++) {
+          var u = a[s].split(",");
+          2 == u.length && (this.realSample[u[0]] = u[1]);
+        }
+      }, t.prototype.needRequestConfig = function () {
+        if (!this.needQueryConfig) return !1;
+        var t = Number(this.storage.getItem(c));
+        return Date.now() - t > 60 * this.strategy.requestInterval * 1e3;
+      }, t.prototype.getUploadUrl = function () {
+        return this.strategy.httpsUploadUrl + "?appkey=" + this.appkey;
+      }, t.prototype.isBlackEvent = function (t) {
+        return -1 != this.strategy.blacklist.indexOf(t);
+      }, t.prototype.isEventUpOnOff = function () {
+        return this.strategy.isEventUpOnOff;
+      }, t.prototype.isSampleEvent = function (t) {
+        return !!Object.prototype.hasOwnProperty.call(this.realSample, t) && this.realSample[t] < Math.floor(Math.random() * Math.floor(1e4));
+      }, t;
+    }(),
+    m = "session_storage_key",
+    w = function () {
+      function t(t, e, n) {
+        this.getSessionStackDepth = 0, this.beacon = n, this.storage = t, this.duration = e, this.appkey = n.config.appkey;
+      }
+      return t.prototype.getSession = function () {
+        this.getSessionStackDepth += 1;
+        var t = this.storage.getItem(m);
+        if (!t) return this.createSession();
+        var e = "",
+          n = 0;
+        try {
+          var r = JSON.parse(t) || {
+            sessionId: void 0,
+            sessionStart: void 0
+          };
+          if (!r.sessionId || !r.sessionStart) return this.createSession();
+          var o = Number(this.storage.getItem(s));
+          if (Date.now() - o > this.duration) return this.createSession();
+          e = r.sessionId, n = r.sessionStart, this.getSessionStackDepth = 0;
+        } catch (t) {}
+        return {
+          sessionId: e,
+          sessionStart: n
+        };
+      }, t.prototype.createSession = function () {
+        var t = Date.now(),
+          e = {
+            sessionId: this.appkey + "_" + t.toString(),
+            sessionStart: t
+          };
+        this.storage.setItem(m, JSON.stringify(e)), this.storage.setItem(s, t.toString());
+        var n = "is_new_user",
+          r = this.storage.getItem(n);
+        return this.getSessionStackDepth <= 1 && this.beacon.onDirectUserAction("rqd_applaunched", {
+          A21: r ? "N" : "Y"
+        }), this.storage.setItem(n, JSON.stringify(!1)), e;
+      }, t;
+    }();
+  function b() {
+    var t = navigator.userAgent,
+      e = t.indexOf("compatible") > -1 && t.indexOf("MSIE") > -1,
+      n = t.indexOf("Edge") > -1 && !e,
+      r = t.indexOf("Trident") > -1 && t.indexOf("rv:11.0") > -1;
+    if (e) {
+      new RegExp("MSIE (\\d+\\.\\d+);").test(t);
+      var o = parseFloat(RegExp.$1);
+      return 7 == o ? 7 : 8 == o ? 8 : 9 == o ? 9 : 10 == o ? 10 : 6;
+    }
+    return n ? -2 : r ? 11 : -1;
+  }
+  function S(t, e) {
+    var n, r;
+    return (n = "https://tun-cos-1258344701.file.myqcloud.com/fp.js", void 0 === r && (r = Date.now() + "-" + Math.random()), new Promise(function (t, e) {
+      if (document.getElementById(r)) t(void 0);else {
+        var o = document.getElementsByTagName("head")[0],
+          i = document.createElement("script");
+        i.onload = function () {
+          return function () {
+            i.onload = null, t(void 0);
+          };
+        }, i.onerror = function (t) {
+          i.onerror = null, o.removeChild(i), e(t);
+        }, i.src = n, i.id = r, o.appendChild(i);
+      }
+    })).then(function () {
+      new Fingerprint().getQimei36(t, e);
+    }).catch(function (t) {}), "";
+  }
+  var _I = function I() {
+    return (_I = Object.assign || function (t) {
+      for (var e, n = 1, r = arguments.length; n < r; n++) {
+        for (var o in e = arguments[n]) {
+          Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
+        }
+      }
+      return t;
+    }).apply(this, arguments);
   };
-  var btou = function btou(b) {
-    return b.replace(re_btou, cb_btou);
+  var E,
+    k = function () {
+      function t(t, e) {
+        void 0 === e && (e = {}), this.reportOptions = {}, this.config = t, this.reportOptions = e;
+      }
+      return t.canUseDB = function () {
+        return !!(null === window || void 0 === window ? void 0 : window.indexedDB);
+      }, t.prototype.openDB = function () {
+        var e = this;
+        return new Promise(function (n, r) {
+          if (!t.canUseDB()) return r({
+            message: "当前不支持 indexeddb"
+          });
+          var o = e.config,
+            i = o.name,
+            s = o.version,
+            a = o.stores,
+            u = indexedDB.open(i, s);
+          u.onsuccess = function () {
+            e.db = u.result, n(), _I({
+              result: 1,
+              func: "open",
+              params: JSON.stringify(e.config)
+            }, e.reportOptions);
+          }, u.onerror = function (t) {
+            var n, o;
+            r(t), _I({
+              result: 0,
+              func: "open",
+              params: JSON.stringify(e.config),
+              error_msg: null === (o = null === (n = t.target) || void 0 === n ? void 0 : n.error) || void 0 === o ? void 0 : o.message
+            }, e.reportOptions);
+          }, u.onupgradeneeded = function () {
+            e.db = u.result;
+            try {
+              null == a || a.forEach(function (t) {
+                e.createStore(t);
+              });
+            } catch (t) {
+              _I({
+                result: 0,
+                func: "open",
+                params: JSON.stringify(e.config),
+                error_msg: t.message
+              }, e.reportOptions), r(t);
+            }
+          };
+        });
+      }, t.prototype.useStore = function (t) {
+        return this.storeName = t, this;
+      }, t.prototype.deleteDB = function () {
+        var t = this;
+        return this.closeDB(), new Promise(function (e, n) {
+          var r = indexedDB.deleteDatabase(t.config.name);
+          r.onsuccess = function () {
+            return e();
+          }, r.onerror = n;
+        });
+      }, t.prototype.closeDB = function () {
+        var t;
+        null === (t = this.db) || void 0 === t || t.close(), this.db = null;
+      }, t.prototype.getStoreCount = function () {
+        var t = this;
+        return new Promise(function (e, n) {
+          var r = t.getStore("readonly").count();
+          r.onsuccess = function () {
+            return e(r.result);
+          }, r.onerror = n;
+        });
+      }, t.prototype.clearStore = function () {
+        var t = this;
+        return new Promise(function (e, n) {
+          var r = t.getStore("readwrite").clear();
+          r.onsuccess = function () {
+            return e();
+          }, r.onerror = n;
+        });
+      }, t.prototype.add = function (t, e) {
+        var n = this;
+        return new Promise(function (r, o) {
+          var i = n.getStore("readwrite").add(t, e);
+          i.onsuccess = function () {
+            r(i.result);
+          }, i.onerror = o;
+        });
+      }, t.prototype.put = function (t, e) {
+        var n = this;
+        return new Promise(function (r, o) {
+          var i = n.getStore("readwrite").put(t, e);
+          i.onsuccess = function () {
+            r(i.result);
+          }, i.onerror = o;
+        });
+      }, t.prototype.getStoreAllData = function () {
+        var t = this;
+        return new Promise(function (e, n) {
+          var r = t.getStore("readonly").openCursor(),
+            o = [];
+          r.onsuccess = function () {
+            var t;
+            if (null === (t = r.result) || void 0 === t ? void 0 : t.value) {
+              var n = r.result.value;
+              o.push(n), r.result.continue();
+            } else e(o);
+          }, r.onerror = n;
+        });
+      }, t.prototype.getDataRangeByIndex = function (t, e, n, r, o) {
+        var i = this;
+        return new Promise(function (s, a) {
+          var u = i.getStore().index(t),
+            c = IDBKeyRange.bound(e, n, r, o),
+            l = [],
+            p = u.openCursor(c);
+          p.onsuccess = function () {
+            var t;
+            (null === (t = null == p ? void 0 : p.result) || void 0 === t ? void 0 : t.value) ? (l.push(null == p ? void 0 : p.result.value), null == p || p.result.continue()) : s(l);
+          }, p.onerror = a;
+        });
+      }, t.prototype.removeDataByIndex = function (t, e, n, r, o) {
+        var i = this;
+        return new Promise(function (s, a) {
+          var u = i.getStore("readwrite").index(t),
+            c = IDBKeyRange.bound(e, n, r, o),
+            l = u.openCursor(c),
+            p = 0;
+          l.onsuccess = function (t) {
+            var e = t.target.result;
+            e ? (p += 1, e.delete(), e.continue()) : s(p);
+          }, l.onerror = a;
+        });
+      }, t.prototype.createStore = function (t) {
+        var e = t.name,
+          n = t.indexes,
+          r = void 0 === n ? [] : n,
+          o = t.options;
+        if (this.db) {
+          this.db.objectStoreNames.contains(e) && this.db.deleteObjectStore(e);
+          var i = this.db.createObjectStore(e, o);
+          r.forEach(function (t) {
+            i.createIndex(t.indexName, t.keyPath, t.options);
+          });
+        }
+      }, t.prototype.getStore = function (t) {
+        var e;
+        return void 0 === t && (t = "readonly"), null === (e = this.db) || void 0 === e ? void 0 : e.transaction(this.storeName, t).objectStore(this.storeName);
+      }, t;
+    }(),
+    O = "event_table_v3",
+    C = "eventId",
+    D = function () {
+      function t(t) {
+        this.isReady = !1, this.taskQueue = Promise.resolve(), this.db = new k({
+          name: "Beacon_" + t + "_V3",
+          version: 1,
+          stores: [{
+            name: O,
+            options: {
+              keyPath: C
+            },
+            indexes: [{
+              indexName: C,
+              keyPath: C,
+              options: {
+                unique: !0
+              }
+            }]
+          }]
+        }), this.open();
+      }
+      return t.prototype.getCount = function () {
+        var t = this;
+        return this.readyExec(function () {
+          return t.db.getStoreCount();
+        });
+      }, t.prototype.setItem = function (t, e) {
+        var n = this;
+        return this.readyExec(function () {
+          return n.db.add({
+            eventId: t,
+            value: e
+          });
+        });
+      }, t.prototype.getItem = function (t) {
+        return n(this, void 0, void 0, function () {
+          var e = this;
+          return r(this, function (n) {
+            return [2, this.readyExec(function () {
+              return e.db.getDataRangeByIndex(C, t, t);
+            })];
+          });
+        });
+      }, t.prototype.removeItem = function (t) {
+        var e = this;
+        return this.readyExec(function () {
+          return e.db.removeDataByIndex(C, t, t);
+        });
+      }, t.prototype.updateItem = function (t, e) {
+        var n = this;
+        return this.readyExec(function () {
+          return n.db.put({
+            eventId: t,
+            value: e
+          });
+        });
+      }, t.prototype.iterate = function (t) {
+        var e = this;
+        return this.readyExec(function () {
+          return e.db.getStoreAllData().then(function (e) {
+            e.forEach(function (e) {
+              t(e.value);
+            });
+          });
+        });
+      }, t.prototype.open = function () {
+        return n(this, void 0, void 0, function () {
+          var t = this;
+          return r(this, function (e) {
+            switch (e.label) {
+              case 0:
+                return this.taskQueue = this.taskQueue.then(function () {
+                  return t.db.openDB();
+                }), [4, this.taskQueue];
+              case 1:
+                return e.sent(), this.isReady = !0, this.db.useStore(O), [2];
+            }
+          });
+        });
+      }, t.prototype.readyExec = function (t) {
+        return this.isReady ? t() : (this.taskQueue = this.taskQueue.then(function () {
+          return t();
+        }), this.taskQueue);
+      }, t;
+    }(),
+    x = function () {
+      function t(t) {
+        this.keyObject = {}, this.storage = t;
+      }
+      return t.prototype.getCount = function () {
+        return this.storage.getStoreCount();
+      }, t.prototype.removeItem = function (t) {
+        this.storage.removeItem(t), delete this.keyObject[t];
+      }, t.prototype.setItem = function (t, e) {
+        var n = JSON.stringify(e);
+        this.storage.setItem(t, n), this.keyObject[t] = e;
+      }, t.prototype.iterate = function (t) {
+        for (var e = Object.keys(this.keyObject), n = 0; n < e.length; n++) {
+          var r = this.storage.getItem(e[n]);
+          t(JSON.parse(r));
+        }
+      }, t;
+    }(),
+    _ = function () {
+      function t(t, e) {
+        var n = this;
+        this.dbEventCount = 0, b() > 0 || !window.indexedDB || /X5Lite/.test(navigator.userAgent) ? (this.store = new x(e), this.dbEventCount = this.store.getCount()) : (this.store = new D(t), this.getCount().then(function (t) {
+          n.dbEventCount = t;
+        }).catch(function (t) {}));
+      }
+      return t.prototype.getCount = function () {
+        return n(this, void 0, void 0, function () {
+          return r(this, function (t) {
+            switch (t.label) {
+              case 0:
+                return t.trys.push([0, 2,, 3]), [4, this.store.getCount()];
+              case 1:
+                return [2, t.sent()];
+              case 2:
+                return t.sent(), [2, Promise.reject()];
+              case 3:
+                return [2];
+            }
+          });
+        });
+      }, t.prototype.insertEvent = function (t, e) {
+        return n(this, void 0, void 0, function () {
+          var n, o;
+          return r(this, function (r) {
+            switch (r.label) {
+              case 0:
+                if (this.dbEventCount >= 1e4) return [2, Promise.reject()];
+                n = f(t.mapValue), r.label = 1;
+              case 1:
+                return r.trys.push([1, 3,, 4]), this.dbEventCount++, [4, this.store.setItem(n, t)];
+              case 2:
+                return [2, r.sent()];
+              case 3:
+                return o = r.sent(), e && e(o, t), this.dbEventCount--, [2, Promise.reject()];
+              case 4:
+                return [2];
+            }
+          });
+        });
+      }, t.prototype.getEvents = function () {
+        return n(this, void 0, void 0, function () {
+          var t;
+          return r(this, function (e) {
+            switch (e.label) {
+              case 0:
+                t = [], e.label = 1;
+              case 1:
+                return e.trys.push([1, 3,, 4]), [4, this.store.iterate(function (e) {
+                  t.push(e);
+                })];
+              case 2:
+                return e.sent(), [2, Promise.all(t)];
+              case 3:
+                return e.sent(), [2, Promise.all(t)];
+              case 4:
+                return [2];
+            }
+          });
+        });
+      }, t.prototype.removeEvent = function (t) {
+        return n(this, void 0, void 0, function () {
+          var e;
+          return r(this, function (n) {
+            switch (n.label) {
+              case 0:
+                e = f(t.mapValue), n.label = 1;
+              case 1:
+                return n.trys.push([1, 3,, 4]), this.dbEventCount--, [4, this.store.removeItem(e)];
+              case 2:
+                return [2, n.sent()];
+              case 3:
+                return n.sent(), this.dbEventCount++, [2, Promise.reject()];
+              case 4:
+                return [2];
+            }
+          });
+        });
+      }, t;
+    }(),
+    _P = function P() {
+      return (_P = Object.assign || function (t) {
+        for (var e, n = 1, r = arguments.length; n < r; n++) {
+          for (var o in e = arguments[n]) {
+            Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
+          }
+        }
+        return t;
+      }).apply(this, arguments);
+    };
+  function T(t) {
+    try {
+      return decodeURIComponent(t.replace(/\+/g, " "));
+    } catch (t) {
+      return null;
+    }
+  }
+  function U(t, e) {
+    var n = [null, void 0, "", NaN].includes(t);
+    if (e.isSkipEmpty && n) return null;
+    var r = !e.isSkipEmpty && n ? "" : t;
+    try {
+      return e.encode ? encodeURIComponent(r) : r;
+    } catch (t) {
+      return null;
+    }
+  }
+  function N(t, e) {
+    void 0 === e && (e = {
+      encode: !0,
+      isSkipEmpty: !1
+    });
+    var n = t.url,
+      r = t.query,
+      o = void 0 === r ? {} : r,
+      i = t.hash,
+      s = n.split("#"),
+      a = s[0],
+      u = s[1],
+      c = void 0 === u ? "" : u,
+      l = a.split("?")[0],
+      p = [],
+      h = U(i || c, e),
+      f = _P(_P({}, function (t) {
+        var e = t.split("#"),
+          n = e[0],
+          r = e[1],
+          o = void 0 === r ? "" : r,
+          i = n.split("?"),
+          s = i[0],
+          a = i[1],
+          u = void 0 === a ? "" : a,
+          c = T(o),
+          l = Object.create(null);
+        return u.split("&").forEach(function (t) {
+          var e = t.split("="),
+            n = e[0],
+            r = e[1],
+            o = void 0 === r ? "" : r,
+            i = T(n),
+            s = T(o);
+          null === i || null === s || "" === i && "" === s || l[i] || (l[i] = s);
+        }), {
+          url: s,
+          query: l,
+          hash: c
+        };
+      }(n).query), o);
+    return Object.keys(f).forEach(function (t) {
+      var n = U(t, e),
+        r = U(f[t], e);
+      null !== n && null !== r && p.push(n + "=" + r);
+    }), l + (p.length ? "?" + p.join("&") : "") + (h ? "#" + h : "");
+  }
+  function j(t, e) {
+    return new Promise(function (n, r) {
+      if (e && document.querySelectorAll("script[data-tag=" + e + "]").length) return n();
+      var o = document.createElement("script"),
+        i = _P({
+          type: "text/javascript",
+          charset: "utf-8"
+        }, t);
+      Object.keys(i).forEach(function (t) {
+        return function (t, e, n) {
+          if (t) return void 0 === n ? t.getAttribute(e) : t.setAttribute(e, n);
+        }(o, t, i[t]);
+      }), e && (o.dataset.tag = e), o.onload = function () {
+        return n();
+      }, o.onreadystatechange = function () {
+        var t = o.readyState;
+        ["complete", "loaded"].includes(t) && (o.onreadystatechange = null, n());
+      }, o.onerror = r, document.body.appendChild(o);
+    });
+  }
+  !function (t) {
+    t[t.equal = 0] = "equal", t[t.low = -1] = "low", t[t.high = 1] = "high";
+  }(E || (E = {}));
+  var _q = function q() {
+    return (_q = Object.assign || function (t) {
+      for (var e, n = 1, r = arguments.length; n < r; n++) {
+        for (var o in e = arguments[n]) {
+          Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
+        }
+      }
+      return t;
+    }).apply(this, arguments);
   };
-  var cb_decode = function cb_decode(cccc) {
-    var len = cccc.length,
-      padlen = len % 4,
-      n = (len > 0 ? b64tab[cccc.charAt(0)] << 18 : 0) | (len > 1 ? b64tab[cccc.charAt(1)] << 12 : 0) | (len > 2 ? b64tab[cccc.charAt(2)] << 6 : 0) | (len > 3 ? b64tab[cccc.charAt(3)] : 0),
-      chars = [fromCharCode(n >>> 16), fromCharCode(n >>> 8 & 0xff), fromCharCode(n & 0xff)];
-    chars.length -= [0, 0, 2, 1][padlen];
-    return chars.join('');
-  };
-  var atob = global.atob ? function (a) {
-    return global.atob(a);
-  } : function (a) {
-    return a.replace(/[\s\S]{1,4}/g, cb_decode);
-  };
-  var _decode = buffer ? function (a) {
-    return (a.constructor === buffer.constructor ? a : new buffer(a, 'base64')).toString();
-  } : function (a) {
-    return btou(atob(a));
-  };
-  var decode = function decode(a) {
-    return _decode(String(a).replace(/[-_]/g, function (m0) {
-      return m0 == '-' ? '+' : '/';
-    }).replace(/[^A-Za-z0-9\+\/]/g, ''));
-  };
-  var noConflict = function noConflict() {
-    var Base64 = global.Base64;
-    global.Base64 = _Base64;
-    return Base64;
-  };
-  // export Base64
-  var Base64 = {
-    VERSION: version,
-    atob: atob,
-    btoa: btoa,
-    fromBase64: decode,
-    toBase64: encode,
-    utob: utob,
-    encode: encode,
-    encodeURI: encodeURI,
-    btou: btou,
-    decode: decode,
-    noConflict: noConflict
-  };
-  return Base64;
-}();
-module.exports = Base64;
+  function A(t, e, n, r) {
+    return new (n || (n = Promise))(function (o, i) {
+      function s(t) {
+        try {
+          u(r.next(t));
+        } catch (t) {
+          i(t);
+        }
+      }
+      function a(t) {
+        try {
+          u(r.throw(t));
+        } catch (t) {
+          i(t);
+        }
+      }
+      function u(t) {
+        var e;
+        t.done ? o(t.value) : (e = t.value, e instanceof n ? e : new n(function (t) {
+          t(e);
+        })).then(s, a);
+      }
+      u((r = r.apply(t, e || [])).next());
+    });
+  }
+  function R(t, e) {
+    var n,
+      r,
+      o,
+      i,
+      s = {
+        label: 0,
+        sent: function sent() {
+          if (1 & o[0]) throw o[1];
+          return o[1];
+        },
+        trys: [],
+        ops: []
+      };
+    return i = {
+      next: a(0),
+      throw: a(1),
+      return: a(2)
+    }, "function" == typeof Symbol && (i[Symbol.iterator] = function () {
+      return this;
+    }), i;
+    function a(i) {
+      return function (a) {
+        return function (i) {
+          if (n) throw new TypeError("Generator is already executing.");
+          for (; s;) {
+            try {
+              if (n = 1, r && (o = 2 & i[0] ? r.return : i[0] ? r.throw || ((o = r.return) && o.call(r), 0) : r.next) && !(o = o.call(r, i[1])).done) return o;
+              switch (r = 0, o && (i = [2 & i[0], o.value]), i[0]) {
+                case 0:
+                case 1:
+                  o = i;
+                  break;
+                case 4:
+                  return s.label++, {
+                    value: i[1],
+                    done: !1
+                  };
+                case 5:
+                  s.label++, r = i[1], i = [0];
+                  continue;
+                case 7:
+                  i = s.ops.pop(), s.trys.pop();
+                  continue;
+                default:
+                  if (!((o = (o = s.trys).length > 0 && o[o.length - 1]) || 6 !== i[0] && 2 !== i[0])) {
+                    s = 0;
+                    continue;
+                  }
+                  if (3 === i[0] && (!o || i[1] > o[0] && i[1] < o[3])) {
+                    s.label = i[1];
+                    break;
+                  }
+                  if (6 === i[0] && s.label < o[1]) {
+                    s.label = o[1], o = i;
+                    break;
+                  }
+                  if (o && s.label < o[2]) {
+                    s.label = o[2], s.ops.push(i);
+                    break;
+                  }
+                  o[2] && s.ops.pop(), s.trys.pop();
+                  continue;
+              }
+              i = e.call(t, s);
+            } catch (t) {
+              i = [6, t], r = 0;
+            } finally {
+              n = o = 0;
+            }
+          }
+          if (5 & i[0]) throw i[1];
+          return {
+            value: i[0] ? i[1] : void 0,
+            done: !0
+          };
+        }([i, a]);
+      };
+    }
+  }
+  var B = function () {
+      function t() {
+        this.interceptors = [];
+      }
+      return t.prototype.use = function (t, e) {
+        return this.interceptors.push({
+          resolved: t,
+          rejected: e
+        }), this.interceptors.length - 1;
+      }, t.prototype.traverse = function (t, e) {
+        void 0 === e && (e = !1);
+        var n = Promise.resolve(t);
+        return (e ? Array.prototype.reduceRight : Array.prototype.reduce).call(this.interceptors, function (t, e) {
+          if (e) {
+            var r = e.resolved,
+              o = e.rejected;
+            n = n.then(r, o);
+          }
+          return t;
+        }, ""), n;
+      }, t.prototype.eject = function (t) {
+        this.interceptors[t] && (this.interceptors[t] = null);
+      }, t;
+    }(),
+    J = {
+      defaults: {
+        timeout: 0,
+        method: "GET",
+        mode: "cors",
+        redirect: "follow",
+        credentials: "same-origin"
+      },
+      headers: {
+        common: {
+          Accept: "application/json, text/plain, */*"
+        },
+        POST: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        PUT: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        PATCH: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        }
+      },
+      baseURL: "",
+      polyfillUrl: "https://vm.gtimg.cn/comps/script/fetch.min.js",
+      interceptors: {
+        request: new B(),
+        response: new B()
+      }
+    },
+    V = /^([a-z][a-z\d+\-.]*:)?\/\//i,
+    Q = Object.prototype.toString;
+  function L(t) {
+    return A(this, void 0, void 0, function () {
+      var e;
+      return R(this, function (n) {
+        switch (n.label) {
+          case 0:
+            if (window.fetch) return [2];
+            n.label = 1;
+          case 1:
+            return n.trys.push([1, 3,, 4]), [4, j({
+              src: t
+            })];
+          case 2:
+            return n.sent(), [3, 4];
+          case 3:
+            throw e = n.sent(), new Error("加载 polyfill " + t + " 失败: " + e.message);
+          case 4:
+            return [2];
+        }
+      });
+    });
+  }
+  function M(t) {
+    return ["Accept", "Content-Type"].forEach(function (e) {
+      return n = e, void ((r = t.headers) && Object.keys(r).forEach(function (t) {
+        t !== n && t.toUpperCase() === n.toUpperCase() && (r[n] = r[t], delete r[t]);
+      }));
+      var n, r;
+    }), function (t) {
+      if ("[object Object]" !== Q.call(t)) return !1;
+      var e = Object.getPrototypeOf(t);
+      return null === e || e === Object.prototype;
+    }(t.body) && (t.body = JSON.stringify(t.body), t.headers && (t.headers["Content-Type"] = "application/json;charset=utf-8")), t;
+  }
+  function K(t) {
+    return A(this, void 0, void 0, function () {
+      var e, n, r, o, i, s, a, u, c, l, p, h, f, d, v, g, y;
+      return R(this, function (m) {
+        switch (m.label) {
+          case 0:
+            return e = J.baseURL, n = J.defaults, r = J.interceptors, [4, L(J.polyfillUrl)];
+          case 1:
+            return m.sent(), (o = _q(_q({}, n), t)).headers || (o.headers = function (t) {
+              void 0 === t && (t = "GET");
+              var e = J.headers[t] || {};
+              return _q(_q({}, J.headers.common), e);
+            }(o.method)), M(o), [4, r.request.traverse(o, !0)];
+          case 2:
+            if ((i = m.sent()) instanceof Error) throw i;
+            return i.url = function (t, e) {
+              return !t || V.test(e) ? e : t.replace(/\/+$/, "") + "/" + e.replace(/^\/+/, "");
+            }(e, i.url), s = i.url, a = i.timeout, u = i.params, c = i.method, l = ["GET", "DELETE", "OPTIONS", "HEAD"].includes(void 0 === c ? "GET" : c) && !!u, p = l ? N({
+              url: s,
+              query: u
+            }) : s, h = [], a && !i.signal && (v = new Promise(function (t) {
+              f = setTimeout(function () {
+                t(new Error("timeout"));
+              }, a);
+            }), h.push(v), d = new AbortController(), i.signal = d.signal), h.push(fetch(p, i).catch(function (t) {
+              return t;
+            })), [4, Promise.race(h)];
+          case 3:
+            return g = m.sent(), f && clearTimeout(f), [4, r.response.traverse(g)];
+          case 4:
+            if ((y = m.sent()) instanceof Error) throw null == d || d.abort(), y;
+            return [2, y];
+        }
+      });
+    });
+  }
+  var F = function () {
+      function t(t) {
+        J.interceptors.request.use(function (n) {
+          var r = n.url,
+            o = n.method,
+            i = n.body,
+            s = i;
+          if (t.onReportBeforeSend) {
+            var a = t.onReportBeforeSend({
+              url: r,
+              method: o,
+              data: i ? JSON.parse(i) : null
+            });
+            s = (null == a ? void 0 : a.data) ? JSON.stringify(a.data) : null;
+          }
+          return "GET" != o && s ? _e(_e({}, n), {
+            body: s
+          }) : n;
+        });
+      }
+      return t.prototype.get = function (t, o) {
+        return n(this, void 0, void 0, function () {
+          var n, i;
+          return r(this, function (r) {
+            switch (r.label) {
+              case 0:
+                return [4, K(_e({
+                  url: t
+                }, o))];
+              case 1:
+                return [4, (n = r.sent()).json()];
+              case 2:
+                return i = r.sent(), [2, Promise.resolve({
+                  data: i,
+                  status: n.status,
+                  statusText: n.statusText,
+                  headers: n.headers
+                })];
+            }
+          });
+        });
+      }, t.prototype.post = function (t, o, i) {
+        return n(this, void 0, void 0, function () {
+          var n, s;
+          return r(this, function (r) {
+            switch (r.label) {
+              case 0:
+                return [4, K(_e({
+                  url: t,
+                  body: o,
+                  method: "POST"
+                }, i))];
+              case 1:
+                return [4, (n = r.sent()).json()];
+              case 2:
+                return s = r.sent(), [2, Promise.resolve({
+                  data: s,
+                  status: n.status,
+                  statusText: n.statusText,
+                  headers: n.headers
+                })];
+            }
+          });
+        });
+      }, t;
+    }(),
+    G = function () {
+      function t(t) {
+        this.appkey = t;
+      }
+      return t.prototype.getItem = function (t) {
+        try {
+          return window.localStorage.getItem(this.getStoreKey(t));
+        } catch (t) {
+          return "";
+        }
+      }, t.prototype.removeItem = function (t) {
+        try {
+          window.localStorage.removeItem(this.getStoreKey(t));
+        } catch (t) {}
+      }, t.prototype.setItem = function (t, e) {
+        try {
+          window.localStorage.setItem(this.getStoreKey(t), e);
+        } catch (t) {}
+      }, t.prototype.setSessionItem = function (t, e) {
+        try {
+          window.sessionStorage.setItem(this.getStoreKey(t), e);
+        } catch (t) {}
+      }, t.prototype.getSessionItem = function (t) {
+        try {
+          return window.sessionStorage.getItem(this.getStoreKey(t));
+        } catch (t) {
+          return "";
+        }
+      }, t.prototype.getStoreKey = function (t) {
+        return o + this.appkey + "_" + t;
+      }, t.prototype.createDeviceId = function () {
+        try {
+          var t = window.localStorage.getItem(i);
+          return t || (t = function (t) {
+            for (var e = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz0123456789", n = "", r = 0; r < t; r++) {
+              n += e.charAt(Math.floor(Math.random() * e.length));
+            }
+            return n;
+          }(32), window.localStorage.setItem(i, t)), t;
+        } catch (t) {
+          return "";
+        }
+      }, t.prototype.clear = function () {
+        try {
+          for (var t = window.localStorage.length, e = 0; e < t; e++) {
+            var n = window.localStorage.key(e);
+            (null == n ? void 0 : n.substr(0, 9)) == o && window.localStorage.removeItem(n);
+          }
+        } catch (t) {}
+      }, t.prototype.getStoreCount = function () {
+        var t = 0;
+        try {
+          t = window.localStorage.length;
+        } catch (t) {}
+        return t;
+      }, t;
+    }(),
+    z = "logid_start",
+    W = "4.5.14-web";
+  return function (n) {
+    function r(t) {
+      var e = n.call(this, t) || this;
+      e.qimei36 = "", e.uselessCycleTaskNum = 0, e.underWeakNet = !1, e.pauseSearching = !1, e.send = function (t, n, r) {
+        e.storage.setItem(s, Date.now().toString()), e.network.post(e.uploadUrl || e.strategy.getUploadUrl(), t.data).then(function (r) {
+          var o;
+          100 == (null === (o = null == r ? void 0 : r.data) || void 0 === o ? void 0 : o.result) ? e.delayTime = 1e3 * r.data.delayTime : e.delayTime = 0, n && n(t.data), t.data.events.forEach(function (t) {
+            e.store.removeEvent(t).then(function () {
+              e.removeSendingId(f(t.mapValue));
+            });
+          }), e.doCustomCycleTask();
+        }).catch(function (n) {
+          var o = t.data.events;
+          e.errorReport.reportError(n.code ? n.code.toString() : "600", n.message), r && r(t.data);
+          var i = JSON.parse(e.storage.getItem(a));
+          o.forEach(function (t) {
+            i && -1 != i.indexOf(f(t)) && e.store.insertEvent(t, function (t, n) {
+              t && e.errorReport.reportError("604", "insertEvent fail!");
+            }), e.removeSendingId(f(t));
+          }), e.monitorUploadFailed();
+        });
+      };
+      var r,
+        o,
+        i = b();
+      return e.isUnderIE8 = i > 0 && i < 8, e.isUnderIE8 || (e.isUnderIE = i > 0, t.needInitQimei && S(t.appkey, function (t) {
+        e.qimei36 = t.q36;
+      }), e.network = new F(t), e.storage = new G(t.appkey), e.initCommonInfo(t), e.store = new _(t.appkey, e.storage), e.errorReport = new g(e.config, e.commonInfo, "web", e.network), e.strategy = new y(null == t.needQueryConfig || t.needQueryConfig, e.config, e.commonInfo, e.storage, e.network), e.logidStartTime = e.storage.getItem(z), e.logidStartTime || (e.logidStartTime = Date.now().toString(), e.storage.setItem(z, e.logidStartTime)), r = e.logidStartTime, o = Date.now() - Number.parseFloat(r), Math.floor(o / 864e5) >= 365 && e.storage.clear(), e.initSession(t), e.onDirectUserAction("rqd_js_init", {}), setTimeout(function () {
+        return e.lifeCycle.emit("init");
+      }, 0), e.initDelayTime = t.delay ? t.delay : 1e3, e.cycleTask(e.initDelayTime)), e;
+    }
+    return function (e, n) {
+      if ("function" != typeof n && null !== n) throw new TypeError("Class extends value " + String(n) + " is not a constructor or null");
+      function r() {
+        this.constructor = e;
+      }
+      _t(e, n), e.prototype = null === n ? Object.create(n) : (r.prototype = n.prototype, new r());
+    }(r, n), r.prototype.initSession = function (t) {
+      var e = 18e5;
+      t.sessionDuration && t.sessionDuration > 3e4 && (e = t.sessionDuration), this.beaconSession = new w(this.storage, e, this);
+    }, r.prototype.initCommonInfo = function (t) {
+      var e = Number(this.storage.getItem(s));
+      try {
+        var n = JSON.parse(this.storage.getItem(a));
+        (Date.now() - e > 3e4 || !n) && this.storage.setItem(a, JSON.stringify([]));
+      } catch (t) {}
+      t.uploadUrl && (this.uploadUrl = t.uploadUrl + "?appkey=" + t.appkey);
+      var r = [window.screen.width, window.screen.height];
+      window.devicePixelRatio && r.push(window.devicePixelRatio), this.commonInfo = {
+        deviceId: this.storage.createDeviceId(),
+        language: navigator && navigator.language || "zh_CN",
+        query: window.location.search,
+        userAgent: navigator.userAgent,
+        pixel: r.join("*"),
+        channelID: t.channelID ? String(t.channelID) : "",
+        openid: t.openid ? String(t.openid) : "",
+        unid: t.unionid ? String(t.unionid) : "",
+        sdkVersion: W
+      }, this.config.appVersion = t.versionCode ? String(t.versionCode) : "", this.config.strictMode = t.strictMode;
+    }, r.prototype.cycleTask = function (t) {
+      var e = this;
+      this.intervalID = window.setInterval(function () {
+        e.pauseSearching || e.store.getEvents().then(function (t) {
+          0 == t.length && (e.pauseSearching = !0);
+          var n = [],
+            r = JSON.parse(e.storage.getItem(a));
+          r || (r = []), t && t.forEach(function (t) {
+            var e = f(t.mapValue);
+            -1 == r.indexOf(e) && (n.push(t), r.push(e));
+          }), 0 != n.length && (e.storage.setItem(a, JSON.stringify(r)), e._normalLogPipeline(e.assembleData(n)));
+        }).catch(function (t) {});
+      }, t);
+    }, r.prototype.onReport = function (t, e, n) {
+      var r = this;
+      if (this.isUnderIE8) this.errorReport.reportError("601", "UnderIE8");else {
+        this.pauseSearching = !1;
+        var o = this.generateData(t, e, n);
+        if (n && 0 == this.delayTime && !this.underWeakNet) this._normalLogPipeline(this.assembleData(o));else {
+          var i = o.shift();
+          i && this.store.insertEvent(i, function (t) {
+            t && r.errorReport.reportError("604", "insertEvent fail!");
+          }).catch(function (t) {
+            r._normalLogPipeline(r.assembleData(o));
+          });
+        }
+      }
+    }, r.prototype.onSendBeacon = function (t, e) {
+      if (this.isUnderIE) this.errorReport.reportError("605", "UnderIE");else {
+        this.pauseSearching = !1;
+        var n = this.assembleData(this.generateData(t, e, !0));
+        "function" == typeof navigator.sendBeacon && navigator.sendBeacon(this.uploadUrl || this.strategy.getUploadUrl(), JSON.stringify(n));
+      }
+    }, r.prototype.generateData = function (t, n, r) {
+      var o = [],
+        i = "4.5.14-web_" + (r ? "direct_log_id" : "normal_log_id"),
+        s = Number(this.storage.getItem(i));
+      return s = s || 1, n = _e(_e({}, n), {
+        A99: r ? "Y" : "N",
+        A100: s.toString(),
+        A72: W,
+        A88: this.logidStartTime
+      }), s++, this.storage.setItem(i, s.toString()), o.push({
+        eventCode: t,
+        eventTime: Date.now().toString(),
+        mapValue: p(n, this.config.strictMode)
+      }), o;
+    }, r.prototype.assembleData = function (t) {
+      var n = this.beaconSession.getSession();
+      return {
+        appVersion: this.config.appVersion ? h(this.config.appVersion) : "",
+        sdkId: "js",
+        sdkVersion: W,
+        mainAppKey: this.config.appkey,
+        platformId: 3,
+        common: p(_e(_e({}, this.additionalParams), {
+          A2: this.commonInfo.deviceId,
+          A8: this.commonInfo.openid,
+          A12: this.commonInfo.language,
+          A17: this.commonInfo.pixel,
+          A23: this.commonInfo.channelID,
+          A50: this.commonInfo.unid,
+          A76: n.sessionId,
+          A101: this.commonInfo.userAgent,
+          A102: window.location.href,
+          A104: document.referrer,
+          A119: this.commonInfo.query,
+          A153: this.qimei36
+        }), !1),
+        events: t
+      };
+    }, r.prototype.monitorUploadFailed = function () {
+      this.uselessCycleTaskNum++, this.uselessCycleTaskNum >= 5 && (window.clearInterval(this.intervalID), this.cycleTask(6e4), this.underWeakNet = !0);
+    }, r.prototype.doCustomCycleTask = function () {
+      this.uselessCycleTaskNum >= 5 && (window.clearInterval(this.intervalID), this.cycleTask(this.initDelayTime)), this.uselessCycleTaskNum = 0, this.underWeakNet = !1;
+    }, r;
+  }(v);
+});
 
 /***/ }),
 
@@ -281,7 +1516,13 @@ var CryptoJS = CryptoJS || function (g, l) {
       },
       init: function init() {},
       mixIn: function mixIn(a) {
+<<<<<<< HEAD
         for (var c in a) a.hasOwnProperty(c) && (this[c] = a[c]);
+=======
+        for (var c in a) {
+          a.hasOwnProperty(c) && (this[c] = a[c]);
+        }
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
         a.hasOwnProperty("toString") && (this.toString = a.toString);
       },
       clone: function clone() {
@@ -302,7 +1543,15 @@ var CryptoJS = CryptoJS || function (g, l) {
           f = this.sigBytes;
         a = a.sigBytes;
         this.clamp();
+<<<<<<< HEAD
         if (f % 4) for (var b = 0; b < a; b++) c[f + b >>> 2] |= (q[b >>> 2] >>> 24 - 8 * (b % 4) & 255) << 24 - 8 * ((f + b) % 4);else if (65535 < q.length) for (b = 0; b < a; b += 4) c[f + b >>> 2] = q[b >>> 2];else c.push.apply(c, q);
+=======
+        if (f % 4) for (var b = 0; b < a; b++) {
+          c[f + b >>> 2] |= (q[b >>> 2] >>> 24 - 8 * (b % 4) & 255) << 24 - 8 * ((f + b) % 4);
+        } else if (65535 < q.length) for (b = 0; b < a; b += 4) {
+          c[f + b >>> 2] = q[b >>> 2];
+        } else c.push.apply(c, q);
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
         this.sigBytes += a;
         return this;
       },
@@ -318,7 +1567,13 @@ var CryptoJS = CryptoJS || function (g, l) {
         return a;
       },
       random: function random(a) {
+<<<<<<< HEAD
         for (var c = [], b = 0; b < a; b += 4) c.push(4294967296 * g.random() | 0);
+=======
+        for (var c = [], b = 0; b < a; b += 4) {
+          c.push(4294967296 * g.random() | 0);
+        }
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
         return new p.init(c, a);
       }
     }),
@@ -335,7 +1590,13 @@ var CryptoJS = CryptoJS || function (g, l) {
         return b.join("");
       },
       parse: function parse(a) {
+<<<<<<< HEAD
         for (var c = a.length, b = [], f = 0; f < c; f += 2) b[f >>> 3] |= parseInt(a.substr(f, 2), 16) << 24 - 4 * (f % 8);
+=======
+        for (var c = a.length, b = [], f = 0; f < c; f += 2) {
+          b[f >>> 3] |= parseInt(a.substr(f, 2), 16) << 24 - 4 * (f % 8);
+        }
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
         return new p.init(b, c / 2);
       }
     },
@@ -343,11 +1604,23 @@ var CryptoJS = CryptoJS || function (g, l) {
       stringify: function stringify(a) {
         var c = a.words;
         a = a.sigBytes;
+<<<<<<< HEAD
         for (var b = [], f = 0; f < a; f++) b.push(String.fromCharCode(c[f >>> 2] >>> 24 - 8 * (f % 4) & 255));
         return b.join("");
       },
       parse: function parse(a) {
         for (var c = a.length, b = [], f = 0; f < c; f++) b[f >>> 2] |= (a.charCodeAt(f) & 255) << 24 - 8 * (f % 4);
+=======
+        for (var b = [], f = 0; f < a; f++) {
+          b.push(String.fromCharCode(c[f >>> 2] >>> 24 - 8 * (f % 4) & 255));
+        }
+        return b.join("");
+      },
+      parse: function parse(a) {
+        for (var c = a.length, b = [], f = 0; f < c; f++) {
+          b[f >>> 2] |= (a.charCodeAt(f) & 255) << 24 - 8 * (f % 4);
+        }
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
         return new p.init(b, c);
       }
     },
@@ -383,7 +1656,13 @@ var CryptoJS = CryptoJS || function (g, l) {
         a = e * d;
         f = g.min(4 * a, f);
         if (a) {
+<<<<<<< HEAD
           for (var k = 0; k < a; k += d) this._doProcessBlock(b, k);
+=======
+          for (var k = 0; k < a; k += d) {
+            this._doProcessBlock(b, k);
+          }
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
           k = b.splice(0, a);
           c.sigBytes -= f;
         }
@@ -492,7 +1771,13 @@ var CryptoJS = CryptoJS || function (g, l) {
         k = 4 * g;
       d.sigBytes > k && (d = e.finalize(d));
       d.clamp();
+<<<<<<< HEAD
       for (var p = this._oKey = d.clone(), b = this._iKey = d.clone(), n = p.words, j = b.words, h = 0; h < g; h++) n[h] ^= 1549556828, j[h] ^= 909522486;
+=======
+      for (var p = this._oKey = d.clone(), b = this._iKey = d.clone(), n = p.words, j = b.words, h = 0; h < g; h++) {
+        n[h] ^= 1549556828, j[h] ^= 909522486;
+      }
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
       p.sigBytes = b.sigBytes = k;
       this.reset();
     },
@@ -774,7 +2059,11 @@ module.exports = function (obj, options) {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
+<<<<<<< HEAD
 /* WEBPACK VAR INJECTION */(function(module) {var __WEBPACK_AMD_DEFINE_RESULT__;var _typeof = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_modules/@babel/runtime/helpers/typeof.js");
+=======
+/* WEBPACK VAR INJECTION */(function(process, global, module) {var __WEBPACK_AMD_DEFINE_RESULT__;var _typeof = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_modules/@babel/runtime/helpers/typeof.js");
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
 /* https://github.com/emn178/js-md5 */
 (function () {
   'use strict';
@@ -785,7 +2074,14 @@ module.exports = function (obj, options) {
     WINDOW = false;
   }
   var WEB_WORKER = !WINDOW && (typeof self === "undefined" ? "undefined" : _typeof(self)) === 'object';
+<<<<<<< HEAD
   if (WEB_WORKER) {
+=======
+  var NODE_JS = !root.JS_MD5_NO_NODE_JS && (typeof process === "undefined" ? "undefined" : _typeof(process)) === 'object' && process.versions && process.versions.node;
+  if (NODE_JS) {
+    root = global;
+  } else if (WEB_WORKER) {
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
     root = self;
   }
   var COMMON_JS = !root.JS_MD5_NO_COMMON_JS && ( false ? undefined : _typeof(module)) === 'object' && module.exports;
@@ -899,6 +2195,12 @@ module.exports = function (obj, options) {
    */
   var createMethod = function createMethod() {
     var method = createOutputMethod('hex');
+<<<<<<< HEAD
+=======
+    if (NODE_JS) {
+      method = nodeWrap(method);
+    }
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
     method.getCtx = method.create = function () {
       return new Md5();
     };
@@ -911,6 +2213,30 @@ module.exports = function (obj, options) {
     }
     return method;
   };
+<<<<<<< HEAD
+=======
+  var nodeWrap = function nodeWrap(method) {
+    var crypto = eval("require('crypto')");
+    var Buffer = eval("require('buffer').Buffer");
+    var nodeMethod = function nodeMethod(message) {
+      if (typeof message === 'string') {
+        return crypto.createHash('md5').update(message, 'utf8').digest('hex');
+      } else {
+        if (message === null || message === undefined) {
+          throw ERROR;
+        } else if (message.constructor === ArrayBuffer) {
+          message = new Uint8Array(message);
+        }
+      }
+      if (Array.isArray(message) || ArrayBuffer.isView(message) || message.constructor === Buffer) {
+        return crypto.createHash('md5').update(new Buffer(message)).digest('hex');
+      } else {
+        return method(message);
+      }
+    };
+    return nodeMethod;
+  };
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
 
   /**
    * Md5 class
@@ -8223,6 +9549,7 @@ function uploadFiles(params, callback) {
         TaskId: ''
       };
 
+<<<<<<< HEAD
       // 如果 批量上传的 Key 是 / 开头，强制去掉第一个 /
       if (!self.options.UseRawKey && fileParams.Key && fileParams.Key.substr(0, 1) === '/') {
         fileParams.Key = fileParams.Key.substr(1);
@@ -8231,6 +9558,11 @@ function uploadFiles(params, callback) {
       // 更新文件总大小
       TotalSize += FileSize;
 
+=======
+      // 更新文件总大小
+      TotalSize += FileSize;
+
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
       // 单个文件上传链路
       if (self.options.EnableTracker) {
         var accelerate = self.options.UseAccelerate || typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.');
@@ -8722,12 +10054,20 @@ function getService(params, callback) {
     callback = params;
     params = {};
   }
+<<<<<<< HEAD
   var protocol = this.options.Protocol || (util.isBrowser && (typeof location === "undefined" ? "undefined" : _typeof(location)) === 'object' && location.protocol === 'http:' ? 'http:' : 'https:');
+=======
+  var protocol = this.options.Protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
   var domain = this.options.ServiceDomain;
   var appId = params.AppId || this.options.appId;
   var region = params.Region;
   if (domain) {
+<<<<<<< HEAD
     domain = domain.replace(/\{\{AppId\}\}/gi, appId || '').replace(/\{\{Region\}\}/gi, region || '').replace(/\{\{.*?\}\}/gi, '');
+=======
+    domain = domain.replace(/\{\{AppId\}\}/ig, appId || '').replace(/\{\{Region\}\}/ig, region || '').replace(/\{\{.*?\}\}/ig, '');
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
     if (!/^[a-zA-Z]+:\/\//.test(domain)) {
       domain = protocol + '//' + domain;
     }
@@ -8942,7 +10282,11 @@ function putBucketAcl(params, callback) {
       AccessControlPolicy: AccessControlPolicy
     });
     headers['Content-Type'] = 'application/xml';
+<<<<<<< HEAD
     headers['Content-MD5'] = util.b64(util.md5(xml));
+=======
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
   }
 
   // Grant Header 去重
@@ -10153,7 +11497,11 @@ function getBucketLogging(params, callback) {
  * @return  {Object}  err                                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                                  返回数据
  */
+<<<<<<< HEAD
 function submitBucketInventory(method, params, callback) {
+=======
+function putBucketInventory(params, callback) {
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
   var InventoryConfiguration = util.clone(params['InventoryConfiguration']);
   if (InventoryConfiguration.OptionalFields) {
     var Field = InventoryConfiguration.OptionalFields || [];
@@ -10201,6 +11549,7 @@ function submitBucketInventory(method, params, callback) {
   });
 }
 
+<<<<<<< HEAD
 /**
  * 创建一个清单任务
  */
@@ -10215,6 +11564,8 @@ function postBucketInventory(params, callback) {
   return submitBucketInventory.call(this, 'POST', params, callback);
 }
 
+=======
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
 /**
  * 获取 Bucket 的清单任务信息
  * @param  {Object}  params             参数对象，必须
@@ -10826,7 +12177,11 @@ function putObjectAcl(params, callback) {
       AccessControlPolicy: AccessControlPolicy
     });
     headers['Content-Type'] = 'application/xml';
+<<<<<<< HEAD
     headers['Content-MD5'] = util.b64(util.md5(xml));
+=======
+    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
   }
 
   // Grant Header 去重
@@ -11437,7 +12792,11 @@ function multipartComplete(params, callback) {
       Part: Parts
     }
   });
+<<<<<<< HEAD
   // CSP/ceph CompleteMultipartUpload 接口 body 写死了限制 1MB，这里最多 10000 片时，xml 字符串去掉空格853KB
+=======
+  // CSP/ceph CompleteMultipartUpload 接口 body 写死了限制 1MB，这里醉倒 10000 片时，xml 字符串去掉空格853KB
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
   xml = xml.replace(/\n\s*/g, '');
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
@@ -11925,7 +13284,11 @@ function getUrl(params) {
   if (['http', 'https'].includes(params.protocol)) {
     params.protocol = params.protocol + ':';
   }
+<<<<<<< HEAD
   var protocol = params.protocol || (util.isBrowser && (typeof location === "undefined" ? "undefined" : _typeof(location)) === 'object' && location.protocol === 'http:' ? 'http:' : 'https:');
+=======
+  var protocol = params.protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
   if (!domain) {
     if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
       domain = '{Region}.myqcloud.com';
@@ -11936,8 +13299,13 @@ function getUrl(params) {
       domain = '{Bucket}.' + domain;
     }
   }
+<<<<<<< HEAD
   domain = domain.replace(/\{\{AppId\}\}/gi, appId).replace(/\{\{Bucket\}\}/gi, shortBucket).replace(/\{\{Region\}\}/gi, region).replace(/\{\{.*?\}\}/gi, '');
   domain = domain.replace(/\{AppId\}/gi, appId).replace(/\{BucketName\}/gi, shortBucket).replace(/\{Bucket\}/gi, longBucket).replace(/\{Region\}/gi, region).replace(/\{.*?\}/gi, '');
+=======
+  domain = domain.replace(/\{\{AppId\}\}/ig, appId).replace(/\{\{Bucket\}\}/ig, shortBucket).replace(/\{\{Region\}\}/ig, region).replace(/\{\{.*?\}\}/ig, '');
+  domain = domain.replace(/\{AppId\}/ig, appId).replace(/\{BucketName\}/ig, shortBucket).replace(/\{Bucket\}/ig, longBucket).replace(/\{Region\}/ig, region).replace(/\{.*?\}/ig, '');
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
   if (!/^[a-zA-Z]+:\/\//.test(domain)) {
     domain = protocol + '//' + domain;
   }
@@ -11970,7 +13338,13 @@ var getSignHost = function getSignHost(opt) {
     region: useAccelerate ? 'accelerate' : opt.Region
   });
   var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
+<<<<<<< HEAD
   return urlHost;
+=======
+  var standardHostReg = new RegExp('^([a-z\\d-]+-\\d+\\.)?(cos|cosv6|ci|pic)\\.([a-z\\d-]+)\\.myqcloud\\.com$');
+  if (standardHostReg.test(urlHost)) return urlHost;
+  return '';
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
 };
 
 // 异步获取签名
@@ -12175,7 +13549,11 @@ function getAuthorizationAsync(params, callback) {
   return '';
 }
 
+<<<<<<< HEAD
 // 判断当前请求出错时能否重试
+=======
+// 调整时间偏差
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
 function allowRetry(err) {
   var self = this;
   var canRetry = false;
@@ -12206,6 +13584,7 @@ function allowRetry(err) {
       canRetry = self.options.AutoSwitchHost;
     }
   }
+<<<<<<< HEAD
   return {
     canRetry: canRetry,
     networkError: networkError
@@ -12230,6 +13609,9 @@ function canSwitchHost(_ref) {
   // 当前域名是cos主域名才切换
   var isCommonCosHost = commonReg.test(requestUrl) && !accelerateReg.test(requestUrl);
   return isCommonCosHost;
+=======
+  return allowRetry;
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
 }
 
 // 获取签名并发起请求
@@ -12298,6 +13680,7 @@ function submitRequest(params, callback) {
         tracker && tracker.setParams({
           httpEndTime: new Date().getTime()
         });
+<<<<<<< HEAD
         var canRetry = false;
         var networkError = false;
         if (err) {
@@ -12306,6 +13689,9 @@ function submitRequest(params, callback) {
           networkError = info.networkError;
         }
         if (err && tryTimes < 2 && canRetry) {
+=======
+        if (err && tryTimes < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
           if (params.headers) {
             delete params.headers.Authorization;
             delete params.headers['token'];
@@ -12314,6 +13700,7 @@ function submitRequest(params, callback) {
             params.headers['x-cos-security-token'] && delete params.headers['x-cos-security-token'];
             params.headers['x-ci-security-token'] && delete params.headers['x-ci-security-token'];
           }
+<<<<<<< HEAD
           // 进入重试逻辑时 需判断是否需要切换cos备用域名
           var switchHost = canSwitchHost.call(self, {
             requestUrl: (err === null || err === void 0 ? void 0 : err.url) || '',
@@ -12321,6 +13708,8 @@ function submitRequest(params, callback) {
             networkError: networkError
           });
           params.SwitchHost = switchHost;
+=======
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
           next(tryTimes + 1);
         } else {
           callback(err, data);
@@ -12356,10 +13745,13 @@ function _submitRequest(params, callback) {
     region: region,
     object: object
   });
+<<<<<<< HEAD
   if (params.SwitchHost) {
     // 更换请求的url
     url = url.replace(/myqcloud.com/, 'tencentcos.cn');
   }
+=======
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
   if (params.action) {
     // 已知问题，某些版本的qq会对url自动拼接（比如/upload被拼接成/upload=(null)）导致签名错误，这里做下兼容。
     url = url + '?' + (util.isIOS_QQ ? "".concat(params.action, "=") : params.action);
@@ -12703,10 +14095,14 @@ var defaultOptions = {
   // 灯塔上报组件，如有需要请自行传入
   TrackerDelay: 5000,
   // 周期性上报，单位毫秒。0代表实时上报
+<<<<<<< HEAD
   CustomId: '',
   // 自定义上报id
   AutoSwitchHost: true,
   CopySourceParser: null // 自定义拷贝源解析器
+=======
+  CustomId: '' // 自定义上报id
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
 };
 
 // 对外暴露的类
@@ -12737,10 +14133,13 @@ var COS = function COS(options) {
     console.warn('warning: cos-js-sdk-v5 不支持 nodejs 环境使用，请改用 cos-nodejs-sdk-v5，参考文档： https://cloud.tencent.com/document/product/436/8629');
     console.warn('warning: cos-js-sdk-v5 does not support nodejs environment. Please use cos-nodejs-sdk-v5 instead. See: https://cloud.tencent.com/document/product/436/8629');
   }
+<<<<<<< HEAD
   if (this.options.ForcePathStyle) {
     console.warn('cos-js-sdk-v5不再支持使用path-style，仅支持使用virtual-hosted-style，参考文档：https://cloud.tencent.com/document/product/436/96243');
     throw new Error('ForcePathStyle is not supported');
   }
+=======
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
   event.init(this);
   task.init(this);
 };
@@ -12981,6 +14380,7 @@ var initTask = function initTask(cos) {
   }();
   var clearQueue = function clearQueue() {
     if (queue.length <= cos.options.UploadQueueSize) return;
+<<<<<<< HEAD
     for
 
       // 如果还太多，才继续清理
@@ -12989,6 +14389,14 @@ var initTask = function initTask(cos) {
     i < queue.length &&
     // 大于队列才清理
     queue.length > cos.options.UploadQueueSize;) {
+=======
+    for (var i = 0; i < nextUploadIndex &&
+    // 小于当前操作的 index 才清理
+    i < queue.length &&
+    // 大于队列才清理
+    queue.length > cos.options.UploadQueueSize // 如果还太多，才继续清理
+    ;) {
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
       var isActive = queue[i].state === 'waiting' || queue[i].state === 'checking' || queue[i].state === 'uploading';
       if (!queue[i] || !isActive) {
         tasks[queue[i].id] && delete tasks[queue[i].id];
@@ -13004,7 +14412,13 @@ var initTask = function initTask(cos) {
     // 检查是否允许增加执行进程
     if (uploadingFileCount >= cos.options.FileParallelLimit) return;
     // 跳过不可执行的任务
+<<<<<<< HEAD
     while (queue[nextUploadIndex] && queue[nextUploadIndex].state !== 'waiting') nextUploadIndex++;
+=======
+    while (queue[nextUploadIndex] && queue[nextUploadIndex].state !== 'waiting') {
+      nextUploadIndex++;
+    }
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
     // 检查是否已遍历结束
     if (nextUploadIndex >= queue.length) return;
     // 上传该遍历到的任务
@@ -13190,6 +14604,7 @@ var _createClass = __webpack_require__(/*! @babel/runtime/helpers/createClass */
 var _typeof = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_modules/@babel/runtime/helpers/typeof.js");
 var pkg = __webpack_require__(/*! ../package.json */ "./package.json");
 var beacon = null;
+<<<<<<< HEAD
 var getBeacon = function getBeacon(Beacon, delay) {
   if (!beacon) {
     // 生成 beacon
@@ -13198,6 +14613,14 @@ var getBeacon = function getBeacon(Beacon, delay) {
     }
     beacon = new Beacon({
       appkey: '0AND0VEVB24UBGDU',
+=======
+var getBeacon = function getBeacon(delay) {
+  if (!beacon) {
+    // 不放在顶层是避免首次引入就被加载，从而避免在某些环境比如webworker里加载灯塔sdk内window相关对象报错
+    var BeaconAction = __webpack_require__(/*! ../lib/beacon.min */ "./lib/beacon.min.js");
+    beacon = new BeaconAction({
+      appkey: "0AND0VEVB24UBGDU",
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
       versionCode: pkg.version,
       channelID: 'js_sdk',
       //渠道,选填
@@ -13221,7 +14644,11 @@ var utils = {
     var S4 = function S4() {
       return ((1 + Math.random()) * 0x10000 | 0).toString(16).substring(1);
     };
+<<<<<<< HEAD
     return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
+=======
+    return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
   },
   // 获取网络类型
   getNetType: function getNetType() {
@@ -13238,10 +14665,17 @@ var utils = {
     }
     var agent = navigator.userAgent.toLowerCase();
     var isMac = /macintosh|mac os x/i.test(navigator.userAgent);
+<<<<<<< HEAD
     if (agent.indexOf('win32') >= 0 || agent.indexOf('wow32') >= 0) {
       return 'win32';
     }
     if (agent.indexOf('win64') >= 0 || agent.indexOf('wow64') >= 0) {
+=======
+    if (agent.indexOf("win32") >= 0 || agent.indexOf("wow32") >= 0) {
+      return 'win32';
+    }
+    if (agent.indexOf("win64") >= 0 || agent.indexOf("wow64") >= 0) {
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
       return 'win64';
     }
     if (isMac) {
@@ -13369,12 +14803,21 @@ function getEventCode(apiName) {
     return 'cos_download';
   }
   return 'base_service';
+<<<<<<< HEAD
 }
 
 // 上报参数驼峰改下划线
 function camel2underline(key) {
   return key.replace(/([A-Z])/g, '_$1').toLowerCase();
 }
+=======
+}
+
+// 上报参数驼峰改下划线
+function camel2underline(key) {
+  return key.replace(/([A-Z])/g, "_$1").toLowerCase();
+}
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
 function formatParams(params) {
   var formattedParams = {};
   var allReporterKeys = ['tracePlatform', 'cossdkVersion', 'region', 'networkType', 'host', 'accelerate', 'requestPath', 'size', 'httpMd5', 'httpSign', 'httpFull', 'name', 'result', 'tookTime', 'errorNode', 'errorCode', 'errorMessage', 'errorRequestId', 'errorStatusCode', 'errorServiceName', 'errorType', 'traceId', 'bucket', 'appid', 'partNumber', 'retryTimes', 'reqUrl', 'customId', 'fullError', 'deviceType', 'devicePlatform', 'deviceName'];
@@ -13405,8 +14848,12 @@ var Tracker = /*#__PURE__*/function () {
       accelerate = opt.accelerate,
       customId = opt.customId,
       delay = opt.delay,
+<<<<<<< HEAD
       deepTracker = opt.deepTracker,
       Beacon = opt.Beacon;
+=======
+      deepTracker = opt.deepTracker;
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
     var appid = bucket && bucket.substr(bucket.lastIndexOf('-') + 1) || '';
     this.parent = parent;
     this.deepTracker = deepTracker;
@@ -13474,7 +14921,11 @@ var Tracker = /*#__PURE__*/function () {
       endTime: 0 //  sdk api调用结束时间，不是纯网络耗时
     };
 
+<<<<<<< HEAD
     this.beacon = getBeacon(Beacon, delay);
+=======
+    this.beacon = getBeacon(delay);
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
   }
 
   // 格式化sdk回调
@@ -13592,7 +15043,10 @@ var md5 = __webpack_require__(/*! ../lib/md5 */ "./lib/md5.js");
 var CryptoJS = __webpack_require__(/*! ../lib/crypto */ "./lib/crypto.js");
 var xml2json = __webpack_require__(/*! ../lib/xml2json */ "./lib/xml2json.js");
 var json2xml = __webpack_require__(/*! ../lib/json2xml */ "./lib/json2xml.js");
+<<<<<<< HEAD
 var base64 = __webpack_require__(/*! ../lib/base64 */ "./lib/base64.js");
+=======
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
 var Tracker = __webpack_require__(/*! ./tracker */ "./src/tracker.js");
 function camSafeUrlEncode(str) {
   return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/\*/g, '%2A');
@@ -13610,6 +15064,10 @@ function getObjectKeys(obj, forKey) {
     return a === b ? 0 : a > b ? 1 : -1;
   });
 }
+<<<<<<< HEAD
+=======
+;
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
 
 /**
  * obj转为string
@@ -13632,7 +15090,11 @@ var obj2str = function obj2str(obj, lowerCaseKey) {
 };
 
 // 可以签入签名的headers
+<<<<<<< HEAD
 var signHeaders = ['cache-control', 'content-disposition', 'content-encoding', 'content-length', 'content-md5', 'expect', 'expires', 'host', 'if-match', 'if-modified-since', 'if-none-match', 'if-unmodified-since', 'origin', 'range', 'transfer-encoding', 'pic-operations'];
+=======
+var signHeaders = ['content-disposition', 'content-encoding', 'content-length', 'content-md5', 'expect', 'host', 'if-match', 'if-modified-since', 'if-none-match', 'if-unmodified-since', 'origin', 'range', 'response-cache-control', 'response-content-disposition', 'response-content-encoding', 'response-content-language', 'response-content-type', 'response-expires', 'transfer-encoding', 'versionid'];
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
 var getSignHeaderObj = function getSignHeaderObj(headers) {
   var signHeaderObj = {};
   for (var i in headers) {
@@ -13975,7 +15437,11 @@ function filter(obj, fn) {
   }
   return o;
 }
+<<<<<<< HEAD
 var b64 = function b64(str) {
+=======
+var binaryBase64 = function binaryBase64(str) {
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
   var i,
     len,
     char,
@@ -13990,7 +15456,11 @@ var uuid = function uuid() {
   var S4 = function S4() {
     return ((1 + Math.random()) * 0x10000 | 0).toString(16).substring(1);
   };
+<<<<<<< HEAD
   return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
+=======
+  return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
 };
 var hasMissingParams = function hasMissingParams(apiName, params) {
   var Bucket = params.Bucket;
@@ -14247,17 +15717,22 @@ var throttleOnProgress = function throttleOnProgress(total, onProgress) {
 var getFileSize = function getFileSize(api, params, callback) {
   var size;
   if (typeof params.Body === 'string') {
-    params.Body = new Blob([params.Body], {
-      type: 'text/plain'
-    });
+    size = params.Body.length;
   } else if (params.Body instanceof ArrayBuffer) {
+<<<<<<< HEAD
     params.Body = new Blob([params.Body]);
   }
   if (params.Body && (params.Body instanceof Blob || params.Body.toString() === '[object File]' || params.Body.toString() === '[object Blob]')) {
+=======
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
     size = params.Body.size;
   } else {
-    callback(util.error(new Error('params body format error, Only allow File|Blob|String.')));
-    return;
+    if (params.Body && (params.Body instanceof Blob || params.Body.toString() === '[object File]' || params.Body.toString() === '[object Blob]')) {
+      size = params.Body.size;
+    } else {
+      callback(util.error(new Error('params body format error, Only allow File|Blob|String.')));
+      return;
+    }
   }
   params.ContentLength = size;
   callback(null, size);
@@ -14323,6 +15798,7 @@ var isQQ = function () {
   }
   return /\sQQ/i.test(navigator.userAgent);
 }();
+<<<<<<< HEAD
 var encodeBase64 = function encodeBase64(str, safe) {
   var base64Str = base64.encode(str);
   // 万象使用的安全base64格式需要特殊处理
@@ -14331,6 +15807,8 @@ var encodeBase64 = function encodeBase64(str, safe) {
   }
   return base64Str;
 };
+=======
+>>>>>>> faac25c (feat: 避免其他类型的 Body 封装为 Blob)
 var util = {
   noop: noop,
   formatParams: formatParams,
