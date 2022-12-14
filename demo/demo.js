@@ -2043,6 +2043,296 @@ function getWebpageAuditingResult() {
   });
 }
 
+// 查询已经开通文档预览的存储桶
+function describeDocProcessBuckets() {
+  var host = 'ci.' + config.Region + '.myqcloud.com/docbucket';
+  var url = 'https://' + host;
+  cos.request({
+      Method: 'GET',
+      Key: 'docbucket',
+      Url: url,
+      Query: {
+        // regions: '', /* 	非必须，地域信息，以“,”分隔字符串，支持 All、ap-shanghai、ap-beijing */
+        // bucketNames: '', /* 非必须，存储桶名称，以“,”分隔，支持多个存储桶，精确搜索	 */
+        // bucketName: '', /* 非必须，存储桶名称前缀，前缀搜索	 */
+        // pageNumber: 1, /* 非必须，第几页	 */
+        pageSize: 2, /* 非必须，每页个数	 */
+      },
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 获取文档预览url
+function getDocPreviewUrl() {
+  cos.getObjectUrl({
+    Bucket: config.Bucket, // Bucket 格式：test-1250000000
+    Region: config.Region,
+    Key: '1/文档.docx',
+    Query: {
+      'ci-process': 'doc-preview', /* 必须，数据万象处理能力，文档预览固定为 doc-preview */
+      srcType: 'docx', /* 非必须，源数据的后缀类型，当前文档转换根据 COS 对象的后缀名来确定源数据类型。当 COS 对象没有后缀名时，可以设置该值 */
+      // page: '', /* 非必须，需转换的文档页码，默认从1开始计数；表格文件中 page 表示转换的第 X 个 sheet 的第 X 张图	*/
+      // dstType: '', /* 非必须，转换输出目标文件类型 */
+    },
+  }, function(err, data) {
+    logger.log(err || data);
+    if (err) {
+      console.log(err);
+    } else {
+      var url = data.Url;
+      console.log(url);
+    }
+  });
+}
+
+// 查询文档转码队列
+function describeDocProcessQueues() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/docqueue';
+  var url = 'https://' + host;
+  cos.request({
+      Method: 'GET',
+      Key: 'docqueue',
+      Url: url,
+      Query: {
+        // queueIds: '', /* 	非必须，队列 ID，以“,”符号分割字符串 */
+        // state: '', /* 非必须，1=Active,2=Paused 	 */
+        // pageNumber: 1, /* 非必须，第几页	 */
+        // pageSize: 2, /* 非必须，每页个数	 */
+      },
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 更新文档预览队列
+function updateDocProcessQueue() {
+  var queueId = 'pa2e2c3d3fae042de909cafc16f1d801b';
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/docqueue/' + queueId;
+  var url = 'https://' + host;
+  var body = COS.util.json2xml({
+    Request: {
+      Name: 'queue-doc-process-1',
+      QueueID: queueId,
+      State: 'Active',
+      NotifyConfig: {
+        State: 'Off',
+      }
+    }
+  });
+  cos.request({
+      Method: 'PUT',
+      Key: 'docqueue/' + queueId,
+      Url: url,
+      Body: body,
+      ContentType: 'application/xml',
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 提交文档转码任务
+function createDocProcessJobs() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/doc_jobs';
+  var url = 'https://' + host;
+  var body = COS.util.json2xml({
+    Request: {
+      Tag: 'DocProcess',
+      Input: {
+        Object: '1/文档.docx', // 存在cos里的路径
+      },
+      Operation: {
+        DocProcess: {
+          TgtType: 'jpg',
+        },
+        Output: {
+          Bucket: config.Bucket,
+          Region: config.Region,
+          Object: '1/文档转码_${Number}.jpg', // 转码后存到cos的路径
+        },
+      },
+      QueueId: 'pa2e2c3d3fae042de909cafc16f1d801b',
+    }
+  });
+  cos.request({
+      Method: 'POST',
+      Key: 'doc_jobs',
+      Url: url,
+      Body: body,
+      ContentType: 'application/xml',
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 查询指定的文档预览任务	
+function describeDocProcessJob() {
+  var jobId = 'd87fbabd07b8611ed974b3f4b4064872e';
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/doc_jobs/' + jobId;
+  var url = 'https://' + host;
+  cos.request({
+      Method: 'GET',
+      Key: 'doc_jobs/' + jobId,
+      Url: url,
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 拉取符合条件的文档预览任务	
+function describeDocProcessJobs() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/doc_jobs';
+  var url = 'https://' + host;
+  cos.request({
+      Method: 'GET',
+      Key: 'doc_jobs',
+      Url: url,
+      Query: {
+        queueId: 'pa2e2c3d3fae042de909cafc16f1d801b',
+        tag: 'DocProcess',
+      },
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 文档转 HTML
+function getDocHtmlUrl() {
+  cos.getObjectUrl({
+    Bucket: config.Bucket, // Bucket 格式：test-1250000000
+    Region: config.Region,
+    Key: '1/文档.docx',
+    Query: {
+      'ci-process': 'doc-preview', /* 必须，数据万象处理能力，文档预览固定为 doc-preview */
+      // srcType: '', /* 非必须，源数据的后缀类型，当前文档转换根据 COS 对象的后缀名来确定源数据类型。当 COS 对象没有后缀名时，可以设置该值 */
+      // page: '', /* 非必须，需转换的文档页码，默认从1开始计数；表格文件中 page 表示转换的第 X 个 sheet 的第 X 张图	*/
+      dstType: 'html', /* 非必须，转换输出目标文件类型 */
+    },
+  }, function(err, data) {
+    if (err) {
+      console.log(err);
+    } else {
+      // 使用浏览器打开url即可预览
+      var url = data.Url;
+      console.log(url);
+    }
+  });
+}
+
+// 识别图片标签
+function getImageLabel() {
+  var key = '1/素材.jpeg';
+  var host = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + key;
+  var url = 'https://' + host;
+  cos.request({
+      Method: 'GET',
+      Key: key,
+      Url: url,
+      Query: {
+        'ci-process': 'detect-label'
+      },
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 二维码识别(上传时识别)
+function identifyQrcode_put() {
+  util.selectLocalFile(function (files) {
+    var file = files && files[0];
+    if (!file) return;
+    cos.putObject({
+      Bucket: config.Bucket, // Bucket 格式：test-1250000000
+      Region: config.Region,
+      Key: '1/上传二维码.png',
+      Body: file,
+      Headers: {
+        // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
+        'Pic-Operations':
+          '{"is_pic_info": 1, "rules": [{"fileid":"test.jpg","rule":" QRcode/cover/0"}]}',
+      },
+      onProgress: function (progressData) {
+          logger.log('onProgress', JSON.stringify(progressData));
+      },
+    }, function (err, data) {
+        logger.log('CIExample1:', err || data);
+    });
+  });
+}
+
+// 二维码识别(下载时识别)
+function identifyQrcode_get() {
+  var key = '1/二维码图片.png';
+  var host = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + key;
+  var url = 'https://' + host;
+  cos.request({
+      Method: 'GET',
+      Key: key,
+      Url: url,
+      Query: {
+        'ci-process': 'QRcode'
+      },
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 二维码生成
+function generateQrcode() {
+  var host = config.Bucket + '.cos.' + config.Region + '.myqcloud.com';
+  var url = 'https://' + host;
+  cos.request({
+      Method: 'GET',
+      Key: '',
+      Url: url,
+      Query: {
+        'ci-process': 'qrcode-generate', /* 必须，对象存储处理能力，二维码生成参数为 qrcode-generate	*/
+        'qrcode-content': '二维码文案', /* 必须，可识别的二维码文本信息	 */
+        // mode: 0, /* 非必须，生成的二维码类型，可选值：0或1。0为二维码，1为条形码，默认值为0	*/
+        width: 200, /* 必须，指定生成的二维码或条形码的宽度，高度会进行等比压缩	*/
+      },
+  },
+  function(err, data){
+    if (!err) {
+      // 获得二维码base64
+      var imgBase64 = data.Response.ResultImage;
+      // 比如可拼接前缀直接展示在img里
+      // document.querySelector('#img').src = 'data:image/jpg;base64,' + imgBase64;
+    }
+  });
+}
+
+// 图片文字识别
+function orc() {
+  var key = '1/素材.jpeg';
+  var host = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + key;
+  var url = 'https://' + host;
+  cos.request({
+      Method: 'GET',
+      Key: key,
+      Url: url,
+      Query: {
+        'ci-process': 'OCR', /* 必须，数据万象处理能力，图片文字识别固定为 OCR。	*/
+        // type: '', /* 非必须，OCR 的识别类型 */
+        // 'language-type': '', /* 非必须，type 值为 general 时有效，表示识别语言类型 */
+        // ispdf: false, /* 非必须，type 值为 general、fast 时有效，表示是否开启 PDF 识别 */
+        // 'pdf-pagenumber': '', /* 非必须，type 值为 general、fast 时有效，表示需要识别的 PDF 页面的对应页码 */
+        // isword: false, /* 非必须，type 值为 general、accurate 时有效，表示识别后是否需要返回单字信息 */
+        // 'enable-word-polygon': false, /* 非必须，type 值为 handwriting 时有效，表示是否开启单字的四点定位坐标输出 */
+      },
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
 
 (function () {
     var list = [
@@ -2150,6 +2440,19 @@ function getWebpageAuditingResult() {
         'getDocumentAuditingResult',
         'postWebpageAuditing',
         'getWebpageAuditingResult',
+        'describeDocProcessBuckets',
+        'getDocPreviewUrl',
+        'describeDocProcessQueues',
+        'updateDocProcessQueue',
+        'createDocProcessJobs',
+        'describeDocProcessJob',
+        'describeDocProcessJobs',
+        'getDocHtmlUrl',
+        'getImageLabel',
+        'identifyQrcode_put',
+        'identifyQrcode_get',
+        'generateQrcode',
+        'orc',
     ];
     var labelMap = {
         putObject: '简单上传',
@@ -2186,6 +2489,19 @@ function getWebpageAuditingResult() {
         getDocumentAuditingResult: '查询文档审核任务结果',
         postWebpageAuditing: '提交网页审核任务',
         getWebpageAuditingResult: '查询网页审核任务结果',
+        describeDocProcessBuckets: '查询文档预览开通状态',
+        getDocPreviewUrl: '文档转码同步请求',
+        describeDocProcessQueues: '查询文档转码队列',
+        updateDocProcessQueue: '更新文档转码队列',
+        createDocProcessJobs: '提交文档预览任务	',
+        describeDocProcessJob: '查询指定的文档预览任务',
+        describeDocProcessJobs: '拉取符合条件的文档预览任务',
+        getDocHtmlUrl: '文档转 HTML',
+        getImageLabel: '识别图片标签',
+        identifyQrcode_put: '二维码识别(上传时识别)',
+        identifyQrcode_get: '二维码识别(下载时识别)',
+        generateQrcode: '二维码生成',
+        orc: '图片文字识别',
     };
     var container = document.querySelector('.main');
     var html = [];
