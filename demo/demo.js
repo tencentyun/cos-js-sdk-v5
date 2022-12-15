@@ -2056,7 +2056,7 @@ function describeDocProcessBuckets() {
         // bucketNames: '', /* 非必须，存储桶名称，以“,”分隔，支持多个存储桶，精确搜索	 */
         // bucketName: '', /* 非必须，存储桶名称前缀，前缀搜索	 */
         // pageNumber: 1, /* 非必须，第几页	 */
-        pageSize: 2, /* 非必须，每页个数	 */
+        // pageSize: 10, /* 非必须，每页个数	 */
       },
   },
   function(err, data){
@@ -2109,12 +2109,12 @@ function describeDocProcessQueues() {
 
 // 更新文档预览队列
 function updateDocProcessQueue() {
-  var queueId = 'pa2e2c3d3fae042de909cafc16f1d801b';
+  var queueId = 'pa2e2c3d3fae042de909cafc16f1d801b';  // 替换成自己的队列id
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/docqueue/' + queueId;
   var url = 'https://' + host;
   var body = COS.util.json2xml({
     Request: {
-      Name: 'queue-doc-process-1',
+      Name: 'queue-doc-process-1', // 替换成自己的队列name
       QueueID: queueId,
       State: 'Active',
       NotifyConfig: {
@@ -2154,7 +2154,7 @@ function createDocProcessJobs() {
           Object: '1/文档转码_${Number}.jpg', // 转码后存到cos的路径
         },
       },
-      QueueId: 'pa2e2c3d3fae042de909cafc16f1d801b',
+      QueueId: 'pa2e2c3d3fae042de909cafc16f1d801b', // 替换成自己的queueId
     }
   });
   cos.request({
@@ -2171,7 +2171,7 @@ function createDocProcessJobs() {
 
 // 查询指定的文档预览任务	
 function describeDocProcessJob() {
-  var jobId = 'd87fbabd07b8611ed974b3f4b4064872e';
+  var jobId = 'd87fbabd07b8611ed974b3f4b4064872e';  // 替换成自己的jogId
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/doc_jobs/' + jobId;
   var url = 'https://' + host;
   cos.request({
@@ -2193,7 +2193,7 @@ function describeDocProcessJobs() {
       Key: 'doc_jobs',
       Url: url,
       Query: {
-        queueId: 'pa2e2c3d3fae042de909cafc16f1d801b',
+        queueId: 'pa2e2c3d3fae042de909cafc16f1d801b', // 替换成自己的queueId
         tag: 'DocProcess',
       },
   },
