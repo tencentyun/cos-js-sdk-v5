@@ -51,10 +51,9 @@ var obj2str = function (obj, lowerCaseKey) {
 
 
 // 可以签入签名的headers
-var signHeaders = ['content-disposition', 'content-encoding', 'content-length', 'content-md5',
-    'expect', 'host', 'if-match', 'if-modified-since', 'if-none-match', 'if-unmodified-since',
-    'origin', 'range', 'response-cache-control', 'response-content-disposition', 'response-content-encoding',
-    'response-content-language', 'response-content-type', 'response-expires', 'transfer-encoding', 'versionid'];
+var signHeaders = ['cache-control', 'content-disposition', 'content-encoding', 'content-length', 'content-md5',
+    'expect', 'expires', 'host', 'if-match', 'if-modified-since', 'if-none-match', 'if-unmodified-since',
+    'origin', 'range', 'transfer-encoding'];
 
 var getSignHeaderObj = function (headers) {
     var signHeaderObj = {};
