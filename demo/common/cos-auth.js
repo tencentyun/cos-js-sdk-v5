@@ -32,6 +32,16 @@
             .replace(/\*/g, '%2A');
     }
 
+    var HmacSHA1 = function (text, key) {
+        return CryptoJS.HmacSHA1(text, key).toString();
+    };
+    var SHA1 = function (text) {
+        return CryptoJS.SHA1(text).toString();
+    };
+    var base64 = function (text) {
+        return CryptoJS.enc.Utf8.parse(text).toString(CryptoJS.enc.Base64);
+    };
+
     // v4 签名
     var CosAuthV4 = function (opt) {
         var pathname = opt.Pathname || '/';
@@ -54,8 +64,57 @@
         var strWordArray = CryptoJS.enc.Utf8.parse(plainText);
         var resWordArray = sha1Res.concat(strWordArray);
         var sign = resWordArray.toString(CryptoJS.enc.Base64);
+        console.log('sign:', sign);
+        var res = HmacSHA1(plainText, opt.SecretKey);
+        console.log('res:', res);
+        console.log('sign1:', base64(res));
+        console.log('sign2:', base64(plainText));
+        console.log('sign2:', base64(res + plainText));
 
         return sign;
+    }
+
+    // PostObject policy 签名
+    var CosAuthPolicy = function (opt) {
+        var now = Math.round(Date.now() / 1000);
+        var exp = now + (opt.Expires || 900);
+        var qKeyTime = now + ';' + exp;
+        var qSignAlgorithm = 'sha1';
+        var policy = JSON.stringify({
+            'expiration': new Date(exp * 1000).toISOString(),
+            'conditions': [
+                // {'acl': query.ACL},
+                // ['starts-with', '$Content-Type', 'image/'],
+                // ['starts-with', '$success_action_redirect', redirectUrl],
+                // ['eq', '$x-cos-server-side-encryption', 'AES256'],
+                {'q-sign-algorithm': qSignAlgorithm},
+                {'q-ak': opt.SecretId},
+                {'q-sign-time': qKeyTime},
+                {'bucket': opt.Bucket},
+                {'key': opt.Key},
+            ],
+        });
+
+        // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
+        // 步骤一：生成 SignKey
+        var signKey = HmacSHA1(qKeyTime, opt.SecretKey);
+
+        // 步骤二：生成 StringToSign
+        var stringToSign = SHA1(policy);
+
+        // 步骤三：生成 Signature
+        var qSignature = HmacSHA1(stringToSign, signKey);
+
+        var credentials = {
+            policyObj: JSON.parse(policy),
+            policy: base64(policy),
+            qSignAlgorithm: qSignAlgorithm,
+            qAk: opt.SecretId,
+            qKeyTime: qKeyTime,
+            qSignature: qSignature,
+        };
+
+        return credentials;
     }
 
     // v5 签名
@@ -66,6 +125,8 @@
 
         if (opt.Version === '4.0') {
             return CosAuthV4(opt);
+        } else if (opt.Version === 'post-object-policy') {
+            return CosAuthPolicy(opt);
         }
 
         opt = opt || {};
@@ -120,16 +181,16 @@
 
         // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
         // 步骤一：计算 SignKey
-        var signKey = CryptoJS.HmacSHA1(qKeyTime, SecretKey).toString();
+        var signKey = HmacSHA1(qKeyTime, SecretKey);
 
         // 步骤二：构成 FormatString
         var formatString = [method, pathname, obj2str(query, true), obj2str(headers, true), ''].join('\n');
 
         // 步骤三：计算 StringToSign
-        var stringToSign = ['sha1', qSignTime, CryptoJS.SHA1(formatString).toString(), ''].join('\n');
+        var stringToSign = ['sha1', qSignTime, SHA1(formatString), ''].join('\n');
 
         // 步骤四：计算 Signature
-        var qSignature = CryptoJS.HmacSHA1(stringToSign, signKey).toString();
+        var qSignature = HmacSHA1(stringToSign, signKey);
 
         // 步骤五：构造 Authorization
         var authorization = [
@@ -145,6 +206,10 @@
         return authorization;
 
     };
+
+    CosAuth.HmacSHA1 = HmacSHA1;
+    CosAuth.SHA1 = SHA1;
+    CosAuth.base64 = base64;
 
     if(typeof module === 'object'){
         module.exports = CosAuth;
