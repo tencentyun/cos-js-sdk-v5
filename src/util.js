@@ -51,10 +51,9 @@ var obj2str = function (obj, lowerCaseKey) {
 
 
 // 可以签入签名的headers
-var signHeaders = ['content-disposition', 'content-encoding', 'content-length', 'content-md5',
-    'expect', 'host', 'if-match', 'if-modified-since', 'if-none-match', 'if-unmodified-since',
-    'origin', 'range', 'response-cache-control', 'response-content-disposition', 'response-content-encoding',
-    'response-content-language', 'response-content-type', 'response-expires', 'transfer-encoding', 'versionid'];
+var signHeaders = ['cache-control', 'content-disposition', 'content-encoding', 'content-length', 'content-md5',
+    'expect', 'expires', 'host', 'if-match', 'if-modified-since', 'if-none-match', 'if-unmodified-since',
+    'origin', 'range', 'transfer-encoding'];
 
 var getSignHeaderObj = function (headers) {
     var signHeaderObj = {};
@@ -205,9 +204,9 @@ var parseSelectPayload = function (chunk) {
 var getSourceParams = function (source) {
     var parser = this.options.CopySourceParser;
     if (parser) return parser(source);
-    var m = source.match(/^([^.]+-\d+)\.cos(v6|-cdc)?\.([^.]+)\.myqcloud\.com\/(.+)$/);
+    var m = source.match(/^([^.]+-\d+)\.cos(v6|-cdc|-cdz|-internal)?\.([^.]+)\.((myqcloud\.com)|(tencentcos\.cn))\/(.+)$/);
     if (!m) return null;
-    return { Bucket: m[1], Region: m[3], Key: m[4] };
+    return { Bucket: m[1], Region: m[3], Key: m[7] };
 };
 
 var noop = function () {
@@ -506,6 +505,8 @@ var formatParams = function (apiName, params) {
                 'x-cos-server-side-encryption': 'ServerSideEncryption',
                 'x-cos-server-side-encryption-cos-kms-key-id': 'SSEKMSKeyId',
                 'x-cos-server-side-encryption-context': 'SSEContext',
+                // 上传时图片处理
+                'Pic-Operations': 'PicOperations',
             };
             util.each(headerMap, function (paramKey, headerKey) {
                 if (params[paramKey] !== undefined) {
@@ -631,7 +632,7 @@ var apiWrapper = function (apiName, apiFn) {
         };
 
         var errMsg = checkParams();
-        var isSync = apiName === 'getAuth' || apiName === 'getObjectUrl';
+        var isSync = ['getAuth', 'getObjectUrl'].includes(apiName);
         if (typeof Promise === 'function' && !isSync && !callback) {
             return new Promise(function (resolve, reject) {
                 callback = function (err, data) {
@@ -750,11 +751,27 @@ var isNode = function () {
     return typeof window !== 'object' && typeof process === 'object' && typeof require === 'function' && !isWebWorker();
 }
 
-
-
 var isCIHost = function(url) {
     return /^https?:\/\/([^/]+\.)?ci\.[^/]+/.test(url);
 }
+
+//判断是否是ios
+var isIOS = (function(){
+  if (typeof navigator !== 'object') {
+    return false;
+  }
+  var u = navigator.userAgent;
+  var isIOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
+  return isIOS;
+})();
+
+// 判断是qq内置浏览器
+var isQQ = (function () {
+  if (typeof navigator !== 'object') {
+    return false;
+  }
+  return /\sQQ/i.test(navigator.userAgent)
+})();
 
 var util = {
     noop: noop,
@@ -790,6 +807,7 @@ var util = {
     isBrowser: true,
     isNode: isNode,
     isCIHost: isCIHost,
+    isIOS_QQ: isIOS && isQQ,
 };
 
 module.exports = util;

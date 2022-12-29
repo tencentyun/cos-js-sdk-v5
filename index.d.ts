@@ -259,6 +259,8 @@ declare namespace COS {
     ExpiredTime: number,
     /** 该临时密钥是否仅用于相同 Scope 权限范围的请求 */
     ScopeLimit?: boolean,
+    /** 签名 */
+    Authorization?: string,
   }
 
   /** 用于发请求的签名字符串，会放在请求 Header 里的 Authorization 字段 */
@@ -1272,7 +1274,9 @@ declare namespace COS {
       Key: Key,
       /** 要删除的对象版本 ID */
       VersionId?: string
-    }[]
+    }[],
+    /** 是否启动 Quiet 模式 */
+    Quiet?: boolean,
   }
   /** deleteMultipleObject 接口返回值 */
   interface DeleteMultipleObjectResult extends GeneralResult {
@@ -1300,7 +1304,10 @@ declare namespace COS {
 
   // getObjectAcl
   /** getObjectAcl 接口参数 */
-  interface GetObjectAclParams extends ObjectParams {}
+  interface GetObjectAclParams extends ObjectParams {
+    /** 历史版本id */
+    VersionId?: VersionId,
+  }
   /** getObjectAcl 接口返回值 */
   interface GetObjectAclResult extends GeneralResult {
     /** 允许用户自定义存储桶权限，有效值：private | public-read | public-read-write */
@@ -1851,7 +1858,7 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
 
   // request
   /** request 接口参数 */
-  interface RequestParams extends BucketParams {
+  interface RequestParams {
     /** 操作方法，如 get，post，delete， head 等 HTTP 方法 */
     Method: string,
     /** 请求的对象键，最前面不带 / */
@@ -1869,6 +1876,11 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     /** 返回文件内容格式，如string、blob、arraybuffer */
     DataType?: string,
     ContentType?: string,
+    Bucket?: Bucket,
+    /** 存储桶所在地域 @see https://cloud.tencent.com/document/product/436/6224 */
+    Region?: Region,
+    /** 请求时带上的 Header 字段 */
+    Headers?: Headers,
   }
   /** Request 接口返回值 */
   interface RequestResult extends GeneralResult {
@@ -2259,13 +2271,13 @@ declare class COS {
   /** 获取上传任务列表 */
   getTaskList(): COS.TaskList;
 
-  /** 判断上传队列是否有未完成的任务 */
+  /** 暂停任务 */
   pauseTask(taskId: COS.TaskId): void;
 
-  /** 判断上传队列是否有未完成的任务 */
+  /** 重启任务 */
   restartTask(taskId: COS.TaskId): void;
 
-  /** 判断上传队列是否有未完成的任务 */
+  /** 取消任务 */
   cancelTask(taskId: COS.TaskId): void;
 
   /** 判断上传队列是否有未完成的任务 */

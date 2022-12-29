@@ -2043,7 +2043,10 @@ function deleteObject(params, callback) {
  *     @return  {Object}  data.AccessControlPolicy  权限列表
  */
 function getObjectAcl(params, callback) {
-
+    var reqParams = {};
+    if(params.VersionId) {
+        reqParams.versionId = params.VersionId;
+    }
     submitRequest.call(this, {
         Action: 'name/cos:GetObjectACL',
         method: 'GET',
@@ -2051,6 +2054,7 @@ function getObjectAcl(params, callback) {
         Region: params.Region,
         Key: params.Key,
         headers: params.Headers,
+        qs: reqParams,
         action: 'acl',
     }, function (err, data) {
         if (err) return callback(err);
@@ -2214,9 +2218,9 @@ function putObjectCopy(params, callback) {
         return;
     }
 
-    var SourceBucket = m[1];
-    var SourceRegion = m[3];
-    var SourceKey = decodeURIComponent(m[4]);
+    var SourceBucket = m.Bucket;
+    var SourceRegion = m.Region;
+    var SourceKey = decodeURIComponent(m.Key);
 
     submitRequest.call(this, {
         Scope: [{
@@ -2266,9 +2270,9 @@ function uploadPartCopy(params, callback) {
         return;
     }
 
-    var SourceBucket = m[1];
-    var SourceRegion = m[3];
-    var SourceKey = decodeURIComponent(m[4]);
+    var SourceBucket = m.Bucket;
+    var SourceRegion = m.Region;
+    var SourceKey = decodeURIComponent(m.Key);
 
     submitRequest.call(this, {
         Scope: [{
@@ -3190,6 +3194,10 @@ function getUrl(params) {
     if (typeof domain === 'function') {
         domain = domain({Bucket: longBucket, Region: region});
     }
+    // 兼容不带冒号的http、https
+    if (['http', 'https'].includes(params.protocol)) {
+      params.protocol = params.protocol + ':';
+    }
     var protocol = params.protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
     if (!domain) {
         if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
@@ -3578,7 +3586,8 @@ function _submitRequest(params, callback) {
         object: object,
     });
     if (params.action) {
-        url = url + '?' + params.action;
+        // 已知问题，某些版本的qq会对url自动拼接（比如/upload被拼接成/upload=(null)）导致签名错误，这里做下兼容。
+        url = url + '?' + (util.isIOS_QQ ? `${params.action}=` : params.action);
     }
     if (params.qsStr) {
         if(url.indexOf('?') > -1){
@@ -3641,30 +3650,27 @@ function _submitRequest(params, callback) {
     // 分块上传时给父级tracker设置url信息
     params.tracker && params.tracker.parent && params.tracker.parent.setParams({ reqUrl: fullUrl, accelerate: useAccelerate ? 'Y' : 'N' });
     var sender = (self.options.Request || REQUEST)(opt, function (r) {
-        if (r.error === 'abort') return;
+        if (r && r.error === 'abort') return;
 
         var receive = {
             options: opt,
-            error: err,
-            statusCode: response && response.statusCode || 0,
-            headers: response && response.headers || {},
-            body: body,
+            error: r && r.error,
+            statusCode: r && r.statusCode || 0,
+            statusMessage: r && r.statusMessage || '',
+            headers: r && r.headers || {},
+            body: r && r.body
         };
-        self.emit('after-receive', receive);
-        err = receive.error;
-        body = receive.body;
-        response = {
-            statusCode: receive.statusCode,
-            headers: receive.headers,
-        };
-
         // 抛出事件，允许修改返回值的 error、statusCode、statusMessage、body
-        self.emit('after-receive', r);
-        var response = {statusCode: r.statusCode, statusMessage: r.statusMessage, headers: r.headers};
-        var err = r.error;
-        var body = r.body;
-
+        self.emit('after-receive', receive);
+        var err = receive.error;
+        var body = receive.body;
         // 返回内容添加 状态码 和 headers
+        var response = {
+            statusCode: receive.statusCode,
+            statusMessage: receive.statusMessage,
+            headers: receive.headers
+        };
+
         var hasReturned;
         var cb = function (err, data) {
             TaskId && self.off('inner-kill-task', killTask);

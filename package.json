@@ -1,6 +1,6 @@
 {
   "name": "cos-js-sdk-v5",
-  "version": "1.4.7",
+  "version": "1.4.15",
   "description": "JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)",
   "main": "dist/cos-js-sdk-v5.js",
   "types": "index.d.ts",
@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/tencentyun/cos-js-sdk-v5#readme",
   "dependencies": {
-    "@xmldom/xmldom": "^0.8.2"
+    "@xmldom/xmldom": "^0.8.6"
   },
   "devDependencies": {
     "@babel/core": "7.17.9",
