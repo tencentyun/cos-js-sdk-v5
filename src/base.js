@@ -16,7 +16,7 @@ function getService(params, callback) {
         callback = params;
         params = {};
     }
-    var protocol = this.options.Protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
+    var protocol = this.options.Protocol || (util.isBrowser && typeof location === 'object' && location.protocol === 'http:' ? 'http:' : 'https:');
     var domain = this.options.ServiceDomain;
     var appId = params.AppId || this.options.appId;
     var region = params.Region;
@@ -3198,7 +3198,7 @@ function getUrl(params) {
     if (['http', 'https'].includes(params.protocol)) {
       params.protocol = params.protocol + ':';
     }
-    var protocol = params.protocol || (util.isBrowser && location.protocol === 'http:' ? 'http:' : 'https:');
+    var protocol = params.protocol || (util.isBrowser && typeof location === 'object' && location.protocol === 'http:' ? 'http:' : 'https:');
     if (!domain) {
         if (['cn-south', 'cn-south-2', 'cn-north', 'cn-east', 'cn-southwest', 'sg'].indexOf(region) > -1) {
             domain = '{Region}.myqcloud.com';
