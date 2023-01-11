@@ -6,12 +6,33 @@ import COS from '../index.js';
 
 // config 替换成自己的桶信息
 var config = {
-	Bucket: process.env.Bucket,
+	Bucket: process.env.Bucket, // 需提前创建并设置跨域
 	Region: process.env.Region,
-  ReplicationBucket: process.env.ReplicationBucket,
-  ReplicationRegion: process.env.ReplicationRegion,
+  ReplicationBucket: process.env.ReplicationBucket, // 存储桶复制时用到的桶，需提前创建并设置跨域
+  ReplicationRegion: process.env.ReplicationRegion, // 存储桶复制时用到的桶的地域
   Uin: process.env.Uin,
 };
+
+if (!process.env.Bucket) {
+  console.warn('环境变量里未找到Bucket,请检查');
+  return;
+}
+if (!process.env.Region) {
+  console.warn('环境变量里未找到Region,请检查');
+  return;
+}
+if (!process.env.ReplicationBucket) {
+  console.warn('环境变量里未找到ReplicationBucket,请检查');
+  return;
+}
+if (!process.env.ReplicationRegion) {
+  console.warn('环境变量里未找到ReplicationRegion,请检查');
+  return;
+}
+if (!process.env.Uin) {
+  console.warn('环境变量里未找到Uin,请检查');
+  return;
+}
 
 var util = {
   createFile: function (options) {
