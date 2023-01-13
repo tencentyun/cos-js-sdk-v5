@@ -13,6 +13,9 @@ var config = {
   Uin: process.env.Uin,
 };
 
+console.log('process', process);
+console.log('process.env', process.env);
+
 if (!process.env.Bucket) {
   console.warn('环境变量里未找到Bucket,请检查');
   return;
