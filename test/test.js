@@ -13,28 +13,28 @@ var config = {
   Uin: process.env.Uin,
 };
 
-console.log('process', process);
-console.log('process.env', process.env);
-
-if (!process.env.Bucket) {
-  console.warn('环境变量里未找到Bucket,请检查');
-  return;
-}
-if (!process.env.Region) {
-  console.warn('环境变量里未找到Region,请检查');
-  return;
-}
-if (!process.env.ReplicationBucket) {
-  console.warn('环境变量里未找到ReplicationBucket,请检查');
-  return;
-}
-if (!process.env.ReplicationRegion) {
-  console.warn('环境变量里未找到ReplicationRegion,请检查');
-  return;
-}
-if (!process.env.Uin) {
-  console.warn('环境变量里未找到Uin,请检查');
-  return;
+function checkEnvParams() {
+  if (!process.env.Bucket) {
+    console.warn('环境变量里未找到Bucket,请检查');
+    return;
+  }
+  if (!process.env.Region) {
+    console.warn('环境变量里未找到Region,请检查');
+    return;
+  }
+  if (!process.env.ReplicationBucket) {
+    console.warn('环境变量里未找到ReplicationBucket,请检查');
+    return;
+  }
+  if (!process.env.ReplicationRegion) {
+    console.warn('环境变量里未找到ReplicationRegion,请检查');
+    return;
+  }
+  if (!process.env.Uin) {
+    console.warn('环境变量里未找到Uin,请检查');
+    return;
+  }
+  return true;
 }
 
 var util = {
@@ -167,6 +167,7 @@ if (match) {
 }
 
 var group = function (name, fn) {
+  if (!checkEnvParams()) return;
   console.log(`${name}进行中....`);
   describe(name, function () {
     jest.setTimeout(60 * 1000);
