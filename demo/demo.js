@@ -2334,6 +2334,165 @@ function orc() {
   });
 }
 
+// 提交文件压缩任务
+function postFileCompress() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs';
+  var url = 'https://' + host;
+  var body = COS.util.json2xml({
+    Request: {
+      Tag: 'FileCompress', // 必须
+      Operation: {
+        FileCompressConfig: {
+          Flatten: '0', // 文件打包时，是否需要去除源文件已有的目录结构.0:不需要;1:需要
+          Format: 'zip', // 打包压缩的类型，有效值：zip、tar、tar.gz
+          // UrlList、Prefix、Key 三者仅能选择一个，不能都为空，也不会同时生效
+          // UrlList: '', // 索引文件的对象地址
+          Prefix: 'testCompress/', // 目录前缀
+          // Key: [], // 支持对存储桶中的多个文件进行打包，个数不能超过 1000, 总大小不超过50G，否则会导致任务失败
+        },
+        Output: {
+          Bucket: config.Bucket, // 保存压缩后文件的存储桶
+          Region: config.Region, // 保存压缩后文件的存储桶地域
+          Object: 'testCompress/compressed.zip', // 压缩后文件的文件名	
+        },
+        UserData: '',
+      },
+      // QueueId: '', // 任务所在的队列 ID
+      // CallBack: 'http://callback.demo.com', // 任务回调的地址
+      // CallBackFormat: 'JSON', // 任务回调格式
+      // CallBackType: 'Url', // 任务回调类型，Url 或 TDMQ，默认 Url
+    }
+  });
+  cos.request({
+      Method: 'POST',
+      Key: 'file_jobs',
+      Url: url,
+      Body: body,
+      ContentType: 'application/xml',
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 查询文件压缩任务结果
+function getFileCompress() {
+  var jobId = 'faf1d2774a13911ed88a65b0c303ae7xx'; // 提交文件压缩任务后会返回当前任务的jobId
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs/' + jobId;
+  var url = 'https://' + host;
+  cos.request({
+    Method: 'GET',
+    Key: 'file_jobs/' + jobId,
+    Url: url,
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 提交文件解压任务
+function postFileUnCompress() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs';
+  var url = 'https://' + host;
+  var body = COS.util.json2xml({
+    Request: {
+      Tag: 'FileUncompress', // 必须
+      Input: {
+        Object: 'testCompress/compressed.zip', // 文件名，取值为文件在当前存储桶中的完整名称
+      },
+      Operation: {
+        FileUncompressConfig: {
+          Prefix: '', // 指定解压后输出文件的前缀，不填则默认保存在存储桶根路径
+          PrefixReplaced: '0', // 指定解压后的文件路径是否需要替换前缀,默认0
+        },
+        Output: {
+          Bucket: config.Bucket, // 保存解压后文件的存储桶
+          Region: config.Region, // 保存解压后文件的存储桶地域
+        },
+      },
+      // QueueId: '', // 任务所在的队列 ID
+      // CallBack: 'http://callback.demo.com', // 任务回调的地址
+      // CallBackFormat: 'JSON', // 任务回调格式
+      // CallBackType: 'Url', // 任务回调类型，Url 或 TDMQ，默认 Url
+    }
+  });
+  cos.request({
+      Method: 'POST',
+      Key: 'file_jobs',
+      Url: url,
+      Body: body,
+      ContentType: 'application/xml',
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 查询文件解压任务结果
+function getFileUnCompress() {
+  var jobId = 'fe7b0fa34a13911eda186254bb8f3aaxx'; // 提交文件解压任务后会返回当前任务的jobId
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs/' + jobId;
+  var url = 'https://' + host;
+  cos.request({
+    Method: 'GET',
+    Key: 'file_jobs/' + jobId,
+    Url: url,
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 提交哈希值计算任务
+function postFileHash() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs';
+  var url = 'https://' + host;
+  var body = COS.util.json2xml({
+    Request: {
+      Tag: 'FileHashCode', // 必须
+      Input: {
+        Object: 'test/1.pdf', // 文件名，取值为文件在当前存储桶中的完整名称
+      },
+      Operation: {
+        FileHashCodeConfig: {
+          Type: 'MD5', // 哈希值的算法类型，有效值：MD5、SHA1、SHA256
+          AddToHeader: 'false', // 是否将计算得到的哈希值添加至文件自定义header, 有效值：true、false，默认值为 false。
+        },
+        // UserData: '', // 透传用户信息, 可打印的 ASCII 码, 长度不超过1024
+      },
+      // QueueId: '', // 任务所在的队列 ID
+      // CallBack: 'http://callback.demo.com', // 任务回调的地址
+      // CallBackFormat: 'JSON', // 任务回调格式
+      // CallBackType: 'Url', // 任务回调类型，Url 或 TDMQ，默认 Url
+    }
+  });
+  cos.request({
+      Method: 'POST',
+      Key: 'file_jobs',
+      Url: url,
+      Body: body,
+      ContentType: 'application/xml',
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 查询哈希值计算任务结果
+function getFileHashResult() {
+  var jobId = 'f3addcbd0a13811ed9b4ff5338d756fxx'; // 提交文件哈希值计算任务后会返回当前任务的jobId
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs/' + jobId;
+  var url = 'https://' + host;
+  cos.request({
+    Method: 'GET',
+    Key: 'file_jobs/' + jobId,
+    Url: url,
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
 (function () {
     var list = [
         'header-工具函数',
@@ -2453,6 +2612,12 @@ function orc() {
         'identifyQrcode_get',
         'generateQrcode',
         'orc',
+        'postFileCompress',
+        'getFileCompress',
+        'postFileUnCompress',
+        'getFileUnCompress',
+        'postFileHash',
+        'getFileHashResult',
     ];
     var labelMap = {
         putObject: '简单上传',
@@ -2502,6 +2667,12 @@ function orc() {
         identifyQrcode_get: '二维码识别(下载时识别)',
         generateQrcode: '二维码生成',
         orc: '图片文字识别',
+        postFileCompress: '提交文件压缩任务',
+        getFileCompress: '查询文件压缩任务',
+        postFileUnCompress: '提交文件解压任务',
+        getFileUnCompress: '查询文件解压任务',
+        postFileHash: '提交哈希值计算任务',
+        getFileHashResult: '查询哈希值计算任务结果',
     };
     var container = document.querySelector('.main');
     var html = [];
