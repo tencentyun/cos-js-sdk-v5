@@ -57,7 +57,7 @@ module.exports = {
         filename: 'cos-js-sdk-v5.js',
         libraryTarget: 'umd',
         library: 'COS',
-        globalObject: 'self',
+        globalObject: 'this',
     },
     module: {
         rules: [
