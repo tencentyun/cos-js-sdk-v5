@@ -2043,6 +2043,56 @@ function getWebpageAuditingResult() {
   });
 }
 
+// 提交直播审核任务
+function postLiveAuditing() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+  var url = 'https://' + host + '/video/auditing';
+  var body = COS.util.json2xml({
+    Request: {
+      Type: 'live_video',
+      Input: {
+        Url: 'rtmp://example.com/live/123', // 需要审核的直播流播放地址
+        // DataId: '',
+        // UserInfo: {},
+      },
+      Conf: {
+        BizType: '766d07a7af937c26216c51db29793ea6',
+        // Callback: 'https://callback.com', // 回调地址，非必须
+        // CallbackType: 1, // 回调片段类型，非必须
+      }
+    }
+  });
+  cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'POST',
+      Url: url,
+      Key: '/video/auditing',
+      ContentType: 'application/xml',
+      Body: body
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 查询直播审核任务结果
+function getLiveAuditingResult() {
+  var jobId = 'av0ca69557bd6111ed904c5254009411xx'; // jobId可以通过提交直播审核任务返回
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+  var url = 'https://' + host + '/video/auditing/' + jobId;
+  cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET',
+      Key: '/video/auditing/' + jobId,
+      Url: url,
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
 // 查询已经开通文档预览的存储桶
 function describeDocProcessBuckets() {
   var host = 'ci.' + config.Region + '.myqcloud.com/docbucket';
@@ -2311,7 +2361,7 @@ function generateQrcode() {
 }
 
 // 图片文字识别
-function orc() {
+function ocr() {
   var key = '1/素材.jpeg';
   var host = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + key;
   var url = 'https://' + host;
@@ -2948,6 +2998,281 @@ function closeOriginProtect() {
             logger.log(err || data);
         });
 }
+// 提交病毒检测任务
+function postVirusDetect() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/virus/detect';
+  var url = 'https://' + host;
+  var body = COS.util.json2xml({
+    Request: {
+      Input: {
+        Object: 'test/1.png', // 文件名，取值为文件在当前存储桶中的完整名称，与Url参数二选一
+        // Url: 'http://examplebucket-1250000000.cos.ap-shanghai.myqcloud.com/virus.doc', // 病毒文件的链接地址，与Object参数二选一
+      },
+      Conf: {
+        DetectType: 'Virus', // 检测的病毒类型，当前固定为：Virus
+        // CallBack: 'http://callback.demo.com', // 任务回调的地址
+      },
+    }
+  });
+  cos.request({
+      Method: 'POST',
+      Key: 'virus/detect',
+      Url: url,
+      Body: body,
+      ContentType: 'application/xml',
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 查询病毒检测任务结果
+function getVirusDetectResult() {
+  var jobId = 'ssdb2dab23bcdb11ed9efb5254009411xx'; // 提交病毒检测任务后会返回当前任务的jobId
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/virus/detect/' + jobId;
+  var url = 'https://' + host;
+  cos.request({
+    Method: 'GET',
+    Key: 'virus/detect/' + jobId,
+    Url: url,
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 提交音频降噪任务
+function postNoiseReduction() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/jobs';
+  var url = 'https://' + host;
+  var body = COS.util.json2xml({
+    Request: {
+      Tag: 'NoiseReduction',
+      Input: {
+        Object: 'ci/music.mp3', // 文件名，取值为文件在当前存储桶中的完整名称
+      },
+      Operation: {
+        Output: {
+          Bucket: config.Bucket, // 输出的存储桶
+          Region: config.Region, // 输出的存储桶的地域
+          Object: 'ci/out.mp3', // 输出的文件Key
+        },
+      },
+      // QueueId: '', // 任务所在的队列 ID，非必须
+      // CallBackFormat: '', // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式，非必须
+      // CallBackType: '', // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型，非必须
+      // CallBack: '', // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调，非必须	
+      // CallBackMqConfig: '', // 任务回调 TDMQ 配置，当 CallBackType 为 TDMQ 时必填，非必须	
+    }
+  });
+  cos.request({
+      Method: 'POST',
+      Key: 'jobs',
+      Url: url,
+      Body: body,
+      ContentType: 'application/xml',
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 提交人声分离任务
+function postVoiceSeparate() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/jobs';
+  var url = 'https://' + host;
+  var body = COS.util.json2xml({
+    Request: {
+      Tag: 'VoiceSeparate',
+      Input: {
+        Object: 'ci/music.mp3', // 文件名，取值为文件在当前存储桶中的完整名称
+      },
+      Operation: {
+        // VoiceSeparate: {}, // 指定转码模板参数，非必须
+        TemplateId: 't13fca82ad97e84878a22cd81bd2e5652c', // 指定的模板 ID，必须
+        // JobLevel: 0, // 任务优先级，级别限制：0 、1 、2。级别越大任务优先级越高，默认为0，非必须
+        Output: {
+          Bucket: config.Bucket, // 输出的存储桶
+          Region: config.Region, // 输出的存储桶的地域
+          Object: 'ci/out/background.mp3', // 输出的文件Key,背景音结果文件名，不能与 AuObject 同时为空
+          AuObject: 'ci/out/audio.mp3',
+        },
+      },
+      // QueueId: '', // 任务所在的队列 ID，非必须
+      // CallBackFormat: '', // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式，非必须
+      // CallBackType: '', // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型，非必须
+      // CallBack: '', // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调，非必须	
+      // CallBackMqConfig: '', // 任务回调 TDMQ 配置，当 CallBackType 为 TDMQ 时必填，非必须	
+    }
+  });
+  cos.request({
+      Method: 'POST',
+      Key: 'jobs',
+      Url: url,
+      Body: body,
+      ContentType: 'application/xml',
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 提交语音合成任务
+function postTts() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/jobs';
+  var url = 'https://' + host;
+  var body = COS.util.json2xml({
+    Request: {
+      Tag: 'Tts',
+      Operation: {
+        // VoiceSeparate: {}, // 指定转码模板参数，非必须
+        TemplateId: 't192931b3564084168a3f50ebfea59acb3', // 指定的模板 ID，必须
+        // JobLevel: 0, // 任务优先级，级别限制：0 、1 、2。级别越大任务优先级越高，默认为0，非必须
+        TtsConfig: {
+          InputType: 'Text',
+          Input: '床前明月光，疑是地上霜',
+        },
+        Output: {
+          Bucket: config.Bucket, // 输出的存储桶
+          Region: config.Region, // 输出的存储桶的地域
+          Object: 'ci/out/tts.mp3', // 输出的文件Key
+        },
+      },
+      // QueueId: '', // 任务所在的队列 ID，非必须
+      // CallBackFormat: '', // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式，非必须
+      // CallBackType: '', // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型，非必须
+      // CallBack: '', // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调，非必须	
+      // CallBackMqConfig: '', // 任务回调 TDMQ 配置，当 CallBackType 为 TDMQ 时必填，非必须	
+    }
+  });
+  cos.request({
+      Method: 'POST',
+      Key: 'jobs',
+      Url: url,
+      Body: body,
+      ContentType: 'application/xml',
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 提交语音识别任务
+function postSpeechRecognition() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asr_jobs';
+  var url = 'https://' + host;
+  var body = COS.util.json2xml({
+    Request: {
+      Tag: 'SpeechRecognition',
+      Input: {
+        Object: 'ci/music.mp3', // 文件名，取值为文件在当前存储桶中的完整名称，与Url参数二选一
+        // Url: 'http://examplebucket-1250000000.cos.ap-shanghai.myqcloud.com/music.mp3', // 病毒文件的链接地址，与Object参数二选一
+      },
+      Operation: {
+        SpeechRecognition: {
+          EngineModelType: '16k_zh_video', // 引擎模型类型
+          ChannelNum: 1, // 语音声道数
+          ResTextFormat: 0, // 识别结果返回形式
+          FilterDirty: 1, // 是否过滤脏词（目前支持中文普通话引擎）
+          FilterModal: 1, // 是否过语气词（目前支持中文普通话引擎）
+          ConvertNumMode: 0, // 是否进行阿拉伯数字智能转换（目前支持中文普通话引擎）
+        },
+        Output: {
+          Bucket: config.Bucket, // 输出的存储桶
+          Region: config.Region, // 输出的存储桶的地域
+          Object: 'ci/out/SpeechRecognition.mp3', // 输出的文件Key
+        },
+      },
+      // QueueId: '', // 任务所在的队列 ID，非必须
+      // CallBackFormat: '', // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式，非必须
+      // CallBackType: '', // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型，非必须
+      // CallBack: '', // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调，非必须	
+      // CallBackMqConfig: '', // 任务回调 TDMQ 配置，当 CallBackType 为 TDMQ 时必填，非必须	
+    }
+  });
+  cos.request({
+      Method: 'POST',
+      Key: 'asr_jobs',
+      Url: url,
+      Body: body,
+      ContentType: 'application/xml',
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 查询语音识别队列
+function getAsrQueue() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asrqueue';
+  var url = 'https://' + host;
+  cos.request({
+    Method: 'GET',
+    Key: 'asrqueue',
+    Url: url,
+    Query: {
+      // queueIds: '', /* 	非必须，队列 ID，以“,”符号分割字符串 */
+      // state: '', /* 非必须，1=Active,2=Paused 	 */
+      // pageNumber: 1, /* 非必须，第几页	 */
+      // pageSize: 2, /* 非必须，每页个数	 */
+    },
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 更新语音识别队列
+function putAsrQueue() {
+  var queueId = 'pcc77499e85c311edb9865254008618d9';
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asrqueue/' + queueId;
+  var url = 'https://' + host;
+  var body = COS.util.json2xml({
+    Request: {
+      Name: 'queue-doc-process-1',
+      QueueID: queueId,
+      State: 'Paused',
+      NotifyConfig: {
+        // Url: '',
+        // Type: 'Url',
+        // Event: '',
+        State: 'Off',
+      },
+    }
+  });
+  cos.request({
+    Method: 'PUT',
+    Key: 'asrqueue/' + queueId,
+    Url: url,
+    Body: body,
+    ContentType: 'application/xml',
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
+// 查询语音识别开通状态
+function getAsrBucket() {
+  var host = 'ci.' + config.Region + '.myqcloud.com/asrbucket';
+  var url = 'https://' + host;
+  cos.request({
+      Method: 'GET',
+      Key: 'asrbucket',
+      Url: url,
+      Query: {
+        // regions: '', /* 	非必须，地域信息，以“,”分隔字符串，支持 All、ap-shanghai、ap-beijing */
+        // bucketNames: '', /* 非必须，存储桶名称，以“,”分隔，支持多个存储桶，精确搜索	 */
+        // bucketName: '', /* 非必须，存储桶名称前缀，前缀搜索	 */
+        // pageNumber: 1, /* 非必须，第几页	 */
+        // pageSize: 10, /* 非必须，每页个数	 */
+      },
+  },
+  function(err, data){
+      logger.log(err || data);
+  });
+}
+
 
 (function () {
     var list = [
@@ -3055,6 +3380,8 @@ function closeOriginProtect() {
         'getDocumentAuditingResult',
         'postWebpageAuditing',
         'getWebpageAuditingResult',
+        'postLiveAuditing',
+        'getLiveAuditingResult',
         'describeDocProcessBuckets',
         'getDocPreviewUrl',
         'describeDocProcessQueues',
@@ -3067,7 +3394,7 @@ function closeOriginProtect() {
         'identifyQrcode_put',
         'identifyQrcode_get',
         'generateQrcode',
-        'orc',
+        'ocr',
         'postFileCompress',
         'getFileCompress',
         'postFileUnCompress',
@@ -3096,6 +3423,15 @@ function closeOriginProtect() {
         'openOriginProtect',
         'describeOriginProtect',
         'closeOriginProtect',
+        'postVirusDetect',
+        'getVirusDetectResult',
+        'postNoiseReduction',
+        'postVoiceSeparate',
+        'postTts',
+        'postSpeechRecognition',
+        'getAsrQueue',
+        'putAsrQueue',
+        'getAsrBucket',
     ];
     var labelMap = {
         putObject: '简单上传',
@@ -3132,6 +3468,8 @@ function closeOriginProtect() {
         getDocumentAuditingResult: '查询文档审核任务结果',
         postWebpageAuditing: '提交网页审核任务',
         getWebpageAuditingResult: '查询网页审核任务结果',
+        postLiveAuditing: '提交直播审核任务',
+        getLiveAuditingResult: '查询直播审核任务结果',
         describeDocProcessBuckets: '查询文档预览开通状态',
         getDocPreviewUrl: '文档转码同步请求',
         describeDocProcessQueues: '查询文档转码队列',
@@ -3144,7 +3482,7 @@ function closeOriginProtect() {
         identifyQrcode_put: '二维码识别(上传时识别)',
         identifyQrcode_get: '二维码识别(下载时识别)',
         generateQrcode: '二维码生成',
-        orc: '图片文字识别',
+        ocr: '图片文字识别',
         postFileCompress: '提交文件压缩任务',
         getFileCompress: '查询文件压缩任务',
         postFileUnCompress: '提交文件解压任务',
@@ -3173,6 +3511,15 @@ function closeOriginProtect() {
         openOriginProtect: '开通原图保护',
         describeOriginProtect: '查询原图保护状态',
         closeOriginProtect: '关闭原图保护',
+        postVirusDetect: '提交病毒检测任务',
+        getVirusDetectResult: '查询病毒检测任务结果',
+        postNoiseReduction: '提交音频降噪任务',
+        postVoiceSeparate: '提交人声分离任务',
+        postTts: '提交语音合成任务',
+        postSpeechRecognition: '提交语音识别任务',
+        getAsrQueue: '查询语音识别队列',
+        putAsrQueue: '更新语音识别队列',
+        getAsrBucket: '查询语音识别开通状态',
     };
     var container = document.querySelector('.main');
     var html = [];
