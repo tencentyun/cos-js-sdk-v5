@@ -2169,7 +2169,7 @@ function createDocProcessJobs() {
   });
 }
 
-// 查询指定的文档预览任务	
+// 查询指定的文档预览任务
 function describeDocProcessJob() {
   var jobId = 'd87fbabd07b8611ed974b3f4b4064872e';  // 替换成自己的jogId
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/doc_jobs/' + jobId;
@@ -2184,7 +2184,7 @@ function describeDocProcessJob() {
   });
 }
 
-// 拉取符合条件的文档预览任务	
+// 拉取符合条件的文档预览任务
 function describeDocProcessJobs() {
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/doc_jobs';
   var url = 'https://' + host;
@@ -2353,7 +2353,7 @@ function postFileCompress() {
         Output: {
           Bucket: config.Bucket, // 保存压缩后文件的存储桶
           Region: config.Region, // 保存压缩后文件的存储桶地域
-          Object: 'testCompress/compressed.zip', // 压缩后文件的文件名	
+          Object: 'testCompress/compressed.zip', // 压缩后文件的文件名
         },
         UserData: '',
       },
@@ -2493,6 +2493,438 @@ function getFileHashResult() {
   });
 }
 
+// 获取在线文档预览地址 todo
+function getDocHtmlPreviewUrl() {
+    var key = 'test.pdf';
+    var host = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + key;
+    var url = 'https://' + host;
+    cos.request({
+            Method: 'GET',
+            Key: key,
+            Url: url,
+            Query: {
+                'ci-process': 'doc-preview', /* 必须，预览固定参数，值为 doc-preview	*/
+                'dstType': 'html', /* 必须，预览类型，如需预览生成类型为 html 则填入 html	*/
+                'weboffice_url': 1, /* 非必须，是否获取预览链接。填入值为1会返回预览链接和Token信息；填入值为2只返回Token信息；不传会直接预览	*/
+            },
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 开通文件处理服务
+function openFileBucketService() {
+    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_bucket';
+    var url = 'https://' + host;
+    cos.request({
+            Method: 'POST',
+            Key: 'file_bucket',
+            Url: url,
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 查询文件处理队列
+function getFileProcessQueue() {
+    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_queue';
+    var url = 'https://' + host;
+    cos.request({
+            Method: 'GET',
+            Key: 'file_queue',
+            Url: url,
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 更新文件处理队列
+function updateFileProcessQueue() {
+    var queueId = 'p6160ada105a7408e95aac015f4bf8xxx';
+    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_queue/' + queueId;
+    var url = 'https://' + host;
+    var body = COS.util.json2xml({
+        Request: {
+            Name: 'My-Queue-file', // 必须，队列名称,长度不超过128
+            State: 'Active', // 必须，Active 表示队列内的作业会被调度执行。Paused 表示队列暂停，作业不再会被调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响。
+            NotifyConfig: { // 必须，回调配置
+                State: 'On', // 必须，回调开关，Off/On，默认Off
+                Event: 'TaskFinish', // 回调事件，当 State=On时, 必选。任务完成：TaskFinish；工作流完成：WorkflowFinish
+                ResultFormat: 'XML', // 非必选，回调格式，JSON/XML
+                Type: 'Url', // 回调类型，当 State=On时, 必选，Url 或 TDMQ
+                Url: 'https://www.example.com', // 回调地址，当 State=On, 且Type=Url时, 必选
+                // MqMode: 'Off', // TDMQ 使用模式，当 State=On, 且Type=TDMQ时, 必选
+                // MqRegion: 'Off', // TDMQ 所属园区，当 State=On, 且Type=TDMQ时, 必选
+                // MqName: 'Off', // TDMQ 主题名称，当 State=On, 且Type=TDMQ时, 必选
+            }
+        }
+    });
+    cos.request({
+            Method: 'POST',
+            Key: 'file_queue/' + queueId,
+            Url: url,
+            Body: body,
+            ContentType: 'application/xml',
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 哈希值计算同步请求
+function fileHashRequest() {
+    var key = 'test.pdf';
+    var host = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + key;
+    var url = 'https://' + host;
+    cos.request({
+            Method: 'GET',
+            Key: key,
+            Url: url,
+            Query: {
+                'ci-process': 'filehash', /* 必须，操作类型，哈希值计算固定为：filehash	*/
+                'type': 'md5', /* 必须，支持的哈希算法类型，有效值：md5、sha1、sha256	*/
+                // 'addtoheader': false, /* 非必须，是否将计算得到的哈希值，自动添加至文件的自定义header，格式为：x-cos-meta-md5/sha1/sha256;有效值：true、false，不填则默认为false。	*/
+            },
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 图片样式 - 增加样式
+function addStyle() {
+    var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?style';
+    var url = 'https://' + host;
+    var body = COS.util.json2xml({
+        AddStyle: {
+            StyleName: 'style_name1', // 必须，样式名称
+            StyleBody: 'imageMogr2/thumbnail/!50px', // 必须，样式详情
+        }
+    });
+    cos.request({
+            Method: 'PUT',
+            Url: url,
+            Body: body,
+            ContentType: 'application/xml',
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 图片样式 - 查询样式
+function getStyle() {
+    var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?style';
+    var url = 'https://' + host;
+    cos.request({
+            Method: 'GET',
+            Url: url,
+            Query: {
+                "style-name": 'style_name', // 非必填，样式名称
+            },
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 图片样式 - 删除样式
+function deleteStyle() {
+    var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?style';
+    var url = 'https://' + host;
+    var body = COS.util.json2xml({
+        DeleteStyle: {
+            StyleName: 'style_name1', // 必须，样式名称
+        }
+    });
+    cos.request({
+            Method: 'DELETE',
+            Url: url,
+            Body: body,
+            ContentType: 'application/xml',
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 开通 Guetzli 压缩
+function openGuetzliCompresss() {
+    var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?guetzli';
+    var url = 'https://' + host;
+    cos.request({
+            Method: 'PUT',
+            Url: url,
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 查询 Guetzli 状态
+function queryGuetzliCompresss() {
+    var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?guetzli';
+    var url = 'https://' + host;
+    cos.request({
+            Method: 'GET',
+            Url: url,
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 关闭 Guetzli 压缩
+function closeGuetzliCompresss() {
+    var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?guetzli';
+    var url = 'https://' + host;
+    cos.request({
+            Method: 'DELETE',
+            Url: url,
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 上传时使用图片压缩
+function AdvanceCompressExample1(){
+    util.selectLocalFile(function (files) {
+        var file = files && files[0];
+        if (!file) return;
+        if(file.type.indexOf('image') < 0){
+            logger.error('Please select a photo to upload!');
+            return;
+        }
+        if (file.size > 1024 * 1024) {
+            cos.sliceUploadFile({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: file.name,
+                Body: file,
+                Headers: {
+                    // 通过 imageMogr2 接口进行 avif 压缩，可以根据需要压缩的类型填入不同的压缩格式：webp/heif/tpg/avif/svgc
+                    'Pic-Operations':
+                        '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/format/avif"}]}',
+                },
+                onTaskReady: function (tid) {
+                    TaskId = tid;
+                },
+                onHashProgress: function (progressData) {
+                    logger.log('onHashProgress', JSON.stringify(progressData));
+                },
+                onProgress: function (progressData) {
+                    logger.log('onProgress', JSON.stringify(progressData));
+                },
+            }, function (err, data) {
+                logger.log('AdvanceCompressExample1:', err || data);
+            });
+        } else {
+            cos.putObject({
+                Bucket: config.Bucket, // Bucket 格式：test-1250000000
+                Region: config.Region,
+                Key: file.name,
+                Body: file,
+                Headers: {
+                    // 通过 imageMogr2 接口进行 avif 压缩，可以根据需要压缩的类型填入不同的压缩格式：webp/heif/tpg/avif/svgc
+                    'Pic-Operations':
+                        '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/format/avif"}]}',
+                },
+                onTaskReady: function (tid) {
+                    TaskId = tid;
+                },
+                onHashProgress: function (progressData) {
+                    logger.log('onHashProgress', JSON.stringify(progressData));
+                },
+                onProgress: function (progressData) {
+                    logger.log('onProgress', JSON.stringify(progressData));
+                },
+            }, function (err, data) {
+                logger.log('AdvanceCompressExample1:', err || data);
+            });
+        }
+    });
+}
+
+// 对云上数据进行图片压缩
+function AdvanceCompressExample2(){
+    cos.request({
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '1.png',
+        Method: 'POST',
+        Action: 'image_process',
+        Headers: {
+            // 通过 imageMogr2 接口进行 avif 压缩，可以根据需要压缩的类型填入不同的压缩格式：webp/heif/tpg/avif/svgc
+            'Pic-Operations':
+                '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/format/avif"}]}',
+        },
+    }, function (err, data) {
+        logger.log('AdvanceCompressExample2:', err || data);
+    });
+}
+
+// 下载时使用图片压缩
+function AdvanceCompressExample3(){
+    cos.getObject({
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '1.png',
+            QueryString: `imageMogr2/format/avif`, // 可以根据需要压缩的类型填入不同的压缩格式：webp/heif/tpg/avif/svgc
+        },
+        function (err, data) {
+            logger.log('AdvanceCompressExample3:', err || data);
+        },
+    );
+}
+
+// 异常图片检测 todo
+function imageInspect() {
+    var key = '1.png';
+    var host = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + key;
+    var url = 'https://' + host;
+    cos.request({
+            Method: 'GET',
+            Key: key,
+            Url: url,
+            Query: {
+                'ci-process': 'ImageInspect', /* 必须，操作类型，异常图片检测固定为：ImageInspect	*/
+            },
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 查询图片处理队列
+function getPicProcessQueue() {
+    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/picqueue';
+    var url = 'https://' + host;
+    cos.request({
+            Method: 'GET',
+            Key: 'picqueue',
+            Url: url,
+            Query: {
+                queueIds: '', /* 非必须，队列 ID，以“,”符号分割字符串	*/
+                state: 'Active', /* 非必须，1. Active 表示队列内的作业会被媒体处理服务调度执行。2. Paused 表示队列暂停，作业不再会被媒体处理调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响。	*/
+                pageNumber: 1, /* 非必须，第几页,默认值1	*/
+                pageSize: 10, /* 非必须，每页个数,默认值10	*/
+            },
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 更新图片处理队列
+function updatePicProcessQueue() {
+    var queueId = 'p882d181160d84feca27d9376e17c4xxx';
+    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/picqueue/' + queueId;
+    var url = 'https://' + host;
+    var body = COS.util.json2xml({
+        Request: {
+            Name: 'My-Queue-Pic', // 必须，队列名称,长度不超过128
+            State: 'Active', // 必须，Active 表示队列内的作业会被调度执行。Paused 表示队列暂停，作业不再会被调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响。
+            NotifyConfig: { // 必须，回调配置
+                State: 'On', // 必须，回调开关，Off/On，默认Off
+                Event: 'TaskFinish', // 回调事件，当 State=On时, 必选。任务完成：TaskFinish；工作流完成：WorkflowFinish
+                ResultFormat: 'XML', // 非必选，回调格式，JSON/XML
+                Type: 'Url', // 回调类型，当 State=On时, 必选，Url 或 TDMQ
+                Url: 'https://www.example.com', // 回调地址，当 State=On, 且Type=Url时, 必选
+                // MqMode: 'Off', // TDMQ 使用模式，当 State=On, 且Type=TDMQ时, 必选
+                // MqRegion: 'Off', // TDMQ 所属园区，当 State=On, 且Type=TDMQ时, 必选
+                // MqName: 'Off', // TDMQ 主题名称，当 State=On, 且Type=TDMQ时, 必选
+            }
+        }
+    });
+    cos.request({
+            Method: 'POST',
+            Key: 'picqueue/' + queueId,
+            Url: url,
+            Body: body,
+            ContentType: 'application/xml',
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 查询防盗链
+function queryHotlink() {
+    var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?hotlink';
+    var url = 'https://' + host;
+    cos.request({
+            Method: 'GET',
+            Url: url,
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 设置防盗链
+function setHotlink() {
+    var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?hotlink';
+    var url = 'https://' + host;
+    var body = COS.util.json2xml({
+        Hotlink: {
+            Url: 'https://www.example.com', // 必须，域名地址
+            Type: 'white', // 必须，防盗链类型，white 为白名单，black 为黑名单，off 为关闭。
+        }
+    });
+    cos.request({
+            Method: 'PUT',
+            Url: url,
+            Body: body,
+            ContentType: 'application/xml',
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 开通原图保护
+function openOriginProtect() {
+    var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?origin-protect';
+    var url = 'https://' + host;
+    cos.request({
+            Method: 'PUT',
+            Url: url,
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 查询原图保护状态
+function queryOriginProtect() {
+    var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?origin-protect';
+    var url = 'https://' + host;
+    cos.request({
+            Method: 'GET',
+            Url: url,
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
+// 关闭原图保护
+function closeOriginProtect() {
+    var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?origin-protect';
+    var url = 'https://' + host;
+    cos.request({
+            Method: 'DELETE',
+            Url: url,
+        },
+        function(err, data){
+            logger.log(err || data);
+        });
+}
+
 (function () {
     var list = [
         'header-工具函数',
@@ -2618,6 +3050,28 @@ function getFileHashResult() {
         'getFileUnCompress',
         'postFileHash',
         'getFileHashResult',
+        'getDocHtmlPreviewUrl',
+        'openFileBucketService',
+        'getFileProcessQueue',
+        'updateFileProcessQueue',
+        'fileHashRequest',
+        'addStyle',
+        'getStyle',
+        'deleteStyle',
+        'openGuetzliCompresss',
+        'queryGuetzliCompresss',
+        'closeGuetzliCompresss',
+        'AdvanceCompressExample1',
+        'AdvanceCompressExample2',
+        'AdvanceCompressExample3',
+        'imageInspect',
+        'getPicProcessQueue',
+        'updatePicProcessQueue',
+        'queryHotlink',
+        'setHotlink',
+        'openOriginProtect',
+        'queryOriginProtect',
+        'closeOriginProtect',
     ];
     var labelMap = {
         putObject: '简单上传',
@@ -2673,6 +3127,28 @@ function getFileHashResult() {
         getFileUnCompress: '查询文件解压任务',
         postFileHash: '提交哈希值计算任务',
         getFileHashResult: '查询哈希值计算任务结果',
+        getDocHtmlPreviewUrl: '获取在线文档预览地址',
+        openFileBucketService: '开通文件处理服务',
+        getFileProcessQueue: '查询文件处理队列',
+        updateFileProcessQueue: '更新文件处理队列',
+        fileHashRequest: '哈希值计算同步请求',
+        addStyle: '图片处理-增加样式',
+        getStyle: '图片处理-查询样式',
+        deleteStyle: '图片处理-删除样式',
+        openGuetzliCompresss: '开通 Guetzli 压缩',
+        queryGuetzliCompresss: '查询 Guetzli 压缩',
+        closeGuetzliCompresss: '关闭 Guetzli 压缩',
+        AdvanceCompressExample1: '上传时使用图片压缩',
+        AdvanceCompressExample2: '对云上数据进行图片压缩',
+        AdvanceCompressExample3: '下载时使用图片压缩',
+        imageInspect: '异常图片检测',
+        getPicProcessQueue: '查询图片处理队列',
+        updatePicProcessQueue: '更新图片处理队列',
+        queryHotlink: '查询防盗链',
+        setHotlink: '设置防盗链',
+        openOriginProtect: '开通原图保护',
+        queryOriginProtect: '查询原图保护状态',
+        closeOriginProtect: '关闭原图保护',
     };
     var container = document.querySelector('.main');
     var html = [];
