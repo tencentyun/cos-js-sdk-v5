@@ -2510,6 +2510,14 @@ function getDocHtmlPreviewUrl() {
             },
         },
         function(err, data){
+            // 从响应数据中解析出在线文档预览地址
+            let body = {};
+            if (data && data.Body) {
+                body = JSON.parse(data.Body) || {};
+            }
+            if(body && body.PreviewUrl) {
+                data.PreviewUrl = body.PreviewUrl;
+            }
             logger.log(err || data);
         });
 }
@@ -2797,6 +2805,14 @@ function imageInspect() {
             },
         },
         function(err, data){
+            // 从响应数据中解析出异常图片检测结果
+            let body = {};
+            if (data && data.Body) {
+                body = JSON.parse(data.Body) || {};
+                if(body) {
+                    data.body = body;
+                }
+            }
             logger.log(err || data);
         });
 }
