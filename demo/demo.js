@@ -1982,7 +1982,7 @@ function postDocumentAuditing() {
 
 // 查询文档审核任务结果
 function getDocumentAuditingResult() {
-  var jobId = 'sd7815c21caff611eca12f525400d88560'; // jobId可以通过提交文档审核任务返回
+  var jobId = 'sd7815c21caff611eca12f525400d88xxx'; // jobId可以通过提交文档审核任务返回
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
   var url = 'https://' + host + '/document/auditing/' + jobId;
   cos.request({
@@ -2171,7 +2171,7 @@ function createDocProcessJobs() {
 
 // 查询指定的文档预览任务
 function describeDocProcessJob() {
-  var jobId = 'd87fbabd07b8611ed974b3f4b4064872e';  // 替换成自己的jogId
+  var jobId = 'd87fbabd07b8611ed974b3f4b40648xxx';  // 替换成自己的jogId
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/doc_jobs/' + jobId;
   var url = 'https://' + host;
   cos.request({
@@ -2604,7 +2604,7 @@ function fileHashRequest() {
 }
 
 // 图片样式 - 增加样式
-function addStyle() {
+function addImageStyle() {
     var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?style';
     var url = 'https://' + host;
     var body = COS.util.json2xml({
@@ -2625,7 +2625,7 @@ function addStyle() {
 }
 
 // 图片样式 - 查询样式
-function getStyle() {
+function describeImageStyles() {
     var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?style';
     var url = 'https://' + host;
     cos.request({
@@ -2641,7 +2641,7 @@ function getStyle() {
 }
 
 // 图片样式 - 删除样式
-function deleteStyle() {
+function deleteImageStyle() {
     var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?style';
     var url = 'https://' + host;
     var body = COS.util.json2xml({
@@ -2661,7 +2661,7 @@ function deleteStyle() {
 }
 
 // 开通 Guetzli 压缩
-function openGuetzliCompresss() {
+function openImageGuetzli() {
     var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?guetzli';
     var url = 'https://' + host;
     cos.request({
@@ -2674,7 +2674,7 @@ function openGuetzliCompresss() {
 }
 
 // 查询 Guetzli 状态
-function queryGuetzliCompresss() {
+function describeImageGuetzli() {
     var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?guetzli';
     var url = 'https://' + host;
     cos.request({
@@ -2687,7 +2687,7 @@ function queryGuetzliCompresss() {
 }
 
 // 关闭 Guetzli 压缩
-function closeGuetzliCompresss() {
+function closeImageGuetzli() {
     var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?guetzli';
     var url = 'https://' + host;
     cos.request({
@@ -2871,7 +2871,7 @@ function updatePicProcessQueue() {
 }
 
 // 查询防盗链
-function queryHotlink() {
+function describeRefer() {
     var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?hotlink';
     var url = 'https://' + host;
     cos.request({
@@ -2884,7 +2884,7 @@ function queryHotlink() {
 }
 
 // 设置防盗链
-function setHotlink() {
+function setRefer() {
     var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?hotlink';
     var url = 'https://' + host;
     var body = COS.util.json2xml({
@@ -3073,20 +3073,20 @@ function closeOriginProtect() {
         'getFileProcessQueue',
         'updateFileProcessQueue',
         'fileHashRequest',
-        'addStyle',
-        'getStyle',
-        'deleteStyle',
-        'openGuetzliCompresss',
-        'queryGuetzliCompresss',
-        'closeGuetzliCompresss',
+        'addImageStyle',
+        'describeImageStyles',
+        'deleteImageStyle',
+        'openImageGuetzli',
+        'describeImageGuetzli',
+        'closeImageGuetzli',
         'AdvanceCompressExample1',
         'AdvanceCompressExample2',
         'AdvanceCompressExample3',
         'imageInspect',
         'getPicProcessQueue',
         'updatePicProcessQueue',
-        'queryHotlink',
-        'setHotlink',
+        'describeRefer',
+        'setRefer',
         'openOriginProtect',
         'queryOriginProtect',
         'closeOriginProtect',
@@ -3150,20 +3150,20 @@ function closeOriginProtect() {
         getFileProcessQueue: '查询文件处理队列',
         updateFileProcessQueue: '更新文件处理队列',
         fileHashRequest: '哈希值计算同步请求',
-        addStyle: '图片处理-增加样式',
-        getStyle: '图片处理-查询样式',
-        deleteStyle: '图片处理-删除样式',
-        openGuetzliCompresss: '开通 Guetzli 压缩',
-        queryGuetzliCompresss: '查询 Guetzli 压缩',
-        closeGuetzliCompresss: '关闭 Guetzli 压缩',
+        addImageStyle: '图片处理-增加样式',
+        describeImageStyles: '图片处理-查询样式',
+        deleteImageStyle: '图片处理-删除样式',
+        openImageGuetzli: '开通 Guetzli 压缩',
+        describeImageGuetzli: '查询 Guetzli 压缩',
+        closeImageGuetzli: '关闭 Guetzli 压缩',
         AdvanceCompressExample1: '上传时使用图片压缩',
         AdvanceCompressExample2: '对云上数据进行图片压缩',
         AdvanceCompressExample3: '下载时使用图片压缩',
         imageInspect: '异常图片检测',
         getPicProcessQueue: '查询图片处理队列',
         updatePicProcessQueue: '更新图片处理队列',
-        queryHotlink: '查询防盗链',
-        setHotlink: '设置防盗链',
+        describeRefer: '查询防盗链',
+        setRefer: '设置防盗链',
         openOriginProtect: '开通原图保护',
         queryOriginProtect: '查询原图保护状态',
         closeOriginProtect: '关闭原图保护',
