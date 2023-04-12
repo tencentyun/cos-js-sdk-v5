@@ -2493,7 +2493,7 @@ function getFileHashResult() {
   });
 }
 
-// 获取在线文档预览地址 todo
+// 获取在线文档预览地址
 function getDocHtmlPreviewUrl() {
     var key = 'test.pdf';
     var host = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + key;
@@ -2502,6 +2502,7 @@ function getDocHtmlPreviewUrl() {
             Method: 'GET',
             Key: key,
             Url: url,
+            RawBody: true,
             Query: {
                 'ci-process': 'doc-preview', /* 必须，预览固定参数，值为 doc-preview	*/
                 'dstType': 'html', /* 必须，预览类型，如需预览生成类型为 html 则填入 html	*/
@@ -2781,7 +2782,7 @@ function AdvanceCompressExample3(){
     );
 }
 
-// 异常图片检测 todo
+// 异常图片检测
 function imageInspect() {
     var key = '1.png';
     var host = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + key;
@@ -2790,6 +2791,7 @@ function imageInspect() {
             Method: 'GET',
             Key: key,
             Url: url,
+            RawBody: true,
             Query: {
                 'ci-process': 'ImageInspect', /* 必须，操作类型，异常图片检测固定为：ImageInspect	*/
             },
