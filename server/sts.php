@@ -3,13 +3,14 @@
 
 include './qcloud-sts-sdk.php'; // 这里获取 sts.php https://github.com/tencentyun/qcloud-cos-sts-sdk/blob/master/php/sts/sts.php
 $sts = new STS();
+
 // 配置参数
 $config = array(
     'url' => 'https://sts.tencentcloudapi.com/',
     'domain' => 'sts.tencentcloudapi.com',
     'proxy' => '',
-    'secretId' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 固定密钥
-    'secretKey' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 固定密钥
+    'secretId' => process.env.SecretId, // 传入密钥 SecretId https://console.cloud.tencent.com/cam/capi
+    'secretKey' => process.env.SecretKey, // 传入密钥 SecretKey
     'bucket' => 'test-1250000000', // 换成你的 bucket
     'region' => 'ap-guangzhou', // 换成 bucket 所在园区
     'durationSeconds' => 1800, // 密钥有效期
