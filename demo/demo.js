@@ -2797,7 +2797,7 @@ function advanceCompressExample3(){
 }
 
 // 异常图片检测
-function imageInspect() {
+function CreateImageInspectJob() {
     var key = '1.png';
     var host = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + key;
     var url = 'https://' + host;
@@ -3088,7 +3088,7 @@ function closeOriginProtect() {
         'advanceCompressExample1',
         'advanceCompressExample2',
         'advanceCompressExample3',
-        'imageInspect',
+        'CreateImageInspectJob',
         'describePicProcessQueues',
         'updatePicProcessQueue',
         'describeRefer',
@@ -3165,7 +3165,7 @@ function closeOriginProtect() {
         advanceCompressExample1: '上传时使用图片压缩',
         advanceCompressExample2: '对云上数据进行图片压缩',
         advanceCompressExample3: '下载时使用图片压缩',
-        imageInspect: '异常图片检测',
+        CreateImageInspectJob: '异常图片检测',
         describePicProcessQueues: '查询图片处理队列',
         updatePicProcessQueue: '更新图片处理队列',
         describeRefer: '查询防盗链',
