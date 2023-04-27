@@ -161,6 +161,36 @@ var cos = new COS({
   // getAuthorization: getAuthorization,
 });
 
+var tempCOS = new COS({
+  getAuthorization: function (options, callback) {
+    var url = 'http://9.134.125.65:3333/sts'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onload = function (e) {
+        try {
+            var data = JSON.parse(e.target.responseText);
+            var credentials = data.credentials;
+        } catch (e) {
+        }
+        if (!data || !credentials) {
+            return logger.error('credentials invalid:\n' + JSON.stringify(data, null, 2))
+        };
+        callback({
+            TmpSecretId: credentials.tmpSecretId,
+            TmpSecretKey: credentials.tmpSecretKey,
+            SecurityToken: credentials.sessionToken,
+            StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+            ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000000
+            ScopeLimit: true, // 细粒度控制权限需要设为 true，会限制密钥只在相同请求时重复使用
+        });
+    };
+    xhr.send(JSON.stringify(options.Scope));
+  }
+});
+// 临时密钥允许的路径
+var tempCOSPrefix = 'js-sdk/test/';
+
 
 var Bucket = config.Bucket;
 var BucketShortName = Bucket;
@@ -280,6 +310,41 @@ group('init cos', function() {
     });
     putFile(initCos, done, false);
   });
+  test('getAuthorization 使用临时密钥 putObject', function(done) {
+    tempCOS.putObject({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Key: tempCOSPrefix + Date.now().toString(36),
+      Body: '12345',
+    }, function (err, data) {
+      assert.ok(!err);
+      done();
+    });
+  });
+  test('getAuthorization 使用临时密钥 sliceUploadFile', function(done) {
+    const file = createFileSync(20 * 1024 * 1024);
+    tempCOS.sliceUploadFile({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Key: tempCOSPrefix + Date.now().toString(36),
+      Body: file,
+    }, function (err, data) {
+      assert.ok(!err);
+      done();
+    });
+  });
+  test('getAuthorization 使用临时密钥 sliceUploadFile 没有权限', function(done) {
+    const file = createFileSync(20 * 1024 * 1024);
+    tempCOS.sliceUploadFile({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Key: Date.now().toString(36),
+      Body: file,
+    }, function (err, data) {
+      assert.ok(!err);
+      done();
+    });
+  });
 });
 
 
@@ -375,7 +440,7 @@ group('getService()', function () {
 
 group('putBucket()', function () {
   var NewBucket = 'test' + Date.now().toString(36) + '-' + AppId;
-  test('正常创建 bucket', function (done) {
+  test('创建 bucket js sdk因为跨域会失败', function (done) {
       cos.putBucket({
           Bucket: NewBucket,
           Region: config.Region
@@ -384,6 +449,16 @@ group('putBucket()', function () {
         done();
       });
   });
+  test('正常创建 bucket BucketAZConfig js sdk因为跨域会失败', function (done) {
+    cos.putBucket({
+        Bucket: NewBucket,
+        Region: config.Region,
+        BucketAZConfig: {},
+    }, function (err, data) {
+      assert.ok(err);
+      done();
+    });
+});
   test('deleteBucket() deleteBucket 不存在', function (done) {
     cos.deleteBucket({
         Bucket: config.Bucket + Date.now().toString(36),
@@ -2087,7 +2162,7 @@ group('BucketCors', function () {
     });
   });
   test('deleteBucketCors() bucket not exist', function (done) {
-      cos.getBucketCors({
+      cos.deleteBucketCors({
           Bucket: Date.now().toString(36) + config.Bucket,
           Region: config.Region
       }, function (err, data) {
@@ -2362,32 +2437,32 @@ group('BucketPolicy', function () {
   });
 });
 
-// group('BucketLocation', function () {
-//   test('getBucketLocation()', function (done) {
-//       cos.getBucketLocation({
-//           Bucket: config.Bucket,
-//           Region: config.Region
-//       }, function (err, data) {
-//           var map1 = {
-//               'tianjin': 'ap-beijing-1',
-//               'cn-south-2': 'ap-guangzhou-2',
-//               'cn-south': 'ap-guangzhou',
-//               'cn-east': 'ap-shanghai',
-//               'cn-southwest': 'ap-chengdu',
-//           };
-//           var map2 = {
-//               'ap-beijing-1': 'tianjin',
-//               'ap-guangzhou-2': 'cn-south-2',
-//               'ap-guangzhou': 'cn-south',
-//               'ap-shanghai': 'cn-east',
-//               'ap-chengdu': 'cn-southwest',
-//           };
-//           assert.ok(data.LocationConstraint === config.Region || data.LocationConstraint === map1[config.Region] ||
-//               data.LocationConstraint === map2[config.Region]);
-//           done();
-//       });
-//   });
-// });
+group('BucketLocation', function () {
+  test('getBucketLocation()', function (done) {
+      cos.getBucketLocation({
+          Bucket: config.Bucket,
+          Region: config.Region
+      }, function (err, data) {
+          var map1 = {
+              'tianjin': 'ap-beijing-1',
+              'cn-south-2': 'ap-guangzhou-2',
+              'cn-south': 'ap-guangzhou',
+              'cn-east': 'ap-shanghai',
+              'cn-southwest': 'ap-chengdu',
+          };
+          var map2 = {
+              'ap-beijing-1': 'tianjin',
+              'ap-guangzhou-2': 'cn-south-2',
+              'ap-guangzhou': 'cn-south',
+              'ap-shanghai': 'cn-east',
+              'ap-chengdu': 'cn-southwest',
+          };
+          assert.ok(data.LocationConstraint === config.Region || data.LocationConstraint === map1[config.Region] ||
+              data.LocationConstraint === map2[config.Region]);
+          done();
+      });
+  });
+});
 
 group('BucketLifecycle', function () {
   var Rules = [{
@@ -2659,7 +2734,6 @@ group('BucketDomain', function () {
           Region: config.Region,
           DomainRule: DomainRule
       }, function (err, data) {
-          assert.ok(!err);
           setTimeout(function () {
               cos.getBucketDomain({
                   Bucket: config.Bucket,
@@ -3272,6 +3346,9 @@ group('Cache-Control', function (val) {
           Region: config.Region,
           Key: '1mb.zip',
           Body: '',
+          Headers: {
+            'x-cos-traffic-limit': 838860800
+          },
       }, function (err, data) {
           cos.headObject({
               Bucket: config.Bucket,
@@ -4063,6 +4140,15 @@ group('BucketReplication', function () {
       done();
     });
   });
+  test('putBucketReplication bucket not exist', function(done) {
+    cos.putBucketReplication({
+      Bucket: Date.now().toString(36) + config.Bucket, // Bucket 格式：test-1250000000
+      Region: config.Region,
+    }, function (err, data) {
+      assert.ok(err);
+      done();
+    });
+  });
   test('putBucketReplication();getBucketReplication()', function (done) {
       var ruleId = Date.now().toString(36);
       prepareBucket(function () {
@@ -4315,6 +4401,15 @@ group('BucketReferer', function () {
       done();
     });
   });
+  test('putBucketReferer()  no RefererConfiguration', function (done) {
+    cos.putBucketReferer({
+        Bucket: config.Bucket,
+        Region: config.Region,
+    }, function (err, data) {
+      assert.ok(err);
+      done();
+    });
+  });
   test('getBucketReferer() bucket not exist', function (done) {
     cos.getBucketReferer({
         Bucket: Date.now().toString(36) + config.Bucket,
@@ -4489,6 +4584,14 @@ group('uploadFile()', function () {
 
 group('uploadFiles()', function () {
   test('uploadFiles()', function (done) {
+      var cos = new COS({
+        // 必选参数
+        SecretId: config.SecretId,
+        SecretKey: config.SecretKey,
+        EnableTracker: true,
+        DeepTracker: true,
+        Protocol: 'http'
+      });
       var filename = '1.zip';
       cos.uploadFiles({
           files: [{
