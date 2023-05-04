@@ -415,7 +415,7 @@ function filter(obj, fn) {
     return o;
 }
 
-var binaryBase64 = function (str) {
+var b64 = function (str) {
     var i, len, char, res = '';
     for (i = 0, len = str.length / 2; i < len; i++) {
         char = parseInt(str[i * 2] + str[i * 2 + 1], 16);
@@ -784,7 +784,7 @@ var util = {
     fileSlice: fileSlice,
     getBodyMd5: getBodyMd5,
     getFileMd5: getFileMd5,
-    binaryBase64: binaryBase64,
+    b64: b64,
     extend: extend,
     isArray: isArray,
     isInArray: isInArray,

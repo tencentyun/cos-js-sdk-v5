@@ -6948,7 +6948,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.4.16\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.4.17\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"jest-localstorage-mock\":\"^2.4.26\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -8705,7 +8705,7 @@ function putBucketAcl(params, callback) {
       AccessControlPolicy: AccessControlPolicy
     });
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
   } // Grant Header 去重
 
 
@@ -8805,7 +8805,7 @@ function putBucketCors(params, callback) {
   });
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:PutBucketCORS',
     method: 'PUT',
@@ -8946,7 +8946,7 @@ function putBucketPolicy(params, callback) {
   if (!Policy.version) Policy.version = '2.0';
   var headers = params.Headers;
   headers['Content-Type'] = 'application/json';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(PolicyStr));
+  headers['Content-MD5'] = util.b64(util.md5(PolicyStr));
   submitRequest.call(this, {
     Action: 'name/cos:PutBucketPolicy',
     method: 'PUT',
@@ -9085,7 +9085,7 @@ function putBucketTagging(params, callback) {
   });
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:PutBucketTagging',
     method: 'PUT',
@@ -9204,7 +9204,7 @@ function putBucketLifecycle(params, callback) {
   });
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:PutBucketLifecycle',
     method: 'PUT',
@@ -9304,7 +9304,7 @@ function putBucketVersioning(params, callback) {
   });
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:PutBucketVersioning',
     method: 'PUT',
@@ -9355,7 +9355,7 @@ function putBucketReplication(params, callback) {
   xml = xml.replace(/<(\/?)Tags>/ig, '<$1Tag>');
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:PutBucketReplication',
     method: 'PUT',
@@ -9475,7 +9475,7 @@ function putBucketWebsite(params, callback) {
   });
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:PutBucketWebsite',
     method: 'PUT',
@@ -9618,7 +9618,7 @@ function putBucketReferer(params, callback) {
   });
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:PutBucketReferer',
     method: 'PUT',
@@ -9716,7 +9716,7 @@ function putBucketDomain(params, callback) {
   });
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:PutBucketDomain',
     method: 'PUT',
@@ -9831,7 +9831,7 @@ function putBucketOrigin(params, callback) {
   });
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:PutBucketOrigin',
     method: 'PUT',
@@ -9942,7 +9942,7 @@ function putBucketLogging(params, callback) {
   });
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:PutBucketLogging',
     method: 'PUT',
@@ -10031,7 +10031,7 @@ function putBucketInventory(params, callback) {
   });
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:PutBucketInventory',
     method: 'PUT',
@@ -10221,7 +10221,7 @@ function putBucketAccelerate(params, callback) {
   var xml = util.json2xml(configuration);
   var headers = {};
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:PutBucketAccelerate',
     method: 'PUT',
@@ -10265,7 +10265,7 @@ function putBucketEncryption(params, callback) {
   });
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:PutBucketEncryption',
     method: 'PUT',
@@ -10550,7 +10550,7 @@ function putObject(params, callback) {
       tracker && tracker.setParams({
         md5EndTime: new Date().getTime()
       });
-      if (self.options.UploadCheckContentMd5) headers['Content-MD5'] = util.binaryBase64(md5);
+      if (self.options.UploadCheckContentMd5) headers['Content-MD5'] = util.b64(md5);
       if (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5) headers['x-cos-meta-md5'] = md5;
     }
 
@@ -10716,7 +10716,7 @@ function putObjectAcl(params, callback) {
       AccessControlPolicy: AccessControlPolicy
     });
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
   } // Grant Header 去重
 
 
@@ -10931,7 +10931,7 @@ function deleteMultipleObject(params, callback) {
   });
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   var Scope = util.map(Objects, function (v) {
     return {
       action: 'name/cos:DeleteObject',
@@ -10979,7 +10979,7 @@ function restoreObject(params, callback) {
     RestoreRequest: RestoreRequest
   });
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:RestoreObject',
     method: 'POST',
@@ -11017,7 +11017,7 @@ function putObjectTagging(params, callback) {
   });
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:PutObjectTagging',
     method: 'PUT',
@@ -11151,7 +11151,7 @@ function selectObjectContent(params, callback) {
   });
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:GetObject',
     method: 'POST',
@@ -11285,7 +11285,7 @@ function multipartUpload(params, callback) {
       md5StartTime: new Date().getTime()
     });
     util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
-      if (md5) params.Headers['Content-MD5'] = util.binaryBase64(md5);
+      if (md5) params.Headers['Content-MD5'] = util.b64(md5);
       needCalcMd5 && tracker && tracker.setParams({
         md5EndTime: new Date().getTime()
       });
@@ -11363,7 +11363,7 @@ function multipartComplete(params, callback) {
   xml = xml.replace(/\n\s*/g, '');
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
-  headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+  headers['Content-MD5'] = util.b64(util.md5(xml));
   submitRequest.call(this, {
     Action: 'name/cos:CompleteMultipartUpload',
     method: 'POST',
@@ -14102,7 +14102,7 @@ function filter(obj, fn) {
   return o;
 }
 
-var binaryBase64 = function binaryBase64(str) {
+var b64 = function b64(str) {
   var i,
       len,
       char,
@@ -14507,7 +14507,7 @@ var util = {
   fileSlice: fileSlice,
   getBodyMd5: getBodyMd5,
   getFileMd5: getFileMd5,
-  binaryBase64: binaryBase64,
+  b64: b64,
   extend: extend,
   isArray: isArray,
   isInArray: isInArray,
