@@ -241,7 +241,7 @@ function putBucketAcl(params, callback) {
         xml = util.json2xml({AccessControlPolicy: AccessControlPolicy});
 
         headers['Content-Type'] = 'application/xml';
-        headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+        headers['Content-MD5'] = util.b64(util.md5(xml));
     }
 
     // Grant Header 去重
@@ -339,7 +339,7 @@ function putBucketCors(params, callback) {
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:PutBucketCORS',
@@ -475,7 +475,7 @@ function putBucketPolicy(params, callback) {
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/json';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(PolicyStr));
+    headers['Content-MD5'] = util.b64(util.md5(PolicyStr));
 
     submitRequest.call(this, {
         Action: 'name/cos:PutBucketPolicy',
@@ -591,7 +591,7 @@ function putBucketTagging(params, callback) {
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:PutBucketTagging',
@@ -699,7 +699,7 @@ function putBucketLifecycle(params, callback) {
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:PutBucketLifecycle',
@@ -790,7 +790,7 @@ function putBucketVersioning(params, callback) {
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:PutBucketVersioning',
@@ -837,7 +837,7 @@ function putBucketReplication(params, callback) {
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:PutBucketReplication',
@@ -943,7 +943,7 @@ function putBucketWebsite(params, callback) {
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:PutBucketWebsite',
@@ -1076,7 +1076,7 @@ function putBucketReferer(params, callback) {
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:PutBucketReferer',
@@ -1165,7 +1165,7 @@ function putBucketDomain(params, callback) {
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:PutBucketDomain',
@@ -1271,7 +1271,7 @@ function putBucketOrigin(params, callback){
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:PutBucketOrigin',
@@ -1377,7 +1377,7 @@ function putBucketLogging(params, callback) {
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:PutBucketLogging',
@@ -1465,7 +1465,7 @@ function putBucketInventory(params, callback) {
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:PutBucketInventory',
@@ -1646,7 +1646,7 @@ function putBucketAccelerate(params, callback) {
 
     var headers = {};
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:PutBucketAccelerate',
@@ -1687,7 +1687,7 @@ function putBucketEncryption(params, callback) {
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:PutBucketEncryption',
@@ -1956,7 +1956,7 @@ function putObject(params, callback) {
     util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
         if (md5) {
             tracker && tracker.setParams({ md5EndTime: new Date().getTime() });
-            if (self.options.UploadCheckContentMd5) headers['Content-MD5'] = util.binaryBase64(md5);
+            if (self.options.UploadCheckContentMd5) headers['Content-MD5'] = util.b64(md5);
             if (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5) headers['x-cos-meta-md5'] = md5;
         }
         if (params.ContentLength !== undefined) headers['Content-Length'] = params.ContentLength;
@@ -2101,7 +2101,7 @@ function putObjectAcl(params, callback) {
         xml = util.json2xml({AccessControlPolicy: AccessControlPolicy});
 
         headers['Content-Type'] = 'application/xml';
-        headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+        headers['Content-MD5'] = util.b64(util.md5(xml));
     }
 
     // Grant Header 去重
@@ -2316,7 +2316,7 @@ function deleteMultipleObject(params, callback) {
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     var Scope = util.map(Objects, function (v) {
         return {
@@ -2366,7 +2366,7 @@ function restoreObject(params, callback) {
     var xml = util.json2xml({RestoreRequest: RestoreRequest});
 
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:RestoreObject',
@@ -2400,7 +2400,7 @@ function putObjectTagging(params, callback) {
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:PutObjectTagging',
@@ -2524,7 +2524,7 @@ function selectObjectContent(params, callback) {
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:GetObject',
@@ -2651,7 +2651,7 @@ function multipartUpload(params, callback) {
         var needCalcMd5 = self.options.UploadCheckContentMd5;
         needCalcMd5 && tracker && tracker.setParams({ md5StartTime: new Date().getTime() });
         util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
-            if (md5) params.Headers['Content-MD5'] = util.binaryBase64(md5);
+            if (md5) params.Headers['Content-MD5'] = util.b64(md5);
             needCalcMd5 && tracker && tracker.setParams({ md5EndTime: new Date().getTime() });
             tracker && tracker.setParams({ partNumber: params.PartNumber });
             submitRequest.call(self, {
@@ -2721,7 +2721,7 @@ function multipartComplete(params, callback) {
 
     var headers = params.Headers;
     headers['Content-Type'] = 'application/xml';
-    headers['Content-MD5'] = util.binaryBase64(util.md5(xml));
+    headers['Content-MD5'] = util.b64(util.md5(xml));
 
     submitRequest.call(this, {
         Action: 'name/cos:CompleteMultipartUpload',
