@@ -102,17 +102,22 @@ var cosHost = `${config.bucket}.cos.${config.region}.myqcloud.com`;
 var app = express();
 
 var replaceBucketRegion = (filePath) => {
-    return (req, res, next) => {
-        var content = fs.readFileSync(filePath).toString()
-            .replace(/(var config = {\r?\n *Bucket: ')test-1250000000(',\r?\n *Region: ')ap-guangzhou(')/,
-                '$1' + config.bucket + '$2' + config.region +'$3');
-        if (process.env.Uin) {
-            content = content.replace("config.Uin = '10001';", "config.Uin = '" + process.env.Uin + "'")
-                .replace("Uin: '10001'", "Uin: '" + process.env.Uin + "'");
-        }
-        res.header('Content-Type', 'application/javascript');
-        res.send(content);
-    };
+  return (req, res, next) => {
+    var content = fs
+      .readFileSync(filePath)
+      .toString()
+      .replace(
+        /(var config = {\r?\n *Bucket: ')test-1250000000(',\r?\n *Region: ')ap-guangzhou(')/,
+        '$1' + config.bucket + '$2' + config.region + '$3',
+      );
+    if (process.env.Uin) {
+      content = content
+        .replace("config.Uin = '10001';", "config.Uin = '" + process.env.Uin + "'")
+        .replace("Uin: '10001'", "Uin: '" + process.env.Uin + "'");
+    }
+    res.header('Content-Type', 'application/javascript');
+    res.send(content);
+  };
 };
 
 app.use(function(req, res, next) {
@@ -132,6 +137,11 @@ app.use(bodyParser.json());
 
 // 返回临时密钥，客户端自行计算签名
 app.all('/sts', function (req, res, next) {
+  // TODO 这里根据自己业务需要做好放行判断
+  if (config.allowPrefix === '_ALLOW_DIR_/*') {
+    res.send({ error: '请修改 allowPrefix 配置项，指定允许上传的路径前缀' });
+    return;
+  }
 
     // TODO 这里根据自己业务需要做好放行判断
     if (config.allowPrefix === '_ALLOW_DIR_/*') {
@@ -399,7 +409,7 @@ app.all('/post-policy', function (req, res, next) {
 // });
 
 app.all('*', function (req, res, next) {
-    res.send({code: -1, message: '404 Not Found'});
+  res.send({ code: -1, message: '404 Not Found' });
 });
 
 // 启动签名服务
