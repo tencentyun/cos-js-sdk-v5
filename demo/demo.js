@@ -1773,7 +1773,6 @@ function postImagesAuditing() {
       }],
       Conf: {
         BizType: '',
-        DetectType: 'Porn'
       }
     }
   });
@@ -1819,7 +1818,6 @@ function postVideoAuditing() {
       },
       Conf: {
         BizType: '',
-        DetectType: 'Porn',
         Snapshot: {
           Count: 1000, // 视频截帧数量
         },
@@ -1869,7 +1867,6 @@ function postAudioAuditing() {
       },
       Conf: {
         BizType: '',
-        DetectType: 'Porn',
       }
     }
   });
@@ -1916,7 +1913,6 @@ function postTextAuditing() {
       },
       Conf: {
         BizType: '',
-        DetectType: 'Porn',
       }
     }
   });
@@ -1962,7 +1958,6 @@ function postDocumentAuditing() {
       },
       Conf: {
         BizType: '',
-        DetectType: 'Porn',
       }
     }
   });
@@ -2008,7 +2003,6 @@ function postWebpageAuditing() {
       },
       Conf: {
         BizType: '',
-        DetectType: 'Porn,Ads',
       }
     }
   });
