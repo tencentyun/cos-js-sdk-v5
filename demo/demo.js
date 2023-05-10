@@ -2114,8 +2114,8 @@ function describeDocProcessBuckets() {
   });
 }
 
-// 获取文档预览url
-function getDocPreviewUrl() {
+// 文档转码同步请求
+function getDocPreview() {
   cos.getObjectUrl({
     Bucket: config.Bucket, // Bucket 格式：test-1250000000
     Region: config.Region,
@@ -2126,14 +2126,21 @@ function getDocPreviewUrl() {
       // page: '', /* 非必须，需转换的文档页码，默认从1开始计数；表格文件中 page 表示转换的第 X 个 sheet 的第 X 张图	*/
       // dstType: '', /* 非必须，转换输出目标文件类型 */
     },
+    DataType: 'blob',
   }, function(err, data) {
-    logger.log(err || data);
     if (err) {
       console.log(err);
     } else {
-      var url = data.Url;
-      console.log(url);
+      // Body为转码后的内容 可展示在img里 比如
+      var body = data.Body;
+      // const url = URL.createObjectURL(body);
+      // const img = document.getElementById('image');
+      // img.src = url;
+      // 获取总页数(需要在跨域配置的Expose-Headers配置需要暴露出的头部 比如下方的X-Total-Page)
+      // 跨域配置可参考文档 https://cloud.tencent.com/document/product/436/13318
+      var totalPage = data.headers['X-Total-Page'];
     }
+
   });
 }
 
@@ -3383,7 +3390,7 @@ function closeOriginProtect() {
         'postLiveAuditing',
         'getLiveAuditingResult',
         'describeDocProcessBuckets',
-        'getDocPreviewUrl',
+        'getDocPreview',
         'describeDocProcessQueues',
         'updateDocProcessQueue',
         'createDocProcessJobs',
@@ -3471,7 +3478,7 @@ function closeOriginProtect() {
         postLiveAuditing: '提交直播审核任务',
         getLiveAuditingResult: '查询直播审核任务结果',
         describeDocProcessBuckets: '查询文档预览开通状态',
-        getDocPreviewUrl: '文档转码同步请求',
+        getDocPreview: '文档转码同步请求',
         describeDocProcessQueues: '查询文档转码队列',
         updateDocProcessQueue: '更新文档转码队列',
         createDocProcessJobs: '提交文档预览任务	',
