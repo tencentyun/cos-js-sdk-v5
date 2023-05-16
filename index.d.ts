@@ -1061,7 +1061,9 @@ declare namespace COS {
 
   // listBucketInventory
   /** listBucketInventory 接口参数 */
-  interface ListBucketInventoryParams extends BucketParams {}
+  interface ListBucketInventoryParams extends BucketParams {
+    ContinuationToken?: string;
+  }
   /** listBucketInventory 接口返回值 */
   interface ListBucketInventoryResult extends GeneralResult {
     /** 包含清单任务的详细信息 */
