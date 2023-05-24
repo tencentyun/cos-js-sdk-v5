@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Form 表单简单上传</title>
+    <style>
+      h1,
+      h2 {
+        font-weight: normal;
+      }
+      #msg {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Form 表单简单上传（兼容 IE8）</h1>
+    <div>最低兼容到 IE6 上传，不支持 onprogress</div>
+
+    <form
+      id="form"
+      target="submitTarget"
+      action=""
+      method="post"
+      enctype="multipart/form-data"
+      accept="*/*"
+    >
+      <input id="name" name="name" type="hidden" value="" />
+      <input name="success_action_status" type="hidden" value="200" />
+      <input
+        id="success_action_redirect"
+        name="success_action_redirect"
+        type="hidden"
+        value=""
+      />
+      <input id="key" name="key" type="hidden" value="" />
+      <input id="policy" name="policy" type="hidden" value="" />
+      <input
+        id="q-sign-algorithm"
+        name="q-sign-algorithm"
+        type="hidden"
+        value=""
+      />
+      <input id="q-ak" name="q-ak" type="hidden" value="" />
+      <input id="q-key-time" name="q-key-time" type="hidden" value="" />
+      <input id="q-signature" name="q-signature" type="hidden" value="" />
+      <input name="Content-Type" type="hidden" value="" />
+      <input
+        id="x-cos-security-token"
+        name="x-cos-security-token"
+        type="hidden"
+        value=""
+      />
+
+      <!-- file 字段放在表单最后，避免文件内容过长影响签名判断和鉴权 -->
+      <input id="fileSelector" name="file" type="file" />
+      <input id="submitBtn" type="button" value="提交" />
+    </form>
+    <iframe
+      id="submitTarget"
+      name="submitTarget"
+      style="display: none"
+      frameborder="0"
+    ></iframe>
+
+    <div id="msg"></div>
+
+    <script>
+      (function () {
+        const form = document.getElementById('form');
+        let prefix = '';
+
+        // 对更多字符编码的 url encode 格式
+        const camSafeUrlEncode = function (str) {
+          return encodeURIComponent(str)
+            .replace(/!/g, '%21')
+            .replace(/'/g, '%27')
+            .replace(/\(/g, '%28')
+            .replace(/\)/g, '%29')
+            .replace(/\*/g, '%2A');
+        };
+
+        // 计算签名
+        const getAuthorization = function (options, callback) {
+          // 替换为自己服务端地址 获取post上传签名
+          const url = `http://127.0.0.1:3000/post-policy?ext=${options.ext}`;
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', url, true);
+          xhr.onreadystatechange = function (e) {
+            if (xhr.readyState === 4) {
+              if (/^2\d\d$/.test('' + xhr.status)) {
+                let credentials;
+                try {
+                  const result = JSON.parse(e.target.responseText);
+                  credentials = result;
+                } catch (e) {
+                  callback('获取签名出错');
+                }
+                if (credentials) {
+                  callback(null, {
+                    SecurityToken: credentials.sessionToken,
+                    cosKey: credentials.cosKey,
+                    cosHost: credentials.cosHost,
+                    policy: credentials.policy,
+                    qAk: credentials.qAk,
+                    qKeyTime: credentials.qKeyTime,
+                    qSignAlgorithm: credentials.qSignAlgorithm,
+                    qSignature: credentials.qSignature,
+                  });
+                } else {
+                  console.error(xhr.responseText);
+                  callback('获取签名出错');
+                }
+              } else {
+                callback('获取签名出错');
+              }
+            }
+          };
+          xhr.send();
+        };
+
+        // 监听上传完成
+        let Key;
+        const submitTarget = document.getElementById('submitTarget');
+        const showMessage = function (err, data) {
+          console.log(err || data);
+          document.getElementById('msg').innerText = err
+            ? err
+            : '上传成功，ETag=' + data.ETag;
+        };
+        submitTarget.onload = function () {
+          let search;
+          try {
+            search = submitTarget.contentWindow.location.search.substr(1);
+          } catch (e) {
+            showMessage('文件 ' + Key + ' 上传失败');
+          }
+          if (search) {
+            const items = search.split('&');
+            let i = 0;
+            let arr = [];
+            const data = {};
+            for (i = 0; i < items.length; i++) {
+              arr = items[i].split('=');
+              data[arr[0]] = decodeURIComponent(arr[1] || '');
+            }
+            showMessage(null, {
+              url: prefix + camSafeUrlEncode(Key).replace(/%2F/g, '/'),
+              ETag: data.etag,
+            });
+          } else {
+          }
+        };
+
+        // 发起上传
+        document.getElementById('submitBtn').onclick = function (e) {
+          const filePath = document.getElementById('fileSelector').value;
+          if (!filePath) {
+            document.getElementById('msg').innerText = '未选择上传文件';
+            return;
+          }
+          let ext = '';
+          const lastDotIndex = filePath.lastIndexOf('.');
+          if (lastDotIndex > -1) {
+            // 这里获取文件后缀 由服务端生成最终上传的路径
+            const ext = filePath.substring(lastDotIndex + 1);
+          }
+          getAuthorization({ ext }, function (err, AuthData) {
+            const protocol =
+              location.protocol === 'https:' ? 'https:' : 'http:';
+            prefix = protocol + '//' + AuthData.cosHost;
+            form.action = prefix;
+            Key = AuthData.cosKey;
+            // 在当前目录下放一个空的 empty.html 以便让接口上传完成跳转回来
+            document.getElementById('success_action_redirect').value =
+              location.href.substr(0, location.href.lastIndexOf('/') + 1) +
+              'empty.html';
+            document.getElementById('key').value = AuthData.cosKey;
+            document.getElementById('policy').value = AuthData.policy;
+            document.getElementById('q-sign-algorithm').value =
+              AuthData.qSignAlgorithm;
+            document.getElementById('q-ak').value = AuthData.qAk;
+            document.getElementById('q-key-time').value = AuthData.qKeyTime;
+            document.getElementById('q-signature').value = AuthData.qSignature;
+            document.getElementById('x-cos-security-token').value =
+              AuthData.SecurityToken || '';
+            form.submit();
+          });
+        };
+      })();
+    </script>
+  </body>
+</html>

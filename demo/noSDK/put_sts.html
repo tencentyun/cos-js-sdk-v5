@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ajax Put 上传（前端计算签名）</title>
+    <style>
+      h1,
+      h2 {
+        font-weight: normal;
+      }
+
+      #msg {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Ajax Put 上传（前端计算签名）</h1>
+
+    <input id="fileSelector" type="file" />
+    <input id="submitBtn" type="submit" />
+
+    <div id="msg"></div>
+
+    <!-- 签名计算 可通过（https://unpkg.com/cos-js-sdk-v5/demo/common/cos-auth.min.js）下载 -->
+    <script src="../common/cos-auth.js"></script>
+    <script>
+      (function () {
+        // 请求用到的参数
+        const Bucket = 'examplebucket-1250000000'; // 替换为自己的存储桶
+        const Region = 'ap-beijing'; // 替换为自己的存储桶地域
+        const protocol = location.protocol === 'https:' ? 'https:' : 'http:';
+        const prefix =
+          protocol + '//' + Bucket + '.cos.' + Region + '.myqcloud.com'; // prefix 用于拼接请求
+
+        // 对更多字符编码的 url encode 格式
+        const camSafeUrlEncode = function (str) {
+          return encodeURIComponent(str)
+            .replace(/!/g, '%21')
+            .replace(/'/g, '%27')
+            .replace(/\(/g, '%28')
+            .replace(/\)/g, '%29')
+            .replace(/\*/g, '%2A');
+        };
+
+        // 计算签名
+        const getAuthorization = function (opt, callback) {
+          // 替换为自己服务端地址 获取临时密钥
+          const url = `http://127.0.0.1:3000/sts`;
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', url, true);
+          xhr.onload = function (e) {
+            let result;
+            try {
+              result = JSON.parse(e.target.responseText);
+            } catch (e) {
+              callback('获取签名出错');
+            }
+            if (result) {
+              // 使用CosAuth 利用返回的临时密钥计算签名
+              const authorization = CosAuth({
+                  SecretId: result.credentials.tmpSecretId,
+                  SecretKey: result.credentials.tmpSecretKey,
+                  Method: opt.Method,
+                  Pathname: opt.Pathname,
+              });
+              callback(null, {
+                securityToken: result.credentials.sessionToken,
+                authorization: authorization,
+              });
+            } else {
+              console.error(xhr.responseText);
+              callback('获取签名出错');
+            }
+          };
+          xhr.onerror = function (e) {
+            callback('获取签名出错');
+          };
+          xhr.send();
+        };
+
+        // 上传文件
+        const uploadFile = function (file, callback) {
+          const Key = file.name;
+          getAuthorization(
+            { Method: 'PUT', Pathname: '/' + Key },
+            function (err, info) {
+              if (err) {
+                alert(err);
+                return;
+              }
+              const auth = info.authorization;
+              const securityToken = info.securityToken;
+              const url =
+                prefix + '/' + camSafeUrlEncode(Key).replace(/%2F/g, '/');
+              const xhr = new XMLHttpRequest();
+              xhr.open('PUT', url, true);
+              xhr.setRequestHeader('authorization', auth);
+              securityToken &&
+                xhr.setRequestHeader('x-cos-security-token', securityToken);
+              xhr.upload.onprogress = function (e) {
+                console.log(
+                  '上传进度 ' +
+                    Math.round((e.loaded / e.total) * 10000) / 100 +
+                    '%'
+                );
+              };
+              xhr.onload = function () {
+                if (/^2\d\d$/.test('' + xhr.status)) {
+                  const ETag = xhr.getResponseHeader('etag');
+                  callback(null, { url: url, ETag: ETag });
+                } else {
+                  callback('文件 ' + Key + ' 上传失败，状态码：' + xhr.status);
+                }
+              };
+              xhr.onerror = function () {
+                callback(
+                  '文件 ' + Key + ' 上传失败，请检查是否没配置 CORS 跨域规则'
+                );
+              };
+              xhr.send(file);
+            }
+          );
+        };
+
+        // 监听表单提交
+        document.getElementById('submitBtn').onclick = function (e) {
+          const file = document.getElementById('fileSelector').files[0];
+          if (!file) {
+            document.getElementById('msg').innerText = '未选择上传文件';
+            return;
+          }
+          file &&
+            uploadFile(file, function (err, data) {
+              console.log(err || data);
+              document.getElementById('msg').innerText = err
+                ? err
+                : '上传成功，ETag=' + data.ETag + 'url=' + data.url;
+            });
+        };
+      })();
+    </script>
+  </body>
+</html>
