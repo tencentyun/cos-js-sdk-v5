@@ -8,80 +8,80 @@ var fs = require('fs');
 
 // 配置参数
 var config = {
-    secretId: process.env.SecretId,
-    secretKey: process.env.SecretKey,
-    proxy: process.env.Proxy,
-    durationSeconds: 1800,
-    bucket: process.env.Bucket,
-    region: process.env.Region,
-    // 允许操作（上传）的对象前缀，可以根据自己网站的用户登录态判断允许上传的目录，例子： user1/* 或者 * 或者a.jpg
-    // 请注意当使用 * 时，可能存在安全风险，详情请参阅：https://cloud.tencent.com/document/product/436/40265
-    allowPrefix: '_ALLOW_DIR_/*',
-    // 密钥的权限列表
-    allowActions: [
-      // 所有 action 请看文档 
-      // COS actions: https://cloud.tencent.com/document/product/436/31923
-      // CI actions: https://cloud.tencent.com/document/product/460/41741
-      // 简单上传
-      'name/cos:PutObject',
-      'name/cos:PostObject',
-      // 分片上传
-      'name/cos:InitiateMultipartUpload',
-      'name/cos:ListMultipartUploads',
-      'name/cos:ListParts',
-      'name/cos:UploadPart',
-      'name/cos:CompleteMultipartUpload',
-      // 文本审核任务
-      "ci:CreateAuditingTextJob", 
-    ],
-    // condition条件限定，关于 condition 的详细设置规则和COS支持的condition类型可以参考https://cloud.tencent.com/document/product/436/71306
-    // condition:{
-    //   // 比如限制该ip才能访问cos
-    //   'ip_equal': {
-    //       'qcs:ip': '192.168.1.1'
-    //   }
-    // }
+  secretId: process.env.SecretId,
+  secretKey: process.env.SecretKey,
+  proxy: process.env.Proxy,
+  durationSeconds: 1800,
+  bucket: process.env.Bucket,
+  region: process.env.Region,
+  // 允许操作（上传）的对象前缀，可以根据自己网站的用户登录态判断允许上传的目录，例子： user1/* 或者 * 或者a.jpg
+  // 请注意当使用 * 时，可能存在安全风险，详情请参阅：https://cloud.tencent.com/document/product/436/40265
+  allowPrefix: '_ALLOW_DIR_/*',
+  // 密钥的权限列表
+  allowActions: [
+    // 所有 action 请看文档
+    // COS actions: https://cloud.tencent.com/document/product/436/31923
+    // CI actions: https://cloud.tencent.com/document/product/460/41741
+    // 简单上传
+    'name/cos:PutObject',
+    'name/cos:PostObject',
+    // 分片上传
+    'name/cos:InitiateMultipartUpload',
+    'name/cos:ListMultipartUploads',
+    'name/cos:ListParts',
+    'name/cos:UploadPart',
+    'name/cos:CompleteMultipartUpload',
+    // 文本审核任务
+    'ci:CreateAuditingTextJob',
+  ],
+  // condition条件限定，关于 condition 的详细设置规则和COS支持的condition类型可以参考https://cloud.tencent.com/document/product/436/71306
+  // condition:{
+  //   // 比如限制该ip才能访问cos
+  //   'ip_equal': {
+  //       'qcs:ip': '192.168.1.1'
+  //   }
+  // }
 };
 
 function camSafeUrlEncode(str) {
   return encodeURIComponent(str)
-      .replace(/!/g, '%21')
-      .replace(/'/g, '%27')
-      .replace(/\(/g, '%28')
-      .replace(/\)/g, '%29')
-      .replace(/\*/g, '%2A');
+    .replace(/!/g, '%21')
+    .replace(/'/g, '%27')
+    .replace(/\(/g, '%28')
+    .replace(/\)/g, '%29')
+    .replace(/\*/g, '%2A');
 }
 
 var getObjectKeys = function (obj, forKey) {
   var list = [];
   for (var key in obj) {
-      if (obj.hasOwnProperty(key)) {
-          list.push(forKey ? camSafeUrlEncode(key).toLowerCase() : key);
-      }
+    if (obj.hasOwnProperty(key)) {
+      list.push(forKey ? camSafeUrlEncode(key).toLowerCase() : key);
+    }
   }
   return list.sort(function (a, b) {
-      a = a.toLowerCase();
-      b = b.toLowerCase();
-      return a === b ? 0 : (a > b ? 1 : -1);
+    a = a.toLowerCase();
+    b = b.toLowerCase();
+    return a === b ? 0 : a > b ? 1 : -1;
   });
 };
 
 /**
-* obj转为string
-* @param  {Object}  obj                需要转的对象，必须
-* @param  {Boolean} lowerCaseKey       key是否转为小写，默认false，非必须
-* @return {String}  data               返回字符串
-*/
+ * obj转为string
+ * @param  {Object}  obj                需要转的对象，必须
+ * @param  {Boolean} lowerCaseKey       key是否转为小写，默认false，非必须
+ * @return {String}  data               返回字符串
+ */
 var obj2str = function (obj, lowerCaseKey) {
   var i, key, val;
   var list = [];
   var keyList = getObjectKeys(obj);
   for (i = 0; i < keyList.length; i++) {
-      key = keyList[i];
-      val = (obj[key] === undefined || obj[key] === null) ? '' : ('' + obj[key]);
-      key = lowerCaseKey? camSafeUrlEncode(key).toLowerCase() : camSafeUrlEncode(key);
-      val = camSafeUrlEncode(val) || '';
-      list.push(key + '=' + val)
+    key = keyList[i];
+    val = obj[key] === undefined || obj[key] === null ? '' : '' + obj[key];
+    key = lowerCaseKey ? camSafeUrlEncode(key).toLowerCase() : camSafeUrlEncode(key);
+    val = camSafeUrlEncode(val) || '';
+    list.push(key + '=' + val);
   }
   return list.join('&');
 };
@@ -90,13 +90,12 @@ var obj2str = function (obj, lowerCaseKey) {
 var generateCosKey = function (ext) {
   var date = new Date();
   var m = date.getMonth() + 1;
-  var ymd = `${date.getFullYear()}${m < 10 ? `0${m}` : m}${date.getDate()}`
+  var ymd = `${date.getFullYear()}${m < 10 ? `0${m}` : m}${date.getDate()}`;
   var r = ('000000' + Math.random() * 1000000).slice(-6);
   var cosKey = `file/${ymd}/${ymd}_${r}${ext ? `.${ext}` : ''}`;
   return cosKey;
 };
 var cosHost = `${config.bucket}.cos.${config.region}.myqcloud.com`;
-
 
 // 创建临时密钥服务和用于调试的静态服务
 var app = express();
@@ -120,7 +119,7 @@ var replaceBucketRegion = (filePath) => {
   };
 };
 
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
@@ -143,41 +142,46 @@ app.all('/sts', function (req, res, next) {
     return;
   }
 
-    // TODO 这里根据自己业务需要做好放行判断
-    if (config.allowPrefix === '_ALLOW_DIR_/*') {
-        res.send({error: '请修改 allowPrefix 配置项，指定允许上传的路径前缀'});
-        return;
-    }
+  // TODO 这里根据自己业务需要做好放行判断
+  if (config.allowPrefix === '_ALLOW_DIR_/*') {
+    res.send({ error: '请修改 allowPrefix 配置项，指定允许上传的路径前缀' });
+    return;
+  }
 
-    // 获取临时密钥
-    var AppId = config.bucket.substr(config.bucket.lastIndexOf('-') + 1);
-    // 数据万象DescribeMediaBuckets接口需要resource为*,参考 https://cloud.tencent.com/document/product/460/41741
-    var policy = {
-        'version': '2.0',
-        'statement': [{
-            'action': config.allowActions,
-            'effect': 'allow',
-            'resource': [
-                // cos相关授权路径
-                'qcs::cos:' + config.region + ':uid/' + AppId + ':' + config.bucket + '/' + config.allowPrefix,
-                // ci相关授权路径 按需使用
-                "qcs::ci:" + config.region + ":uid/" + AppId + ":bucket/" + config.bucket + "/" + "job/*",
-            ],
-        }],
-    };
-    var startTime = Math.round(Date.now() / 1000);
-    STS.getCredential({
-        secretId: config.secretId,
-        secretKey: config.secretKey,
-        proxy: config.proxy,
-        region: config.region,
-        durationSeconds: config.durationSeconds,
-        // endpoint: 'sts.internal.tencentcloudapi.com', // 支持设置sts内网域名
-        policy: policy,
-    }, function (err, tempKeys) {
-        if (tempKeys) tempKeys.startTime = startTime;
-        res.send(err || tempKeys);
-    });
+  // 获取临时密钥
+  var AppId = config.bucket.substr(config.bucket.lastIndexOf('-') + 1);
+  // 数据万象DescribeMediaBuckets接口需要resource为*,参考 https://cloud.tencent.com/document/product/460/41741
+  var policy = {
+    version: '2.0',
+    statement: [
+      {
+        action: config.allowActions,
+        effect: 'allow',
+        resource: [
+          // cos相关授权路径
+          'qcs::cos:' + config.region + ':uid/' + AppId + ':' + config.bucket + '/' + config.allowPrefix,
+          // ci相关授权路径 按需使用
+          'qcs::ci:' + config.region + ':uid/' + AppId + ':bucket/' + config.bucket + '/' + 'job/*',
+        ],
+      },
+    ],
+  };
+  var startTime = Math.round(Date.now() / 1000);
+  STS.getCredential(
+    {
+      secretId: config.secretId,
+      secretKey: config.secretKey,
+      proxy: config.proxy,
+      region: config.region,
+      durationSeconds: config.durationSeconds,
+      // endpoint: 'sts.internal.tencentcloudapi.com', // 支持设置sts内网域名
+      policy: policy,
+    },
+    function (err, tempKeys) {
+      if (tempKeys) tempKeys.startTime = startTime;
+      res.send(err || tempKeys);
+    },
+  );
 });
 
 // // 格式二：临时密钥接口，支持细粒度权限控制
@@ -218,7 +222,6 @@ app.all('/sts', function (req, res, next) {
 // });
 //
 
-
 // 生成put上传签名，客户端传递文件后缀，这里生成随机Key
 app.all('/put-sign', function (req, res, next) {
   var ext = req.query.ext;
@@ -258,13 +261,13 @@ app.all('/put-sign', function (req, res, next) {
 
   // 步骤五：构造 Authorization
   var authorization = [
-      'q-sign-algorithm=' + qSignAlgorithm,
-      'q-ak=' + qAk,
-      'q-sign-time=' + qSignTime,
-      'q-key-time=' + qKeyTime,
-      'q-header-list=' + qHeaderList,
-      'q-url-param-list=' + qUrlParamList,
-      'q-signature=' + qSignature
+    'q-sign-algorithm=' + qSignAlgorithm,
+    'q-ak=' + qAk,
+    'q-sign-time=' + qSignTime,
+    'q-key-time=' + qKeyTime,
+    'q-header-list=' + qHeaderList,
+    'q-url-param-list=' + qUrlParamList,
+    'q-signature=' + qSignature,
   ].join('&');
 
   res.send({
@@ -277,52 +280,52 @@ app.all('/put-sign', function (req, res, next) {
 
 // 生成post上传签名，客户端传递文件后缀，这里生成随机Key
 app.all('/post-policy', function (req, res, next) {
-    var query = req.query;
-    var ext = query.ext;
+  var query = req.query;
+  var ext = query.ext;
 
-    // 服务端生成随机Key并计算签名
-    var cosKey = generateCosKey(ext);
+  // 服务端生成随机Key并计算签名
+  var cosKey = generateCosKey(ext);
 
-    var now = Math.round(Date.now() / 1000);
-    var exp = now + 900;
-    var qKeyTime = now + ';' + exp;
-    var qSignAlgorithm = 'sha1';
-    var policy = JSON.stringify({
-        'expiration': new Date(exp * 1000).toISOString(),
-        'conditions': [
-            // {'acl': query.ACL},
-            // ['starts-with', '$Content-Type', 'image/'],
-            // ['starts-with', '$success_action_redirect', redirectUrl],
-            // ['eq', '$x-cos-server-side-encryption', 'AES256'],
-            {'q-sign-algorithm': qSignAlgorithm},
-            {'q-ak': config.secretId},
-            {'q-sign-time': qKeyTime},
-            {'bucket': config.bucket},
-            {'key': cosKey},
-        ]
-    });
+  var now = Math.round(Date.now() / 1000);
+  var exp = now + 900;
+  var qKeyTime = now + ';' + exp;
+  var qSignAlgorithm = 'sha1';
+  var policy = JSON.stringify({
+    expiration: new Date(exp * 1000).toISOString(),
+    conditions: [
+      // {'acl': query.ACL},
+      // ['starts-with', '$Content-Type', 'image/'],
+      // ['starts-with', '$success_action_redirect', redirectUrl],
+      // ['eq', '$x-cos-server-side-encryption', 'AES256'],
+      { 'q-sign-algorithm': qSignAlgorithm },
+      { 'q-ak': config.secretId },
+      { 'q-sign-time': qKeyTime },
+      { bucket: config.bucket },
+      { key: cosKey },
+    ],
+  });
 
-    // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
-    // 步骤一：生成 SignKey
-    var signKey = crypto.createHmac('sha1', config.secretKey).update(qKeyTime).digest('hex');
+  // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
+  // 步骤一：生成 SignKey
+  var signKey = crypto.createHmac('sha1', config.secretKey).update(qKeyTime).digest('hex');
 
-    // 步骤二：生成 StringToSign
-    var stringToSign = crypto.createHash('sha1').update(policy).digest('hex');
+  // 步骤二：生成 StringToSign
+  var stringToSign = crypto.createHash('sha1').update(policy).digest('hex');
 
-    // 步骤三：生成 Signature
-    var qSignature = crypto.createHmac('sha1', signKey).update(stringToSign).digest('hex');
+  // 步骤三：生成 Signature
+  var qSignature = crypto.createHmac('sha1', signKey).update(stringToSign).digest('hex');
 
-    res.send({
-        cosHost,
-        cosKey,
-        policyObj: JSON.parse(policy),
-        policy: Buffer.from(policy).toString('base64'),
-        qSignAlgorithm: qSignAlgorithm,
-        qAk: config.secretId,
-        qKeyTime: qKeyTime,
-        qSignature: qSignature,
-        // securityToken: securityToken, // 如果使用临时密钥，要返回在这个资源 sessionToken 的值
-    });
+  res.send({
+    cosHost,
+    cosKey,
+    policyObj: JSON.parse(policy),
+    policy: Buffer.from(policy).toString('base64'),
+    qSignAlgorithm: qSignAlgorithm,
+    qAk: config.secretId,
+    qKeyTime: qKeyTime,
+    qSignature: qSignature,
+    // securityToken: securityToken, // 如果使用临时密钥，要返回在这个资源 sessionToken 的值
+  });
 });
 
 //

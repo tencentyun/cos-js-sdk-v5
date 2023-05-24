@@ -2060,8 +2060,8 @@ function postImagesAuditing() {
       ],
       Conf: {
         BizType: '',
-      }
-    }
+      },
+    },
   });
   cos.request(
     {
@@ -2162,8 +2162,8 @@ function postAudioAuditing() {
       },
       Conf: {
         BizType: '',
-      }
-    }
+      },
+    },
   });
   cos.request(
     {
@@ -2212,8 +2212,8 @@ function postTextAuditing() {
       },
       Conf: {
         BizType: '',
-      }
-    }
+      },
+    },
   });
   cos.request(
     {
@@ -2261,8 +2261,8 @@ function postDocumentAuditing() {
       },
       Conf: {
         BizType: '',
-      }
-    }
+      },
+    },
   });
   cos.request(
     {
@@ -2310,8 +2310,8 @@ function postWebpageAuditing() {
       },
       Conf: {
         BizType: '',
-      }
-    }
+      },
+    },
   });
   cos.request(
     {
@@ -2427,32 +2427,35 @@ function describeDocProcessBuckets() {
 
 // 文档转码同步请求
 function getDocPreview() {
-  cos.getObjectUrl({
-    Bucket: config.Bucket, // Bucket 格式：test-1250000000
-    Region: config.Region,
-    Key: '1/文档.docx',
-    Query: {
-      'ci-process': 'doc-preview', /* 必须，数据万象处理能力，文档预览固定为 doc-preview */
-      srcType: 'docx', /* 非必须，源数据的后缀类型，当前文档转换根据 COS 对象的后缀名来确定源数据类型。当 COS 对象没有后缀名时，可以设置该值 */
-      // page: '', /* 非必须，需转换的文档页码，默认从1开始计数；表格文件中 page 表示转换的第 X 个 sheet 的第 X 张图	*/
-      // dstType: '', /* 非必须，转换输出目标文件类型 */
+  cos.getObjectUrl(
+    {
+      Bucket: config.Bucket, // Bucket 格式：test-1250000000
+      Region: config.Region,
+      Key: '1/文档.docx',
+      Query: {
+        'ci-process': 'doc-preview' /* 必须，数据万象处理能力，文档预览固定为 doc-preview */,
+        srcType:
+          'docx' /* 非必须，源数据的后缀类型，当前文档转换根据 COS 对象的后缀名来确定源数据类型。当 COS 对象没有后缀名时，可以设置该值 */,
+        // page: '', /* 非必须，需转换的文档页码，默认从1开始计数；表格文件中 page 表示转换的第 X 个 sheet 的第 X 张图	*/
+        // dstType: '', /* 非必须，转换输出目标文件类型 */
+      },
+      DataType: 'blob',
     },
-    DataType: 'blob',
-  }, function(err, data) {
-    if (err) {
-      console.log(err);
-    } else {
-      // Body为转码后的内容 可展示在img里 比如
-      var body = data.Body;
-      // const url = URL.createObjectURL(body);
-      // const img = document.getElementById('image');
-      // img.src = url;
-      // 获取总页数(需要在跨域配置的Expose-Headers配置需要暴露出的头部 比如下方的X-Total-Page)
-      // 跨域配置可参考文档 https://cloud.tencent.com/document/product/436/13318
-      var totalPage = data.headers['X-Total-Page'];
-    }
-
-  });
+    function (err, data) {
+      if (err) {
+        console.log(err);
+      } else {
+        // Body为转码后的内容 可展示在img里 比如
+        var body = data.Body;
+        // const url = URL.createObjectURL(body);
+        // const img = document.getElementById('image');
+        // img.src = url;
+        // 获取总页数(需要在跨域配置的Expose-Headers配置需要暴露出的头部 比如下方的X-Total-Page)
+        // 跨域配置可参考文档 https://cloud.tencent.com/document/product/436/13318
+        var totalPage = data.headers['X-Total-Page'];
+      }
+    },
+  );
 }
 
 // 查询文档转码队列
@@ -3782,186 +3785,193 @@ function closeOriginProtect() {
     'pauseTask',
     'restartTask',
 
-        'header-数据万象示例',
-        'CIExample1',
-        'CIExample2',
-        'CIExample3',
-        'CIExample4',
-        'describeMediaBuckets',
-        'getMediaInfo',
-        'getSnapshot',
-        'getImageAuditing',
-        'postImagesAuditing',
-        'getImageAuditingResult',
-        'postVideoAuditing',
-        'getVideoAuditingResult',
-        'postAudioAuditing',
-        'getAudioAuditingResult',
-        'postTextAuditing',
-        'getTextAuditingResult',
-        'postDocumentAuditing',
-        'getDocumentAuditingResult',
-        'postWebpageAuditing',
-        'getWebpageAuditingResult',
-        'postLiveAuditing',
-        'getLiveAuditingResult',
-        'describeDocProcessBuckets',
-        'getDocPreview',
-        'describeDocProcessQueues',
-        'updateDocProcessQueue',
-        'createDocProcessJobs',
-        'describeDocProcessJob',
-        'describeDocProcessJobs',
-        'getDocHtmlUrl',
-        'getImageLabel',
-        'identifyQrcode_put',
-        'identifyQrcode_get',
-        'generateQrcode',
-        'ocr',
-        'postFileCompress',
-        'getFileCompress',
-        'postFileUnCompress',
-        'getFileUnCompress',
-        'postFileHash',
-        'getFileHashResult',
-        'postVirusDetect',
-        'getVirusDetectResult',
-        'postNoiseReduction',
-        'postVoiceSeparate',
-        'postTts',
-        'postSpeechRecognition',
-        'getAsrQueue',
-        'putAsrQueue',
-        'getAsrBucket',
-        'getDocHtmlPreviewUrl',
-        'createFileProcessBucket',
-        'describeFileProcessQueues',
-        'updateFileProcessQueue',
-        'generateFileHash',
-        'addImageStyle',
-        'describeImageStyles',
-        'deleteImageStyle',
-        'openImageGuetzli',
-        'describeImageGuetzli',
-        'closeImageGuetzli',
-        'advanceCompressExample1',
-        'advanceCompressExample2',
-        'advanceCompressExample3',
-        'createImageInspectJob',
-        'describePicProcessQueues',
-        'updatePicProcessQueue',
-        'describeRefer',
-        'setRefer',
-        'openOriginProtect',
-        'describeOriginProtect',
-        'closeOriginProtect',
-    ];
-    var labelMap = {
-        putObject: '简单上传',
-        putObject_base64ToBlob: '简单上传：base64转blob',
-        appendObject: '追加上传',
-        appendObject_continue: '查询position并追加上传',
-        uploadFile: '高级上传',
-        sliceUploadFile: '分片上传',
-        sliceCopyFile: '分片复制',
-        uploadFiles: '批量上传文件',
-        selectFileToUpload: '上传本地文件',
-        uploadFolder: '上传文件夹',
-        uploadToFolder: '上传到指定文件夹',
-        request: '通用请求接口',
-        listFolder: '列出文件夹',
-        deleteFolder: '删除文件夹(按前缀批量删除)',
-        CIExample1: '上传时使用图片处理',
-        CIExample2: '对云上数据进行图片处理',
-        CIExample3: '下载时使用图片处理',
-        CIExample4: '生成带图片处理参数的签名 URL',
-        describeMediaBuckets: '查询媒体处理开通情况',
-        getMediaInfo: '获取媒体文件信息',
-        getSnapshot: '获取媒体文件某个时间的截图',
-        getImageAuditing: '图片同步审核',
-        postImagesAuditing: '图片批量审核',
-        getImageAuditingResult: '查询图片审核任务结果',
-        postVideoAuditing: '提交视频审核任务',
-        getVideoAuditingResult: '查询视频审核任务结果',
-        postAudioAuditing: '提交音频审核任务',
-        getAudioAuditingResult: '查询音频审核任务结果',
-        postTextAuditing: '提交文本审核任务',
-        getTextAuditingResult: '查询文本审核任务结果',
-        postDocumentAuditing: '提交文档审核任务',
-        getDocumentAuditingResult: '查询文档审核任务结果',
-        postWebpageAuditing: '提交网页审核任务',
-        getWebpageAuditingResult: '查询网页审核任务结果',
-        postLiveAuditing: '提交直播审核任务',
-        getLiveAuditingResult: '查询直播审核任务结果',
-        describeDocProcessBuckets: '查询文档预览开通状态',
-        getDocPreview: '文档转码同步请求',
-        describeDocProcessQueues: '查询文档转码队列',
-        updateDocProcessQueue: '更新文档转码队列',
-        createDocProcessJobs: '提交文档预览任务	',
-        describeDocProcessJob: '查询指定的文档预览任务',
-        describeDocProcessJobs: '拉取符合条件的文档预览任务',
-        getDocHtmlUrl: '文档转 HTML',
-        getImageLabel: '识别图片标签',
-        identifyQrcode_put: '二维码识别(上传时识别)',
-        identifyQrcode_get: '二维码识别(下载时识别)',
-        generateQrcode: '二维码生成',
-        ocr: '图片文字识别',
-        postFileCompress: '提交文件压缩任务',
-        getFileCompress: '查询文件压缩任务',
-        postFileUnCompress: '提交文件解压任务',
-        getFileUnCompress: '查询文件解压任务',
-        postFileHash: '提交哈希值计算任务',
-        getFileHashResult: '查询哈希值计算任务结果',
-        postVirusDetect: '提交病毒检测任务',
-        getVirusDetectResult: '查询病毒检测任务结果',
-        postNoiseReduction: '提交音频降噪任务',
-        postVoiceSeparate: '提交人声分离任务',
-        postTts: '提交语音合成任务',
-        postSpeechRecognition: '提交语音识别任务',
-        getAsrQueue: '查询语音识别队列',
-        putAsrQueue: '更新语音识别队列',
-        getAsrBucket: '查询语音识别开通状态',
-        getDocHtmlPreviewUrl: '获取在线文档预览地址',
-        createFileProcessBucket: '开通文件处理服务',
-        describeFileProcessQueues: '查询文件处理队列',
-        updateFileProcessQueue: '更新文件处理队列',
-        generateFileHash: '哈希值计算同步请求',
-        addImageStyle: '图片处理-增加样式',
-        describeImageStyles: '图片处理-查询样式',
-        deleteImageStyle: '图片处理-删除样式',
-        openImageGuetzli: '开通 Guetzli 压缩',
-        describeImageGuetzli: '查询 Guetzli 压缩',
-        closeImageGuetzli: '关闭 Guetzli 压缩',
-        advanceCompressExample1: '上传时使用图片压缩',
-        advanceCompressExample2: '对云上数据进行图片压缩',
-        advanceCompressExample3: '下载时使用图片压缩',
-        createImageInspectJob: '异常图片检测',
-        describePicProcessQueues: '查询图片处理队列',
-        updatePicProcessQueue: '更新图片处理队列',
-        describeRefer: '查询防盗链',
-        setRefer: '设置防盗链',
-        openOriginProtect: '开通原图保护',
-        describeOriginProtect: '查询原图保护状态',
-        closeOriginProtect: '关闭原图保护',
-    };
-    var container = document.querySelector('.main');
-    var html = [];
-    list.forEach(function (name) {
-        if (name === '-') {
-            html.push('<hr/>');
-        } else if(name.indexOf('header') > -1){
-            html.push('<h4>'+ name.split('-')[1] +'</h4>')
-        } else {
-            html.push('<a href="javascript:void(0)" data-method="' + name + '">' + name + (labelMap[name] ? ' (' + labelMap[name] + ')' : '') + '</a>');
-        }
-    });
-    container.innerHTML = html.join('');
-    container.onclick = function (e) {
-        if (e.target.tagName === 'A') {
-            var name = e.target.getAttribute('data-method').trim();
-            window[name]();
-        }
-    };
+    'header-数据万象示例',
+    'CIExample1',
+    'CIExample2',
+    'CIExample3',
+    'CIExample4',
+    'describeMediaBuckets',
+    'getMediaInfo',
+    'getSnapshot',
+    'getImageAuditing',
+    'postImagesAuditing',
+    'getImageAuditingResult',
+    'postVideoAuditing',
+    'getVideoAuditingResult',
+    'postAudioAuditing',
+    'getAudioAuditingResult',
+    'postTextAuditing',
+    'getTextAuditingResult',
+    'postDocumentAuditing',
+    'getDocumentAuditingResult',
+    'postWebpageAuditing',
+    'getWebpageAuditingResult',
+    'postLiveAuditing',
+    'getLiveAuditingResult',
+    'describeDocProcessBuckets',
+    'getDocPreview',
+    'describeDocProcessQueues',
+    'updateDocProcessQueue',
+    'createDocProcessJobs',
+    'describeDocProcessJob',
+    'describeDocProcessJobs',
+    'getDocHtmlUrl',
+    'getImageLabel',
+    'identifyQrcode_put',
+    'identifyQrcode_get',
+    'generateQrcode',
+    'ocr',
+    'postFileCompress',
+    'getFileCompress',
+    'postFileUnCompress',
+    'getFileUnCompress',
+    'postFileHash',
+    'getFileHashResult',
+    'postVirusDetect',
+    'getVirusDetectResult',
+    'postNoiseReduction',
+    'postVoiceSeparate',
+    'postTts',
+    'postSpeechRecognition',
+    'getAsrQueue',
+    'putAsrQueue',
+    'getAsrBucket',
+    'getDocHtmlPreviewUrl',
+    'createFileProcessBucket',
+    'describeFileProcessQueues',
+    'updateFileProcessQueue',
+    'generateFileHash',
+    'addImageStyle',
+    'describeImageStyles',
+    'deleteImageStyle',
+    'openImageGuetzli',
+    'describeImageGuetzli',
+    'closeImageGuetzli',
+    'advanceCompressExample1',
+    'advanceCompressExample2',
+    'advanceCompressExample3',
+    'createImageInspectJob',
+    'describePicProcessQueues',
+    'updatePicProcessQueue',
+    'describeRefer',
+    'setRefer',
+    'openOriginProtect',
+    'describeOriginProtect',
+    'closeOriginProtect',
+  ];
+  var labelMap = {
+    putObject: '简单上传',
+    putObject_base64ToBlob: '简单上传：base64转blob',
+    appendObject: '追加上传',
+    appendObject_continue: '查询position并追加上传',
+    uploadFile: '高级上传',
+    sliceUploadFile: '分片上传',
+    sliceCopyFile: '分片复制',
+    uploadFiles: '批量上传文件',
+    selectFileToUpload: '上传本地文件',
+    uploadFolder: '上传文件夹',
+    uploadToFolder: '上传到指定文件夹',
+    request: '通用请求接口',
+    listFolder: '列出文件夹',
+    deleteFolder: '删除文件夹(按前缀批量删除)',
+    CIExample1: '上传时使用图片处理',
+    CIExample2: '对云上数据进行图片处理',
+    CIExample3: '下载时使用图片处理',
+    CIExample4: '生成带图片处理参数的签名 URL',
+    describeMediaBuckets: '查询媒体处理开通情况',
+    getMediaInfo: '获取媒体文件信息',
+    getSnapshot: '获取媒体文件某个时间的截图',
+    getImageAuditing: '图片同步审核',
+    postImagesAuditing: '图片批量审核',
+    getImageAuditingResult: '查询图片审核任务结果',
+    postVideoAuditing: '提交视频审核任务',
+    getVideoAuditingResult: '查询视频审核任务结果',
+    postAudioAuditing: '提交音频审核任务',
+    getAudioAuditingResult: '查询音频审核任务结果',
+    postTextAuditing: '提交文本审核任务',
+    getTextAuditingResult: '查询文本审核任务结果',
+    postDocumentAuditing: '提交文档审核任务',
+    getDocumentAuditingResult: '查询文档审核任务结果',
+    postWebpageAuditing: '提交网页审核任务',
+    getWebpageAuditingResult: '查询网页审核任务结果',
+    postLiveAuditing: '提交直播审核任务',
+    getLiveAuditingResult: '查询直播审核任务结果',
+    describeDocProcessBuckets: '查询文档预览开通状态',
+    getDocPreview: '文档转码同步请求',
+    describeDocProcessQueues: '查询文档转码队列',
+    updateDocProcessQueue: '更新文档转码队列',
+    createDocProcessJobs: '提交文档预览任务	',
+    describeDocProcessJob: '查询指定的文档预览任务',
+    describeDocProcessJobs: '拉取符合条件的文档预览任务',
+    getDocHtmlUrl: '文档转 HTML',
+    getImageLabel: '识别图片标签',
+    identifyQrcode_put: '二维码识别(上传时识别)',
+    identifyQrcode_get: '二维码识别(下载时识别)',
+    generateQrcode: '二维码生成',
+    ocr: '图片文字识别',
+    postFileCompress: '提交文件压缩任务',
+    getFileCompress: '查询文件压缩任务',
+    postFileUnCompress: '提交文件解压任务',
+    getFileUnCompress: '查询文件解压任务',
+    postFileHash: '提交哈希值计算任务',
+    getFileHashResult: '查询哈希值计算任务结果',
+    postVirusDetect: '提交病毒检测任务',
+    getVirusDetectResult: '查询病毒检测任务结果',
+    postNoiseReduction: '提交音频降噪任务',
+    postVoiceSeparate: '提交人声分离任务',
+    postTts: '提交语音合成任务',
+    postSpeechRecognition: '提交语音识别任务',
+    getAsrQueue: '查询语音识别队列',
+    putAsrQueue: '更新语音识别队列',
+    getAsrBucket: '查询语音识别开通状态',
+    getDocHtmlPreviewUrl: '获取在线文档预览地址',
+    createFileProcessBucket: '开通文件处理服务',
+    describeFileProcessQueues: '查询文件处理队列',
+    updateFileProcessQueue: '更新文件处理队列',
+    generateFileHash: '哈希值计算同步请求',
+    addImageStyle: '图片处理-增加样式',
+    describeImageStyles: '图片处理-查询样式',
+    deleteImageStyle: '图片处理-删除样式',
+    openImageGuetzli: '开通 Guetzli 压缩',
+    describeImageGuetzli: '查询 Guetzli 压缩',
+    closeImageGuetzli: '关闭 Guetzli 压缩',
+    advanceCompressExample1: '上传时使用图片压缩',
+    advanceCompressExample2: '对云上数据进行图片压缩',
+    advanceCompressExample3: '下载时使用图片压缩',
+    createImageInspectJob: '异常图片检测',
+    describePicProcessQueues: '查询图片处理队列',
+    updatePicProcessQueue: '更新图片处理队列',
+    describeRefer: '查询防盗链',
+    setRefer: '设置防盗链',
+    openOriginProtect: '开通原图保护',
+    describeOriginProtect: '查询原图保护状态',
+    closeOriginProtect: '关闭原图保护',
+  };
+  var container = document.querySelector('.main');
+  var html = [];
+  list.forEach(function (name) {
+    if (name === '-') {
+      html.push('<hr/>');
+    } else if (name.indexOf('header') > -1) {
+      html.push('<h4>' + name.split('-')[1] + '</h4>');
+    } else {
+      html.push(
+        '<a href="javascript:void(0)" data-method="' +
+          name +
+          '">' +
+          name +
+          (labelMap[name] ? ' (' + labelMap[name] + ')' : '') +
+          '</a>',
+      );
+    }
+  });
+  container.innerHTML = html.join('');
+  container.onclick = function (e) {
+    if (e.target.tagName === 'A') {
+      var name = e.target.getAttribute('data-method').trim();
+      window[name]();
+    }
+  };
 
   // 设置结果面板跟随窗口自适应高
   var mainPanel = document.querySelector('.main');
