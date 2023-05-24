@@ -2060,8 +2060,8 @@ function postImagesAuditing() {
       ],
       Conf: {
         BizType: '',
-      }
-    }
+      },
+    },
   });
   cos.request(
     {
@@ -2162,8 +2162,8 @@ function postAudioAuditing() {
       },
       Conf: {
         BizType: '',
-      }
-    }
+      },
+    },
   });
   cos.request(
     {
@@ -2212,8 +2212,8 @@ function postTextAuditing() {
       },
       Conf: {
         BizType: '',
-      }
-    }
+      },
+    },
   });
   cos.request(
     {
@@ -2261,8 +2261,8 @@ function postDocumentAuditing() {
       },
       Conf: {
         BizType: '',
-      }
-    }
+      },
+    },
   });
   cos.request(
     {
@@ -2310,8 +2310,8 @@ function postWebpageAuditing() {
       },
       Conf: {
         BizType: '',
-      }
-    }
+      },
+    },
   });
   cos.request(
     {
@@ -2427,32 +2427,35 @@ function describeDocProcessBuckets() {
 
 // 文档转码同步请求
 function getDocPreview() {
-  cos.getObjectUrl({
-    Bucket: config.Bucket, // Bucket 格式：test-1250000000
-    Region: config.Region,
-    Key: '1/文档.docx',
-    Query: {
-      'ci-process': 'doc-preview', /* 必须，数据万象处理能力，文档预览固定为 doc-preview */
-      srcType: 'docx', /* 非必须，源数据的后缀类型，当前文档转换根据 COS 对象的后缀名来确定源数据类型。当 COS 对象没有后缀名时，可以设置该值 */
-      // page: '', /* 非必须，需转换的文档页码，默认从1开始计数；表格文件中 page 表示转换的第 X 个 sheet 的第 X 张图	*/
-      // dstType: '', /* 非必须，转换输出目标文件类型 */
+  cos.getObjectUrl(
+    {
+      Bucket: config.Bucket, // Bucket 格式：test-1250000000
+      Region: config.Region,
+      Key: '1/文档.docx',
+      Query: {
+        'ci-process': 'doc-preview' /* 必须，数据万象处理能力，文档预览固定为 doc-preview */,
+        srcType:
+          'docx' /* 非必须，源数据的后缀类型，当前文档转换根据 COS 对象的后缀名来确定源数据类型。当 COS 对象没有后缀名时，可以设置该值 */,
+        // page: '', /* 非必须，需转换的文档页码，默认从1开始计数；表格文件中 page 表示转换的第 X 个 sheet 的第 X 张图	*/
+        // dstType: '', /* 非必须，转换输出目标文件类型 */
+      },
+      DataType: 'blob',
     },
-    DataType: 'blob',
-  }, function(err, data) {
-    if (err) {
-      console.log(err);
-    } else {
-      // Body为转码后的内容 可展示在img里 比如
-      var body = data.Body;
-      // const url = URL.createObjectURL(body);
-      // const img = document.getElementById('image');
-      // img.src = url;
-      // 获取总页数(需要在跨域配置的Expose-Headers配置需要暴露出的头部 比如下方的X-Total-Page)
-      // 跨域配置可参考文档 https://cloud.tencent.com/document/product/436/13318
-      var totalPage = data.headers['X-Total-Page'];
-    }
-
-  });
+    function (err, data) {
+      if (err) {
+        console.log(err);
+      } else {
+        // Body为转码后的内容 可展示在img里 比如
+        var body = data.Body;
+        // const url = URL.createObjectURL(body);
+        // const img = document.getElementById('image');
+        // img.src = url;
+        // 获取总页数(需要在跨域配置的Expose-Headers配置需要暴露出的头部 比如下方的X-Total-Page)
+        // 跨域配置可参考文档 https://cloud.tencent.com/document/product/436/13318
+        var totalPage = data.headers['X-Total-Page'];
+      }
+    },
+  );
 }
 
 // 查询文档转码队列
