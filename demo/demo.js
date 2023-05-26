@@ -2487,8 +2487,7 @@ function getDocPreview() {
       Key: '1/文档.docx',
       Query: {
         'ci-process': 'doc-preview', // 必须，数据万象处理能力，文档预览固定为 doc-preview
-        srcType:
-          'docx', // 非必须，源数据的后缀类型，当前文档转换根据 COS 对象的后缀名来确定源数据类型。当 COS 对象没有后缀名时，可以设置该值
+        srcType: 'docx', // 非必须，源数据的后缀类型，当前文档转换根据 COS 对象的后缀名来确定源数据类型。当 COS 对象没有后缀名时，可以设置该值
         // page: '', // 非必须，需转换的文档页码，默认从1开始计数；表格文件中 page 表示转换的第 X 个 sheet 的第 X 张图
         // dstType: '', // 非必须，转换输出目标文件类型
       },
@@ -2522,7 +2521,7 @@ function describeDocProcessQueues() {
       Url: url,
       Query: {
         // queueIds: '', // 非必须，队列 ID，以“,”符号分割字符串
-        // state: '', // 非必须，1=Active,2=Paused 
+        // state: '', // 非必须，1=Active,2=Paused
         // pageNumber: 1, // 非必须，第几页
         // pageSize: 2, // 非必须，每页个数
       },
@@ -2647,7 +2646,7 @@ function getDocHtmlUrl() {
         'ci-process': 'doc-preview', // 必须，数据万象处理能力，文档预览固定为 doc-preview
         // srcType: '', // 非必须，源数据的后缀类型，当前文档转换根据 COS 对象的后缀名来确定源数据类型。当 COS 对象没有后缀名时，可以设置该值
         // page: '', // 非必须，需转换的文档页码，默认从1开始计数；表格文件中 page 表示转换的第 X 个 sheet 的第 X 张图
-        dstType: 'html' // 非必须，转换输出目标文件类型
+        dstType: 'html', // 非必须，转换输出目标文件类型
       },
     },
     function (err, data) {
@@ -2741,7 +2740,7 @@ function generateQrcode() {
         'ci-process': 'qrcode-generate', // 必须，对象存储处理能力，二维码生成参数为 qrcode-generate
         'qrcode-content': '二维码文案', // 必须，可识别的二维码文本信息
         // mode: 0, // 非必须，生成的二维码类型，可选值：0或1。0为二维码，1为条形码，默认值为0
-        width: 200 //必须，指定生成的二维码或条形码的宽度，高度会进行等比压缩
+        width: 200, //必须，指定生成的二维码或条形码的宽度，高度会进行等比压缩
       },
     },
     function (err, data) {
@@ -3259,7 +3258,7 @@ function getDocHtmlPreviewUrl() {
       Query: {
         'ci-process': 'doc-preview', // 必须，预览固定参数，值为 doc-preview
         dstType: 'html', // 必须，预览类型，如需预览生成类型为 html 则填入 html
-        weboffice_url: 1 // 非必须，是否获取预览链接。填入值为1会返回预览链接和Token信息；填入值为2只返回Token信息；不传会直接预览
+        weboffice_url: 1, // 非必须，是否获取预览链接。填入值为1会返回预览链接和Token信息；填入值为2只返回Token信息；不传会直接预览
       },
     },
     function (err, data) {
@@ -3303,10 +3302,9 @@ function describeFileProcessQueues() {
       Url: url,
       Query: {
         // queueIds: '', // 非必须，队列 ID，以“,”符号分割字符串
-        state:
-          'Active', // 非必须，Active 表示队列内的作业会被调度执行。Paused 表示队列暂停，作业不再会被调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响
+        state: 'Active', // 非必须，Active 表示队列内的作业会被调度执行。Paused 表示队列暂停，作业不再会被调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响
         pageNumber: 1, // 第几页,默认值1
-        pageSize: 10 // 非必须，每页个数,默认值10
+        pageSize: 10, // 非必须，每页个数,默认值10
       },
     },
     function (err, data) {
@@ -3594,7 +3592,7 @@ function createImageInspectJob() {
       Url: url,
       RawBody: true,
       Query: {
-        'ci-process': 'ImageInspect' // 必须，操作类型，异常图片检测固定为：ImageInspect
+        'ci-process': 'ImageInspect', // 必须，操作类型，异常图片检测固定为：ImageInspect
       },
     },
     function (err, data) {
@@ -3622,8 +3620,7 @@ function describePicProcessQueues() {
       Url: url,
       Query: {
         // queueIds: '', // 非必须，队列 ID，以“,”符号分割字符串
-        state:
-          'Active', // 非必须，1. Active 表示队列内的作业会被媒体处理服务调度执行。2. Paused 表示队列暂停，作业不再会被媒体处理调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响。
+        state: 'Active', // 非必须，1. Active 表示队列内的作业会被媒体处理服务调度执行。2. Paused 表示队列暂停，作业不再会被媒体处理调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响。
         pageNumber: 1, // 非必须，第几页,默认值1
         pageSize: 10, // 非必须，每页个数,默认值10
       },
@@ -4882,7 +4879,7 @@ function postSnapshot() {
     closeOriginProtect: '关闭原图保护',
     postSnapshot: '提交视频截帧任务',
   };
-  var container = document.querySelector('.main');
+  var container = document.querySelector('.cos-main');
   var html = [];
   list.forEach(function (name) {
     if (name === '-') {
@@ -4909,7 +4906,7 @@ function postSnapshot() {
   };
 
   // 设置结果面板跟随窗口自适应高
-  var mainPanel = document.querySelector('.main');
+  var mainPanel = document.querySelector('.cos-main');
   var resultPanel = document.querySelector('.result');
   resultPanel.style.height = getPanelHeight();
   window.onresize = function (e) {

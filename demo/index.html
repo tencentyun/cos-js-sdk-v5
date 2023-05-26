@@ -10,21 +10,30 @@
         body { font-family: "Microsoft YaHei";}
         .page { min-width:1000px; margin:0 auto; padding: 0 50px;}
         .main-wrap { float: left; width: 100%; }
-        .main { margin-right: 700px; margin-bottom: 20px; }
+        .main { margin-right: 700px; margin-bottom: 20px; display: none; }
+        .main.show { display: block; }
         .siderbar { float: left; width: 600px; margin-left: -600px; margin-bottom: 20px; padding-top: 60px }
         .result { line-height:1.3;font-size: 13px;font-family:monospace;border:1px solid #006eff;margin:0;height:200px;overflow:auto;box-sizing:border-box;padding:5px;}
         h1 { font-weight: normal; color:#333;}
         a { color: #006eff; background-color: transparent; padding: 8px 16px; line-height: 1.3; display: inline-block; text-align: center; margin: 0 8px 8px 0; border: 1px solid #006eff; font-size: 14px; text-decoration: none; }
         a:hover { color: #fff; background-color: #006eff; }
         hr {border: 0; border-top: 1px solid #006eff;}
+        .demo-select-content { display: inline-block; font-size: 16px; margin-left: 20px; }
+        .demo-select-content div { display: inline-block; border: solid 1px #ddd; padding: 2px 6px;cursor: pointer;}
+        .demo-select-content div.active { border-color: #006eff; color: #006eff;} 
     </style>
 </head>
 <body>
 
 <div class="page">
-    <h1>cos-js-sdk-v5</h1>
+    <h1>cos-js-sdk-v5
+      <div class="demo-select-content">
+        <div class="active" id="showCosDemo">cos demo</div><div id="showCiDemo">ci demo</div>
+      </div>
+    </h1>
     <div class="main-wrap">
-        <div class="main"></div>
+        <div class="main cos-main show"></div>
+        <div class="main ci-main"></div>
     </div>
     <div class="siderbar">
         <pre class="result"></pre>
@@ -33,6 +42,28 @@
 
 <script src="../dist/cos-js-sdk-v5.js"></script>
 <script src="./demo.js"></script>
+<script src="./ciDemo.js"></script>
+
+<script>
+  (function(){
+    var showCosDemoBtn = document.querySelector('#showCosDemo');
+    var showCiDemobtn = document.querySelector('#showCiDemo');
+    var cosMain = document.querySelector('.cos-main');
+    var ciMain = document.querySelector('.ci-main');
+    showCosDemoBtn.addEventListener('click', function(e) {
+      showCosDemoBtn.className = 'active';
+      showCiDemobtn.className = '';
+      cosMain.className = 'main cos-main show';
+      ciMain.className = 'main cos-main';
+    });
+    showCiDemobtn.addEventListener('click', function(e) {
+      showCosDemoBtn.className = '';
+      showCiDemobtn.className = 'active';
+      cosMain.className = 'main cos-main';
+      ciMain.className = 'main cos-main show';
+    });
+  })();
+</script>
 
 </body>
 </html>
