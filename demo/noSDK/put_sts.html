@@ -27,7 +27,7 @@
     <script>
       (function () {
         // 请求用到的参数
-        const Bucket = 'examplebucket-1250000000'; // 替换为自己的存储桶
+        const Bucket = 'test-1300555317'; // 替换为自己的存储桶
         const Region = 'ap-beijing'; // 替换为自己的存储桶地域
         const protocol = location.protocol === 'https:' ? 'https:' : 'http:';
         const prefix =
@@ -65,7 +65,7 @@
                   Pathname: opt.Pathname,
               });
               callback(null, {
-                securityToken: result.credentials.sessionToken,
+                securityToken: result.credentials.securityToken,
                 authorization: authorization,
               });
             } else {
