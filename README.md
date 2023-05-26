@@ -63,20 +63,23 @@ var cos = new COS({
     }
 });
 
+var taskId;
+
 // 监听选文件
 document.getElementById('file-selector').onchange = function () {
 
     var file = this.files[0];
     if (!file) return;
 
-    // 分片上传文件
-    cos.sliceUploadFile({
+    // 上传文件
+    cos.uploadFile({
         Bucket: Bucket,
         Region: Region,
         Key: file.name,
         Body: file,
-        onHashProgress: function (progressData) {
-            console.log('校验中', JSON.stringify(progressData));
+        SliceSize: 1024 * 1024, // 大于1mb才进行分块上传
+        onTaskReady: function (tid) {
+          taskId = tid;
         },
         onProgress: function (progressData) {
             console.log('上传中', JSON.stringify(progressData));
@@ -84,6 +87,9 @@ document.getElementById('file-selector').onchange = function () {
     }, function (err, data) {
         console.log(err, data);
     });
+
+    // 可使用队列暂停、重启任务
+    // cos.pauseTask(taskId);
 
 };
 </script>
