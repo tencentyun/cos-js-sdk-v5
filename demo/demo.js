@@ -1058,7 +1058,7 @@ function putObject() {
     {
       Bucket: config.Bucket, // Bucket 格式：test-1250000000
       Region: config.Region,
-      Key: filename /* 必须 */,
+      Key: filename, // 必须
       Body: blob,
       onTaskReady: function (tid) {
         TaskId = tid;
@@ -1101,7 +1101,7 @@ function putObject_base64ToBlob() {
     {
       Bucket: config.Bucket, // Bucket 格式：test-1250000000
       Region: config.Region,
-      Key: 'base64_file.png' /* 必须 */,
+      Key: 'base64_file.png', // 必须
       Body: dataURLtoBlob(base64Url),
       onTaskReady: function (tid) {
         logger.log('onTaskReady', tid);
@@ -1128,7 +1128,7 @@ function appendObject() {
     {
       Bucket: config.Bucket, // Bucket 格式：test-1250000000
       Region: config.Region,
-      Key: 'append.txt' /* 必须 */,
+      Key: 'append.txt', // 必须
       Body: '12345',
       Position: 0,
     },
@@ -1143,7 +1143,7 @@ function appendObject_continue() {
     {
       Bucket: config.Bucket, // Bucket 格式：test-1250000000
       Region: config.Region,
-      Key: 'append.txt' /* 必须 */,
+      Key: 'append.txt', // 必须
     },
     function (err, data) {
       if (err) return console.log(err);
@@ -1153,7 +1153,7 @@ function appendObject_continue() {
         {
           Bucket: config.Bucket, // Bucket 格式：test-1250000000
           Region: config.Region,
-          Key: 'append.txt' /* 必须 */,
+          Key: 'append.txt', // 必须
           Body: '66666',
           Position: position,
         },
@@ -1374,8 +1374,8 @@ function selectObjectContent() {
 function abortUploadTask() {
   cos.abortUploadTask(
     {
-      Bucket: config.Bucket /* 必须 */, // Bucket 格式：test-1250000000
-      Region: config.Region /* 必须 */,
+      Bucket: config.Bucket, // 必须 // Bucket 格式：test-1250000000
+      Region: config.Region, // 必须
       // 格式1，删除单个上传任务
       // Level: 'task',
       // Key: '10mb.zip',
@@ -1421,7 +1421,7 @@ function sliceUploadFile() {
     {
       Bucket: config.Bucket, // Bucket 格式：test-1250000000
       Region: config.Region,
-      Key: '3mb.zip' /* 必须 */,
+      Key: '3mb.zip', // 必须
       Body: blob,
       Headers: {
         // 万象持久化接口，上传时持久化
@@ -1959,14 +1959,14 @@ function describeMediaBuckets() {
       Bucket: config.Bucket,
       Region: config.Region,
       Method: 'GET',
-      Key: 'mediabucket' /** 固定值，必须 */,
+      Key: 'mediabucket', // 固定值，必须
       Url: url,
       Query: {
-        pageNumber: '1' /** 第几页，非必须 */,
-        pageSize: '10' /** 每页个数，非必须 */,
-        // regions: 'ap-chengdu', /** 地域信息，例如'ap-beijing'，支持多个值用逗号分隔如'ap-shanghai,ap-beijing'，非必须 */
-        // bucketNames: 'test-1250000000', /** 存储桶名称，精确搜索，例如'test-1250000000'，支持多个值用逗号分隔如'test1-1250000000,test2-1250000000'，非必须 */
-        // bucketName: 'test', /** 存储桶名称前缀，前缀搜索，例如'test'，支持多个值用逗号分隔如'test1,test2'，非必须 */
+        pageNumber: '1', // 第几页，非必须
+        pageSize: '10', // 每页个数，非必须
+        // regions: 'ap-chengdu', // 地域信息，例如'ap-beijing'，支持多个值用逗号分隔如'ap-shanghai,ap-beijing'，非必须
+        // bucketNames: 'test-1250000000', // 存储桶名称，精确搜索，例如'test-1250000000'，支持多个值用逗号分隔如'test1-1250000000,test2-1250000000'，非必须
+        // bucketName: 'test', //存储桶名称前缀，前缀搜索，例如'test'，支持多个值用逗号分隔如'test1,test2'，非必须
       },
     },
     function (err, data) {
@@ -1984,7 +1984,7 @@ function getMediaInfo() {
       Method: 'GET',
       Key: 'test.mp4',
       Query: {
-        'ci-process': 'videoinfo' /** 固定值，必须 */,
+        'ci-process': 'videoinfo', // 固定值，必须
       },
     },
     function (err, data) {
@@ -2002,13 +2002,13 @@ function getSnapshot() {
       Method: 'GET',
       Key: 'test.mp4',
       Query: {
-        'ci-process': 'snapshot' /** 固定值，必须 */,
-        time: 1 /** 截图的时间点，单位为秒，必须 */,
-        // width: 0, /** 截图的宽，非必须 */
-        // height: 0, /** 截图的高，非必须 */
-        // format: 'jpg', /** 截图的格式，支持 jpg 和 png，默认 jpg，非必须 */
-        // rotate: 'auto', /** 图片旋转方式，默认为'auto'，非必须 */
-        // mode: 'exactframe', /** 截帧方式，默认为'exactframe'，非必须 */
+        'ci-process': 'snapshot', // 固定值，必须
+        time: 1, // 截图的时间点，单位为秒，必须
+        // width: 0, // 截图的宽，非必须
+        // height: 0, // 截图的高，非必须
+        // format: 'jpg', // 截图的格式，支持 jpg 和 png，默认 jpg，非必须
+        // rotate: 'auto', // 图片旋转方式，默认为'auto'，非必须
+        // mode: 'exactframe', // 截帧方式，默认为'exactframe'，非必须
       },
       RawBody: true,
       // 可选返回文件格式为blob
@@ -2029,13 +2029,12 @@ function getImageAuditing() {
       Method: 'GET',
       Key: '1.png',
       Query: {
-        'ci-process': 'sensitive-content-recognition' /** 固定值，必须 */,
-        'biz-type': '' /** 审核类型，非必须 */,
-        'detect-type': 'porn,ads' /** 审核策略，不填写则使用默认策略，非必须 */,
-        'detect-url': '' /** 审核任意公网可访问的图片链接，非必须 */,
-        interval: 5 /** 审核 GIF 动图时，每隔interval帧截取一帧，非必须 */,
-        'max-frames': 5 /** 审核 GIF 动图时，最大截帧数，非必须 */,
-        'large-image-detect': '0' /** 是否需要压缩图片后再审核，非必须 */,
+        'ci-process': 'sensitive-content-recognition', // 固定值，必须
+        'biz-type': '', // 审核类型，非必须
+        'detect-url': '', // 审核任意公网可访问的图片链接，非必须
+        interval: 5, // 审核 GIF 动图时，每隔interval帧截取一帧，非必须
+        'max-frames': 5, // 审核 GIF 动图时，最大截帧数，非必须
+        'large-image-detect': '0', // 是否需要压缩图片后再审核，非必须
       },
     },
     function (err, data) {
@@ -2412,11 +2411,11 @@ function describeDocProcessBuckets() {
       Key: 'docbucket',
       Url: url,
       Query: {
-        // regions: '', /* 	非必须，地域信息，以“,”分隔字符串，支持 All、ap-shanghai、ap-beijing */
-        // bucketNames: '', /* 非必须，存储桶名称，以“,”分隔，支持多个存储桶，精确搜索	 */
-        // bucketName: '', /* 非必须，存储桶名称前缀，前缀搜索	 */
-        // pageNumber: 1, /* 非必须，第几页	 */
-        // pageSize: 10, /* 非必须，每页个数	 */
+        // regions: '', // 非必须，地域信息，以“,”分隔字符串，支持 All、ap-shanghai、ap-beijing
+        // bucketNames: '', // 非必须，存储桶名称，以“,”分隔，支持多个存储桶，精确搜索
+        // bucketName: '', // 非必须，存储桶名称前缀，前缀搜索
+        // pageNumber: 1, // 非必须，第几页
+        // pageSize: 10, // 非必须，每页个数
       },
     },
     function (err, data) {
@@ -2433,11 +2432,11 @@ function getDocPreview() {
       Region: config.Region,
       Key: '1/文档.docx',
       Query: {
-        'ci-process': 'doc-preview' /* 必须，数据万象处理能力，文档预览固定为 doc-preview */,
+        'ci-process': 'doc-preview', // 必须，数据万象处理能力，文档预览固定为 doc-preview
         srcType:
-          'docx' /* 非必须，源数据的后缀类型，当前文档转换根据 COS 对象的后缀名来确定源数据类型。当 COS 对象没有后缀名时，可以设置该值 */,
-        // page: '', /* 非必须，需转换的文档页码，默认从1开始计数；表格文件中 page 表示转换的第 X 个 sheet 的第 X 张图	*/
-        // dstType: '', /* 非必须，转换输出目标文件类型 */
+          'docx', // 非必须，源数据的后缀类型，当前文档转换根据 COS 对象的后缀名来确定源数据类型。当 COS 对象没有后缀名时，可以设置该值
+        // page: '', // 非必须，需转换的文档页码，默认从1开始计数；表格文件中 page 表示转换的第 X 个 sheet 的第 X 张图
+        // dstType: '', // 非必须，转换输出目标文件类型
       },
       DataType: 'blob',
     },
@@ -2468,10 +2467,10 @@ function describeDocProcessQueues() {
       Key: 'docqueue',
       Url: url,
       Query: {
-        // queueIds: '', /* 	非必须，队列 ID，以“,”符号分割字符串 */
-        // state: '', /* 非必须，1=Active,2=Paused 	 */
-        // pageNumber: 1, /* 非必须，第几页	 */
-        // pageSize: 2, /* 非必须，每页个数	 */
+        // queueIds: '', // 非必须，队列 ID，以“,”符号分割字符串
+        // state: '', // 非必须，1=Active,2=Paused 
+        // pageNumber: 1, // 非必须，第几页
+        // pageSize: 2, // 非必须，每页个数
       },
     },
     function (err, data) {
@@ -2591,10 +2590,10 @@ function getDocHtmlUrl() {
       Region: config.Region,
       Key: '1/文档.docx',
       Query: {
-        'ci-process': 'doc-preview' /* 必须，数据万象处理能力，文档预览固定为 doc-preview */,
-        // srcType: '', /* 非必须，源数据的后缀类型，当前文档转换根据 COS 对象的后缀名来确定源数据类型。当 COS 对象没有后缀名时，可以设置该值 */
-        // page: '', /* 非必须，需转换的文档页码，默认从1开始计数；表格文件中 page 表示转换的第 X 个 sheet 的第 X 张图	*/
-        dstType: 'html' /* 非必须，转换输出目标文件类型 */,
+        'ci-process': 'doc-preview', // 必须，数据万象处理能力，文档预览固定为 doc-preview
+        // srcType: '', // 非必须，源数据的后缀类型，当前文档转换根据 COS 对象的后缀名来确定源数据类型。当 COS 对象没有后缀名时，可以设置该值
+        // page: '', // 非必须，需转换的文档页码，默认从1开始计数；表格文件中 page 表示转换的第 X 个 sheet 的第 X 张图
+        dstType: 'html' // 非必须，转换输出目标文件类型
       },
     },
     function (err, data) {
@@ -2685,10 +2684,10 @@ function generateQrcode() {
       Key: '',
       Url: url,
       Query: {
-        'ci-process': 'qrcode-generate' /* 必须，对象存储处理能力，二维码生成参数为 qrcode-generate	*/,
-        'qrcode-content': '二维码文案' /* 必须，可识别的二维码文本信息	 */,
-        // mode: 0, /* 非必须，生成的二维码类型，可选值：0或1。0为二维码，1为条形码，默认值为0	*/
-        width: 200 /* 必须，指定生成的二维码或条形码的宽度，高度会进行等比压缩	*/,
+        'ci-process': 'qrcode-generate', // 必须，对象存储处理能力，二维码生成参数为 qrcode-generate
+        'qrcode-content': '二维码文案', // 必须，可识别的二维码文本信息
+        // mode: 0, // 非必须，生成的二维码类型，可选值：0或1。0为二维码，1为条形码，默认值为0
+        width: 200 //必须，指定生成的二维码或条形码的宽度，高度会进行等比压缩
       },
     },
     function (err, data) {
@@ -2713,13 +2712,13 @@ function ocr() {
       Key: key,
       Url: url,
       Query: {
-        'ci-process': 'OCR' /* 必须，数据万象处理能力，图片文字识别固定为 OCR。	*/,
-        // type: '', /* 非必须，OCR 的识别类型 */
-        // 'language-type': '', /* 非必须，type 值为 general 时有效，表示识别语言类型 */
-        // ispdf: false, /* 非必须，type 值为 general、fast 时有效，表示是否开启 PDF 识别 */
-        // 'pdf-pagenumber': '', /* 非必须，type 值为 general、fast 时有效，表示需要识别的 PDF 页面的对应页码 */
-        // isword: false, /* 非必须，type 值为 general、accurate 时有效，表示识别后是否需要返回单字信息 */
-        // 'enable-word-polygon': false, /* 非必须，type 值为 handwriting 时有效，表示是否开启单字的四点定位坐标输出 */
+        'ci-process': 'OCR', // 必须，数据万象处理能力，图片文字识别固定为 OCR
+        // type: '', // 非必须，OCR 的识别类型
+        // 'language-type': '', // 非必须，type 值为 general 时有效，表示识别语言类型
+        // ispdf: false, // 非必须，type 值为 general、fast 时有效，表示是否开启 PDF 识别
+        // 'pdf-pagenumber': '', // 非必须，type 值为 general、fast 时有效，表示需要识别的 PDF 页面的对应页码
+        // isword: false, // 非必须，type 值为 general、accurate 时有效，表示识别后是否需要返回单字信息
+        // 'enable-word-polygon': false, // 非必须，type 值为 handwriting 时有效，表示是否开启单字的四点定位坐标输出
       },
     },
     function (err, data) {
@@ -3125,10 +3124,10 @@ function getAsrQueue() {
       Key: 'asrqueue',
       Url: url,
       Query: {
-        // queueIds: '', /* 	非必须，队列 ID，以“,”符号分割字符串 */
-        // state: '', /* 非必须，1=Active,2=Paused 	 */
-        // pageNumber: 1, /* 非必须，第几页	 */
-        // pageSize: 2, /* 非必须，每页个数	 */
+        // queueIds: '', // 非必须，队列 ID，以“,”符号分割字符串
+        // state: '', // 非必须，1=Active,2=Paused
+        // pageNumber: 1, // 非必须，第几页
+        // pageSize: 2, // 非必须，每页个数
       },
     },
     function (err, data) {
@@ -3179,11 +3178,11 @@ function getAsrBucket() {
       Key: 'asrbucket',
       Url: url,
       Query: {
-        // regions: '', /* 	非必须，地域信息，以“,”分隔字符串，支持 All、ap-shanghai、ap-beijing */
-        // bucketNames: '', /* 非必须，存储桶名称，以“,”分隔，支持多个存储桶，精确搜索	 */
-        // bucketName: '', /* 非必须，存储桶名称前缀，前缀搜索	 */
-        // pageNumber: 1, /* 非必须，第几页	 */
-        // pageSize: 10, /* 非必须，每页个数	 */
+        // regions: '', // 非必须，地域信息，以“,”分隔字符串，支持 All、ap-shanghai、ap-beijing
+        // bucketNames: '', // 非必须，存储桶名称，以“,”分隔，支持多个存储桶，精确搜索
+        // bucketName: '', // 非必须，存储桶名称前缀，前缀搜索
+        // pageNumber: 1, // 非必须，第几页
+        // pageSize: 10, // 非必须，每页个数
       },
     },
     function (err, data) {
@@ -3204,9 +3203,9 @@ function getDocHtmlPreviewUrl() {
       Url: url,
       RawBody: true,
       Query: {
-        'ci-process': 'doc-preview' /* 必须，预览固定参数，值为 doc-preview	*/,
-        dstType: 'html' /* 必须，预览类型，如需预览生成类型为 html 则填入 html	*/,
-        weboffice_url: 1 /* 非必须，是否获取预览链接。填入值为1会返回预览链接和Token信息；填入值为2只返回Token信息；不传会直接预览	*/,
+        'ci-process': 'doc-preview', // 必须，预览固定参数，值为 doc-preview
+        dstType: 'html', // 必须，预览类型，如需预览生成类型为 html 则填入 html
+        weboffice_url: 1 // 非必须，是否获取预览链接。填入值为1会返回预览链接和Token信息；填入值为2只返回Token信息；不传会直接预览
       },
     },
     function (err, data) {
@@ -3249,11 +3248,11 @@ function describeFileProcessQueues() {
       Key: 'file_queue',
       Url: url,
       Query: {
-        // queueIds: '', /* 非必须，队列 ID，以“,”符号分割字符串	*/
+        // queueIds: '', // 非必须，队列 ID，以“,”符号分割字符串
         state:
-          'Active' /* 非必须，Active 表示队列内的作业会被调度执行。Paused 表示队列暂停，作业不再会被调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响。	*/,
-        pageNumber: 1 /* 第几页,默认值1	*/,
-        pageSize: 10 /* 非必须，每页个数,默认值10	*/,
+          'Active', // 非必须，Active 表示队列内的作业会被调度执行。Paused 表示队列暂停，作业不再会被调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响
+        pageNumber: 1, // 第几页,默认值1
+        pageSize: 10 // 非必须，每页个数,默认值10
       },
     },
     function (err, data) {
@@ -3309,9 +3308,9 @@ function generateFileHash() {
       Key: key,
       Url: url,
       Query: {
-        'ci-process': 'filehash' /* 必须，操作类型，哈希值计算固定为：filehash	*/,
-        type: 'md5' /* 必须，支持的哈希算法类型，有效值：md5、sha1、sha256	*/,
-        // 'addtoheader': false, /* 非必须，是否将计算得到的哈希值，自动添加至文件的自定义header，格式为：x-cos-meta-md5/sha1/sha256;有效值：true、false，不填则默认为false。	*/
+        'ci-process': 'filehash', // 必须，操作类型，哈希值计算固定为：filehash
+        type: 'md5', // 必须，支持的哈希算法类型，有效值：md5、sha1、sha256
+        // 'addtoheader': false, // 非必须，是否将计算得到的哈希值，自动添加至文件的自定义header，格式为：x-cos-meta-md5/sha1/sha256;有效值：true、false，不填则默认为false。
       },
     },
     function (err, data) {
@@ -3541,7 +3540,7 @@ function createImageInspectJob() {
       Url: url,
       RawBody: true,
       Query: {
-        'ci-process': 'ImageInspect' /* 必须，操作类型，异常图片检测固定为：ImageInspect	*/,
+        'ci-process': 'ImageInspect' // 必须，操作类型，异常图片检测固定为：ImageInspect
       },
     },
     function (err, data) {
@@ -3568,11 +3567,11 @@ function describePicProcessQueues() {
       Key: 'picqueue',
       Url: url,
       Query: {
-        // queueIds: '', /* 非必须，队列 ID，以“,”符号分割字符串	*/
+        // queueIds: '', // 非必须，队列 ID，以“,”符号分割字符串
         state:
-          'Active' /* 非必须，1. Active 表示队列内的作业会被媒体处理服务调度执行。2. Paused 表示队列暂停，作业不再会被媒体处理调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响。	*/,
-        pageNumber: 1 /* 非必须，第几页,默认值1	*/,
-        pageSize: 10 /* 非必须，每页个数,默认值10	*/,
+          'Active', // 非必须，1. Active 表示队列内的作业会被媒体处理服务调度执行。2. Paused 表示队列暂停，作业不再会被媒体处理调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响。
+        pageNumber: 1, // 非必须，第几页,默认值1
+        pageSize: 10, // 非必须，每页个数,默认值10
       },
     },
     function (err, data) {
