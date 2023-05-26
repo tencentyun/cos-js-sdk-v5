@@ -1195,7 +1195,7 @@ declare namespace COS {
   /** getObject 接口返回值 */
   interface GetObjectResult extends GeneralResult {
     /** 对象内容 */
-    Body: string,
+    Body: string | Blob | ArrayBuffer,
     /** 对象的实体标签（Entity Tag），是对象被创建时标识对象内容的信息标签，可用于检查对象的内容是否发生变化，例如"8e0b617ca298a564c3331da28dcb50df"。此头部并不一定返回对象的 MD5 值，而是根据对象上传和加密方式而有所不同 */
     ETag: ETag,
     /** 对象的版本 ID */
@@ -1888,7 +1888,7 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
   }
   /** Request 接口返回值 */
   interface RequestResult extends GeneralResult {
-    Body?: Buffer,
+    Body?: string | Blob | ArrayBuffer,
   }
 
   // getObjectUrl

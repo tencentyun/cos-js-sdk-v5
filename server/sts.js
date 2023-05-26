@@ -31,6 +31,8 @@ var config = {
     'name/cos:ListParts',
     'name/cos:UploadPart',
     'name/cos:CompleteMultipartUpload',
+    // 下载文件
+    'name/cos:GetObject',
     // 文本审核任务
     'ci:CreateAuditingTextJob',
   ],
