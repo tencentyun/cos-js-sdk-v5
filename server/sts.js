@@ -41,8 +41,14 @@ var config = {
   //   // 比如限制该ip才能访问cos
   //   'ip_equal': {
   //       'qcs:ip': '192.168.1.1'
-  //   }
+  //   },
+  // 比如限制上传文件最大为1MB
+  //   'numeric_less_than_equal: {
+  //     'cos:content-length': 1038336
   // }
+  // }
+  // 限制的上传后缀
+  extWhiteList: ['jpg', 'jpeg', 'png', 'gif', 'bmp'],
 };
 
 function camSafeUrlEncode(str) {
@@ -136,6 +142,50 @@ app.use('/test/', express.static(pathLib.resolve(__dirname, '../test')));
 app.all('/', (req, res, next) => res.redirect('/demo/'));
 app.use(bodyParser.json());
 
+// 获取临时密钥
+function getSts() {
+  return new Promise((resolve, reject) => {
+    // 获取临时密钥
+    var AppId = config.bucket.substr(config.bucket.lastIndexOf('-') + 1);
+    // 数据万象DescribeMediaBuckets接口需要resource为*,参考 https://cloud.tencent.com/document/product/460/41741
+    var policy = {
+      version: '2.0',
+      statement: [
+        {
+          action: config.allowActions,
+          effect: 'allow',
+          resource: [
+            // cos相关授权路径
+            'qcs::cos:' + config.region + ':uid/' + AppId + ':' + config.bucket + '/' + config.allowPrefix,
+            // ci相关授权路径 按需使用
+            'qcs::ci:' + config.region + ':uid/' + AppId + ':bucket/' + config.bucket + '/' + 'job/*',
+          ],
+        },
+      ],
+    };
+    var startTime = Math.round(Date.now() / 1000);
+    STS.getCredential(
+      {
+        secretId: config.secretId,
+        secretKey: config.secretKey,
+        proxy: config.proxy,
+        region: config.region,
+        durationSeconds: config.durationSeconds,
+        // endpoint: 'sts.internal.tencentcloudapi.com', // 支持设置sts内网域名
+        policy: policy,
+      },
+      function (err, tempKeys) {
+        if (tempKeys) tempKeys.startTime = startTime;
+        if (err) {
+          reject(err);
+        } else {
+          resolve(tempKeys);
+        }
+      },
+    );
+  });
+}
+
 // 返回临时密钥，客户端自行计算签名
 app.all('/sts', function (req, res, next) {
   // TODO 这里根据自己业务需要做好放行判断
@@ -143,47 +193,13 @@ app.all('/sts', function (req, res, next) {
     res.send({ error: '请修改 allowPrefix 配置项，指定允许上传的路径前缀' });
     return;
   }
-
-  // TODO 这里根据自己业务需要做好放行判断
-  if (config.allowPrefix === '_ALLOW_DIR_/*') {
-    res.send({ error: '请修改 allowPrefix 配置项，指定允许上传的路径前缀' });
-    return;
-  }
-
-  // 获取临时密钥
-  var AppId = config.bucket.substr(config.bucket.lastIndexOf('-') + 1);
-  // 数据万象DescribeMediaBuckets接口需要resource为*,参考 https://cloud.tencent.com/document/product/460/41741
-  var policy = {
-    version: '2.0',
-    statement: [
-      {
-        action: config.allowActions,
-        effect: 'allow',
-        resource: [
-          // cos相关授权路径
-          'qcs::cos:' + config.region + ':uid/' + AppId + ':' + config.bucket + '/' + config.allowPrefix,
-          // ci相关授权路径 按需使用
-          'qcs::ci:' + config.region + ':uid/' + AppId + ':bucket/' + config.bucket + '/' + 'job/*',
-        ],
-      },
-    ],
-  };
-  var startTime = Math.round(Date.now() / 1000);
-  STS.getCredential(
-    {
-      secretId: config.secretId,
-      secretKey: config.secretKey,
-      proxy: config.proxy,
-      region: config.region,
-      durationSeconds: config.durationSeconds,
-      // endpoint: 'sts.internal.tencentcloudapi.com', // 支持设置sts内网域名
-      policy: policy,
-    },
-    function (err, tempKeys) {
-      if (tempKeys) tempKeys.startTime = startTime;
-      res.send(err || tempKeys);
-    },
-  );
+  getSts()
+    .then((data) => {
+      res.send(data);
+    })
+    .catch((err) => {
+      res.send(err);
+    });
 });
 
 // // 格式二：临时密钥接口，支持细粒度权限控制
@@ -225,16 +241,37 @@ app.all('/sts', function (req, res, next) {
 //
 
 // 生成put上传签名，客户端传递文件后缀，这里生成随机Key
-app.all('/put-sign', function (req, res, next) {
+app.all('/put-sign', async function (req, res, next) {
   var ext = req.query.ext;
+
+  // 判断异常情况
+  if (!config.secretId || !config.secretKey)
+    return res.send({ code: '-1', message: 'secretId or secretKey not ready' });
+  if (!config.bucket || !config.region) return res.send({ code: '-1', message: 'bucket or regions not ready' });
+  // if (!config.extWhiteList.includes(ext)) return res.send({code: '-1', message: 'ext not allow'});
+
   var cosKey = generateCosKey(ext);
+
+  let ak = config.secretId;
+  let sk = config.secretKey;
+  let securityToken = '';
+
+  // 也可以使用临时密钥计算签名，使用临时密钥计算时 前端上传文件时必须上送securityToken字段
+  // try {
+  //   const tmpData = await getSts();
+  //   ak = tmpData.credentials.tmpSecretId;
+  //   sk = tmpData.credentials.tmpSecretKey;
+  //   securityToken = tmpData.credentials.sessionToken;
+  // } catch (e) {
+  //   console.log('get sts error', e);
+  // }
 
   // 开始计算签名
   var qSignAlgorithm = 'sha1';
   var method = 'put';
   var pathname = cosKey;
   pathname.indexOf('/') !== 0 && (pathname = '/' + pathname);
-  var qAk = config.secretId;
+  var qAk = ak;
   var now = Math.round(new Date().getTime() / 1000) - 1;
   var exp = now + 900; // 默认900s过期
   var qSignTime = now + ';' + exp;
@@ -248,7 +285,7 @@ app.all('/put-sign', function (req, res, next) {
 
   // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
   // 步骤一：计算 SignKey
-  var signKey = crypto.createHmac('sha1', config.secretKey).update(qKeyTime).digest('hex');
+  var signKey = crypto.createHmac('sha1', sk).update(qKeyTime).digest('hex');
 
   // 步骤二：构成 FormatString
   var formatString = [method, pathname, obj2str(queryParams, true), obj2str(headers, true), ''].join('\n');
@@ -276,17 +313,37 @@ app.all('/put-sign', function (req, res, next) {
     cosHost,
     cosKey,
     authorization,
-    // securityToken: securityToken, // 如果使用临时密钥，要返回在这个资源 sessionToken 的值
+    securityToken: securityToken, // 如果使用临时密钥，要返回在这个资源 sessionToken 的值
   });
 });
 
 // 生成post上传签名，客户端传递文件后缀，这里生成随机Key
-app.all('/post-policy', function (req, res, next) {
+app.all('/post-policy', async function (req, res, next) {
   var query = req.query;
   var ext = query.ext;
 
+  // 判断异常情况
+  if (!config.secretId || !config.secretKey)
+    return res.send({ code: '-1', message: 'secretId or secretKey not ready' });
+  if (!config.bucket || !config.region) return res.send({ code: '-1', message: 'bucket or regions not ready' });
+  // if (!config.extWhiteList.includes(ext)) return res.send({code: '-1', message: 'ext not allow'});
+
   // 服务端生成随机Key并计算签名
   var cosKey = generateCosKey(ext);
+
+  let ak = config.secretId;
+  let sk = config.secretKey;
+  let securityToken = '';
+
+  // 也可以使用临时密钥计算签名，使用临时密钥计算时 前端上传文件时必须上送securityToken字段
+  // try {
+  //   const tmpData = await getSts();
+  //   ak = tmpData.credentials.tmpSecretId;
+  //   sk = tmpData.credentials.tmpSecretKey;
+  //   securityToken = tmpData.credentials.sessionToken;
+  // } catch (e) {
+  //   console.log('get sts error', e);
+  // }
 
   var now = Math.round(Date.now() / 1000);
   var exp = now + 900;
@@ -299,8 +356,9 @@ app.all('/post-policy', function (req, res, next) {
       // ['starts-with', '$Content-Type', 'image/'],
       // ['starts-with', '$success_action_redirect', redirectUrl],
       // ['eq', '$x-cos-server-side-encryption', 'AES256'],
+      // ['content-length-range', 1, 5242880 ], // 可限制上传文件大小范围比如1 - 5MB
       { 'q-sign-algorithm': qSignAlgorithm },
-      { 'q-ak': config.secretId },
+      { 'q-ak': ak },
       { 'q-sign-time': qKeyTime },
       { bucket: config.bucket },
       { key: cosKey },
@@ -309,7 +367,7 @@ app.all('/post-policy', function (req, res, next) {
 
   // 签名算法说明文档：https://www.qcloud.com/document/product/436/7778
   // 步骤一：生成 SignKey
-  var signKey = crypto.createHmac('sha1', config.secretKey).update(qKeyTime).digest('hex');
+  var signKey = crypto.createHmac('sha1', sk).update(qKeyTime).digest('hex');
 
   // 步骤二：生成 StringToSign
   var stringToSign = crypto.createHash('sha1').update(policy).digest('hex');
@@ -323,10 +381,10 @@ app.all('/post-policy', function (req, res, next) {
     policyObj: JSON.parse(policy),
     policy: Buffer.from(policy).toString('base64'),
     qSignAlgorithm: qSignAlgorithm,
-    qAk: config.secretId,
+    qAk: ak,
     qKeyTime: qKeyTime,
     qSignature: qSignature,
-    // securityToken: securityToken, // 如果使用临时密钥，要返回在这个资源 sessionToken 的值
+    securityToken: securityToken, // 如果使用临时密钥，要返回在这个资源 sessionToken 的值
   });
 });
 

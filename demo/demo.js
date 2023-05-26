@@ -3700,6 +3700,46 @@ function closeOriginProtect() {
   );
 }
 
+// 提交视频截帧任务
+function postSnapshot() {
+  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/jobs';
+  var url = 'https://' + host;
+  var body = COS.util.json2xml({
+    Request: {
+      Tag: 'Snapshot', // 必须，固定值
+      Input: {
+        Object: 'ci/abc.mp4', // 文件名，取值为文件在当前存储桶中的完整名称
+      },
+      Operation: {
+        // TemplateId与Snapshot二选一传递
+        // TemplateId: '',
+        Snapshot: {
+          Mode: 'Interval', // 截图模式
+          Start: '1', // 开始时间
+          Count: '1', // 截图数量
+        },
+        Output: {
+          Bucket: config.Bucket, // 输出的存储桶
+          Region: config.Region, // 输出的存储桶的地域
+          Object: 'ci/output/snapshot-${Number}.jpg', // 输出的文件 Key
+        },
+      },
+    },
+  });
+  cos.request(
+    {
+      Method: 'POST',
+      Key: 'jobs',
+      Url: url,
+      Body: body,
+      ContentType: 'application/xml',
+    },
+    function (err, data) {
+      logger.log(err || data);
+    },
+  );
+}
+
 (function () {
   var list = [
     'header-工具函数',
@@ -3858,6 +3898,7 @@ function closeOriginProtect() {
     'openOriginProtect',
     'describeOriginProtect',
     'closeOriginProtect',
+    'postSnapshot',
   ];
   var labelMap = {
     putObject: '简单上传',
@@ -3946,6 +3987,7 @@ function closeOriginProtect() {
     openOriginProtect: '开通原图保护',
     describeOriginProtect: '查询原图保护状态',
     closeOriginProtect: '关闭原图保护',
+    postSnapshot: '提交视频截帧任务',
   };
   var container = document.querySelector('.main');
   var html = [];
