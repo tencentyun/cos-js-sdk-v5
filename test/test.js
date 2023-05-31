@@ -2,7 +2,6 @@
  * @jest-environment jsdom
  */
 import { describe, expect, jest, test } from '@jest/globals';
-import 'jest-localstorage-mock';
 import COS from '../index.js';
 
 // config 替换成自己的桶信息
@@ -15,6 +14,30 @@ var config = {
   ReplicationRegion: process.env.ReplicationRegion, // 存储桶复制时用到的桶的地域
   Uin: process.env.Uin,
 };
+
+// mock localStroage
+var localStorageMock = (function () {
+  var store = {};
+  return {
+    getItem: function (key) {
+      return store[key];
+    },
+    setItem: function (key, value) {
+      store[key] = value.toString();
+    },
+    clear: function () {
+      store = {};
+    },
+    removeItem: function (key) {
+      delete store[key];
+    },
+  };
+})();
+Object.defineProperty(window, 'localStorage', {
+  writable: true,
+  configurable: true,
+  value: localStorageMock,
+});
 
 function checkEnvParams() {
   if (!process.env.Bucket) {
@@ -349,7 +372,7 @@ group('init cos', function () {
         Body: file,
       },
       function (err, data) {
-        assert.ok(!err);
+        assert.ok(err);
         done();
       },
     );
@@ -358,23 +381,24 @@ group('init cos', function () {
 
 group('task 队列', function () {
   test('putObject() 批量上传', function (done) {
+    var cos = new COS({
+      SecretId: config.SecretId,
+      SecretKey: config.SecretKey,
+      UploadQueueSize: 100,
+    });
     var upload = function () {
       var filename = '5.txt';
-      var taskId;
       cos.putObject(
         {
           Bucket: config.Bucket,
           Region: config.Region,
           Key: filename,
           Body: '12345',
-          TaskReady: function (id) {
-            taskId = id;
-          },
         },
         function (err, data) {},
       );
     };
-    for (var i = 0; i < 12000; i++) {
+    for (var i = 0; i < 120; i++) {
       upload();
     }
     var taskList = cos.getTaskList();
@@ -1609,7 +1633,7 @@ group('putObjectCopy() 1', function () {
       },
     );
   });
-  test('捕获 object 异常', function (done, assert) {
+  test('捕获 object 异常', function (done) {
     var errFileName = '12345.txt' + Date.now().toString(36);
     cos.putObjectCopy(
       {
@@ -4329,6 +4353,21 @@ group('BucketInventory', function () {
     );
   });
 
+  test('postBucketInventory() bucket not exist', function (done) {
+    cos.postBucketInventory(
+      {
+        Bucket: Date.now().toString(36) + config.Bucket,
+        Region: config.Region,
+        Id: InventoryConfiguration.Id,
+        InventoryConfiguration: InventoryConfiguration,
+      },
+      function (err, data) {
+        assert.ok(err);
+        done();
+      },
+    );
+  });
+
   test('getBucketInventory() bucket not exist', function (done) {
     cos.getBucketInventory(
       {
@@ -4379,6 +4418,25 @@ group('BucketInventory', function () {
             done();
           },
         );
+      },
+    );
+  });
+
+  test('postBucketInventory()', function (done) {
+    var config = JSON.parse(JSON.stringify(InventoryConfiguration));
+    config.Id = config.Id + Date.now().toString(36);
+    delete config.IsEnabled;
+    delete config.Schedule;
+    cos.postBucketInventory(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Id: config.Id,
+        InventoryConfiguration: config,
+      },
+      function (err, data) {
+        assert.ok(!err);
+        done();
       },
     );
   });

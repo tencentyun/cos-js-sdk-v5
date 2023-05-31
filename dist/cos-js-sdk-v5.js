@@ -6948,7 +6948,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.4.17\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js test/test.js server/sts.js\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"jest-localstorage-mock\":\"^2.4.26\",\"prettier\":\"2.8.8\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.4.18\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js test/test.js server/sts.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"prettier\":\"2.8.8\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -10007,7 +10007,7 @@ function getBucketLogging(params, callback) {
  */
 
 
-function putBucketInventory(params, callback) {
+function submitBucketInventory(method, params, callback) {
   var InventoryConfiguration = util.clone(params['InventoryConfiguration']);
 
   if (InventoryConfiguration.OptionalFields) {
@@ -10032,9 +10032,10 @@ function putBucketInventory(params, callback) {
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
   headers['Content-MD5'] = util.b64(util.md5(xml));
+  var action = method === 'PUT' ? 'name/cos:PutBucketInventory' : 'name/cos:PostBucketInventory';
   submitRequest.call(this, {
-    Action: 'name/cos:PutBucketInventory',
-    method: 'PUT',
+    Action: action,
+    method: method,
     Bucket: params.Bucket,
     Region: params.Region,
     body: xml,
@@ -10057,6 +10058,22 @@ function putBucketInventory(params, callback) {
       headers: data.headers
     });
   });
+}
+/**
+ * 创建一个清单任务
+*/
+
+
+function putBucketInventory(params, callback) {
+  return submitBucketInventory.call(this, 'PUT', params, callback);
+}
+/**
+ * 创建一个一次性清单任务 会立即执行
+*/
+
+
+function postBucketInventory(params, callback) {
+  return submitBucketInventory.call(this, 'POST', params, callback);
 }
 /**
  * 获取 Bucket 的清单任务信息
@@ -12527,6 +12544,7 @@ var API_MAP = {
   getBucketLogging: getBucketLogging,
   putBucketInventory: putBucketInventory,
   // BucketInventory
+  postBucketInventory: postBucketInventory,
   getBucketInventory: getBucketInventory,
   listBucketInventory: listBucketInventory,
   deleteBucketInventory: deleteBucketInventory,
