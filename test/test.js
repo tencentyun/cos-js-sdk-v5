@@ -4423,16 +4423,16 @@ group('BucketInventory', function () {
   });
 
   test('postBucketInventory()', function (done) {
-    var config = JSON.parse(JSON.stringify(InventoryConfiguration));
-    config.Id = config.Id + Date.now().toString(36);
-    delete config.IsEnabled;
-    delete config.Schedule;
+    var inventoryConfig = JSON.parse(JSON.stringify(InventoryConfiguration));
+    inventoryConfig.Id = inventoryConfig.Id + Date.now().toString(36);
+    delete inventoryConfig.IsEnabled;
+    delete inventoryConfig.Schedule;
     cos.postBucketInventory(
       {
         Bucket: config.Bucket,
         Region: config.Region,
-        Id: config.Id,
-        InventoryConfiguration: config,
+        Id: inventoryConfig.Id,
+        InventoryConfiguration: inventoryConfig,
       },
       function (err, data) {
         assert.ok(!err);
