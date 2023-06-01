@@ -923,7 +923,6 @@ function deleteBucketLogging() {
 }
 
 function putBucketInventory() {
-  var AppId = config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1);
   cos.putBucketInventory(
     {
       Bucket: config.Bucket, // Bucket 格式：test-1250000000
@@ -962,6 +961,54 @@ function putBucketInventory() {
     },
     function (err, data) {
       logger.log('putBucketInventory:', err || data);
+    },
+  );
+}
+
+function postBucketInventory() {
+  cos.postBucketInventory(
+    {
+      Bucket: config.Bucket, // Bucket 格式：test-1250000000
+      Region: config.Region,
+      Id: 'inventory_test6',
+      InventoryConfiguration: {
+        Id: 'inventory_test6',
+        Destination: {
+          COSBucketDestination: {
+            Format: 'CSV',
+            AccountId: config.Uin,
+            Bucket: 'qcs::cos:' + config.Region + '::' + config.Bucket,
+            Prefix: 'inventory6',
+            Encryption: {
+              SSECOS: '',
+            },
+          },
+        },
+        Filter: {
+          Prefix: 'myPrefix',
+          // Period: {
+          //   StartTime: new Date('2023-05-01').getTime()/1000,
+          //   EndTime: new Date('2023-05-31').getTime()/1000,
+          // },
+          // And: {
+          //   Prefix: 'myPrefix',
+          //   Tag: [{ Key: 'test1', Value: '1'}, { Key: 'test2', Value: '2' }]
+          // }
+        },
+        IncludedObjectVersions: 'All',
+        OptionalFields: [
+          'Size',
+          'LastModifiedDate',
+          'ETag',
+          'StorageClass',
+          'IsMultipartUploaded',
+          'ReplicationStatus',
+          'Tag',
+        ],
+      },
+    },
+    function (err, data) {
+      logger.log('postBucketInventory:', err || data);
     },
   );
 }
@@ -4673,6 +4720,7 @@ function postSnapshot() {
     'getBucketLogging',
     'deleteBucketLogging',
     'putBucketInventory',
+    'postBucketInventory',
     'getBucketInventory',
     'deleteBucketInventory',
     'listBucketInventory',
