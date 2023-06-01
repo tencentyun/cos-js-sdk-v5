@@ -1577,7 +1577,7 @@ function getBucketLogging(params, callback) {
  * @return  {Object}  err                                                   请求失败的错误，如果请求成功，则为空。https://cloud.tencent.com/document/product/436/7730
  * @return  {Object}  data                                                  返回数据
  */
-function putBucketInventory(params, callback) {
+function submitBucketInventory(method, params, callback) {
   var InventoryConfiguration = util.clone(params['InventoryConfiguration']);
 
   if (InventoryConfiguration.OptionalFields) {
@@ -1607,11 +1607,13 @@ function putBucketInventory(params, callback) {
   headers['Content-Type'] = 'application/xml';
   headers['Content-MD5'] = util.b64(util.md5(xml));
 
+  var action = method === 'PUT' ? 'name/cos:PutBucketInventory' : 'name/cos:PostBucketInventory';
+
   submitRequest.call(
     this,
     {
-      Action: 'name/cos:PutBucketInventory',
-      method: 'PUT',
+      Action: action,
+      method,
       Bucket: params.Bucket,
       Region: params.Region,
       body: xml,
@@ -1633,6 +1635,20 @@ function putBucketInventory(params, callback) {
       });
     },
   );
+}
+
+/**
+ * 创建一个清单任务
+ */
+function putBucketInventory(params, callback) {
+  return submitBucketInventory.call(this, 'PUT', params, callback);
+}
+
+/**
+ * 创建一个一次性清单任务 会立即执行
+ */
+function postBucketInventory(params, callback) {
+  return submitBucketInventory.call(this, 'POST', params, callback);
 }
 
 /**
@@ -4134,6 +4150,7 @@ var API_MAP = {
   putBucketLogging: putBucketLogging, // BucketLogging
   getBucketLogging: getBucketLogging,
   putBucketInventory: putBucketInventory, // BucketInventory
+  postBucketInventory: postBucketInventory,
   getBucketInventory: getBucketInventory,
   listBucketInventory: listBucketInventory,
   deleteBucketInventory: deleteBucketInventory,

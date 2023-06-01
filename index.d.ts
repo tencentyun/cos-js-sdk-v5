@@ -1010,27 +1010,30 @@ declare namespace COS {
     BucketLoggingStatus: BucketLoggingStatus;
   }
 
-  // putBucketInventory
-  /** putBucketInventory 接口参数 */
-  interface InventoryConfiguration {
+  interface BaseInventoryConfiguration {
     /** 清单的名称，与请求参数中的 id 对应，可选 */
     Id: string;
-    /** 清单是否启用的标识：如果设置为 true，清单功能将生效，如果设置为 false，将不生成任何清单，必选 */
-    IsEnabled: BooleanString;
     /** 是否在清单中包含对象版本：如果设置为 All，清单中将会包含所有对象版本，并在清单中增加 VersionId，IsLatest，DeleteMarker 这几个字段，如果设置为 Current，则清单中不包含对象版本信息，必选 */
     IncludedObjectVersions: 'All' | 'Current';
     /** 筛选待分析对象。清单功能将分析符合 Filter 中设置的前缀的对象，可选 */
     Filter?: {
       /** 筛选待分析对象。清单功能将分析符合 Filter 中设置的前缀的对象，可选 */
       Prefix?: Prefix;
+      /** 需要分析的对象的创建时间范围	*/
+      Period?: {
+        StartTime?: number;
+        EndTime?: number;
+      };
+      /** 筛选待分析对象时，可以用对象标签（支持多个）作为过滤条件	*/
+      Tag?: Tag[];
+      /** 筛选待分析对象时，如果同时需要前缀与对象标签条件，需要用 And 包装 */
+      And?: {
+        Prefix: Prefix;
+        Tag: Tag[];
+      };
     };
     /** 设置清单结果中应包含的分析项目，可选 */
     OptionalFields?: string[];
-    /** 配置清单任务周期，必选 */
-    Schedule: {
-      /** 清单任务周期，可选项为按日或者按周，枚举值：Daily、Weekly，必选 */
-      Frequency: 'Daily' | 'Weekly';
-    };
     /** 描述存放清单结果的信息，必选 */
     Destination: {
       /** 清单结果导出后存放的存储桶信息，必选 */
@@ -1051,6 +1054,19 @@ declare namespace COS {
       };
     };
   }
+
+  // putBucketInventory
+  /** putBucketInventory 接口参数 */
+  interface InventoryConfiguration extends BaseInventoryConfiguration {
+    /** 清单是否启用的标识：如果设置为 true，清单功能将生效，如果设置为 false，将不生成任何清单，必选 */
+    IsEnabled: BooleanString;
+    /** 配置清单任务周期，必选 */
+    Schedule: {
+      /** 清单任务周期，可选项为按日或者按周，枚举值：Daily、Weekly，必选 */
+      Frequency: 'Daily' | 'Weekly';
+    };
+  }
+
   interface PutBucketInventoryParams extends BucketParams {
     /** 清单的名称，与请求参数中的 id 对应 */
     Id: string;
@@ -1059,6 +1075,17 @@ declare namespace COS {
   }
   /** putBucketInventory 接口返回值 */
   interface PutBucketInventoryResult extends GeneralResult {}
+
+  // postBucketInventory
+  /** postBucketInventory 接口参数 */
+  interface PostBucketInventoryParams extends BucketParams {
+    /** 清单的名称，与请求参数中的 id 对应 */
+    Id: string;
+    /** 包含清单任务的详细信息 */
+    InventoryConfiguration: BaseInventoryConfiguration;
+  }
+  /** postBucketInventory 接口返回值 */
+  interface PostBucketInventoryResult extends GeneralResult {}
 
   // getBucketInventory
   /** getBucketInventory 接口参数 */
@@ -2255,6 +2282,13 @@ declare class COS {
     callback: (err: COS.CosError, data: COS.PutBucketInventoryResult) => void,
   ): void;
   putBucketInventory(params: COS.PutBucketInventoryParams): Promise<COS.PutBucketInventoryResult>;
+
+  /** 创建/编辑 Bucket 一次性清单任务 @see https://cloud.tencent.com/document/product/436/83382 */
+  postBucketInventory(
+    params: COS.PostBucketInventoryParams,
+    callback: (err: COS.CosError, data: COS.PostBucketInventoryResult) => void,
+  ): void;
+  postBucketInventory(params: COS.PostBucketInventoryParams): Promise<COS.PostBucketInventoryResult>;
 
   /** 获取 Bucket 的清单任务信息 @see https://cloud.tencent.com/document/product/436/33705 */
   getBucketInventory(
