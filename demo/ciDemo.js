@@ -1,193 +1,5 @@
-// @ts-check
-// config 替换成自己的存储桶和账号信息
-var config = {
-  Bucket: 'test-1250000000',
-  Region: 'ap-guangzhou',
-  Uin: '10001',
-};
-
-var util = {
-  createFile: function (options) {
-    var buffer = new ArrayBuffer(options.size || 0);
-    var arr = new Uint8Array(buffer);
-    [].forEach.call(arr, function (char, i) {
-      arr[i] = 0;
-    });
-    var opt = {};
-    options.type && (opt.type = options.type);
-    var blob = new Blob([buffer], options);
-    return blob;
-  },
-  selectLocalFile: function (onChange) {
-    var id = 'file_selector';
-    var input = document.createElement('input');
-    input.style = 'width:0;height:0;border:0;margin:0;padding:0;';
-    input.type = 'file';
-    input.id = id;
-    input.onchange = function (e) {
-      var files = this.files;
-      if (!files.length) return;
-      onChange && onChange(files);
-      document.body.removeChild(input);
-    };
-    document.body.appendChild(input);
-    input.click();
-  },
-};
-
-// 对更多字符编码的 url encode 格式
-var camSafeUrlEncode = function (str) {
-  return encodeURIComponent(str)
-    .replace(/!/g, '%21')
-    .replace(/'/g, '%27')
-    .replace(/\(/g, '%28')
-    .replace(/\)/g, '%29')
-    .replace(/\*/g, '%2A');
-};
-
-var getAuthorization = function (options, callback) {
-  // 格式一、（推荐）后端通过获取临时密钥给到前端，前端计算签名
-  // 服务端 JS 和 PHP 例子：https://github.com/tencentyun/cos-js-sdk-v5/blob/master/server/
-  // 服务端其他语言参考 COS STS SDK ：https://github.com/tencentyun/qcloud-cos-sts-sdk
-  var url = '/sts'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
-  var xhr = new XMLHttpRequest();
-  xhr.open('POST', url, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.onload = function (e) {
-    try {
-      var data = JSON.parse(e.target.responseText);
-      var credentials = data.credentials;
-    } catch (e) {}
-    if (!data || !credentials) {
-      return logger.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
-    }
-    callback({
-      TmpSecretId: credentials.tmpSecretId,
-      TmpSecretKey: credentials.tmpSecretKey,
-      SecurityToken: credentials.sessionToken,
-      StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
-      ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000000
-      ScopeLimit: true, // 细粒度控制权限需要设为 true，会限制密钥只在相同请求时重复使用
-    });
-  };
-  xhr.send(JSON.stringify(options.Scope));
-
-  // // 格式二、（推荐）【细粒度控制权限】后端通过获取临时密钥给到前端，前端只有相同请求才重复使用临时密钥，后端可以通过 Scope 细粒度控制权限
-  // // 服务端例子：https://github.com/tencentyun/qcloud-cos-sts-sdk/edit/master/scope.md
-  // // var url = '../server/sts.php'; // 如果起的是 php server 用这个
-  // var url = '/sts-scope'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
-  // var xhr = new XMLHttpRequest();
-  // xhr.open('POST', url, true);
-  // xhr.setRequestHeader('Content-Type', 'application/json');
-  // xhr.onload = function (e) {
-  //     try {
-  //         var data = JSON.parse(e.target.responseText);
-  //         var credentials = data.credentials;
-  //     } catch (e) {
-  //     }
-  //     if (!data || !credentials) {
-  //         return logger.error('credentials invalid:\n' + JSON.stringify(data, null, 2))
-  //     };
-  //     callback({
-  //         TmpSecretId: credentials.tmpSecretId,
-  //         TmpSecretKey: credentials.tmpSecretKey,
-  //         SecurityToken: credentials.sessionToken,
-  //         StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
-  //         ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000000
-  //         ScopeLimit: true, // 细粒度控制权限需要设为 true，会限制密钥只在相同请求时重复使用
-  //     });
-  // };
-  // xhr.send(JSON.stringify(options.Scope));
-
-  // // 格式三、（不推荐，分片上传权限不好控制）前端每次请求前都需要通过 getAuthorization 获取签名，后端使用固定密钥或临时密钥计算签名返回给前端
-  // // 服务端获取签名，请参考对应语言的 COS SDK：https://cloud.tencent.com/document/product/436/6474
-  // // 注意：这种有安全风险，后端需要通过 method、pathname 严格控制好权限，比如不允许 put / 等
-  // var method = (options.Method || 'get').toLowerCase();
-  // var query = options.Query || {};
-  // var headers = options.Headers || {};
-  // var pathname = options.Pathname || '/';
-  // // var url = 'http://127.0.0.1:3000/auth';
-  // var url = '../server/auth.php';
-  // var xhr = new XMLHttpRequest();
-  // var data = {
-  //     method: method,
-  //     pathname: pathname,
-  //     query: query,
-  //     headers: headers,
-  // };
-  // xhr.open('POST', url, true);
-  // xhr.setRequestHeader('content-type', 'application/json');
-  // xhr.onload = function (e) {
-  //     try {
-  //         var data = JSON.parse(e.target.responseText);
-  //     } catch (e) {
-  //     }
-  //     if (!data || !data.authorization) return console.error('authorization invalid');
-  //     callback({
-  //         Authorization: data.authorization,
-  //         // SecurityToken: data.sessionToken, // 如果使用临时密钥，需要把 sessionToken 传给 SecurityToken
-  //     });
-  // };
-  // xhr.send(JSON.stringify(data));
-
-  // // 格式四、（不推荐，适用于前端调试，避免泄露密钥）前端使用固定密钥计算签名
-  // var authorization = COS.getAuthorization({
-  //     SecretId: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 可传固定密钥或者临时密钥
-  //     SecretKey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // 可传固定密钥或者临时密钥
-  //     Method: options.Method,
-  //     Pathname: options.Pathname,
-  //     Query: options.Query,
-  //     Headers: options.Headers,
-  //     Expires: 900,
-  // });
-  // callback({
-  //     Authorization: authorization,
-  //     // SecurityToken: credentials.sessionToken, // 如果使用临时密钥，需要传 SecurityToken
-  // });
-};
-
-var cos = new COS({
-  getAuthorization: getAuthorization,
-  UploadCheckContentMd5: true,
-});
 
 var TaskId;
-
-var pre = document.querySelector('.result');
-var showLogText = function (text, color) {
-  if (typeof text === 'object') {
-    try {
-      text = JSON.stringify(text);
-    } catch (e) {}
-  }
-  var div = document.createElement('div');
-  div.innerText = text;
-  color && (div.style.color = color);
-  pre.appendChild(div);
-  pre.style.display = 'block';
-  pre.scrollTop = pre.scrollHeight;
-};
-
-var logger = {
-  log: function (text) {
-    console.log.apply(console, arguments);
-    var args = [].map.call(arguments, function (v) {
-      return typeof v === 'object' ? JSON.stringify(v, null, 2) : v;
-    });
-
-    var logStr = args.join(' ');
-
-    if (logStr.length > 1000000) {
-      logStr = logStr.slice(0, 1000000) + '...content is too long, the first 1000000 characters are intercepted';
-    }
-
-    showLogText(logStr);
-  },
-  error: function (text) {
-    console.error(text);
-    showLogText(text, 'red');
-  },
-};
 
 function getObjectUrl() {
   var url = cos.getObjectUrl(
@@ -882,6 +694,7 @@ function describeDocProcessQueues() {
 
 // 更新文档预览队列
 function updateDocProcessQueue() {
+  // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询 
   var queueId = 'pa2e2c3d3fae042de909cafc16f1d801b'; // 替换成自己的队列id
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/docqueue/' + queueId;
   var url = 'https://' + host;
@@ -929,7 +742,6 @@ function createDocProcessJobs() {
           Object: '1/文档转码_${Number}.jpg', // 转码后存到cos的路径
         },
       },
-      QueueId: 'pa2e2c3d3fae042de909cafc16f1d801b', // 替换成自己的queueId
     },
   });
   cos.request(
@@ -973,7 +785,6 @@ function describeDocProcessJobs() {
       Key: 'doc_jobs',
       Url: url,
       Query: {
-        queueId: 'pa2e2c3d3fae042de909cafc16f1d801b', // 替换成自己的queueId
         tag: 'DocProcess',
       },
     },
@@ -1539,6 +1350,7 @@ function getAsrQueue() {
 
 // 更新语音识别队列
 function putAsrQueue() {
+    // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询 
   var queueId = 'pcc77499e85c311edb9865254008618d9';
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asrqueue/' + queueId;
   var url = 'https://' + host;
@@ -1664,6 +1476,7 @@ function describeFileProcessQueues() {
 
 // 更新文件处理队列
 function updateFileProcessQueue() {
+  // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询 
   var queueId = 'p6160ada105a7408e95aac015f4bf8xxx';
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_queue/' + queueId;
   var url = 'https://' + host;
@@ -1983,6 +1796,7 @@ function describePicProcessQueues() {
 
 // 更新图片处理队列
 function updatePicProcessQueue() {
+  // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询 
   var queueId = 'p882d181160d84feca27d9376e17c4xxx';
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/picqueue/' + queueId;
   var url = 'https://' + host;
