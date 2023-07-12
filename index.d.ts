@@ -162,7 +162,7 @@ declare namespace COS {
     Domain?: string;
     /** getService方法可以使用的自定义域名 */
     ServiceDomain?: string;
-    /** http协议，枚举值'http:','https:'冒号必须 */
+    /** http协议，枚举值'http:','https:' */
     Protocol?: string;
     /** 开启兼容模式，默认 false 不开启，兼容模式下不校验 Region 是否格式有误，在用于私有化 COS 时使用 */
     CompatibilityMode?: boolean;
@@ -1948,6 +1948,10 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     Expires?: number;
     /** 是否使用全球加速域名,默认false */
     UseAccelerate?: boolean;
+    /** 调用操作存储桶和对象的 API 时自定义请求域名。可以使用模板，如"{Bucket}.cos.{Region}.myqcloud.com"，即在调用 API 时会使用参数中传入的 Bucket 和 Region 进行替换。 */
+    Domain?: string;
+    /** http协议，枚举值'http:','https:' */
+    Protocol?: string;
   }
 
   /** getObjectUrl 接口返回值 */
