@@ -63,7 +63,7 @@ declare namespace COS {
     | 'public-read'
     | 'authenticated-read'
     | 'bucket-owner-read'
-    | 'bucket-owner-full-contro';
+    | 'bucket-owner-full-control';
   /** 二进制值的字符串，'true' | 'false' */
   type BooleanString = 'true' | 'false';
   /** 所有者的信息 */
@@ -207,6 +207,7 @@ declare namespace COS {
     md5: (str: String, encoding?: string) => string;
     xml2json: (bodyStr: string) => any;
     json2xml: (json: any) => string;
+    encodeBase64: (str: string, safe?: boolean) => string;
   }
 
   interface StaticGetAuthorizationOptions {
@@ -1506,7 +1507,13 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     'x-cos-meta-*'?: string;
   }
   /** putObjectCopy 接口返回值 */
-  interface PutObjectCopyResult extends GeneralResult {}
+  interface PutObjectCopyResult extends GeneralResult {
+    ETag: string;
+    CRC64: string;
+    LastModified: string;
+    VersionId: string;
+    Location: Location;
+  }
 
   // putObjectTagging
   /** putObjectTagging 接口参数 */

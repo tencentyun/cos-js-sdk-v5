@@ -4,6 +4,7 @@ var md5 = require('../lib/md5');
 var CryptoJS = require('../lib/crypto');
 var xml2json = require('../lib/xml2json');
 var json2xml = require('../lib/json2xml');
+var base64 = require('../lib/base64');
 var Tracker = require('./tracker');
 
 function camSafeUrlEncode(str) {
@@ -825,6 +826,15 @@ var isQQ = (function () {
   return /\sQQ/i.test(navigator.userAgent);
 })();
 
+var encodeBase64 = function (str, safe) {
+  let base64Str = base64.encode(str);
+  // 万象使用的安全base64格式需要特殊处理
+  if (safe) {
+    base64Str = base64Str.replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
+  }
+  return base64Str;
+};
+
 var util = {
   noop: noop,
   formatParams: formatParams,
@@ -860,6 +870,7 @@ var util = {
   isNode: isNode,
   isCIHost: isCIHost,
   isIOS_QQ: isIOS && isQQ,
+  encodeBase64: encodeBase64,
 };
 
 module.exports = util;

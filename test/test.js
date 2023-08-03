@@ -3462,7 +3462,8 @@ group('params check Region', function () {
 
 group('Key 特殊字符处理', function () {
   test('Key 特殊字符处理', function (done) {
-    var Key = "中文→↓←→↖↗↙↘! $&'()+,-.0123456789=@ABCDEFGHIJKLMNOPQRSTUV？WXYZ[]^_`abcdefghijklmnopqrstuvwxyz{}~.jpg";
+    var Key =
+      "中文→↓←→↖↗↙↘! $&'()+,-.0123456789=@ABCDEFGHIJKLMNOPQRSTUV？WXYZ[]^_`abcdefghijklmnopqrstuvwxyz{}~.jpg";
     cos.putObject(
       {
         Bucket: config.Bucket,
