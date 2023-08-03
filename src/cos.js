@@ -87,6 +87,7 @@ COS.util = {
   md5: util.md5,
   xml2json: util.xml2json,
   json2xml: util.json2xml,
+  encodeBase64: util.encodeBase64,
 };
 COS.getAuthorization = util.getAuth;
 COS.version = pkg.version;

@@ -419,8 +419,8 @@ function postTextAuditing() {
   var body = COS.util.json2xml({
     Request: {
       Input: {
+        Content: COS.util.encodeBase64('乳沟'), // 经过base64编码过的文本”乳沟“，查询结果同步返回
         // Object: 'hello.txt', // 存在cos里的资源，审核结果异步返回，可以调用查询文本审核结果api查询
-        Content: '5Lmz5rKf', // 经过base64编码过的文本”乳沟“，查询结果同步返回
       },
       Conf: {
         BizType: '',
