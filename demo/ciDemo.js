@@ -1,4 +1,3 @@
-
 var TaskId;
 
 function getObjectUrl() {
@@ -37,109 +36,14 @@ function request() {
   );
 }
 
-function CIExample1() {
-  util.selectLocalFile(function (files) {
-    var file = files && files[0];
-    if (!file) return;
-    if (file.type.indexOf('image') < 0) {
-      logger.error('Please select a photo to upload!');
-      return;
-    }
-    if (file.size > 1024 * 1024) {
-      cos.sliceUploadFile(
-        {
-          Bucket: config.Bucket, // Bucket 格式：test-1250000000
-          Region: config.Region,
-          Key: file.name,
-          Body: file,
-          Headers: {
-            // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
-            'Pic-Operations':
-              '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}',
-          },
-          onTaskReady: function (tid) {
-            TaskId = tid;
-          },
-          onHashProgress: function (progressData) {
-            logger.log('onHashProgress', JSON.stringify(progressData));
-          },
-          onProgress: function (progressData) {
-            logger.log('onProgress', JSON.stringify(progressData));
-          },
-        },
-        function (err, data) {
-          logger.log('CIExample1:', err || data);
-        },
-      );
-    } else {
-      cos.putObject(
-        {
-          Bucket: config.Bucket, // Bucket 格式：test-1250000000
-          Region: config.Region,
-          Key: file.name,
-          Body: file,
-          Headers: {
-            // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
-            'Pic-Operations':
-              '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}',
-          },
-          onTaskReady: function (tid) {
-            TaskId = tid;
-          },
-          onHashProgress: function (progressData) {
-            logger.log('onHashProgress', JSON.stringify(progressData));
-          },
-          onProgress: function (progressData) {
-            logger.log('onProgress', JSON.stringify(progressData));
-          },
-        },
-        function (err, data) {
-          logger.log('CIExample1:', err || data);
-        },
-      );
-    }
-  });
-}
-function CIExample2() {
-  cos.request(
-    {
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Key: 'photo.png',
-      Method: 'POST',
-      Action: 'image_process',
-      Headers: {
-        // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
-        'Pic-Operations':
-          '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}',
-      },
-    },
-    function (err, data) {
-      logger.log('CIExample2:', err || data);
-    },
-  );
-}
-function CIExample3() {
-  cos.getObject(
-    {
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Key: 'photo.png',
-      QueryString: `imageMogr2/thumbnail/200x/`,
-    },
-    function (err, data) {
-      logger.log('CIExample3:', err || data);
-    },
-  );
-}
-function CIExample4() {
+function getImageUrl() {
   // 生成带图片处理参数的文件签名URL，过期时间设置为 30 分钟。
   cos.getObjectUrl(
     {
       Bucket: config.Bucket,
       Region: config.Region,
-      Key: 'photo.png',
-      QueryString: `imageMogr2/thumbnail/200x/`,
+      Key: '02.png',
+      Query: { 'imageMogr2/thumbnail/200x/': '' },
       Expires: 1800,
       Sign: true,
     },
@@ -281,7 +185,7 @@ function postImagesAuditing() {
       Region: config.Region,
       Method: 'POST',
       Url: url,
-      Key: '/image/auditing',
+      Key: 'image/auditing',
       ContentType: 'application/xml',
       Body: body,
     },
@@ -303,6 +207,37 @@ function getImageAuditingResult() {
       Method: 'GET',
       Key: '/image/auditing/' + jobId,
       Url: url,
+    },
+    function (err, data) {
+      logger.log(err || data);
+    },
+  );
+}
+
+// 反馈处理结果
+function reportBadCase() {
+  const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+  const key = 'report/badcase';
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      ContentType: 2,
+      Url: 'https://example.com/desample_photo.jpg',
+      Label: 'Porn',
+      SuggestedLabel: 'Normal',
+      // JobId: '',
+      // ModerationTime: '',
+    },
+  });
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'POST',
+      Url: url,
+      Key: key,
+      ContentType: 'application/xml',
+      Body: body,
     },
     function (err, data) {
       logger.log(err || data);
@@ -595,6 +530,26 @@ function postLiveAuditing() {
   );
 }
 
+// 取消直播审核
+function cancelLiveAuditing() {
+  const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+  const jobId = 'av8088af71359c11eeb17c525400941xxx';
+  const key = `video/cancel_auditing/${jobId}`;
+  const url = `https://${host}/${key}`;
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'POST',
+      Url: url,
+      Key: key,
+    },
+    function (err, data) {
+      logger.log(err || data);
+    },
+  );
+}
+
 // 查询直播审核任务结果
 function getLiveAuditingResult() {
   var jobId = 'av0ca69557bd6111ed904c5254009411xx'; // jobId可以通过提交直播审核任务返回
@@ -646,8 +601,7 @@ function getDocPreview() {
       Key: '1/文档.docx',
       Query: {
         'ci-process': 'doc-preview', // 必须，数据万象处理能力，文档预览固定为 doc-preview
-        srcType:
-          'docx', // 非必须，源数据的后缀类型，当前文档转换根据 COS 对象的后缀名来确定源数据类型。当 COS 对象没有后缀名时，可以设置该值
+        srcType: 'docx', // 非必须，源数据的后缀类型，当前文档转换根据 COS 对象的后缀名来确定源数据类型。当 COS 对象没有后缀名时，可以设置该值
         // page: '', // 非必须，需转换的文档页码，默认从1开始计数；表格文件中 page 表示转换的第 X 个 sheet 的第 X 张图
         // dstType: '', // 非必须，转换输出目标文件类型
       },
@@ -681,7 +635,7 @@ function describeDocProcessQueues() {
       Url: url,
       Query: {
         // queueIds: '', // 非必须，队列 ID，以“,”符号分割字符串
-        // state: '', // 非必须，1=Active,2=Paused 
+        // state: '', // 非必须，1=Active,2=Paused
         // pageNumber: 1, // 非必须，第几页
         // pageSize: 2, // 非必须，每页个数
       },
@@ -694,7 +648,7 @@ function describeDocProcessQueues() {
 
 // 更新文档预览队列
 function updateDocProcessQueue() {
-  // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询 
+  // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
   var queueId = 'pa2e2c3d3fae042de909cafc16f1d801b'; // 替换成自己的队列id
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/docqueue/' + queueId;
   var url = 'https://' + host;
@@ -805,7 +759,7 @@ function getDocHtmlUrl() {
         'ci-process': 'doc-preview', // 必须，数据万象处理能力，文档预览固定为 doc-preview
         // srcType: '', // 非必须，源数据的后缀类型，当前文档转换根据 COS 对象的后缀名来确定源数据类型。当 COS 对象没有后缀名时，可以设置该值
         // page: '', // 非必须，需转换的文档页码，默认从1开始计数；表格文件中 page 表示转换的第 X 个 sheet 的第 X 张图
-        dstType: 'html' // 非必须，转换输出目标文件类型
+        dstType: 'html', // 非必须，转换输出目标文件类型
       },
     },
     function (err, data) {
@@ -899,7 +853,7 @@ function generateQrcode() {
         'ci-process': 'qrcode-generate', // 必须，对象存储处理能力，二维码生成参数为 qrcode-generate
         'qrcode-content': '二维码文案', // 必须，可识别的二维码文本信息
         // mode: 0, // 非必须，生成的二维码类型，可选值：0或1。0为二维码，1为条形码，默认值为0
-        width: 200 //必须，指定生成的二维码或条形码的宽度，高度会进行等比压缩
+        width: 200, //必须，指定生成的二维码或条形码的宽度，高度会进行等比压缩
       },
     },
     function (err, data) {
@@ -1350,7 +1304,7 @@ function getAsrQueue() {
 
 // 更新语音识别队列
 function putAsrQueue() {
-    // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询 
+  // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
   var queueId = 'pcc77499e85c311edb9865254008618d9';
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asrqueue/' + queueId;
   var url = 'https://' + host;
@@ -1418,7 +1372,7 @@ function getDocHtmlPreviewUrl() {
       Query: {
         'ci-process': 'doc-preview', // 必须，预览固定参数，值为 doc-preview
         dstType: 'html', // 必须，预览类型，如需预览生成类型为 html 则填入 html
-        weboffice_url: 1 // 非必须，是否获取预览链接。填入值为1会返回预览链接和Token信息；填入值为2只返回Token信息；不传会直接预览
+        weboffice_url: 1, // 非必须，是否获取预览链接。填入值为1会返回预览链接和Token信息；填入值为2只返回Token信息；不传会直接预览
       },
     },
     function (err, data) {
@@ -1462,10 +1416,9 @@ function describeFileProcessQueues() {
       Url: url,
       Query: {
         // queueIds: '', // 非必须，队列 ID，以“,”符号分割字符串
-        state:
-          'Active', // 非必须，Active 表示队列内的作业会被调度执行。Paused 表示队列暂停，作业不再会被调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响
+        state: 'Active', // 非必须，Active 表示队列内的作业会被调度执行。Paused 表示队列暂停，作业不再会被调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响
         pageNumber: 1, // 第几页,默认值1
-        pageSize: 10 // 非必须，每页个数,默认值10
+        pageSize: 10, // 非必须，每页个数,默认值10
       },
     },
     function (err, data) {
@@ -1476,7 +1429,7 @@ function describeFileProcessQueues() {
 
 // 更新文件处理队列
 function updateFileProcessQueue() {
-  // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询 
+  // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
   var queueId = 'p6160ada105a7408e95aac015f4bf8xxx';
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_queue/' + queueId;
   var url = 'https://' + host;
@@ -1641,8 +1594,8 @@ function closeImageGuetzli() {
   );
 }
 
-// 上传时使用图片压缩
-function advanceCompressExample1() {
+// 上传时使用图片处理
+function uploadPicOperation() {
   util.selectLocalFile(function (files) {
     var file = files && files[0];
     if (!file) return;
@@ -1658,9 +1611,11 @@ function advanceCompressExample1() {
           Key: file.name,
           Body: file,
           Headers: {
-            // 通过 imageMogr2 接口进行 avif 压缩，可以根据需要压缩的类型填入不同的压缩格式：webp/heif/tpg/avif/svgc
-            'Pic-Operations':
-              '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/format/avif"}]}',
+            // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
+            'Pic-Operations': JSON.stringify({
+              is_pic_info: 1,
+              rules: [{ fileid: 'desample_photo.jpg', rule: 'imageMogr2/thumbnail/200x/' }],
+            }),
           },
           onTaskReady: function (tid) {
             TaskId = tid;
@@ -1673,7 +1628,7 @@ function advanceCompressExample1() {
           },
         },
         function (err, data) {
-          logger.log('advanceCompressExample1:', err || data);
+          logger.log('uploadPicOperation:', err || data);
         },
       );
     } else {
@@ -1699,30 +1654,45 @@ function advanceCompressExample1() {
           },
         },
         function (err, data) {
-          logger.log('advanceCompressExample1:', err || data);
+          logger.log('uploadPicOperation:', err || data);
         },
       );
     }
   });
 }
 
-// 对云上数据进行图片压缩
-function advanceCompressExample2() {
+// 对云上数据处理
+function requestPicOperation() {
+  // 文字水印示例
+  const text = '腾讯云万象优图';
+  const color = '#3D3D3D';
+  // 经过安全base64编码 使用 COS.util.encodeBase64 方法需要sdk版本至少为1.4.18
+  const textBase64 = COS.util.encodeBase64(text, true);
+  const colorBase64 = COS.util.encodeBase64(color, true);
+  // 生成一个文字水印
+  const waterMarkRule = `watermark/2/text/${textBase64}/fill/${colorBase64}/fontsize/20/dissolve/50/gravity/northeast/dx/20/dy/20/batch/1/degree/45`;
+  const picOperations = JSON.stringify({
+    is_pic_info: 1, // 固定
+    // fileid 设置和Key相同可实现只保留处理后的图片而不保留原图
+    rules: [{ fileid: 'desample_photo.jpg', rule: waterMarkRule }],
+  });
+
   cos.request(
     {
       Bucket: config.Bucket,
       Region: config.Region,
-      Key: '1.png',
-      Method: 'POST',
-      Action: 'image_process',
-      Headers: {
-        // 通过 imageMogr2 接口进行 avif 压缩，可以根据需要压缩的类型填入不同的压缩格式：webp/heif/tpg/avif/svgc
-        'Pic-Operations':
-          '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/format/avif"}]}',
-      },
+      Key: '02.png',
+      Method: 'GET',
+      Action: 'exif',
+      RawBody: true,
+      // Headers: {
+      //   // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
+      //   'Pic-Operations': picOperations,
+      // },
     },
     function (err, data) {
-      logger.log('advanceCompressExample2:', err || data);
+      const info = JSON.parse(data.Body);
+      logger.log('requestPicOperation:', err || data);
     },
   );
 }
@@ -1754,7 +1724,7 @@ function createImageInspectJob() {
       Url: url,
       RawBody: true,
       Query: {
-        'ci-process': 'ImageInspect' // 必须，操作类型，异常图片检测固定为：ImageInspect
+        'ci-process': 'ImageInspect', // 必须，操作类型，异常图片检测固定为：ImageInspect
       },
     },
     function (err, data) {
@@ -1782,8 +1752,7 @@ function describePicProcessQueues() {
       Url: url,
       Query: {
         // queueIds: '', // 非必须，队列 ID，以“,”符号分割字符串
-        state:
-          'Active', // 非必须，1. Active 表示队列内的作业会被媒体处理服务调度执行。2. Paused 表示队列暂停，作业不再会被媒体处理调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响。
+        state: 'Active', // 非必须，1. Active 表示队列内的作业会被媒体处理服务调度执行。2. Paused 表示队列暂停，作业不再会被媒体处理调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响。
         pageNumber: 1, // 非必须，第几页,默认值1
         pageSize: 10, // 非必须，每页个数,默认值10
       },
@@ -1796,7 +1765,7 @@ function describePicProcessQueues() {
 
 // 更新图片处理队列
 function updatePicProcessQueue() {
-  // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询 
+  // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
   var queueId = 'p882d181160d84feca27d9376e17c4xxx';
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/picqueue/' + queueId;
   var url = 'https://' + host;
@@ -1957,18 +1926,15 @@ function postSnapshot() {
 (function () {
   var list = [
     'header-图片处理',
-    'CIExample1',
-    'CIExample2',
-    'CIExample3',
-    'CIExample4',
+    'getImageUrl',
     'addImageStyle',
     'describeImageStyles',
     'deleteImageStyle',
     'openImageGuetzli',
     'describeImageGuetzli',
     'closeImageGuetzli',
-    'advanceCompressExample1',
-    'advanceCompressExample2',
+    'uploadPicOperation',
+    'requestPicOperation',
     'advanceCompressExample3',
     'createImageInspectJob',
     'describePicProcessQueues',
@@ -1987,6 +1953,7 @@ function postSnapshot() {
     'getImageAuditing',
     'postImagesAuditing',
     'getImageAuditingResult',
+    'reportBadCase',
     'postVideoAuditing',
     'getVideoAuditingResult',
     'postAudioAuditing',
@@ -1999,6 +1966,7 @@ function postSnapshot() {
     'getWebpageAuditingResult',
     'postLiveAuditing',
     'getLiveAuditingResult',
+    'cancelLiveAuditing',
 
     'header-文档预览',
     'describeDocProcessBuckets',
@@ -2062,16 +2030,14 @@ function postSnapshot() {
     request: '通用请求接口',
     listFolder: '列出文件夹',
     deleteFolder: '删除文件夹(按前缀批量删除)',
-    CIExample1: '上传时使用图片处理',
-    CIExample2: '对云上数据进行图片处理',
-    CIExample3: '下载时使用图片处理',
-    CIExample4: '生成带图片处理参数的签名 URL',
+    getImageUrl: '生成带图片处理参数的签名 URL',
     describeMediaBuckets: '查询媒体处理开通情况',
     getMediaInfo: '获取媒体文件信息',
     getSnapshot: '获取媒体文件某个时间的截图',
     getImageAuditing: '图片同步审核',
     postImagesAuditing: '图片批量审核',
     getImageAuditingResult: '查询图片审核任务结果',
+    reportBadCase: '反馈处理结果',
     postVideoAuditing: '提交视频审核任务',
     getVideoAuditingResult: '查询视频审核任务结果',
     postAudioAuditing: '提交音频审核任务',
@@ -2084,6 +2050,7 @@ function postSnapshot() {
     getWebpageAuditingResult: '查询网页审核任务结果',
     postLiveAuditing: '提交直播审核任务',
     getLiveAuditingResult: '查询直播审核任务结果',
+    cancelLiveAuditing: '取消直播审核任务',
     describeDocProcessBuckets: '查询文档预览开通状态',
     getDocPreview: '文档转码同步请求',
     describeDocProcessQueues: '查询文档转码队列',
@@ -2123,9 +2090,9 @@ function postSnapshot() {
     openImageGuetzli: '开通 Guetzli 压缩',
     describeImageGuetzli: '查询 Guetzli 压缩',
     closeImageGuetzli: '关闭 Guetzli 压缩',
-    advanceCompressExample1: '上传时使用图片压缩',
-    advanceCompressExample2: '对云上数据进行图片压缩',
-    advanceCompressExample3: '下载时使用图片压缩',
+    uploadPicOperation: '上传时使用图片处理',
+    requestPicOperation: '对云上数据进行图片处理',
+    advanceCompressExample3: '下载时使用图片处理',
     createImageInspectJob: '异常图片检测',
     describePicProcessQueues: '查询图片处理队列',
     updatePicProcessQueue: '更新图片处理队列',
