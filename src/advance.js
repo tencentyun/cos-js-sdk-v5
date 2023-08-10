@@ -1003,6 +1003,11 @@ function uploadFiles(params, callback) {
       var FileSize = Body.size || Body.length || 0;
       var fileInfo = { Index: index, TaskId: '' };
 
+      // 如果 批量上传的 Key 是 / 开头，强制去掉第一个 /
+      if (!self.options.UseRawKey && fileParams.Key && fileParams.Key.substr(0, 1) === '/') {
+        fileParams.Key = fileParams.Key.substr(1);
+      }
+
       // 更新文件总大小
       TotalSize += FileSize;
 
