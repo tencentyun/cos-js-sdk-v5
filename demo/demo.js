@@ -71,8 +71,7 @@ function getBucket() {
     {
       Bucket: config.Bucket, // Bucket 格式：test-1250000000
       Region: config.Region,
-      Prefix: '',
-      Delimiter: '/',
+      Prefix: 'a/',
     },
     function (err, data) {
       logger.log('getBucket:', err || data);
@@ -1267,7 +1266,6 @@ function uploadFile() {
       },
     },
     function (err, data) {
-      logger.log('上传' + (err ? '失败' : '完成'));
       logger.log('uploadFile:', err || data);
     },
   );
@@ -1794,11 +1792,11 @@ function request() {
     } else {
       html.push(
         '<a href="javascript:void(0)" data-method="' +
-          name +
-          '">' +
-          name +
-          (labelMap[name] ? ' (' + labelMap[name] + ')' : '') +
-          '</a>',
+        name +
+        '">' +
+        name +
+        (labelMap[name] ? ' (' + labelMap[name] + ')' : '') +
+        '</a>',
       );
     }
   });
