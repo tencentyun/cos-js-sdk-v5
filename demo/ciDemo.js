@@ -1139,7 +1139,7 @@ function getImageAuditing() {
       Bucket: config.Bucket,
       Region: config.Region,
       Method: 'GET',
-      Key: '1.png',
+      Key: '1.png', // 与detect-url二选一传递
       Query: {
         'ci-process': 'sensitive-content-recognition', // 固定值，必须
         'biz-type': '', // 审核类型，非必须
@@ -1771,21 +1771,57 @@ function getDocHtmlUrl() {
 
 // 识别图片标签
 function getImageLabel() {
-  var key = '1/素材.jpeg';
-  var host = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + key;
-  var url = 'https://' + host;
   cos.request(
     {
-      Method: 'GET',
-      Key: key,
-      Url: url,
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/dog.jpeg', // 与detect-url二选一传递
       Query: {
+        // 固定值detect-label;是否必传：是
         'ci-process': 'detect-label',
+        // 本次调用支持的识别场景，可选值如下：web，针对网络图片优化；camera，针对手机摄像头拍摄图片优化；album，针对手机相册、网盘产品优化；news，针对新闻、资讯、广电等行业优化；如果不传此参数，则默认为camera。支持多场景（scenes）一起检测，以，分隔。例如，使用 scenes=web，camera 即对一张图片使用两个模型同时检测，输出两套识别结果。;是否必传：否
+        // scenes: '',
+        // 您可以通过填写 detect-url 处理任意公网可访问的图片链接。不填写 detect-url 时，后台会默认处理 ObjectKey ，填写了 detect-url 时，后台会处理 detect-url 链接，无需再填写 ObjectKey detect-url 示例：http://www.example.com/abc.jpg ，需要进行 UrlEncode，处理后为http%25253A%25252F%25252Fwww.example.com%25252Fabc.jpg;是否必传：否
+        // 'detect-url': '',
       },
     },
     function (err, data) {
-      logger.log(err || data);
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    }
+  );
+}
+
+// 二维码识别（云上图片识别）
+function recognitionQRcode() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/二维码.png', // 必须
+      Query: {
+        // 万象处理能力，二维码识别固定为 QRcode;是否必传：是
+        'ci-process': 'QRcode',
+        // 二维码覆盖功能，将对识别出的二维码覆盖上马赛克。取值为0或1。0表示不开启二维码覆盖，1表示开启二维码覆盖，默认值0;是否必传：否
+        cover: 0,
+      },
     },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
   );
 }
 
@@ -1836,14 +1872,12 @@ function identifyQrcode_get() {
 }
 
 // 二维码生成
-function generateQrcode() {
-  var host = config.Bucket + '.cos.' + config.Region + '.myqcloud.com';
-  var url = 'https://' + host;
+function createCRcode() {
   cos.request(
     {
+      Bucket: config.Bucket,
+      Region: config.Region,
       Method: 'GET',
-      Key: '',
-      Url: url,
       Query: {
         'ci-process': 'qrcode-generate', // 必须，对象存储处理能力，二维码生成参数为 qrcode-generate
         'qrcode-content': '二维码文案', // 必须，可识别的二维码文本信息
@@ -1863,28 +1897,41 @@ function generateQrcode() {
 }
 
 // 图片文字识别
-function ocr() {
-  var key = '1/素材.jpeg';
-  var host = config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + key;
-  var url = 'https://' + host;
+function cOSOCR() {
   cos.request(
     {
-      Method: 'GET',
-      Key: key,
-      Url: url,
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/0.jpg', // 与detect-url二选一传递
       Query: {
-        'ci-process': 'OCR', // 必须，数据万象处理能力，图片文字识别固定为 OCR
-        // type: '', // 非必须，OCR 的识别类型
-        // 'language-type': '', // 非必须，type 值为 general 时有效，表示识别语言类型
-        // ispdf: false, // 非必须，type 值为 general、fast 时有效，表示是否开启 PDF 识别
-        // 'pdf-pagenumber': '', // 非必须，type 值为 general、fast 时有效，表示需要识别的 PDF 页面的对应页码
-        // isword: false, // 非必须，type 值为 general、accurate 时有效，表示识别后是否需要返回单字信息
-        // 'enable-word-polygon': false, // 非必须，type 值为 handwriting 时有效，表示是否开启单字的四点定位坐标输出
+        // 数据万象处理能力，图片文字识别固定为OCR;是否必传：是
+        'ci-process': 'OCR',
+        // 您可以通过填写 detect-url 处理任意公网可访问的图片链接。不填写 detect-url 时，后台会默认处理 ObjectKey ，填写了 detect-url 时，后台会处理 detect-url 链接，无需再填写 ObjectKey detect-url 示例：http://www.example.com/abc.jpg ，需要进行 UrlEncode，处理后为http%25253A%25252F%25252Fwww.example.com%25252Fabc.jpg;是否必传：否
+        // 'detect-url': '',
+        // ocr的识别类型，有效值为general，accurate，efficient，fast，handwriting。general表示通用印刷体识别；accurate表示印刷体高精度版；efficient表示印刷体精简版；fast表示印刷体高速版；handwriting表示手写体识别。默认值为general。;是否必传：否
+        type: 'general',
+        // type值为general时有效，表示识别语言类型。支持自动识别语言类型，同时支持自选语言种类，默认中英文混合(zh)，各种语言均支持与英文混合的文字识别。可选值：zh：中英混合zh_rare：支持英文、数字、中文生僻字、繁体字，特殊符号等auto：自动mix：混合语种jap：日语kor：韩语spa：西班牙语fre：法语ger：德语por：葡萄牙语vie：越语may：马来语rus：俄语ita：意大利语hol：荷兰语swe：瑞典语fin：芬兰语dan：丹麦语nor：挪威语hun：匈牙利语tha：泰语hi：印地语ara：阿拉伯语;是否必传：否
+        'language-type': 'zh',
+        // type值为general，fast时有效，表示是否开启PDF识别，有效值为true和false，默认值为false，开启后可同时支持图片和PDF的识别。;是否必传：否
+        ispdf: false,
+        // type值为general，fast时有效，表示需要识别的PDF页面的对应页码，仅支持PDF单页识别，当上传文件为PDF且ispdf参数值为true时有效，默认值为1。;是否必传：否
+        // 'pdf-pagenumber': 0,
+        // type值为general，accurate时有效，表示识别后是否需要返回单字信息，有效值为true和false，默认为false;是否必传：否
+        isword: false,
+        // type值为handwriting时有效，表示是否开启单字的四点定位坐标输出，有效值为true和false，默认值为false。;是否必传：否
+        'enable-word-polygon': false,
       },
     },
     function (err, data) {
-      logger.log(err || data);
-    },
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
   );
 }
 
@@ -2108,9 +2155,10 @@ function getVirusDetectResult() {
 
 // 提交音频降噪任务
 function postNoiseReduction() {
-  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/jobs';
-  var url = 'https://' + host;
-  var body = COS.util.json2xml({
+  const key = 'jobs'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
     Request: {
       Tag: 'NoiseReduction',
       Input: {
@@ -2139,15 +2187,22 @@ function postNoiseReduction() {
       ContentType: 'application/xml',
     },
     function (err, data) {
-      logger.log(err || data);
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
     },
   );
 }
 
 // 提交人声分离任务
 function postVoiceSeparate() {
-  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/jobs';
-  var url = 'https://' + host;
+  const key = 'jobs'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
   var body = COS.util.json2xml({
     Request: {
       Tag: 'VoiceSeparate',
@@ -2156,7 +2211,7 @@ function postVoiceSeparate() {
       },
       Operation: {
         // VoiceSeparate: {}, // 指定转码模板参数，非必须
-        TemplateId: 'xxx', // 指定的模板 ID，必须
+        TemplateId: 't17844a8302372436187b425271a0ae33a', // 指定的模板 ID，必须
         // JobLevel: 0, // 任务优先级，级别限制：0 、1 、2。级别越大任务优先级越高，默认为0，非必须
         Output: {
           Bucket: config.Bucket, // 输出的存储桶
@@ -2181,57 +2236,299 @@ function postVoiceSeparate() {
       ContentType: 'application/xml',
     },
     function (err, data) {
-      logger.log(err || data);
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
     },
   );
 }
 
-// 提交语音合成任务
-function postTts() {
-  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/jobs';
-  var url = 'https://' + host;
-  var body = COS.util.json2xml({
+// 创建人声分离模板
+function postVoiceSeparateTemplete() {
+  const key = 'template'; // 固定
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
     Request: {
-      Tag: 'Tts',
-      Operation: {
-        // VoiceSeparate: {}, // 指定转码模板参数，非必须
-        TemplateId: 'xxx', // 指定的模板 ID，必须
-        // JobLevel: 0, // 任务优先级，级别限制：0 、1 、2。级别越大任务优先级越高，默认为0，非必须
-        TtsConfig: {
-          InputType: 'Text',
-          Input: '床前明月光，疑是地上霜',
-        },
-        Output: {
-          Bucket: config.Bucket, // 输出的存储桶
-          Region: config.Region, // 输出的存储桶的地域
-          Object: 'ci/out/tts.mp3', // 输出的文件Key
-        },
+      // 模板类型: VoiceSeparate;是否必传：是
+      Tag: 'VoiceSeparate',
+      // 模板名称，仅支持中文、英文、数字、_、-和*，长度不超过 64;是否必传：是
+      Name: 'my_voiceSeparate',
+      // 输出音频IsAudio：输出人声IsBackground：输出背景声AudioAndBackground：输出人声和背景声MusicMode：输出人声、背景声、Bass声、鼓声;是否必传：是
+      AudioMode: 'IsAudio',
+      // 音频配置;是否必传：是
+      AudioConfig: {
+        // 编解码格式，取值 aac、mp3、flac、amr。当 Request.AudioMode 为 MusicMode 时，仅支持 mp3、wav、acc;是否必传：否
+        Codec: 'mp3',
+        // 采样率单位：Hz可选 8000、11025、22050、32000、44100、48000、96000当 Codec 设置为 aac/flac 时，不支持 8000当 Codec 设置为 mp3 时，不支持 8000 和 96000当 Codec 设置为 amr 时，只支持 8000当 Request.AudioMode 为 MusicMode 时，该参数无效;是否必传：否
+        // Samplerate: '',
+        // 音频码率单位：Kbps值范围：[8，1000]当 Request.AudioMode 为 MusicMode 时，该参数无效;是否必传：否
+        // Bitrate: '',
+        // 声道数当 Codec 设置为 aac/flac，支持1、2、4、5、6、8当 Codec 设置为 mp3，支持1、2 当 Codec 设置为 amr，只支持1当 Request.AudioMode 为 MusicMode 时，该参数无效;是否必传：否
+        // Channels: '',
       },
-      // QueueId: '', // 任务所在的队列 ID，非必须
-      // CallBackFormat: '', // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式，非必须
-      // CallBackType: '', // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型，非必须
-      // CallBack: '', // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调，非必须
-      // CallBackMqConfig: '', // 任务回调 TDMQ 配置，当 CallBackType 为 TDMQ 时必填，非必须
-    },
+    }
   });
+
   cos.request(
     {
-      Method: 'POST',
-      Key: 'jobs',
-      Url: url,
-      Body: body,
-      ContentType: 'application/xml',
+      Method: 'POST', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+
     },
     function (err, data) {
-      logger.log(err || data);
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
     },
+  );
+}
+
+// 更新人声分离模板
+function updateVoiceSeparateTemplete() {
+  const templateId = 't18e592c70a4724b46bdcde4b711c6c0d5'; // 要更新的模版id
+  const key = `template/${templateId}`; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 模板类型: VoiceSeparate;是否必传：是
+      Tag: 'VoiceSeparate',
+      // 模板名称，仅支持中文、英文、数字、_、-和*，长度不超过 64;是否必传：是
+      Name: 'my_voiceSeparate2',
+      // 输出音频IsAudio：输出人声IsBackground：输出背景声AudioAndBackground：输出人声和背景声MusicMode：输出人声、背景声、Bass声、鼓声;是否必传：是
+      AudioMode: 'IsAudio',
+      // 音频配置;是否必传：是
+      AudioConfig: {
+        // 编解码格式，取值 aac、mp3、flac、amr。当 Request.AudioMode 为 MusicMode 时，仅支持 mp3、wav、acc;是否必传：否
+        Codec: 'mp3',
+        // 采样率单位：Hz可选 8000、11025、22050、32000、44100、48000、96000当 Codec 设置为 aac/flac 时，不支持 8000当 Codec 设置为 mp3 时，不支持 8000 和 96000当 Codec 设置为 amr 时，只支持 8000当 Request.AudioMode 为 MusicMode 时，该参数无效;是否必传：否
+        // Samplerate: '',
+        // 音频码率单位：Kbps值范围：[8，1000]当 Request.AudioMode 为 MusicMode 时，该参数无效;是否必传：否
+        // Bitrate: '',
+        // 声道数当 Codec 设置为 aac/flac，支持1、2、4、5、6、8当 Codec 设置为 mp3，支持1、2 当 Codec 设置为 amr，只支持1当 Request.AudioMode 为 MusicMode 时，该参数无效;是否必传：否
+        // Channels: '',
+      },
+    }
+  });
+
+  cos.request(
+    {
+      Method: 'PUT', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    },
+  );
+}
+
+// 提交一个语音合成任务
+function postVoiceSynthesis() {
+  const key = 'jobs'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 创建任务的 Tag：Tts;是否必传：是
+      Tag: 'Tts',
+      // 操作规则;是否必传：是
+      Operation: {
+        // 语音合成模板 ID; 与TtsTpl二选一传递
+        TemplateId: 't1958211407ca54ebc8c78060a7f2ba564',
+        // 语音合成参数; 与TemplateId二选一传递
+        // TtsTpl: {
+        //   // 同创建语音合成模板接口中的 Request.Mode﻿;是否必传：否
+        //   Mode: '',
+        //   // 同创建语音合成模板接口中的 Request.Codec﻿;是否必传：否
+        //   Codec: '',
+        //   // 同创建语音合成模板接口中的 Request.VoiceType﻿;是否必传：否
+        //   VoiceType: '',
+        //   // 同创建语音合成模板接口中的 Request.Volume﻿;是否必传：否
+        //   Volume: '',
+        //   // 同创建语音合成模板接口中的 Request.Speed﻿;是否必传：否
+        //   Speed: '',
+        //   // 同创建语音合成模板接口中的 Request.Emotion﻿;是否必传：否
+        //   Emotion: '',
+        // },
+        // 语音合成任务参数;是否必传：是
+        TtsConfig: {
+          // 输入类型，Url/Text;是否必传：是
+          InputType: 'Text',
+          // 当 InputType 为 Url 时， 必须是合法的 COS 地址，文件必须是utf-8编码，且大小不超过 10M。如果合成方式为同步处理，则文件内容不超过 300 个 utf-8 字符；如果合成方式为异步处理，则文件内容不超过 10000 个 utf-8 字符。当 InputType 为 Text 时, 输入必须是 utf-8 字符, 且不超过 300 个字符。;是否必传：是
+          Input: '床前明月光，疑是地上霜',
+        },
+        // 结果输出配置;是否必传：是
+        Output: {
+          // 存储桶的地域;是否必传：是
+          Region: config.Region,
+          // 存储结果的存储桶;是否必传：是
+          Bucket: config.Bucket,
+          // 结果文件名;是否必传：是
+          Object: 'ci/tts.mp3',
+        },
+        // 透传用户信息，可打印的 ASCII 码，长度不超过1024;是否必传：否
+        // UserData: '',
+        // 任务优先级，级别限制：0 、1 、2 。级别越大任务优先级越高，默认为0;是否必传：否
+        // JobLevel: '',
+      },
+      // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式;是否必传：否
+      // CallBackFormat: '',
+      // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型;是否必传：否
+      // CallBackType: '',
+      // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调;是否必传：否
+      // CallBack: '',
+      // 任务回调TDMQ配置，当 CallBackType 为 TDMQ 时必填。详情见 CallBackMqConfig;是否必传：否
+      // CallBackMqConfig: {
+      // 消息队列所属园区，目前支持园区 sh（上海）、bj（北京）、gz（广州）、cd（成都）、hk（中国香港）;是否必传：是
+      // MqRegion: '',
+      // 消息队列使用模式，默认 Queue ：主题订阅：Topic队列服务: Queue;是否必传：是
+      // MqMode: '',
+      // TDMQ 主题名称;是否必传：是
+      // MqName: '',
+      // },
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'POST', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 创建语音合成模板
+function postVoiceSynthesisTemplete() {
+  const key = 'template'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 模板类型：Tts;是否必传：是
+      Tag: 'Tts',
+      // 模板名称，仅支持中文、英文、数字、_、-和*，长度不超过 64;是否必传：是
+      Name: 'my_tts',
+      // 处理模式Asyc（异步合成）Sync（同步合成）;是否必传：否
+      // Mode: 'Asyc',
+      // 音频格式，支持 wav、mp3、pcm ;是否必传：否
+      // Codec: 'pcm',
+      // 音色，取值和限制介绍请见下表;是否必传：否
+      // VoiceType: 'ruxue',
+      // 音量，取值范围 [-10,10];是否必传：否
+      // Volume: '0',
+      // 语速，取值范围 [50,200];是否必传：否
+      // Speed: '100',
+      // 情绪，不同音色支持的情绪不同，详见下表;是否必传：否
+      // Emotion: '',
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'POST', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 更新语音合成模板
+function updateVoiceSynthesisTemplete() {
+  const templateId = 'xxxx'; // 要更新的模板id
+  const key = `template/${templateId}`; // 固定格式
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 模板类型：Tts;是否必传：是
+      Tag: 'Tts',
+      // 模板名称，仅支持中文、英文、数字、_、-和*，长度不超过 64;是否必传：是
+      Name: 'my_tts2',
+      // 处理模式Asyc（异步合成）Sync（同步合成）;是否必传：否
+      Mode: 'Asyc',
+      // 音频格式，支持 wav、mp3、pcm ;是否必传：否
+      Codec: 'pcm',
+      // 音色，取值和限制介绍请见下表;是否必传：否
+      VoiceType: 'ruxue',
+      // 音量，取值范围 [-10,10];是否必传：否
+      Volume: '0',
+      // 语速，取值范围 [50,200];是否必传：否
+      Speed: '100',
+      // 情绪，不同音色支持的情绪不同，详见下表;是否必传：否
+      Emotion: '无',
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'PUT', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
   );
 }
 
 // 提交语音识别任务
 function postSpeechRecognition() {
-  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asr_jobs';
-  var url = 'https://' + host;
+  const key = 'jobs'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
   var body = COS.util.json2xml({
     Request: {
       Tag: 'SpeechRecognition',
@@ -2264,41 +2561,195 @@ function postSpeechRecognition() {
   cos.request(
     {
       Method: 'POST',
-      Key: 'asr_jobs',
+      Key: key,
       Url: url,
       Body: body,
       ContentType: 'application/xml',
     },
     function (err, data) {
-      logger.log(err || data);
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
     },
+  );
+}
+
+// 创建语音识别模板
+function postSpeechRecognitionTemplete() {
+  const key = 'template'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 模板类型：SpeechRecognition;是否必传：是
+      Tag: 'SpeechRecognition',
+      // 模板名称，仅支持中文、英文、数字、_、-和*，长度不超过 64;是否必传：是
+      Name: 'my_speechRecognition',
+      // 语音识别参数;是否必传：是
+      SpeechRecognition: {
+        // 开启极速ASR，取值 true/false;是否必传：否
+        FlashAsr: 'false',
+        // 引擎模型类型，分为电话场景和非电话场景。电话场景：8k_zh：电话 8k 中文普通话通用（可用于双声道音频）8k_zh_s：电话 8k 中文普通话话者分离（仅适用于单声道音频）8k_en：电话 8k 英语 非电话场景： 6k_zh：16k 中文普通话通用16k_zh_video：16k 音视频领域16k_en：16k 英语16k_ca：16k 粤语16k_ja：16k 日语16k_zh_edu：中文教育16k_en_edu：英文教育16k_zh_medical：医疗16k_th：泰语16k_zh_dialect：多方言，支持23种方言极速 ASR 支持8k_zh、16k_zh、16k_en、16k_zh_video、16k_zh_dialect、16k_ms（马来语）、16k_zh-PY（中英粤）;是否必传：是
+        EngineModelType: '16k_zh',
+        // 语音声道数：1 表示单声道。EngineModelType为非电话场景仅支持单声道2 表示双声道（仅支持 8k_zh 引擎模型 双声道应分别对应通话双方）仅���持非极速ASR，为非极速ASR时，该参数必填;是否必传：否
+        ChannelNum: '1',
+        // 识别结果返回形式：0：识别结果文本（含分段时间戳）1：词级别粒度的详细识别结果，不含标点，含语速值（词时间戳列表，一般用于生成字幕场景）2：词级别粒度的详细识别结果（包含标点、语速值）3：标点符号分段，包含每段时间戳，特别适用于字幕场景（包含词级时间、标点、语速值）仅支持非极速ASR;是否必传：否
+        // ResTextFormat: '0',
+        // 是否过滤脏词（目前支持中文普通话引擎）0：不过滤脏词1：过滤脏词2：将脏词替换为 *;是否必传：否
+        // FilterDirty: '0',
+        // 是否过滤语气词（目前支持中文普通话引擎）：0 表示不过滤语气词1 表示部分过滤2 表示严格过滤 ;是否必传：否
+        // FilterModal: '0',
+        // 是否进行阿拉伯数字智能转换（目前支持中文普通话引擎）0：不转换，直接输出中文数字1：根据场景智能转换为阿拉伯数字3 ：打开数学相关数字转换仅支持非极速ASR;是否必传：否
+        // ConvertNumMode: '0',
+        // 是否开启说话人分离0：不开启1：开启(仅支持8k_zh，16k_zh，16k_zh_video，单声道音频)8k电话场景建议使用双声道来区分通话双方，设置ChannelNum=2即可，不用开启说话人分离。;是否必传：否
+        // SpeakerDiarization: '0',
+        // 说话人分离人数（需配合开启说话人分离使用），取值范围：[0, 10]0 代表自动分离（目前仅支持≤6个人）1-10代表指定说话人数分离仅支持非极速ASR;是否必传：否
+        // SpeakerNumber: '',
+        // 是否过滤标点符号（目前支持中文普通话引擎）0：不过滤。1：过滤句末标点2：过滤所有标点;是否必传：否
+        // FilterPunc: '',
+        // 输出文件类型，可选txt、srt极速ASR仅支持txt非极速Asr且ResTextFormat为3时仅支持txt;是否必传：否
+        // OutputFileType: '',
+        // 极速ASR音频格式，支持 wav、pcm、ogg-opus、speex、silk、mp3、m4a、aac极速ASR时，该参数必填;是否必传：否
+        // Format: '',
+        // 是否识别首个声道0：识别所有声道1：识别首个声道仅支持极速ASR;是否必传：否
+        // FirstChannelOnly: '',
+        // 是否显示词级别时间戳0：不显示1：显示，不包含标点时间戳2：显示，包含标点时间戳仅支持极速ASR;是否必传：否
+        // WordInfo: '',
+        // 单标点最多字数，取值范围：[6，40]默认值为 0 表示不开启该功能该参数可用于字幕生成场景，控制单行字幕最大字数当FlashAsr为false时，仅ResTextFormat为3时参数有效;是否必传：否
+        // SentenceMaxLength: '',
+      },
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'POST', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 更新语音识别模板
+function updateSpeechRecognitionTemplete() {
+  const templateId = 'xxxxx'; // 要更新的模板id
+  const key = `template/${templateId}`; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 模板类型：SpeechRecognition;是否必传：是
+      Tag: 'SpeechRecognition',
+      // 模板名称，仅支持中文、英文、数字、_、-和*，长度不超过 64;是否必传：是
+      Name: 'my_speechRecognition',
+      // 语音识别参数;是否必传：是
+      SpeechRecognition: {
+        // 开启极速ASR，取值 true/false;是否必传：否
+        FlashAsr: 'true',
+        // 引擎模型类型，分为电话场景和非电话场景。电话场景：8k_zh：电话 8k 中文普通话通用（可用于双声道音频）8k_zh_s：电话 8k 中文普通话话者分离（仅适用于单声道音频）8k_en：电话 8k 英语 非电话场景： 6k_zh：16k 中文普通话通用16k_zh_video：16k 音视频领域16k_en：16k 英语16k_ca：16k 粤语16k_ja：16k 日语16k_zh_edu：中文教育16k_en_edu：英文教育16k_zh_medical：医疗16k_th：泰语16k_zh_dialect：多方言，支持23种方言极速 ASR 支持8k_zh、16k_zh、16k_en、16k_zh_video、16k_zh_dialect、16k_ms（马来语）、16k_zh-PY（中英粤）;是否必传：是
+        EngineModelType: '16k_zh',
+        // 语音声道数：1 表示单声道。EngineModelType为非电话场景仅支持单声道2 表示双声道（仅支持 8k_zh 引擎模型 双声道应分别对应通话双方）仅���持非极速ASR，为非极速ASR时，该参数必填;是否必传：否
+        ChannelNum: '2',
+        // 识别结果返回形式：0：识别结果文本（含分段时间戳）1：词级别粒度的详细识别结果，不含标点，含语速值（词时间戳列表，一般用于生成字幕场景）2：词级别粒度的详细识别结果（包含标点、语速值）3：标点符号分段，包含每段时间戳，特别适用于字幕场景（包含词级时间、标点、语速值）仅支持非极速ASR;是否必传：否
+        // ResTextFormat: '',
+        // 是否过滤脏词（目前支持中文普通话引擎）0：不过滤脏词1：过滤脏词2：将脏词替换为 *;是否必传：否
+        // FilterDirty: '',
+        // 是否过滤语气词（目前支持中文普通话引擎）：0 表示不过滤语气词1 表示部分过滤2 表示严格过滤 ;是否必传：否
+        // FilterModal: '',
+        // 是否进行阿拉伯数字智能转换（目前支持中文普通话引擎）0：不转换，直接输出中文数字1：根据场景智能转换为阿拉伯数字3 ：打开数学相关数字转换仅支持非极速ASR;是否必传：否
+        // ConvertNumMode: '',
+        // 是否开启说话人分离0：不开启1：开启(仅支持8k_zh，16k_zh，16k_zh_video，单声道音频)8k电话场景建议使用双声道来区分通话双方，设置ChannelNum=2即可，不用开启说话人分离。;是否必传：否
+        // SpeakerDiarization: '',
+        // 说话人分离人数（需配合开启说话人分离使用），取值范围：[0, 10]0 代表自动分离（目前仅支持≤6个人）1-10代表指定说话人数分离仅支持非极速ASR;是否必传：否
+        // SpeakerNumber: '',
+        // 是否过滤标点符号（目前支持中文普通话引擎）0：不过滤。1：过滤句末标点2：过滤所有标点;是否必传：否
+        // FilterPunc: '',
+        // 输出文件类型，可选txt、srt极速ASR仅支持txt非极速Asr且ResTextFormat为3时仅支持txt;是否必传：否
+        // OutputFileType: '',
+        // 极速ASR音频格式，支持 wav、pcm、ogg-opus、speex、silk、mp3、m4a、aac极速ASR时，该参数必填;是否必传：否
+        // Format: '',
+        // 是否识别首个声道0：识别所有声道1：识别首个声道仅支持极速ASR;是否必传：否
+        // FirstChannelOnly: '',
+        // 是否显示词级别时间戳0：不显示1：显示，不包含标点时间戳2：显示，包含标点时间戳仅支持极速ASR;是否必传：否
+        // WordInfo: '',
+        // 单标点最多字数，取值范围：[6，40]默认值为 0 表示不开启该功能该参数可用于字幕生成场景，控制单行字幕最大字数当FlashAsr为false时，仅ResTextFormat为3时参数有效;是否必传：否
+        // SentenceMaxLength: '',
+      },
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'PUT', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
   );
 }
 
 // 查询语音识别队列
 function getAsrQueue() {
-  var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asrqueue';
-  var url = 'https://' + host;
+  const key = 'asrqueue'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+
   cos.request(
     {
-      Method: 'GET',
-      Key: 'asrqueue',
-      Url: url,
+      Method: 'GET', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
       Query: {
-        // queueIds: '', // 非必须，队列 ID，以“,”符号分割字符串
-        // state: '', // 非必须，1=Active,2=Paused
-        // pageNumber: 1, // 非必须，第几页
-        // pageSize: 2, // 非必须，每页个数
+        // 队列 ID，以“,”符号分割字符串;是否必传：否
+        // queueIds: '',
+        // Active 表示队列内的作业会被调度执行Paused 表示队列暂停，作业不再会被调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响;是否必传：否
+        // state: '',
+        // 第几页，默认值1;是否必传：否
+        // pageNumber: '',
+        // 每页个数，默认值10;是否必传：否
+        // pageSize: '',
       },
+
     },
     function (err, data) {
-      logger.log(err || data);
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
     },
   );
 }
 
 // 更新语音识别队列
-function putAsrQueue() {
+function updateAsrQueue() {
   // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
   var queueId = 'pcc77499e85c311edb9865254008618d9';
   var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asrqueue/' + queueId;
@@ -2325,33 +2776,243 @@ function putAsrQueue() {
       ContentType: 'application/xml',
     },
     function (err, data) {
-      logger.log(err || data);
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
     },
   );
 }
 
 // 查询语音识别开通状态
 function getAsrBucket() {
-  var host = 'ci.' + config.Region + '.myqcloud.com/asrbucket';
-  var url = 'https://' + host;
+  const key = 'asrbucket'; // 固定值
+  const host = `ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+
   cos.request(
     {
-      Method: 'GET',
-      Key: 'asrbucket',
-      Url: url,
+      Method: 'GET', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
       Query: {
-        // regions: '', // 非必须，地域信息，以“,”分隔字符串，支持 All、ap-shanghai、ap-beijing
-        // bucketNames: '', // 非必须，存储桶名称，以“,”分隔，支持多个存储桶，精确搜索
-        // bucketName: '', // 非必须，存储桶名称前缀，前缀搜索
-        // pageNumber: 1, // 非必须，第几页
-        // pageSize: 10, // 非必须，每页个数
+        // 地域信息，例如 ap-shanghai、ap-beijing，若查询多个地域以“,”分隔字符串，详情请参见 地域与域名;是否必传：是
+        // regions: "",
+        // 存储桶名称，以“,”分隔，支持多个存储桶，精确搜索;是否必传：是
+        // bucketNames: "",
+        // 存储桶名称前缀，前缀搜索;是否必传：是
+        // bucketName: "",
+        // 第几页;是否必传：是
+        // pageNumber: 1,
+        // 每页个数，大于0且小于等于100的整数;是否必传：是
+        // pageSize: 10,
       },
+
     },
     function (err, data) {
-      logger.log(err || data);
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
     },
   );
 }
+
+// 开通智能语音
+function openAsrBucket() {
+  const key = 'asrbucket'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+
+  cos.request(
+    {
+      Method: 'POST', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 关闭智能语音
+function closeAsrBucket() {
+  const key = 'asrbucket'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  cos.request(
+    {
+      Method: 'DELETE', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 创建音频降噪模版
+function postNoiseReductionTemplete() {
+  const key = 'template'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 固定值：NoiseReduction;是否必传：是
+      Tag: 'NoiseReduction',
+      // 模板名称，仅支持中文、英文、数字、_、-和*，长度不超过 64。;是否必传：是
+      Name: 'my_noiseReduction',
+      // 降噪参数;是否必传：是
+      NoiseReduction: {
+        // 封装格式，支持 mp3、m4a、wav;是否必传：否
+        Format: 'mp3',
+        // 采样率单位：Hz可选 8000、12000、16000、24000、32000、44100、48000;是否必传：否
+        // Samplerate: '',
+      },
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'POST', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 更新音频降噪模板
+function updateNoiseReductionTemplete() {
+  const templateId = 'xxxxx'; // 要更新的模板id
+  const key = `template/${templateId}`; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 固定值：NoiseReduction;是否必传：是
+      Tag: 'NoiseReduction',
+      // 模板名称，仅支持中文、英文、数字、_、-和*，长度不超过 64。;是否必传：是
+      Name: 'my_noiseReduction2',
+      // 降噪参数;是否必传：是
+      NoiseReduction: {
+        // 封装格式，支持 mp3、m4a、wav;是否必传：否
+        Format: 'mp3',
+        // 采样率单位：Hz可选 8000、12000、16000、24000、32000、44100、48000;是否必传：否
+        // Samplerate: '',
+      },
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'PUT', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 提交听歌识曲任务
+function postSoundHound() {
+  const key = 'jobs'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 创建任务的 Tag：SoundHound;是否必传：是
+      Tag: 'SoundHound',
+      // 待操作的对象信息;是否必传：是
+      Input: {
+        // 文件路径;是否必传：是
+        Object: 'ci/music.mp3',
+      },
+      // 操作规则;是否必传：是
+      // Operation: {
+      // 透���用户信息，可打印的 ASCII 码，长度不超过1024;是否必传：否
+      // UserData: '',
+      // 任务优先级，级别限制：0 、1 、2 。级别越大任务优先级越高，默认为0;是否必传：否
+      // JobLevel: '',
+      // },
+      // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式;是否必传：否
+      // CallBackFormat: '',
+      // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型;是否必传：否
+      // CallBackType: '',
+      // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调;是否必传：否
+      // CallBack: '',
+      // 任务回调TDMQ配置，当 CallBackType 为 TDMQ 时必填。详情见 CallBackMqConfig;是否必传：否
+      // CallBackMqConfig: {
+      // 消息队列所属园区，目前支持园区 sh（上海）、bj（北京）、gz（广州）、cd（成都）、hk（中国香港）;是否必传：是
+      // MqRegion: '',
+      // 消息队列使用模式，默认 Queue ：主题订阅：Topic队列服务: Queue;是否必传：是
+      // MqMode: '',
+      // TDMQ 主题名称;是否必传：是
+      // MqName: '',
+      // },
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'POST', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
 
 // 获取在线文档预览地址
 function getDocHtmlPreviewUrl() {
@@ -3043,6 +3704,1367 @@ function triggerworkflow() {
   );
 }
 
+// 开通AI内容识别
+function openAIBucket() {
+  const key = 'ai_bucket'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+
+  cos.request(
+    {
+      Method: 'POST', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    },
+  );
+}
+
+// 关闭AI内容识别
+function closeAIBucket() {
+  const key = 'ai_bucket'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+
+  cos.request(
+    {
+      Method: 'DELETE', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    },
+  );
+}
+
+// 查询开通AI内容识别的桶
+function getAIBucket() {
+  const key = 'ai_bucket'; // 固定值
+  const host = `ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+
+  cos.request(
+    {
+      Method: 'GET', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Query: {
+        // 地域信息，例如 ap-shanghai、ap-beijing，若查询多个地域以“,”分隔字符串，详情请参见 地域与域名;是否必传：是
+        // regions: '',
+        // 存储桶名称，以“,”分隔，支持多个存储桶，精确搜索;是否必传：是
+        // bucketNames: '',
+        // 存储桶名称前缀，前缀搜索;是否必传：是
+        // bucketName: '',
+        // 第几页;是否必传：是
+        // pageNumber: 1,
+        // 每页个数，大于0且小于等于100的整数;是否必传：是
+        // pageSize: 10,
+      },
+
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    },
+  );
+}
+
+
+// 查询AI内容识别队列
+function getAIQueue() {
+  const key = 'ai_queue'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+
+  cos.request(
+    {
+      Method: 'GET', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Query: {
+        // 队列 ID，以“,”符号分割字符串;是否必传：否
+        // queueIds: '',
+        // Active 表示队列内的作业会被调度执行Paused 表示队列暂停，作业不再会被调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响;是否必传：否
+        state: 'Active',
+        // 第几页，默认值1;是否必传：否
+        // pageNumber: 0,
+        // 每页个数，默认值10;是否必传：否
+        // pageSize: 0,
+      },
+
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    },
+  );
+}
+
+// 更新AI内容识别队列
+function updateAIQueue() {
+  const queueId = 'pf71b90a56f614163b0b7d00cf20518b4'; // 队列id
+  const key = `ai_queue/${queueId}`; // 固定格式
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 队列名称，仅支持中文、英文、数字、_、-和*，长度不超过 128;是否必传：是
+      Name: 'my_queue',
+      // Active 表示队列内的作业会被调度执行Paused 表示队列暂停，作业不再会被调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响;是否必传：是
+      State: 'Active',
+      // 回调配置;是否必传：是
+      NotifyConfig: {
+        // 回调开关OffOn;是否必传：否
+        State: 'On',
+        // 回调事件TaskFinish：任务完成WorkflowFinish：工作流完成;是否必传：否
+        Event: 'TaskFinish',
+        // 回调格式XMLJSON;是否必传：否
+        // ResultFormat: '',
+        // 回调类型UrlTDMQ;是否必传：否
+        Type: 'Url',
+        // 回调地址，不能为内网地址。;是否必传：否
+        Url: 'http://example.com',
+        // TDMQ 使用模式Topic：主题订阅Queue: 队列服务;是否必传：否
+        // MqMode: '',
+        // TDMQ 所属园区，目前支持园区 sh（上海）、bj（北京）、gz（广州）、cd（成都）、hk（中国香港）;是否必传：否
+        // MqRegion: '',
+        // TDMQ 主题名称;是否必传：否
+        // MqName: '',
+      },
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'PUT', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 车辆识别
+function aIDetectCar() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/car.png', // 对象文件名，必须，例如：folder/document.jpg
+      Query: {
+        // 数据万象处理能力，车辆识别固定为 DetectCar;是否必传：是
+        'ci-process': 'DetectCar',
+      },
+
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    },
+  );
+}
+
+// 宠物识别
+function aIDetectPet() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/dog.jpeg', // 对象文件名，必须，例如：folder/document.jpg须
+      Query: {
+        // 数据万象处理能力，宠物识别固定为 detect-pet;是否必传：是
+        'ci-process': 'detect-pet',
+      },
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    },
+  );
+}
+
+// 创建视频目标检测模板
+function postVideoTargetTemplete() {
+  const key = 'template'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 模板类型：VideoTargetRec;是否必传：是
+      Tag: 'VideoTargetRec',
+      // 模板名称，仅支持中文、英文、数字、_、-和*，长度不超过 64;是否必传：是
+      Name: 'my_videoTargetRec',
+      // 视频目标检测 参数;是否必传：是
+      VideoTargetRec: {
+        // 是否开启人体检测，取值 true/false;是否必传：否
+        Body: 'true',
+        // 是否开启宠物检测，取值 true/false;是否必传：否
+        Pet: 'true',
+        // 是否开启车辆检测，取值 true/false;是否必传：否
+        Car: 'false',
+      },
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'POST', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 更新视频目标检测模板
+function updateVideoTargetTemplete() {
+  const templateId = 'xxxxxxx'; // 要更新的模板id
+  const key = `template/${templateId}`; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 模板类型：VideoTargetRec;是否必传：是
+      Tag: 'VideoTargetRec',
+      // 模板名称，仅支持中文、英文、数字、_、-和*，长度不超过 64;是否必传：是
+      Name: 'my_videoTargetRec2',
+      // 视频目标检测 参数;是否必传：是
+      VideoTargetRec: {
+        // 是否开启人体检测，取值 true/false;是否必传：否
+        Body: 'false',
+        // 是否开启宠物检测，取值 true/false;是否必传：否
+        Pet: 'false',
+        // 是否开启车辆检测，取值 true/false;是否必传：否
+        Car: 'true',
+      },
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'PUT', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 提交一个视频目标检测任务
+function postVideoTargetRec() {
+  const key = 'jobs'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 创建任务的 Tag：VideoTargetRec;是否必传：是
+      Tag: 'VideoTargetRec',
+      // 操作规则;是否必传：是
+      Operation: {
+        // 视频目标检测模板 ID;与VideoTargetRec二选一传递
+        TemplateId: 'xxxx',
+        // 视频目标检测参数, 同创建视频目标检测模板接口中的 Request.VideoTargetRec﻿;与TemplateId二选一传递
+        // VideoTargetRec: {
+        // 是否开启人体检测，取值 true/false;是否必传：否
+        // Body: '',
+        // 是否开启宠物检测，取值 true/false;是否必传：否
+        // Pet: '',
+        // 是否开启车辆检测，取值 true/false;是否必传：否
+        // Car: '',
+        // },
+        // 透传用户信息, 可打印的 ASCII 码, 长度不超过1024;是否必传：否
+        // UserData: '',
+        // 任务优先级，级别限制：0 、1 、2 。级别越大任务优先级越高，默认为0;是否必传：否
+        // JobLevel: '',
+      },
+      // 待操作的媒体信息;是否必传：是
+      Input: {
+        // 媒体文件名;是否必传：否
+        Object: 'ci/test.mp4',
+      },
+      // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式;是否必传：否
+      // CallBackFormat: '',
+      // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型;是否必传：否
+      // CallBackType: '',
+      // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调;是否必传：否
+      // CallBack: '',
+      // 任务回调TDMQ配置，当 CallBackType 为 TDMQ 时必填。详情请参见 CallBackMqConfig;是否必传：否
+      // CallBackMqConfig: {
+      // 消息队列所属园区，目前支持园区 sh（上海）、bj（北京）、gz（广州）、cd（成都）、hk（中国香港）;是否必传：是
+      // MqRegion: '',
+      // 消息队列使用模式，默认 Queue ：主题订阅：Topic队列服务: Queue;是否必传：是
+      // MqMode: '',
+      // TDMQ 主题名称;是否必传：是
+      // MqName: '',
+      // },
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'POST', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 提交词性分析任务
+function postWordsGeneralize() {
+  const key = 'jobs'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 创建任务的 Tag：WordsGeneralize;是否必传：是
+      Tag: 'WordsGeneralize',
+      // 待操作的对象信息;是否必传：是
+      Input: {
+        // 文件路径;是否必传：是
+        Object: 'ci/test.txt',
+      },
+      // 操作规则;是否必传：是
+      Operation: {
+        // 指定分词参数;是否必传：是
+        WordsGeneralize: {
+          // ner 方式，支持 NerBasic 和 DL，默认值 DL;是否必传：否
+          NerMethod: 'DL',
+          // 分词粒度，支持 SegBasic 和 MIX，默认值 MIX;是否必传：否
+          SegMethod: 'MIX',
+        },
+        // 透传用户信息，可打印的 ASCII 码，长度不超过1024;是否必传：否
+        // UserData: '',
+        // 任务优先级，级别限制：0 、1 、2。级别越大任务优先级越高，默认为0;是否必传：否
+        // JobLevel: '',
+      },
+      // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式;是否必传：否
+      // CallBackFormat: '',
+      // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型;是否必传：否
+      // CallBackType: '',
+      // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调;是否必传：否
+      // CallBack: '',
+      // 任务回调 TDMQ 配置，当 CallBackType 为 TDMQ 时必填。详情见 CallBackMqConfig;是否必传：否
+      // CallBackMqConfig: {
+      // 消息队列所属园区，目前支持园区 sh（上海）、bj（北京）、gz（广州）、cd（成都）、hk（中国香港）;是否必传：是
+      // MqRegion: '',
+      // 消息队列使用模式，默认 Queue ：主题订阅：Topic队列服务: Queue;是否必传：是
+      // MqMode: '',
+      // TDMQ 主题名称;是否必传：是
+      // MqName: '',
+      // },
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'POST', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+function livenessRecognition() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/tf.mp4', // 必须
+      Query: {
+        // 数据万象处理能力，人脸核身固定为 LivenessRecognition;是否必传：是
+        'ci-process': 'LivenessRecognition',
+        // 身份证号;是否必传：是
+        IdCard: '610321199411040019',
+        // 姓名。中文请使用 UTF-8编码;是否必传：是
+        Name: '田丰',
+        // 活体检测类型，取值：LIP/ACTION/SILENTLIP 为数字模式，ACTION 为动作模式，SILENT 为静默模式，三种模式选择一种传入;是否必传：是
+        LivenessType: 'SILENT',
+        // 数字模式传参：数字验证码（1234），需先调用接口获取数字验证码动作模式传参：传动作顺序（2，1 or 1，2），需先调用接口获取动作顺序静默模式传参：空;是否必传：否
+        ValidateData: '',
+        // 需要返回多张最佳截图，取值范围1 - 10，不设置默认返回一张最佳截图;是否必传：否
+        BestFrameNum: 1,
+      },
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 获取动作顺序
+function getActionSequence() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Query: {
+        // 数据万象处理能力，获取动作顺序固定为 GetActionSequence;是否必传：是
+        'ci-process': 'GetActionSequence',
+      },
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 获取数字验证码
+function getLiveCode() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Query: {
+        // 数据万象处理能力，获取数字验证码固定为 GetLiveCode;是否必传：是
+        'ci-process': 'GetLiveCode',
+      },
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 卡证识别
+function aILicenseRec() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/card.jpeg', // 与detect-url二选一传递
+      Query: {
+        // 数据万象处理能力，卡证识别固定为AILicenseRec;是否必传：是
+        'ci-process': 'AILicenseRec',
+        // 您可以通过填写 detect-url 处理任意公网可访问的图片链接。不填写 detect-url 时，后台会默认处理 ObjectKey ，填写了 detect-url 时，后台会处理 detect-url 链接，无需再填写 ObjectKey detect-url 示例：http://www.example.com/abc.jpg ，需要进行 UrlEncode，处理后为http%25253A%25252F%25252Fwww.example.com%25252Fabc.jpg;是否必传：否
+        'detect-url': '',
+        // 卡证识别类型，有效值为IDCard，DriverLicense。<br>IDCard表示身份证；DriverLicense表示驾驶证，默认：DriverLicense;是否必传：是
+        CardType: 'IDCard',
+      },
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 开通以图搜图
+function imageSearchBucket() {
+  const key = 'ImageSearchBucket'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 图库容量限制;是否必传：是
+      MaxCapacity: 1000,
+      // 图库访问限制，默认10;是否必传：否
+      MaxQps: 10,
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'POST', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 商品抠图
+function goodsMatting() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/goods.jpeg', // 与detect-url二选一传递
+      Query: {
+        // ;是否必传：是
+        'ci-process': 'GoodsMatting',
+        // ;是否必传：否
+        // 'detect-url': '',
+      },
+      RawBody: true,
+      DataType: 'blob',
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    }
+  );
+}
+
+// 添加图库图片
+function addImageSearch() {
+  const body = COS.util.json2xml({
+    Request: {
+      // 物品 ID，最多支持64个字符。若 EntityId 已存在，则对其追加图片;是否必传：是
+      EntityId: '123456',
+      // 用户自定义的内容，最多支持4096个字符，查询时原样带回;是否必传：否
+      CustomContent: '小商品',
+      // 图片自定义标签，最多不超过10个，json 字符串，格式为 key:value （例 key1>=1 key1>='aa' ）对;是否必传：否
+      // Tags: '',
+    },
+  });
+
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'POST', // 固定值，必须
+      Key: 'ci/goods.jpeg', // 必须
+      Query: {
+        // 固定值：ImageSearch;是否必传：是
+        'ci-process': 'ImageSearch',
+        // 固定值：AddImage;是否必传：是
+        action: 'AddImage',
+      },
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    }
+  );
+}
+
+// 删除图库图片
+function deleteImageSearch() {
+  const body = COS.util.json2xml({
+    Request: {
+      // 物品 ID;是否必传：是
+      EntityId: '',
+    },
+  });
+
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'POST', // 固定值，必须
+      Key: key, // 必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 检索图片
+function getSearchImage() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/goods.jpeg', // 必须
+      Query: {
+        'ci-process': 'ImageSearch',
+        action: 'SearchImage',
+        // 出参 Score 中，只有超过 MatchThreshold 值的结果才会返回。默认为0;是否必传：否
+        MatchThreshold: 0,
+        // 起始序号，默认值为0;是否必传：否
+        Offset: 0,
+        // 返回数量，默认值为10，最大值为100;是否必传：否
+        Limit: 0,
+        // 针对入库时提交的 Tags 信息进行条件过滤。支持>、>=、<、<=、=、!=，多个条件之间支持 AND 和 OR 进行连接;是否必传：否
+        Filter: '',
+      },
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    }
+  );
+}
+
+// 提交内容翻译任务
+function postTranslation() {
+  const key = 'jobs'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 创建任务的 Tag：Translation;是否必传：是
+      Tag: 'Translation',
+      // 待操作的对象信息;是否必传：是
+      Input: {
+        // 源文档文件名单文件（docx/xlsx/html/markdown/txt）：不超过800万字符有页数的（pdf/pptx）：不超过300页文本文件（txt）：不超过10MB二进制文件（pdf/docx/pptx/xlsx）：不超过60MB图片文件（jpg/jpeg/png/webp）：不超过10MB;是否必传：是
+        Object: 'ci/test.txt',
+        // 文档语言类型zh：简体中文zh-hk：繁体中文zh-tw：繁体中文zh-tr：繁体中文en：英语ar：阿拉伯语de：德语es：西班牙语fr：法语id：印尼语it：意大利语ja：日语pt：葡萄牙语ru：俄语ko：韩语km：高棉语lo：老挝语;是否必传：是
+        Lang: 'zh-hk',
+        // 文档类型pdfdocxpptxxlsxtxtxmlhtml：只能翻译 HTML 里的文本节点，需要通过 JS 动态加载的不进行翻译markdownjpgjpegpngwebp;是否必传：是
+        Type: 'txt',
+        // 原始文档类型仅在 Type=pdf/jpg/jpeg/png/webp 时使用，当值为pdf时，仅支持 docx、pptx当值为jpg/jpeg/png/webp时，仅支持txt;是否必传：否
+        // BasicType: '',
+      },
+      // 操作规则;是否必传：是
+      Operation: {
+        // 翻译参数;是否必传：是
+        Translation: {
+          // 目标语言类型源语言类型为 zh/zh-hk/zh-tw/zh-tr 时支持：en、ar、de、es、fr、id、it、ja、it、ru、ko、km、lo、pt源语言类型为 en 时支持：zh、zh-hk、zh-tw、zh-tr、ar、de、es、fr、id、it、ja、it、ru、ko、km、lo、pt其他类型时支持：zh、zh-hk、zh-tw、zh-tr、en;是否必传：是
+          Lang: 'en',
+          // 文档类型，源文件类型与目标文件类型映射关系如下：docx：docxpptx：pptxxlsx：xlsxtxt：txtxml：xmlhtml：htmlmarkdown：markdownpdf：pdf、docxpng：txtjpg：txtjpeg：txtwebp：txt;是否必传：是
+          Type: 'txt',
+        },
+        // 结果输出地址，当NoNeedOutput为true时非必选;是否必传：否
+        Output: {
+          // 存储桶的地域;是否必传：是
+          Region: config.Region,
+          // 存储结果的存储桶;是否必传：是
+          Bucket: config.Bucket,
+          // 输出结果的文件名;是否必传：是
+          Object: 'ci/trans_test.txt',
+        },
+        // 透传用户信息，可打印的 ASCII 码，长度不超过1024;是否必传：否
+        // UserData: '',
+        // 任务优先级，级别限制：0 、1 、2 。级别越大任务优先级越高，默认为0;是否必传：否
+        // JobLevel: '',
+        // 仅输出结果，不生成结果文件。取值：true/false。该参数原文档类型为图片时有效。默认值 false;是否必传：否
+        // NoNeedOutput: '',
+      },
+      // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式;是否必传：否
+      // CallBackFormat: '',
+      // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型;是否必传：否
+      // CallBackType: '',
+      // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调;是否必传：否
+      // CallBack: '',
+      // 任务回调TDMQ配置，当 CallBackType 为 TDMQ 时必填。详情见 CallBackMqConfig;是否必传：否
+      // CallBackMqConfig: {
+      // 消息队列所属园区，目前支持园区 sh（上海）、bj（北京）、gz（广州）、cd（成都）、hk（中国香港）;是否必传：是
+      // MqRegion: '',
+      // 消息队列使用模式，默认 Queue ：主题订阅：Topic队列服务: Queue;是否必传：是
+      // MqMode: '',
+      // TDMQ 主题名称;是否必传：是
+      // MqName: '',
+      // },
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'POST', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 人脸检测
+function aIDetectFace() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/1.jpg', // 必须
+      Query: {
+        // 数据万象处理能力，人脸特效固定为 DetectFace。;是否必传：是
+        'ci-process': 'DetectFace',
+        // 最多处理的人脸数目。默认值为1（仅检测图片中面积最大的那张人脸），最大���为120。此参数用于控制处理待检测图片中的人脸个数，值越小，处理速度越快。;是否必传：否
+        'max-face-num': 1,
+      },
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 人脸特效
+function aIFaceEffect() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/dog.jpeg', // 与detect-url二选一传递
+      Query: {
+        // 万象处理能力，人脸特效固定为face-effect;是否必传：是
+        'ci-process': 'face-effect',
+        // 您可以通过填写 detect-url 处理任意公网可访问的图片链接。不填写 detect-url 时，后台会默认处理 ObjectKey ，填写了 detect-url 时，后台会处理 detect-url 链接，无需再填写 ObjectKey detect-url 示例：http://www.example.com/abc.jpg ，需要进行 UrlEncode，处理后为http%25253A%25252F%25252Fwww.example.com%25252Fabc.jpg。;是否必传：否
+        // 'detect-url': '',
+        // 人脸特效类型，人脸美颜：face-beautify；人脸性别转换：face-gender-transformation；人脸年龄变化：face-age-transformation；人像分割：face-segmentation;是否必传：是
+        type: 'face-beautify',
+        // type为face-beautify时生效，美白程度，取值范围[0,100]。0不美白，100代表最高程度。默认值30;是否必传：否
+        whitening: 50,
+        // type为face-beautify时生效，磨皮程度，取值范围[0,100]。0不磨皮，100代表最高程度。默认值10;是否必传：否
+        smoothing: 50,
+        // type为face-beautify时生效，瘦脸程度，取值范围[0,100]。0不瘦脸，100代表最高程度。默认值70;是否必传：否
+        faceLifting: 50,
+        // type为face-beautify时生效，大眼程度，取值范围[0,100]。0不大眼，100代表最高程度。默认值70;是否必传：否
+        eyeEnlarging: 50,
+        // type为face-gender-transformation时生效，选择转换方向，0：男变女，1：女变男。无默认值，为必选项。限制：仅对图片中面积最大的人脸进行转换。;是否必传：否
+        // gender: 0,
+        // type为face-age-transformation时生效，变化到的人脸年龄,[10,80]。无默认值，为必选项。限制：仅对图片中面积最大的人脸进行转换。;是否必传：否
+        // age: 0,
+      },
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 人体识别
+function aIBodyRecognition() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/dog.jpeg', // 与detect-url二选一传递
+      Query: {
+        // 数据万象处理能力，人体识别固定为AIBodyRecognition;是否必传：是
+        'ci-process': 'AIBodyRecognition',
+        // 您可以通过填写 detect-url 处理任意公网可访问的图片链接。不填写 detect-url 时，后台会默认处理 ObjectKey ，填写了 detect-url 时，后台会处理 detect-url 链接，无需再填写 ObjectKey detect-url 示例：http://www.example.com/abc.jpg ，需要进行 UrlEncode，处理后为http%25253A%25252F%25252Fwww.example.com%25252Fabc.jpg;是否必传：否
+        // 'detect-url': '',
+      },
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    }
+  );
+}
+
+// 身份证识别
+function aIIDCardOCR() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/card.jpeg', // 必须
+      Query: {
+        // 数据万象处理能力，身份证识别固定为 IDCardOCR;是否必传：是
+        'ci-process': 'IDCardOCR',
+        // FRONT：身份证有照片的一面（人像面）BACK：身份证有国徽的一面（国徽面）该参数如果不填，将为您自动判断身份证正反面;是否必传：否
+        CardSide: 'FRONT',
+        // 以下可选字段均为 bool 类型，默认 false：CropIdCard，身份证照片裁剪（去掉证件外多余的边缘、自动矫正拍摄角度）CropPortrait，人像照片裁剪（自动抠取身份证头像区域）CopyWarn，复印件告警BorderCheckWarn，边框和框内遮挡告警ReshootWarn，翻拍告警DetectPsWarn，PS 检测告警TempIdWarn，临时身份证告警InvalidDateWarn，身份证有效日期不合法告警Quality，图片质量分数（评价图片的模糊程度）MultiCardDetect，是否开启多卡证检测参数设置方式参考：Config = {"CropIdCard":true,"CropPortrait":true};是否必传：否
+        // Config: {},
+      },
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 实时文字翻译
+function autoTranslationBlock() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Query: {
+        // 数据万象处理能力，文本块翻译固定为 AutoTranslationBlock。;是否必传：是
+        'ci-process': 'AutoTranslationBlock',
+        // 待翻译的文本;是否必传：是
+        InputText: '我是张三',
+        // 输入语言，如 "zh";是否必传：是
+        SourceLang: 'zh',
+        // 输出语言，如 "en";是否必传：是
+        TargetLang: 'en',
+        // 文本所属业务领域，如: "ecommerce", //缺省值为 general;是否必传：否
+        // TextDomain: '',
+        // 文本类型，如: "title", //缺省值为 sentence;是否必传：否
+        // TextStyle: '',
+      },
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    }
+  );
+}
+
+// 提交一个视频人像抠图任务
+function postSegmentVideoBody() {
+  const key = 'jobs'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 创建任务的 Tag：SegmentVideoBody;是否必传：是
+      Tag: 'SegmentVideoBody',
+      // 待操作的对象信息;是否必传：是
+      Input: {
+        // 文件路径;是否必传：是
+        Object: 'ci/tf.mp4',
+      },
+      // 操作规则;是否必传：是
+      Operation: {
+        // 视频人像抠图配置;是否必传：否
+        SegmentVideoBody: {
+          // 抠图模式 Mask：输出alpha通道结果Foreground：输出前景视频Combination：输出抠图后的前景与自定义背景合成后的视频默认值：Mask;是否必传：否
+          Mode: 'Mask',
+          // 抠图类型HumanSeg：人像抠图GreenScreenSeg：绿幕抠图SolidColorSeg：纯色背景抠图默认值：HumanSeg;是否必传：否
+          // SegmentType: '',
+          // mode为 Foreground 时参数生效，背景颜色为红色，取值范围 [0, 255]， 默认值为 0;是否必传：否
+          // BackgroundRed: '',
+          // mode为 Foreground 时参数生效，背景颜色为绿色，取值范围 [0, 255]，默认值为 0;是否必传：否
+          // BackgroundGreen: '',
+          // mode为 Foreground 时参数生效，背景颜色为蓝色，取值范围 [0, 255]，默认值为 0;是否必传：否
+          // BackgroundBlue: '',
+          // 传入背景文件。mode为 Combination 时，此参数必填，背景文件需与源文件在同存储桶下;是否必传：否
+          // BackgroundLogoUrl: '',
+          // 调整抠图的边缘位置，取值范围为[0, 255]，默认值为 0;是否必传：否
+          // BinaryThreshold: '',
+          // 纯色背景抠图的背景色（红）, 当 SegmentType 为 SolidColorSeg 生效，取值范围为 [0, 255]，默认值为 0;是否必传：否
+          // RemoveRed: '',
+          // 纯色背景抠图的背景色（绿）, 当 SegmentType 为 SolidColorSeg 生效，取值范围为 [0, 255]，默认值为 0;是否必传：否
+          // RemoveGreen: '',
+          // 纯色背景抠图的背景色（蓝）, 当 SegmentType 为 SolidColorSeg 生效，取���范围为 [0, 255]，默认值为 0;是否必传：否
+          // RemoveBlue: '',
+        },
+        // 结果输出配置;是否必传：是
+        Output: {
+          // 存储桶的地域;是否必传：是
+          Region: config.Region,
+          // 存储结果的存储桶;是否必传：是
+          Bucket: config.Bucket,
+          // 输出结果的文件名;是否必传：是
+          Object: 'ci/ss.mp4',
+        },
+        // 透传用户信息，可打印的 ASCII 码，长度不超过1024;是否必传：否
+        // UserData: '',
+        // 任务优先级，级别限制：0 、1 、2。级别越大任务优先级越高，默认为0;是否必传：否
+        // JobLevel: '',
+      },
+      // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式;是否必传：否
+      // CallBackFormat: '',
+      // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型;是否必传：否
+      // CallBackType: '',
+      // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调;是否必传：否
+      // CallBack: '',
+      // 任务回调 TDMQ 配置，当 CallBackType 为 TDMQ 时必填。详情见 CallBackMqConfig;是否必传：否
+      // CallBackMqConfig: {
+      // 消息队列所属园区，目前支持园区 sh（上海）、bj（北京）、gz（广州）、cd（成都）、hk（中国香港）;是否必传：是
+      // MqRegion: '',
+      // 消息队列使用模式，默认 Queue ：主题订阅：Topic队列服务: Queue;是否必传：是
+      // MqMode: '',
+      // TDMQ 主题名称;是否必传：是
+      // MqName: '',
+      // },
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'POST', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+function aIImageColoring() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/1.jpg', // 与detect-url二选一传递
+      Query: {
+        // 数据万象处理能力，图片上色参固定为AIImageColoring。;是否必传：是
+        'ci-process': 'AIImageColoring',
+        // 待上色图片url，需要进行urlencode，与ObjectKey二选其一，如果同时存在，则默认以ObjectKey为准;是否必传：否
+        // 'detect-url': '',
+      },
+      RawBody: true,
+      DataType: 'blob',
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    }
+  );
+}
+
+// 图片质量评分
+function assessQuality() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/dog.jpeg', // 必须
+      Query: {
+        // 数据万象处理能力，图像质量检测固定为 AssessQuality。;是否必传：是
+        'ci-process': 'AssessQuality',
+      },
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 图像超分
+function aISuperResolution() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/test.jpeg', // 与detect-url二选一传递
+      Query: {
+        // 数据万象处理能力，只能裁剪参固定为AISuperResolution。;是否必传：否
+        'ci-process': 'AISuperResolution',
+        // 您可以通过填写 detect-url 处理任意公网可访问的图片链接。不填写 detect-url 时，后台会默认处理 ObjectKey ，填写了 detect-url 时，后台会处理 detect-url 链接，无需再填写 ObjectKey，detect-url 示例：http://www.example.com/abc.jpg ，需要进行 UrlEncode，处理后为http%25253A%25252F%25252Fwww.example.com%25252Fabc.jpg。;是否必传：否
+        // 'detect-url': '',
+      },
+      RawBody: true,
+      DataType: 'blob'
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    }
+  );
+}
+
+// 图像修复
+function imageRepair() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/card.jpeg', // 必须
+      Query: {
+        // 固定值：ImageRepair;是否必传：是
+        'ci-process': 'ImageRepair',
+        // 遮罩（白色区域为需要去除的水印位置）图片地址，私有图片需携带签名，需要经过 URL 安全的 Base64 编码
+        // 比如图片url为 http://test.com/test.jpg
+        MaskPic: COS.util.encodeBase64('http://test.com/test.jpg', true),
+      },
+      RawBody: true,
+      DataType: 'blob',
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    }
+  );
+}
+
+// 图像增强
+function aIEnhanceImage() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/1.jpg', // 与detect-url二选一传递
+      Query: {
+        // 数据万象处理能力，只能裁剪参固定为 AIEnhanceImage。;是否必传：是
+        'ci-process': 'AIEnhanceImage',
+        // 去噪强度值，取值范围为 0 - 5 之间的整数，值为 0 时不进行去噪操作，默认值为3。;是否必传：否
+        denoise: 0,
+        // 锐化强度值，取值范围为 0 - 5 之间的整数，值为 0 时不进行锐化操作，默认值为3。;是否必传：否
+        sharpen: 0,
+        // 您可以通过填写 detect-url 处理任意公网可访问的图片链接。不填写 detect-url  时，后台会默认处理 ObjectKey ，填写了detect-url 时，后台会处理 detect-url链接，无需再填写 ObjectKey ，detect-url 示例：http://www.example.com/abc.jpg ，需要进行 UrlEncode，处理后为  http%25253A%25252F%25252Fwww.example.com%25252Fabc.jpg;是否必传：否
+        // 'detect-url': '',
+        // ;是否必传：否
+        'ignore-error': 0,
+      },
+      RawBody: true,
+      DataType: 'blob',
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    }
+  );
+}
+
+// 图像智能裁剪
+function aIImageCrop() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/dog.jpeg', // 与detect-url二选一传递
+      Query: {
+        // 数据万象处理能力，智能裁剪固定为AIImageCrop;是否必传：是
+        'ci-process': 'AIImageCrop',
+        // 您可以通过填写 detect-url 处理任意公网可访问的图片链接。不填写 detect-url 时，后台会默认处理 ObjectKey ，填写了 detect-url 时，后台会处理 detect-url 链接，无需再填写 ObjectKey detect-url 示例：http://www.example.com/abc.jpg ，需要进行 UrlEncode，处理后为http%25253A%25252F%25252Fwww.example.com%25252Fabc.jpg;是否必传：否
+        // 'detect-url': '',
+        // 需要裁剪区域的宽度，与height共同组成所需裁剪的图片宽高比例；输入数字请大于0、小于图片宽度的像素值;是否必传：是
+        width: 0,
+        // 需要裁剪区域的高度，与width共同组成所需裁剪的图片宽高比例；输入数字请大于0、小于图片高度的像素值；width : height建议取值在[1, 2.5]之间，超过这个范围可能会影响效果;是否必传：是
+        height: 0,
+        // 是否严格按照 width 和 height 的值进行输出。取值为0时，宽高比例（width : height）会简化为最简分数，即如果width输入10、height输入20，会简化为1：2；取值为1时，输出图片的宽度等于width，高度等于height；默认值为0;是否必传：否
+        fixed: 0,
+        // 当此参数为1时，针对文件过大等导致处理失败的场景，会直接返回原图而不报错;是否必传：否
+        'ignore-error': 0,
+      },
+      RawBody: true,
+      DataType: 'blob',
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    }
+  );
+}
+
+// 音乐评分
+function vocalScore() {
+  const key = 'jobs'; // 固定值
+  const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
+  const url = `https://${host}/${key}`;
+  const body = COS.util.json2xml({
+    Request: {
+      // 创建任务的 Tag：VocalScore;是否必传：是
+      Tag: 'VocalScore',
+      // 待操作的对象信息;是否必传：是
+      Input: {
+        // 文件路径;是否必传：否
+        Object: 'ci/music.mp3',
+      },
+      // 操作规则;是否必传：是
+      Operation: {
+        // 音乐评分参数配置;是否必传：是
+        VocalScore: {
+          // 比对基准文件路径;是否必传：否
+          StandardObject: 'ci/base.mp3',
+        },
+        // 透传用户信息, 可打印的 ASCII 码, 长度不超过1024;是否必传：否
+        // UserData: '',
+        // 任务优先级，级别限制：0 、1 、2 。级别越大任务优先级越高，默认为0;是否必传：否
+        // JobLevel: '',
+      },
+      // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式;是否必传：否
+      // CallBackFormat: '',
+      // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型;是否必传：否
+      // CallBackType: '',
+      // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调;是否必传：否
+      // CallBack: '',
+      // 任务回调TDMQ配置，当 CallBackType 为 TDMQ 时必填。详情见 CallBackMqConfig﻿;是否必传：否
+      // CallBackMqConfig: {
+      // 消息队列所属园区，目前支持园区 sh（上海）、bj（北京）、gz（广州）、cd（成都）、hk（中国香港）;是否必传：是
+      // MqRegion: '',
+      // 消息队列使用模式，默认 Queue ：主题订阅：Topic队列服务: Queue;是否必传：是
+      // MqMode: '',
+      // TDMQ 主题名称;是否必传：是
+      // MqName: '',
+      // },
+    },
+  });
+
+  cos.request(
+    {
+      Method: 'POST', // 固定值，必须
+      Key: key, // 必须
+      Url: url, // 请求的url，必须
+      Body: body, // 请求体参数，必须
+      ContentType: 'application/xml', // 固定值，必须
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    }
+  );
+}
+
+// 游戏场景识别
+function aIGameRec() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/game.jpeg', // 与detect-url二选一传递
+      Query: {
+        // 数据万象处理能力，游戏场景识别固定为 AIGameRec;是否必传：是
+        'ci-process': 'AIGameRec',
+        // 您可以通过填写 detect-url 对任意公网可访问的图片进行游戏场景识别。不填写 detect-url 时，后台会默认处理 objectkey ；填写了 detect-url 时，后台会处理 detect-url 链接，无需再填写 objectkey ， detect-url 示例：http://www.example.com/abc.jpg。;是否必传：是
+        // 'detect-url': '',
+      },
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    }
+  );
+}
+
+// Logo 识别
+function recognizeLogo() {
+  cos.request(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/logo.png', // 与detect-url二选一传递
+      Query: {
+        // 数据万象处理能力，Logo识别固定为RecognizeLogo;是否必传：是
+        'ci-process': 'RecognizeLogo',
+        // 待检查图片url，需要进行urlencode;是否必传：是
+        // 'detect-url': '',
+      },
+    },
+    function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    }
+  );
+}
+
 (function () {
   var list = [
     'header-任务与工作流',
@@ -3122,11 +5144,48 @@ function triggerworkflow() {
     'getDocHtmlPreviewUrl',
 
     'header-AI识别',
+    'openAIBucket',
+    'closeAIBucket',
+    'getAIBucket',
+    'getAIQueue',
+    'updateAIQueue',
     'getImageLabel',
+    'recognitionQRcode',
     'identifyQrcode_put',
     'identifyQrcode_get',
-    'generateQrcode',
-    'ocr',
+    'createCRcode',
+    'cOSOCR',
+    'aIDetectCar',
+    'aIDetectPet',
+    'postVideoTargetTemplete',
+    'updateVideoTargetTemplete',
+    'postVideoTargetRec',
+    'postWordsGeneralize',
+    'livenessRecognition',
+    'getActionSequence',
+    'getLiveCode',
+    'aILicenseRec',
+    'imageSearchBucket',
+    'goodsMatting',
+    'addImageSearch',
+    'deleteImageSearch',
+    'getSearchImage',
+    'postTranslation',
+    'aIDetectFace',
+    'aIFaceEffect',
+    'aIBodyRecognition',
+    'aIIDCardOCR',
+    'autoTranslationBlock',
+    'postSegmentVideoBody',
+    'aIImageColoring',
+    'assessQuality',
+    'aISuperResolution',
+    'imageRepair',
+    'aIEnhanceImage',
+    'aIImageCrop',
+    'vocalScore',
+    'aIGameRec',
+    'recognizeLogo',
 
     'header-文件处理',
     'postFileCompress',
@@ -3145,13 +5204,24 @@ function triggerworkflow() {
     'getVirusDetectResult',
 
     'header-智能语音',
+    'getAsrBucket',
+    'openAsrBucket',
+    'closeAsrBucket',
+    'getAsrQueue',
+    'updateAsrQueue',
     'postNoiseReduction',
     'postVoiceSeparate',
-    'postTts',
+    'postVoiceSeparateTemplete',
+    'updateVoiceSeparateTemplete',
+    'postVoiceSynthesis',
+    'postVoiceSynthesisTemplete',
+    'updateVoiceSynthesisTemplete',
     'postSpeechRecognition',
-    'getAsrQueue',
-    'putAsrQueue',
-    'getAsrBucket',
+    'postSpeechRecognitionTemplete',
+    'updateSpeechRecognitionTemplete',
+    'postNoiseReductionTemplete',
+    'updateNoiseReductionTemplete',
+    'postSoundHound',
 
     'header-防盗链',
     'describeRefer',
@@ -3224,11 +5294,50 @@ function triggerworkflow() {
     describeDocProcessJob: '查询指定的文档预览任务',
     describeDocProcessJobs: '拉取符合条件的文档预览任务',
     getDocHtmlUrl: '文档转 HTML',
+
+    openAIBucket: '开通AI内容识别',
+    closeAIBucket: '关闭AI内容识别',
+    getAIBucket: '查询开通AI内容识别的桶',
+    getAIQueue: '查询AI内容识别队列',
+    updateAIQueue: '更新AI内容识别队列',
     getImageLabel: '识别图片标签',
+    recognitionQRcode: '二维码识别(云上数据识别)',
     identifyQrcode_put: '二维码识别(上传时识别)',
     identifyQrcode_get: '二维码识别(下载时识别)',
-    generateQrcode: '二维码生成',
-    ocr: '图片文字识别',
+    createCRcode: '二维码生成',
+    cOSOCR: '图片文字识别',
+    aIDetectCar: '车辆识别',
+    aIDetectPet: '宠物识别',
+    postVideoTargetTemplete: '创建视频目标检测模板',
+    updateVideoTargetTemplete: '更新视频目标检测模板',
+    postVideoTargetRec: '提交视频目标检测任务',
+    postWordsGeneralize: '提交词性分析任务',
+    livenessRecognition: '活体人脸核身',
+    getActionSequence: '获取动作顺序',
+    getLiveCode: '获取数字验证码',
+    aILicenseRec: '卡证识别',
+    imageSearchBucket: '开通以图搜图',
+    goodsMatting: '商品抠图',
+    addImageSearch: '添加图库图片',
+    deleteImageSearch: '删除图库图片',
+    getSearchImage: '图片搜索',
+    postTranslation: '内容翻译',
+    aIDetectFace: '人脸检测',
+    aIFaceEffect: '人脸特效',
+    aIBodyRecognition: '人体识别',
+    aIIDCardOCR: '身份证识别',
+    autoTranslationBlock: '实时文字翻译',
+    postSegmentVideoBody: '视频人像抠图',
+    aIImageColoring: '图片上色',
+    assessQuality: '图片质量评分',
+    aISuperResolution: '图像超分',
+    imageRepair: '图像修复',
+    aIEnhanceImage: '图片增强',
+    aIImageCrop: '图像智能裁剪',
+    vocalScore: '音乐评分',
+    aIGameRec: '游戏场景识别',
+    recognizeLogo: 'LOGO 识别',
+
     postFileCompress: '提交文件压缩任务',
     getFileCompress: '查询文件压缩任务',
     postFileUnCompress: '提交文件解压任务',
@@ -3237,13 +5346,27 @@ function triggerworkflow() {
     getFileHashResult: '查询哈希值计算任务结果',
     postVirusDetect: '提交病毒检测任务',
     getVirusDetectResult: '查询病毒检测任务结果',
+
     postNoiseReduction: '提交音频降噪任务',
     postVoiceSeparate: '提交人声分离任务',
-    postTts: '提交语音合成任务',
+    postVoiceSeparateTemplete: '创建人声分离模板',
+    updateVoiceSeparateTemplete: '更新人声分离模板',
+    postNoiseReductionTemplete: '创建音频降噪模版',
+    updateNoiseReductionTemplete: '更新音频降噪模板',
+    postVoiceSynthesis: '提交语音合成任务',
+    postVoiceSynthesisTemplete: '创建语音合成模板',
+    updateVoiceSynthesisTemplete: '更新语音合成模板',
     postSpeechRecognition: '提交语音识别任务',
+    postSpeechRecognitionTemplete: '创建语音识别模板',
+    updateSpeechRecognitionTemplete: '更新语音识别模板',
     getAsrQueue: '查询语音识别队列',
-    putAsrQueue: '更新语音识别队列',
+    updateAsrQueue: '更新语音识别队列',
     getAsrBucket: '查询语音识别开通状态',
+    openAsrBucket: '开通智能语音',
+    closeAsrBucket: '关闭智能语音',
+    postSoundHound: '提交听歌识曲任务',
+
+
     getDocHtmlPreviewUrl: '获取在线文档预览地址',
     createFileProcessBucket: '开通文件处理服务',
     describeFileProcessQueues: '查询文件处理队列',
