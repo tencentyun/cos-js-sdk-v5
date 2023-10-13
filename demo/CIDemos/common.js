@@ -71,9 +71,9 @@ export const queryCIBucket = {
 export const postVirusDetect = {
   name: '提交病毒检测任务',
   fn: function postVirusDetect() {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/virus/detect';
-    var url = 'https://' + host;
-    var body = COS.util.json2xml({
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/virus/detect';
+    const url = 'https://' + host;
+    const body = COS.util.json2xml({
       Request: {
         Input: {
           Object: 'test/1.png', // 文件名，取值为文件在当前存储桶中的完整名称，与Url参数二选一
@@ -107,9 +107,9 @@ export const postVirusDetect = {
 export const getVirusDetectResult = {
   name: '查询病毒检测任务结果',
   fn: function getVirusDetectResult() {
-    var jobId = 'ssdb2dab23bcdb11ed9efb5254009411xx'; // 提交病毒检测任务后会返回当前任务的jobId
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/virus/detect/' + jobId;
-    var url = 'https://' + host;
+    const jobId = 'ssdb2dab23bcdb11ed9efb5254009411xx'; // 提交病毒检测任务后会返回当前任务的jobId
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/virus/detect/' + jobId;
+    const url = 'https://' + host;
     cos.request({
       Method: 'GET',
       Key: 'virus/detect/' + jobId,
@@ -130,8 +130,8 @@ export const getVirusDetectResult = {
 export const describeRefer = {
   name: '查询防盗链',
   fn: function describeRefer() {
-    var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?hotlink';
-    var url = 'https://' + host;
+    const host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?hotlink';
+    const url = 'https://' + host;
     cos.request({
       Method: 'GET',
       Url: url,
@@ -151,9 +151,9 @@ export const describeRefer = {
 export const setRefer = {
   name: '设置防盗链',
   fn: function setRefer() {
-    var host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?hotlink';
-    var url = 'https://' + host;
-    var body = COS.util.json2xml({
+    const host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?hotlink';
+    const url = 'https://' + host;
+    const body = COS.util.json2xml({
       Hotlink: {
         Url: 'https://www.example.com', // 必须，域名地址
         Type: 'white', // 必须，防盗链类型，white 为白名单，black 为黑名单，off 为关闭。

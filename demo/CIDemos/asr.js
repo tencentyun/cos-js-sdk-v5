@@ -126,10 +126,10 @@ export const updateAsrQueue = {
   name: '更新语音识别队列',
   fn: function updateAsrQueue() {
     // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
-    var queueId = 'pcc77499e85c311edb9865254008618d9';
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asrqueue/' + queueId;
-    var url = 'https://' + host;
-    var body = COS.util.json2xml({
+    const queueId = 'pcc77499e85c311edb9865254008618d9';
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asrqueue/' + queueId;
+    const url = 'https://' + host;
+    const body = COS.util.json2xml({
       Request: {
         Name: 'queue-doc-process-1',
         QueueID: queueId,
@@ -212,7 +212,7 @@ export const postVoiceSeparate = {
     const key = 'jobs'; // 固定值
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    var body = COS.util.json2xml({
+    const body = COS.util.json2xml({
       Request: {
         Tag: 'VoiceSeparate',
         Input: {
@@ -538,7 +538,7 @@ export const postSpeechRecognition = {
     const key = 'jobs'; // 固定值
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    var body = COS.util.json2xml({
+    const body = COS.util.json2xml({
       Request: {
         Tag: 'SpeechRecognition',
         Input: {

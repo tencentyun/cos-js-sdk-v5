@@ -3,9 +3,9 @@
 */
 
 // 开通AI内容识别
-export const openAIBucket = {
+export const CreateAIProcessBucket = {
   name: '开通AI内容识别',
-  fn: function openAIBucket() {
+  fn: function CreateAIProcessBucket() {
     const key = 'ai_bucket'; // 固定值
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
@@ -51,9 +51,9 @@ export const closeAIBucket = {
 };
 
 // 查询开通AI内容识别的桶
-export const getAIBucket = {
+export const DescribeAIProcessBuckets = {
   name: '查询开通AI内容识别的桶',
-  fn: function getAIBucket() {
+  fn: function DescribeAIProcessBuckets() {
     const key = 'ai_bucket'; // 固定值
     const host = `ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
@@ -88,9 +88,9 @@ export const getAIBucket = {
 };
 
 // 查询AI内容识别队列
-export const getAIQueue = {
+export const DescribeAiProcessQueues = {
   name: '查询AI内容识别队列',
-  fn: function getAIQueue() {
+  fn: function DescribeAiProcessQueues() {
     const key = 'ai_queue'; // 固定值
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
@@ -123,10 +123,10 @@ export const getAIQueue = {
 };
 
 // 更新AI内容识别队列
-export const updateAIQueue = {
+export const UpdateAiProcessQueue = {
   name: '更新AI内容识别队列',
-  fn: function updateAIQueue() {
-    const queueId = 'pf71b90a56f614163b0b7d00cf20518b4'; // 队列id
+  fn: function UpdateAiProcessQueue() {
+    const queueId = 'xxx'; // 队列id
     const key = `ai_queue/${queueId}`; // 固定格式
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
@@ -237,7 +237,7 @@ export const identifyQrcode_put = {
   name: '二维码识别(上传时识别)',
   fn: function identifyQrcode_put() {
     util.selectLocalFile(function (files) {
-      var file = files && files[0];
+      const file = files && files[0];
       if (!file) return;
       cos.putObject(
         {
@@ -271,7 +271,7 @@ export const identifyQrcode_put = {
 export const identifyQrcode_get = {
   name: '二维码识别(下载时识别)',
   fn: function identifyQrcode_get() {
-    var key = '1/二维码图片.png';
+    const key = '1/二维码图片.png';
     cos.request({
       Bucket: config.Bucket,
       Region: config.Region,
@@ -309,7 +309,7 @@ export const createCRcode = {
     }, function (err, data) {
       if (!err) {
         // 获得二维码base64
-        var imgBase64 = data.Response.ResultImage;
+        const imgBase64 = data.Response.ResultImage;
         // 比如可拼接前缀直接展示在img里
         // document.querySelector('#img').src = 'data:image/jpg;base64,' + imgBase64;
       }
@@ -631,9 +631,9 @@ export const postWordsGeneralize = {
 };
 
 // 活体人脸核身
-export const livenessRecognition = {
+export const LivenessRecognition = {
   name: '活体人脸核身',
-  fn: function livenessRecognition() {
+  fn: function LivenessRecognition() {
     cos.request({
       Bucket: config.Bucket,
       Region: config.Region,
@@ -666,9 +666,9 @@ export const livenessRecognition = {
 };
 
 // 获取动作顺序
-export const getActionSequence = {
+export const GetActionSequence = {
   name: '获取动作顺序',
-  fn: function getActionSequence() {
+  fn: function GetActionSequence() {
     cos.request({
       Bucket: config.Bucket,
       Region: config.Region,
@@ -690,9 +690,9 @@ export const getActionSequence = {
 };
 
 // 获取数字验证码
-export const getLiveCode = {
+export const GetLiveCode = {
   name: '获取数字验证码',
-  fn: function getLiveCode() {
+  fn: function GetLiveCode() {
     cos.request({
       Bucket: config.Bucket,
       Region: config.Region,
@@ -743,10 +743,10 @@ export const aILicenseRec = {
 };
 
 // 开通以图搜图
-export const imageSearchBucket = {
+export const CreateImageSearchBucket = {
   name: '开通以图搜图',
-  fn: function imageSearchBucket() {
-    const key = 'ImageSearchBucket'; // 固定值
+  fn: function CreateImageSearchBucket() {
+    const key = 'CreateImageSearchBucket'; // 固定值
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
     const body = COS.util.json2xml({
@@ -806,9 +806,9 @@ export const goodsMatting = {
 };
 
 // 添加图库图片
-export const addImageSearch = {
+export const AddImage = {
   name: '添加图库图片',
-  fn: function addImageSearch() {
+  fn: function AddImage() {
     const body = COS.util.json2xml({
       Request: {
         // 物品 ID，最多支持64个字符。若 EntityId 已存在，则对其追加图片;是否必传：是
@@ -846,9 +846,9 @@ export const addImageSearch = {
 };
 
 // 删除图库图片
-export const deleteImageSearch = {
+export const DeleteImage = {
   name: '删除图库图片',
-  fn: function deleteImageSearch() {
+  fn: function DeleteImage() {
     const body = COS.util.json2xml({
       Request: {
         // 物品 ID;是否必传：是
@@ -876,9 +876,9 @@ export const deleteImageSearch = {
 };
 
 // 检索图片
-export const getSearchImage = {
+export const SearchImage = {
   name: '检索图片',
-  fn: function getSearchImage() {
+  fn: function SearchImage() {
     cos.request({
       Bucket: config.Bucket,
       Region: config.Region,
@@ -1018,15 +1018,15 @@ export const aIDetectFace = {
   }
 };
 
-// 人脸特效
-export const aIFaceEffect = {
-  name: '人脸特效',
+// 人脸美颜
+export const FaceBeautify = {
+  name: '人脸美颜',
   fn: function aIFaceEffect() {
     cos.request({
       Bucket: config.Bucket,
       Region: config.Region,
       Method: 'GET', // 固定值，必须
-      Key: 'ci/dog.jpeg', // 与detect-url二选一传递
+      Key: 'ci/tom.jpeg', // 对象文件名，例如：folder/document.jpg，与detect-url二选一传递
       Query: {
         // 万象处理能力，人脸特效固定为face-effect;是否必传：是
         'ci-process': 'face-effect',
@@ -1042,10 +1042,97 @@ export const aIFaceEffect = {
         faceLifting: 50,
         // type为face-beautify时生效，大眼程度，取值范围[0,100]。0不大眼，100代表最高程度。默认值70;是否必传：否
         eyeEnlarging: 50,
+      },
+    }, function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    });
+  }
+};
+
+// 人脸性别转换
+export const FaceGenderTransformation = {
+  name: '人脸性别转换',
+  fn: function FaceGenderTransformation() {
+    cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/tom.jpeg', // 对象文件名，例如：folder/document.jpg，与detect-url二选一传递
+      Query: {
+        // 万象处理能力，人脸特效固定为face-effect;是否必传：是
+        'ci-process': 'face-effect',
+        // 您可以通过填写 detect-url 处理任意公网可访问的图片链接。不填写 detect-url 时，后台会默认处理 ObjectKey ，填写了 detect-url 时，后台会处理 detect-url 链接，无需再填写 ObjectKey detect-url 示例：http://www.example.com/abc.jpg ，需要进行 UrlEncode，处理后为http%25253A%25252F%25252Fwww.example.com%25252Fabc.jpg。;是否必传：否
+        // 'detect-url': '',
+        // 人脸特效类型，人脸美颜：face-beautify；人脸性别转换：face-gender-transformation；人脸年龄变化：face-age-transformation；人像分割：face-segmentation;是否必传：是
+        type: 'face-gender-transformation',
         // type为face-gender-transformation时生效，选择转换方向，0：男变女，1：女变男。无默认值，为必选项。限制：仅对图片中面积最大的人脸进行转换。;是否必传：否
-        // gender: 0,
-        // type为face-age-transformation时生效，变化到的人脸年龄,[10,80]。无默认值，为必选项。限制：仅对图片中面积最大的人脸进行转换。;是否必传：否
-        // age: 0,
+        gender: 0,
+      },
+    }, function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    });
+  }
+};
+
+// 人脸年龄变化
+export const FaceAgeTransformation = {
+  name: '人脸年龄变化',
+  fn: function FaceAgeTransformation() {
+    cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/tom.jpeg', // 对象文件名，例如：folder/document.jpg，与detect-url二选一传递
+      Query: {
+        // 万象处理能力，人脸特效固定为face-effect;是否必传：是
+        'ci-process': 'face-effect',
+        // 您可以通过填写 detect-url 处理任意公网可访问的图片链接。不填写 detect-url 时，后台会默认处理 ObjectKey ，填写了 detect-url 时，后台会处理 detect-url 链接，无需再填写 ObjectKey detect-url 示例：http://www.example.com/abc.jpg ，需要进行 UrlEncode，处理后为http%25253A%25252F%25252Fwww.example.com%25252Fabc.jpg。;是否必传：否
+        // 'detect-url': '',
+        // 人脸特效类型，人脸美颜：face-beautify；人脸性别转换：face-gender-transformation；人脸年龄变化：face-age-transformation；人像分割：face-segmentation;是否必传：是
+        type: 'face-age-transformation',
+        // type 为 face-age-transformation  时生效，变化到的人脸年龄，范围为[10,80]，无默认值。注意：仅对图片中面积最大的人脸进行转换
+        age: 40,
+      },
+    }, function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data.Response);
+      }
+    });
+  }
+};
+
+// 人像分割
+export const FaceSegmentation = {
+  name: '人像分割',
+  fn: function FaceSegmentation() {
+    cos.request({
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Method: 'GET', // 固定值，必须
+      Key: 'ci/tom.jpeg', // 对象文件名，例如：folder/document.jpg，与detect-url二选一传递
+      Query: {
+        // 万象处理能力，人脸特效固定为face-effect;是否必传：是
+        'ci-process': 'face-effect',
+        // 您可以通过填写 detect-url 处理任意公网可访问的图片链接。不填写 detect-url 时，后台会默认处理 ObjectKey ，填写了 detect-url 时，后台会处理 detect-url 链接，无需再填写 ObjectKey detect-url 示例：http://www.example.com/abc.jpg ，需要进行 UrlEncode，处理后为http%25253A%25252F%25252Fwww.example.com%25252Fabc.jpg。;是否必传：否
+        // 'detect-url': '',
+        // 人脸特效类型，人脸美颜：face-beautify；人脸性别转换：face-gender-transformation；人脸年龄变化：face-age-transformation；人像分割：face-segmentation;是否必传：是
+        type: 'face-segmentation',
       },
     }, function (err, data) {
       if (err) {
@@ -1087,9 +1174,9 @@ export const aIBodyRecognition = {
 };
 
 // 身份证识别
-export const aIIDCardOCR = {
+export const IDCardOCR = {
   name: '身份证识别',
-  fn: function aIIDCardOCR() {
+  fn: function IDCardOCR() {
     cos.request({
       Bucket: config.Bucket,
       Region: config.Region,

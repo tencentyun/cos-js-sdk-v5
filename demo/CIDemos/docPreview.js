@@ -6,8 +6,8 @@
 export const describeDocProcessBuckets = {
   name: '查询已经开通文档预览的存储桶',
   fn: function describeDocProcessBuckets() {
-    var host = 'ci.' + config.Region + '.myqcloud.com/docbucket';
-    var url = 'https://' + host;
+    const host = 'ci.' + config.Region + '.myqcloud.com/docbucket';
+    const url = 'https://' + host;
     cos.request({
       Method: 'GET',
       Key: 'docbucket',
@@ -51,13 +51,13 @@ export const getDocPreview = {
         console.log(err);
       } else {
         // Body为转码后的内容 可展示在img里 比如
-        var body = data.Body;
+        const body = data.Body;
         // const url = URL.createObjectURL(body);
         // const img = document.getElementById('image');
         // img.src = url;
         // 获取总页数(需要在跨域配置的Expose-Headers配置需要暴露出的头部 比如下方的X-Total-Page)
         // 跨域配置可参考文档 https://cloud.tencent.com/document/product/436/13318
-        var totalPage = data.headers['X-Total-Page'];
+        const totalPage = data.headers['X-Total-Page'];
       }
     });
   }
@@ -67,8 +67,8 @@ export const getDocPreview = {
 export const describeDocProcessQueues = {
   name: '查询文档转码队列',
   fn: function describeDocProcessQueues() {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/docqueue';
-    var url = 'https://' + host;
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/docqueue';
+    const url = 'https://' + host;
     cos.request({
       Method: 'GET',
       Key: 'docqueue',
@@ -96,10 +96,10 @@ export const updateDocProcessQueue = {
   name: '更新文档预览队列',
   fn: function updateDocProcessQueue() {
     // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
-    var queueId = 'pa2e2c3d3fae042de909cafc16f1d801b'; // 替换成自己的队列id
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/docqueue/' + queueId;
-    var url = 'https://' + host;
-    var body = COS.util.json2xml({
+    const queueId = 'pa2e2c3d3fae042de909cafc16f1d801b'; // 替换成自己的队列id
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/docqueue/' + queueId;
+    const url = 'https://' + host;
+    const body = COS.util.json2xml({
       Request: {
         Name: 'queue-doc-process-1', // 替换成自己的队列name
         QueueID: queueId,
@@ -131,9 +131,9 @@ export const updateDocProcessQueue = {
 export const createDocProcessJobs = {
   name: '提交文档转码任务',
   fn: function createDocProcessJobs() {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/doc_jobs';
-    var url = 'https://' + host;
-    var body = COS.util.json2xml({
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/doc_jobs';
+    const url = 'https://' + host;
+    const body = COS.util.json2xml({
       Request: {
         Tag: 'DocProcess',
         Input: {
@@ -174,9 +174,9 @@ export const createDocProcessJobs = {
 export const describeDocProcessJob = {
   name: '查询指定的文档预览任务',
   fn: function describeDocProcessJob() {
-    var jobId = 'd87fbabd07b8611ed974b3f4b40648xxx'; // 替换成自己的jogId
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/doc_jobs/' + jobId;
-    var url = 'https://' + host;
+    const jobId = 'd87fbabd07b8611ed974b3f4b40648xxx'; // 替换成自己的jogId
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/doc_jobs/' + jobId;
+    const url = 'https://' + host;
     cos.request({
       Method: 'GET',
       Key: 'doc_jobs/' + jobId,
@@ -197,8 +197,8 @@ export const describeDocProcessJob = {
 export const describeDocProcessJobs = {
   name: '拉取符合条件的文档预览任务',
   fn: function describeDocProcessJobs() {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/doc_jobs';
-    var url = 'https://' + host;
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/doc_jobs';
+    const url = 'https://' + host;
     cos.request({
       Method: 'GET',
       Key: 'doc_jobs',
@@ -237,7 +237,7 @@ export const getDocHtmlUrl = {
         console.log(err);
       } else {
         // 使用浏览器打开url即可预览
-        var url = data.Url;
+        const url = data.Url;
         console.log(url);
       }
     });
@@ -248,7 +248,7 @@ export const getDocHtmlUrl = {
 export const getDocHtmlPreviewUrl = {
   name: '获取在线文档预览地址',
   fn: function getDocHtmlPreviewUrl() {
-    var key = 'test.pdf';
+    const key = 'test.pdf';
     cos.request({
       Bucket: config.Bucket,
       Region: config.Region,

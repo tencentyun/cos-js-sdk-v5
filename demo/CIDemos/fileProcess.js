@@ -2,13 +2,88 @@
  * 文件处理demo集合
 */
 
+// 开通文件处理服务
+export const createFileProcessBucket = {
+  name: '开通文件处理服务',
+  fn: function createFileProcessBucket() {
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_bucket';
+    const url = 'https://' + host;
+    cos.request({
+      Method: 'POST',
+      Key: 'file_bucket',
+      Url: url,
+    }, function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    });
+  }
+};
+
+// 查询文件处理服务
+export const DescribeFileProcessBuckets = {
+  name: '查询文件处理服务',
+  fn: function DescribeFileProcessBuckets() {
+    const key = 'file_bucket';
+    const host = 'ci.' + config.Region + '.myqcloud.com/' + key;
+    const url = 'https://' + host;
+    cos.request({
+      Method: 'GET',
+      Key: key,
+      Url: url,
+      Query: {
+        // regions: '', // 地域信息，例如 ap-shanghai、ap-beijing，若查询多个地域以“,”分隔字符串，详情请参见 地域与域名
+        // bucketNames: '', // 存储桶名称，以“,”分隔，支持多个存储桶，精确搜索
+        // bucketName: '', // 存储桶名称前缀，前缀搜索
+        // pageNumber: '', // 第几页
+        // pageSize: '', // 每页个数，大于0且小于等于100的整数
+      },
+    }, function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    });
+  }
+};
+
+// 关闭文件处理服务
+export const DeleteFileProcessBucket = {
+  name: '关闭文件处理服务',
+  fn: function DeleteFileProcessBucket() {
+    const key = 'file_bucket';
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/' + key;
+    const url = 'https://' + host;
+    cos.request({
+      Method: 'Delete',
+      Key: key,
+      Url: url,
+    }, function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    });
+  }
+};
+
 // 提交文件压缩任务
 export const postFileCompress = {
   name: '提交文件压缩任务',
   fn: function postFileCompress() {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs';
-    var url = 'https://' + host;
-    var body = COS.util.json2xml({
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs';
+    const url = 'https://' + host;
+    const body = COS.util.json2xml({
       Request: {
         Tag: 'FileCompress', // 必须
         Operation: {
@@ -55,9 +130,9 @@ export const postFileCompress = {
 export const getFileCompress = {
   name: '查询文件压缩任务结果',
   fn: function getFileCompress() {
-    var jobId = 'faf1d2774a13911ed88a65b0c303ae7xx'; // 提交文件压缩任务后会返回当前任务的jobId
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs/' + jobId;
-    var url = 'https://' + host;
+    const jobId = 'faf1d2774a13911ed88a65b0c303ae7xx'; // 提交文件压缩任务后会返回当前任务的jobId
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs/' + jobId;
+    const url = 'https://' + host;
     cos.request({
       Method: 'GET',
       Key: 'file_jobs/' + jobId,
@@ -78,9 +153,9 @@ export const getFileCompress = {
 export const postFileUnCompress = {
   name: '提交文件解压任务',
   fn: function postFileUnCompress() {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs';
-    var url = 'https://' + host;
-    var body = COS.util.json2xml({
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs';
+    const url = 'https://' + host;
+    const body = COS.util.json2xml({
       Request: {
         Tag: 'FileUncompress', // 必须
         Input: {
@@ -124,9 +199,9 @@ export const postFileUnCompress = {
 export const getFileUnCompress = {
   name: '查询文件解压任务结果',
   fn: function getFileUnCompress() {
-    var jobId = 'fe7b0fa34a13911eda186254bb8f3aaxx'; // 提交文件解压任务后会返回当前任务的jobId
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs/' + jobId;
-    var url = 'https://' + host;
+    const jobId = 'fe7b0fa34a13911eda186254bb8f3aaxx'; // 提交文件解压任务后会返回当前任务的jobId
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs/' + jobId;
+    const url = 'https://' + host;
     cos.request({
       Method: 'GET',
       Key: 'file_jobs/' + jobId,
@@ -147,9 +222,9 @@ export const getFileUnCompress = {
 export const postFileHash = {
   name: '提交哈希值计算任务',
   fn: function postFileHash() {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs';
-    var url = 'https://' + host;
-    var body = COS.util.json2xml({
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs';
+    const url = 'https://' + host;
+    const body = COS.util.json2xml({
       Request: {
         Tag: 'FileHashCode', // 必须
         Input: {
@@ -190,34 +265,12 @@ export const postFileHash = {
 export const getFileHashResult = {
   name: '查询哈希值计算任务结果',
   fn: function getFileHashResult() {
-    var jobId = 'f3addcbd0a13811ed9b4ff5338d756fxx'; // 提交文件哈希值计算任务后会返回当前任务的jobId
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs/' + jobId;
-    var url = 'https://' + host;
+    const jobId = 'f3addcbd0a13811ed9b4ff5338d756fxx'; // 提交文件哈希值计算任务后会返回当前任务的jobId
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_jobs/' + jobId;
+    const url = 'https://' + host;
     cos.request({
       Method: 'GET',
       Key: 'file_jobs/' + jobId,
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
-      }
-    });
-  }
-};
-
-// 开通文件处理服务
-export const createFileProcessBucket = {
-  name: '开通文件处理服务',
-  fn: function createFileProcessBucket() {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_bucket';
-    var url = 'https://' + host;
-    cos.request({
-      Method: 'POST',
-      Key: 'file_bucket',
       Url: url,
     }, function (err, data) {
       if (err) {
@@ -235,8 +288,8 @@ export const createFileProcessBucket = {
 export const describeFileProcessQueues = {
   name: '查询文件处理队列',
   fn: function describeFileProcessQueues() {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_queue';
-    var url = 'https://' + host;
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_queue';
+    const url = 'https://' + host;
     cos.request({
       Method: 'GET',
       Key: 'file_queue',
@@ -264,10 +317,10 @@ export const updateFileProcessQueue = {
   name: '更新文件处理队列',
   fn: function updateFileProcessQueue() {
     // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
-    var queueId = 'p6160ada105a7408e95aac015f4bf8xxx';
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_queue/' + queueId;
-    var url = 'https://' + host;
-    var body = COS.util.json2xml({
+    const queueId = 'p6160ada105a7408e95aac015f4bf8xxx';
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_queue/' + queueId;
+    const url = 'https://' + host;
+    const body = COS.util.json2xml({
       Request: {
         Name: 'My-Queue-file', // 必须，队列名称,长度不超过128
         State: 'Active', // 必须，Active 表示队列内的作业会被调度执行。Paused 表示队列暂停，作业不再会被调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响。
@@ -306,7 +359,7 @@ export const updateFileProcessQueue = {
 export const generateFileHash = {
   name: '哈希值计算同步请求',
   fn: function generateFileHash() {
-    var key = 'test.pdf';
+    const key = 'test.pdf';
     cos.request({
       Bucket: config.Bucket,
       Region: config.Region,

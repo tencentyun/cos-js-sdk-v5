@@ -35,9 +35,9 @@ export const getImageAuditing = {
 export const postImagesAuditing = {
   name: '图片批量审核',
   fn: function postImagesAuditing() {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/image/auditing';
-    var body = COS.util.json2xml({
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+    const url = 'https://' + host + '/image/auditing';
+    const body = COS.util.json2xml({
       Request: {
         Input: [
           {
@@ -76,9 +76,9 @@ export const postImagesAuditing = {
 export const getImageAuditingResult = {
   name: '查询图片审核任务结果',
   fn: function getImageAuditingResult() {
-    var jobId = 'si8263213daf3711eca0d1525400d88xxx'; // jobId可以通过图片批量审核返回
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/image/auditing/' + jobId;
+    const jobId = 'si8263213daf3711eca0d1525400d88xxx'; // jobId可以通过图片批量审核返回
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+    const url = 'https://' + host + '/image/auditing/' + jobId;
     cos.request({
       Bucket: config.Bucket,
       Region: config.Region,
@@ -138,9 +138,9 @@ export const reportBadCase = {
 export const postVideoAuditing = {
   name: '提交视频审核任务',
   fn: function postVideoAuditing() {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/video/auditing';
-    var body = COS.util.json2xml({
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+    const url = 'https://' + host + '/video/auditing';
+    const body = COS.util.json2xml({
       Request: {
         Input: {
           Object: '1.mp4',
@@ -178,9 +178,9 @@ export const postVideoAuditing = {
 export const getVideoAuditingResult = {
   name: '查询视频审核任务结果',
   fn: function getVideoAuditingResult() {
-    var jobId = 'av14d9ca15af3a11eca0d6525400d88xxx'; // jobId可以通过提交视频审核任务返回
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/video/auditing/' + jobId;
+    const jobId = 'av14d9ca15af3a11eca0d6525400d88xxx'; // jobId可以通过提交视频审核任务返回
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+    const url = 'https://' + host + '/video/auditing/' + jobId;
     cos.request({
       Bucket: config.Bucket,
       Region: config.Region,
@@ -203,9 +203,9 @@ export const getVideoAuditingResult = {
 export const postAudioAuditing = {
   name: '提交音频审核任务',
   fn: function postAudioAuditing() {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/audio/auditing';
-    var body = COS.util.json2xml({
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+    const url = 'https://' + host + '/audio/auditing';
+    const body = COS.util.json2xml({
       Request: {
         Input: {
           Object: '1.mp3',
@@ -239,9 +239,9 @@ export const postAudioAuditing = {
 export const getAudioAuditingResult = {
   name: '查询音频审核任务结果',
   fn: function getAudioAuditingResult() {
-    var jobId = 'sa0c28d41daff411ecb23352540078cxxx'; // jobId可以通过提交音频审核任务返回
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/audio/auditing/' + jobId;
+    const jobId = 'sa0c28d41daff411ecb23352540078cxxx'; // jobId可以通过提交音频审核任务返回
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+    const url = 'https://' + host + '/audio/auditing/' + jobId;
     cos.request({
       Bucket: config.Bucket,
       Region: config.Region,
@@ -264,9 +264,9 @@ export const getAudioAuditingResult = {
 export const postTextAuditing = {
   name: '提交文本审核任务',
   fn: function postTextAuditing() {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/text/auditing';
-    var body = COS.util.json2xml({
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+    const url = 'https://' + host + '/text/auditing';
+    const body = COS.util.json2xml({
       Request: {
         Input: {
           // Content: COS.util.encodeBase64('乳沟'), // 经过base64编码过的文本”乳沟“，查询结果同步返回
@@ -301,9 +301,9 @@ export const postTextAuditing = {
 export const getTextAuditingResult = {
   name: '查询文本审核任务结果',
   fn: function getTextAuditingResult() {
-    var jobId = 'st8d88c664aff511ecb23352540078cxxx'; // jobId可以通过提交文本审核任务返回（Input传入Object）
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/text/auditing/' + jobId;
+    const jobId = 'st8d88c664aff511ecb23352540078cxxx'; // jobId可以通过提交文本审核任务返回（Input传入Object）
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+    const url = 'https://' + host + '/text/auditing/' + jobId;
     cos.request({
       Bucket: config.Bucket,
       Region: config.Region,
@@ -326,9 +326,9 @@ export const getTextAuditingResult = {
 export const postDocumentAuditing = {
   name: '提交文档审核任务',
   fn: function postDocumentAuditing() {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/document/auditing';
-    var body = COS.util.json2xml({
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+    const url = 'https://' + host + '/document/auditing';
+    const body = COS.util.json2xml({
       Request: {
         Input: {
           Object: 'test.xlsx', // 存在cos里的资源，审核结果异步返回，可以调用查询文本审核结果api查询
@@ -362,9 +362,9 @@ export const postDocumentAuditing = {
 export const getDocumentAuditingResult = {
   name: '查询文档审核任务结果',
   fn: function getDocumentAuditingResult() {
-    var jobId = 'sd7815c21caff611eca12f525400d88xxx'; // jobId可以通过提交文档审核任务返回
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/document/auditing/' + jobId;
+    const jobId = 'sd7815c21caff611eca12f525400d88xxx'; // jobId可以通过提交文档审核任务返回
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+    const url = 'https://' + host + '/document/auditing/' + jobId;
     cos.request({
       Bucket: config.Bucket,
       Region: config.Region,
@@ -387,9 +387,9 @@ export const getDocumentAuditingResult = {
 export const postWebpageAuditing = {
   name: '提交网页审核任务',
   fn: function postWebpageAuditing() {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/webpage/auditing';
-    var body = COS.util.json2xml({
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+    const url = 'https://' + host + '/webpage/auditing';
+    const body = COS.util.json2xml({
       Request: {
         Input: {
           Url: 'https://cloud.tencent.com/', // 存在cos里的资源，审核结果异步返回，可以调用查询文本审核结果api查询
@@ -423,9 +423,9 @@ export const postWebpageAuditing = {
 export const getWebpageAuditingResult = {
   name: '查询网页审核任务结果',
   fn: function getWebpageAuditingResult() {
-    var jobId = 'shce868019aff611ecb1155254009a4xxx'; // jobId可以通过提交网页审核任务返回
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/webpage/auditing/' + jobId;
+    const jobId = 'shce868019aff611ecb1155254009a4xxx'; // jobId可以通过提交网页审核任务返回
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+    const url = 'https://' + host + '/webpage/auditing/' + jobId;
     cos.request({
       Bucket: config.Bucket,
       Region: config.Region,
@@ -448,9 +448,9 @@ export const getWebpageAuditingResult = {
 export const postLiveAuditing = {
   name: '提交直播审核任务',
   fn: function postLiveAuditing() {
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/video/auditing';
-    var body = COS.util.json2xml({
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+    const url = 'https://' + host + '/video/auditing';
+    const body = COS.util.json2xml({
       Request: {
         Type: 'live_video',
         Input: {
@@ -489,9 +489,9 @@ export const postLiveAuditing = {
 export const getLiveAuditingResult = {
   name: '查询直播审核任务结果',
   fn: function getLiveAuditingResult() {
-    var jobId = 'av0ca69557bd6111ed904c5254009411xx'; // jobId可以通过提交直播审核任务返回
-    var host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
-    var url = 'https://' + host + '/video/auditing/' + jobId;
+    const jobId = 'av0ca69557bd6111ed904c5254009411xx'; // jobId可以通过提交直播审核任务返回
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
+    const url = 'https://' + host + '/video/auditing/' + jobId;
     cos.request({
       Bucket: config.Bucket,
       Region: config.Region,

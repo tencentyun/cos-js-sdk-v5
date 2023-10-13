@@ -469,7 +469,51 @@ export const closeOriginProtect = {
   }
 };
 
+// 开通图片处理（异步）服务
+export const CreatePicProcessBucket = {
+  name: '开通图片处理（异步）服务',
+  fn: function CreatePicProcessBucket() {
+    const key = 'picbucket'; // 固定值
+    const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/' + key;
+    const url = 'https://' + host;
+    cos.request({
+      Method: 'POST',
+      Key: key,
+      Url: url,
+    }, function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    });
+  }
+};
 
+// 查询图片处理（异步）服务
+export const DescribePicProcessBuckets = {
+  name: '查询图片处理（异步）服务',
+  fn: function DescribePicProcessBuckets() {
+    const key = 'picbucket'; // 固定值
+    const host = 'ci.' + config.Region + '.myqcloud.com/' + key;
+    const url = 'https://' + host;
+    cos.request({
+      Method: 'GET',
+      Key: key,
+      Url: url,
+    }, function (err, data) {
+      if (err) {
+        // 处理请求失败
+        console.log(err);
+      } else {
+        // 处理请求成功
+        console.log(data);
+      }
+    });
+  }
+};
 
 
 
