@@ -1,6 +1,6 @@
 /**
  * 智能语音demo集合
-*/
+ */
 
 // 查询语音识别开通状态
 export const getAsrBucket = {
@@ -10,33 +10,35 @@ export const getAsrBucket = {
     const host = `ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
 
-    cos.request({
-      Method: 'GET', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Query: {
-        // 地域信息，例如 ap-shanghai、ap-beijing，若查询多个地域以“,”分隔字符串，详情请参见 地域与域名;是否必传：是
-        // regions: "",
-        // 存储桶名称，以“,”分隔，支持多个存储桶，精确搜索;是否必传：是
-        // bucketNames: "",
-        // 存储桶名称前缀，前缀搜索;是否必传：是
-        // bucketName: "",
-        // 第几页;是否必传：是
-        // pageNumber: 1,
-        // 每页个数，大于0且小于等于100的整数;是否必传：是
-        // pageSize: 10,
+    cos.request(
+      {
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Query: {
+          // 地域信息，例如 ap-shanghai、ap-beijing，若查询多个地域以“,”分隔字符串，详情请参见 地域与域名;是否必传：是
+          // regions: "",
+          // 存储桶名称，以“,”分隔，支持多个存储桶，精确搜索;是否必传：是
+          // bucketNames: "",
+          // 存储桶名称前缀，前缀搜索;是否必传：是
+          // bucketName: "",
+          // 第几页;是否必传：是
+          // pageNumber: 1,
+          // 每页个数，大于0且小于等于100的整数;是否必传：是
+          // pageSize: 10,
+        },
       },
-
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 开通智能语音
@@ -47,20 +49,23 @@ export const CreateAsrBucket = {
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 关闭智能语音
@@ -70,20 +75,23 @@ export const DeleteAsrBucket = {
     const key = 'asrbucket'; // 固定值
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Method: 'DELETE', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'DELETE', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询语音识别队列
@@ -94,31 +102,33 @@ export const getAsrQueue = {
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
 
-    cos.request({
-      Method: 'GET', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Query: {
-        // 队列 ID，以“,”符号分割字符串;是否必传：否
-        // queueIds: '',
-        // Active 表示队列内的作业会被调度执行Paused 表示队列暂停，作业不再会被调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响;是否必传：否
-        // state: '',
-        // 第几页，默认值1;是否必传：否
-        // pageNumber: '',
-        // 每页个数，默认值10;是否必传：否
-        // pageSize: '',
+    cos.request(
+      {
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Query: {
+          // 队列 ID，以“,”符号分割字符串;是否必传：否
+          // queueIds: '',
+          // Active 表示队列内的作业会被调度执行Paused 表示队列暂停，作业不再会被调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响;是否必传：否
+          // state: '',
+          // 第几页，默认值1;是否必传：否
+          // pageNumber: '',
+          // 每页个数，默认值10;是否必传：否
+          // pageSize: '',
+        },
       },
-
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 更新语音识别队列
@@ -142,22 +152,25 @@ export const updateAsrQueue = {
         },
       },
     });
-    cos.request({
-      Method: 'PUT',
-      Key: 'asrqueue/' + queueId,
-      Url: url,
-      Body: body,
-      ContentType: 'application/xml',
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'PUT',
+        Key: 'asrqueue/' + queueId,
+        Url: url,
+        Body: body,
+        ContentType: 'application/xml',
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交音频降噪任务
@@ -187,22 +200,25 @@ export const postNoiseReduction = {
         // CallBackMqConfig: '', // 任务回调 TDMQ 配置，当 CallBackType 为 TDMQ 时必填，非必须
       },
     });
-    cos.request({
-      Method: 'POST',
-      Key: 'jobs',
-      Url: url,
-      Body: body,
-      ContentType: 'application/xml',
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST',
+        Key: 'jobs',
+        Url: url,
+        Body: body,
+        ContentType: 'application/xml',
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交人声分离任务
@@ -236,22 +252,25 @@ export const postVoiceSeparate = {
         // CallBackMqConfig: '', // 任务回调 TDMQ 配置，当 CallBackType 为 TDMQ 时必填，非必须
       },
     });
-    cos.request({
-      Method: 'POST',
-      Key: 'jobs',
-      Url: url,
-      Body: body,
-      ContentType: 'application/xml',
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST',
+        Key: 'jobs',
+        Url: url,
+        Body: body,
+        ContentType: 'application/xml',
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 创建人声分离模板
@@ -280,26 +299,28 @@ export const postVoiceSeparateTemplete = {
           // 声道数当 Codec 设置为 aac/flac，支持1、2、4、5、6、8当 Codec 设置为 mp3，支持1、2 当 Codec 设置为 amr，只支持1当 Request.AudioMode 为 MusicMode 时，该参数无效;是否必传：否
           // Channels: '',
         },
-      }
+      },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 更新人声分离模板
@@ -329,26 +350,28 @@ export const updateVoiceSeparateTemplete = {
           // 声道数当 Codec 设置为 aac/flac，支持1、2、4、5、6、8当 Codec 设置为 mp3，支持1、2 当 Codec 设置为 amr，只支持1当 Request.AudioMode 为 MusicMode 时，该参数无效;是否必传：否
           // Channels: '',
         },
-      }
+      },
     });
 
-    cos.request({
-      Method: 'PUT', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'PUT', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交一个语音合成任务
@@ -420,22 +443,25 @@ export const postVoiceSynthesis = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 创建语音合成模板
@@ -466,22 +492,25 @@ export const postVoiceSynthesisTemplete = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 更新语音合成模板
@@ -513,22 +542,25 @@ export const updateVoiceSynthesisTemplete = {
       },
     });
 
-    cos.request({
-      Method: 'PUT', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'PUT', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交语音识别任务
@@ -567,22 +599,25 @@ export const postSpeechRecognition = {
         // CallBackMqConfig: '', // 任务回调 TDMQ 配置，当 CallBackType 为 TDMQ 时必填，非必须
       },
     });
-    cos.request({
-      Method: 'POST',
-      Key: key,
-      Url: url,
-      Body: body,
-      ContentType: 'application/xml',
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST',
+        Key: key,
+        Url: url,
+        Body: body,
+        ContentType: 'application/xml',
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 创建语音识别模板
@@ -634,22 +669,25 @@ export const postSpeechRecognitionTemplete = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 更新语音识别模板
@@ -702,22 +740,25 @@ export const updateSpeechRecognitionTemplete = {
       },
     });
 
-    cos.request({
-      Method: 'PUT', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'PUT', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 创建音频降噪模版
@@ -743,22 +784,25 @@ export const postNoiseReductionTemplete = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 更新音频降噪模板
@@ -785,22 +829,25 @@ export const updateNoiseReductionTemplete = {
       },
     });
 
-    cos.request({
-      Method: 'PUT', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'PUT', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交听歌识曲任务
@@ -844,22 +891,25 @@ export const postSoundHound = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 音乐评分
@@ -908,20 +958,23 @@ export const vocalScore = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };

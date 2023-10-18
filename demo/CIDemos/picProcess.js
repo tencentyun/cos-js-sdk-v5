@@ -1,34 +1,40 @@
 /**
  * 图片处理demo集合
-*/
+ */
 
 // 获取带图片处理的访问url
 export const getImageUrl = {
   name: '获取带图片处理的访问url',
   fn: function getImageUrl() {
     // 生成带图片处理参数的文件签名URL，过期时间设置为 30 分钟。
-    cos.getObjectUrl({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Key: '02.png',
-      Query: { 'imageMogr2/thumbnail/200x/': '' },
-      Expires: 1800,
-      Sign: true,
-    }, function (err, data) {
-      console.log('getObjectUrl with sign: ', err || (data && data.Url));
-    });
+    cos.getObjectUrl(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '02.png',
+        Query: { 'imageMogr2/thumbnail/200x/': '' },
+        Expires: 1800,
+        Sign: true,
+      },
+      function (err, data) {
+        console.log('getObjectUrl with sign: ', err || (data && data.Url));
+      }
+    );
 
     // 生成带图片处理参数的文件URL，不带签名。
-    cos.getObjectUrl({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Key: 'photo.png',
-      QueryString: `imageMogr2/thumbnail/200x/`,
-      Sign: false,
-    }, function (err, data) {
-      console.log('getObjectUrl without sign: ', err || (data && data.Url));
-    });
-  }
+    cos.getObjectUrl(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: 'photo.png',
+        QueryString: `imageMogr2/thumbnail/200x/`,
+        Sign: false,
+      },
+      function (err, data) {
+        console.log('getObjectUrl without sign: ', err || (data && data.Url));
+      }
+    );
+  },
 };
 
 // 图片样式 - 查询样式
@@ -37,22 +43,25 @@ export const describeImageStyles = {
   fn: function describeImageStyles() {
     const host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?style';
     const url = 'https://' + host;
-    cos.request({
-      Method: 'GET',
-      Url: url,
-      Query: {
-        'style-name': 'style_name', // 非必填，样式名称
+    cos.request(
+      {
+        Method: 'GET',
+        Url: url,
+        Query: {
+          'style-name': 'style_name', // 非必填，样式名称
+        },
       },
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 图片样式 - 增加样式
@@ -67,21 +76,24 @@ export const addImageStyle = {
         StyleBody: 'imageMogr2/thumbnail/!50px', // 必须，样式详情
       },
     });
-    cos.request({
-      Method: 'PUT',
-      Url: url,
-      Body: body,
-      ContentType: 'application/xml',
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'PUT',
+        Url: url,
+        Body: body,
+        ContentType: 'application/xml',
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 图片样式 - 删除样式
@@ -95,21 +107,24 @@ export const deleteImageStyle = {
         StyleName: 'style_name1', // 必须，样式名称
       },
     });
-    cos.request({
-      Method: 'DELETE',
-      Url: url,
-      Body: body,
-      ContentType: 'application/xml',
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'DELETE',
+        Url: url,
+        Body: body,
+        ContentType: 'application/xml',
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 开通 Guetzli 压缩
@@ -118,19 +133,22 @@ export const openImageGuetzli = {
   fn: function openImageGuetzli() {
     const host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?guetzli';
     const url = 'https://' + host;
-    cos.request({
-      Method: 'PUT',
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'PUT',
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询 Guetzli 状态
@@ -139,19 +157,22 @@ export const describeImageGuetzli = {
   fn: function describeImageGuetzli() {
     const host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?guetzli';
     const url = 'https://' + host;
-    cos.request({
-      Method: 'GET',
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'GET',
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 关闭 Guetzli 压缩
@@ -160,19 +181,22 @@ export const closeImageGuetzli = {
   fn: function closeImageGuetzli() {
     const host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?guetzli';
     const url = 'https://' + host;
-    cos.request({
-      Method: 'DELETE',
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'DELETE',
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    })
-  }
+    );
+  },
 };
 
 // 上传时使用图片处理
@@ -187,52 +211,56 @@ export const uploadPicOperation = {
         return;
       }
       if (file.size > 1024 * 1024) {
-        cos.sliceUploadFile({
-          Bucket: config.Bucket, // Bucket 格式：test-1250000000
-          Region: config.Region,
-          Key: file.name,
-          Body: file,
-          Headers: {
-            // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
-            'Pic-Operations': JSON.stringify({
-              is_pic_info: 1,
-              rules: [{ fileid: 'desample_photo.jpg', rule: 'imageMogr2/thumbnail/200x/' }],
-            }),
+        cos.sliceUploadFile(
+          {
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            Key: file.name,
+            Body: file,
+            Headers: {
+              // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
+              'Pic-Operations': JSON.stringify({
+                is_pic_info: 1,
+                rules: [{ fileid: 'desample_photo.jpg', rule: 'imageMogr2/thumbnail/200x/' }],
+              }),
+            },
+            onHashProgress: function (progressData) {
+              console.log('onHashProgress', JSON.stringify(progressData));
+            },
+            onProgress: function (progressData) {
+              console.log('onProgress', JSON.stringify(progressData));
+            },
           },
-          onHashProgress: function (progressData) {
-            console.log('onHashProgress', JSON.stringify(progressData));
-          },
-          onProgress: function (progressData) {
-            console.log('onProgress', JSON.stringify(progressData));
-          },
-        }, function (err, data) {
-          console.log('uploadPicOperation:', err || data);
-        },
+          function (err, data) {
+            console.log('uploadPicOperation:', err || data);
+          }
         );
       } else {
-        cos.putObject({
-          Bucket: config.Bucket, // Bucket 格式：test-1250000000
-          Region: config.Region,
-          Key: file.name,
-          Body: file,
-          Headers: {
-            // 通过 imageMogr2 接口进行 avif 压缩，可以根据需要压缩的类型填入不同的压缩格式：webp/heif/tpg/avif/svgc
-            'Pic-Operations':
-              '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/format/avif"}]}',
+        cos.putObject(
+          {
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            Key: file.name,
+            Body: file,
+            Headers: {
+              // 通过 imageMogr2 接口进行 avif 压缩，可以根据需要压缩的类型填入不同的压缩格式：webp/heif/tpg/avif/svgc
+              'Pic-Operations':
+                '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/format/avif"}]}',
+            },
+            onHashProgress: function (progressData) {
+              console.log('onHashProgress', JSON.stringify(progressData));
+            },
+            onProgress: function (progressData) {
+              console.log('onProgress', JSON.stringify(progressData));
+            },
           },
-          onHashProgress: function (progressData) {
-            console.log('onHashProgress', JSON.stringify(progressData));
-          },
-          onProgress: function (progressData) {
-            console.log('onProgress', JSON.stringify(progressData));
-          },
-        }, function (err, data) {
-          console.log('uploadPicOperation:', err || data);
-        },
+          function (err, data) {
+            console.log('uploadPicOperation:', err || data);
+          }
         );
       }
     });
-  }
+  },
 };
 
 // 对云上数据处理
@@ -253,49 +281,55 @@ export const requestPicOperation = {
       rules: [{ fileid: 'desample_photo.jpg', rule: waterMarkRule }],
     });
 
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Key: '02.png',
-      Method: 'GET',
-      Action: 'exif',
-      RawBody: true,
-      // Headers: {
-      //   // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
-      //   'Pic-Operations': picOperations,
-      // },
-    }, function (err, data) {
-      const info = JSON.parse(data.Body);
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '02.png',
+        Method: 'GET',
+        Action: 'exif',
+        RawBody: true,
+        // Headers: {
+        //   // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
+        //   'Pic-Operations': picOperations,
+        // },
+      },
+      function (err, data) {
+        const info = JSON.parse(data.Body);
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 下载时使用图片压缩
 export const getObjectPicOperation = {
   name: '下载时使用图片压缩',
   fn: function getObjectPicOperation() {
-    cos.getObject({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Key: '1.png',
-      QueryString: `imageMogr2/format/avif`, // 可以根据需要压缩的类型填入不同的压缩格式：webp/heif/tpg/avif/svgc
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.getObject(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '1.png',
+        QueryString: `imageMogr2/format/avif`, // 可以根据需要压缩的类型填入不同的压缩格式：webp/heif/tpg/avif/svgc
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 异常图片检测
@@ -303,35 +337,37 @@ export const createImageInspectJob = {
   name: '异常图片检测',
   fn: function createImageInspectJob() {
     const key = '1.png';
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'GET',
-      Key: key,
-      RawBody: true,
-      Query: {
-        'ci-process': 'ImageInspect', // 必须，操作类型，异常图片检测固定为：ImageInspect
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'GET',
+        Key: key,
+        RawBody: true,
+        Query: {
+          'ci-process': 'ImageInspect', // 必须，操作类型，异常图片检测固定为：ImageInspect
+        },
       },
-    }, function (err, data) {
-      // 从响应数据中解析出异常图片检测结果
-      let body = {};
-      if (data && data.Body) {
-        body = JSON.parse(data.Body) || {};
-        if (body) {
-          data.body = body;
+      function (err, data) {
+        // 从响应数据中解析出异常图片检测结果
+        let body = {};
+        if (data && data.Body) {
+          body = JSON.parse(data.Body) || {};
+          if (body) {
+            data.body = body;
+          }
+        }
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
         }
       }
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
-      }
-    });
-  }
+    );
+  },
 };
-
 
 // 查询图片处理队列
 export const describePicProcessQueues = {
@@ -339,28 +375,30 @@ export const describePicProcessQueues = {
   fn: function describePicProcessQueues() {
     const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/picqueue';
     const url = 'https://' + host;
-    cos.request({
-      Method: 'GET',
-      Key: 'picqueue',
-      Url: url,
-      Query: {
-        // queueIds: '', // 非必须，队列 ID，以“,”符号分割字符串
-        state: 'Active', // 非必须，1. Active 表示队列内的作业会被媒体处理服务调度执行。2. Paused 表示队列暂停，作业不再会被媒体处理调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响。
-        pageNumber: 1, // 非必须，第几页,默认值1
-        pageSize: 10, // 非必须，每页个数,默认值10
+    cos.request(
+      {
+        Method: 'GET',
+        Key: 'picqueue',
+        Url: url,
+        Query: {
+          // queueIds: '', // 非必须，队列 ID，以“,”符号分割字符串
+          state: 'Active', // 非必须，1. Active 表示队列内的作业会被媒体处理服务调度执行。2. Paused 表示队列暂停，作业不再会被媒体处理调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响。
+          pageNumber: 1, // 非必须，第几页,默认值1
+          pageSize: 10, // 非必须，每页个数,默认值10
+        },
       },
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
-
 
 // 更新图片处理队列
 export const updatePicProcessQueue = {
@@ -387,22 +425,25 @@ export const updatePicProcessQueue = {
         },
       },
     });
-    cos.request({
-      Method: 'POST',
-      Key: 'picqueue/' + queueId,
-      Url: url,
-      Body: body,
-      ContentType: 'application/xml',
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'POST',
+        Key: 'picqueue/' + queueId,
+        Url: url,
+        Body: body,
+        ContentType: 'application/xml',
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询原图保护状态
@@ -411,21 +452,23 @@ export const describeOriginProtect = {
   fn: function describeOriginProtect() {
     const host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?origin-protect';
     const url = 'https://' + host;
-    cos.request({
-      Method: 'GET',
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'GET',
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
-
 
 // 开通原图保护
 export const openOriginProtect = {
@@ -433,19 +476,22 @@ export const openOriginProtect = {
   fn: function openOriginProtect() {
     const host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?origin-protect';
     const url = 'https://' + host;
-    cos.request({
-      Method: 'PUT',
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'PUT',
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 关闭原图保护
@@ -454,19 +500,22 @@ export const closeOriginProtect = {
   fn: function closeOriginProtect() {
     const host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?origin-protect';
     const url = 'https://' + host;
-    cos.request({
-      Method: 'DELETE',
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'DELETE',
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 开通图片处理（异步）服务
@@ -476,20 +525,23 @@ export const CreatePicProcessBucket = {
     const key = 'picbucket'; // 固定值
     const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/' + key;
     const url = 'https://' + host;
-    cos.request({
-      Method: 'POST',
-      Key: key,
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'POST',
+        Key: key,
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询图片处理（异步）服务
@@ -499,21 +551,21 @@ export const DescribePicProcessBuckets = {
     const key = 'picbucket'; // 固定值
     const host = 'ci.' + config.Region + '.myqcloud.com/' + key;
     const url = 'https://' + host;
-    cos.request({
-      Method: 'GET',
-      Key: key,
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'GET',
+        Key: key,
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
-
-
-

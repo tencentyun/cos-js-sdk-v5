@@ -115,7 +115,7 @@ var replaceBucketRegion = (filePath) => {
       .toString()
       .replace(
         /(var config = {\r?\n *Bucket: ')test-1250000000(',\r?\n *Region: ')ap-guangzhou(')/,
-        '$1' + config.bucket + '$2' + config.region + '$3',
+        '$1' + config.bucket + '$2' + config.region + '$3'
       );
     if (process.env.Uin) {
       content = content
@@ -181,7 +181,7 @@ function getSts() {
         } else {
           resolve(tempKeys);
         }
-      },
+      }
     );
   });
 }

@@ -11,7 +11,7 @@ function getObjectUrl() {
     },
     function (err, data) {
       logger.log('getObjectUrl:', err || (data && data.Url));
-    },
+    }
   );
   logger.log('getObjectUrl:', url);
 }
@@ -40,7 +40,7 @@ function getAuth() {
         AuthData +
         (AuthData.SecurityToken ? '&' + AuthData.SecurityToken : '');
       logger.log('getAuth:', url);
-    },
+    }
   );
 }
 
@@ -62,7 +62,7 @@ function putBucket() {
     },
     function (err, data) {
       logger.log('putBucket:', err || data);
-    },
+    }
   );
 }
 
@@ -75,7 +75,7 @@ function getBucket() {
     },
     function (err, data) {
       logger.log('getBucket:', err || data);
-    },
+    }
   );
 }
 
@@ -87,7 +87,7 @@ function headBucket() {
     },
     function (err, data) {
       logger.log('headBucket:', err || data);
-    },
+    }
   );
 }
 
@@ -99,7 +99,7 @@ function deleteBucket() {
     },
     function (err, data) {
       logger.log('deleteBucket:', err || data);
-    },
+    }
   );
 }
 
@@ -145,7 +145,7 @@ function putBucketAcl() {
     },
     function (err, data) {
       logger.log('putBucketAcl:', err || data);
-    },
+    }
   );
 }
 
@@ -157,7 +157,7 @@ function getBucketAcl() {
     },
     function (err, data) {
       logger.log('getBucketAcl:', err || data);
-    },
+    }
   );
 }
 
@@ -188,7 +188,7 @@ function putBucketCors() {
     },
     function (err, data) {
       logger.log('putBucketCors:', err || data);
-    },
+    }
   );
 }
 
@@ -200,7 +200,7 @@ function getBucketCors() {
     },
     function (err, data) {
       logger.log('getBucketCors:', err || data);
-    },
+    }
   );
 }
 
@@ -212,7 +212,7 @@ function deleteBucketCors() {
     },
     function (err, data) {
       logger.log('deleteBucketCors:', err || data);
-    },
+    }
   );
 }
 
@@ -230,7 +230,7 @@ function putBucketTagging() {
     },
     function (err, data) {
       logger.log('putBucketTagging:', err || data);
-    },
+    }
   );
 }
 
@@ -242,7 +242,7 @@ function getBucketTagging() {
     },
     function (err, data) {
       logger.log('getBucketTagging:', err || data);
-    },
+    }
   );
 }
 
@@ -254,7 +254,7 @@ function deleteBucketTagging() {
     },
     function (err, data) {
       logger.log('deleteBucketTagging:', err || data);
-    },
+    }
   );
 }
 
@@ -328,7 +328,7 @@ function putBucketPolicy() {
     },
     function (err, data) {
       logger.log('putBucketPolicy:', err || data);
-    },
+    }
   );
 }
 
@@ -340,7 +340,7 @@ function getBucketPolicy() {
     },
     function (err, data) {
       logger.log('getBucketPolicy:', err || data);
-    },
+    }
   );
 }
 
@@ -352,7 +352,7 @@ function deleteBucketPolicy() {
     },
     function (err, data) {
       logger.log('deleteBucketPolicy:', err || data);
-    },
+    }
   );
 }
 
@@ -364,7 +364,7 @@ function getBucketLocation() {
     },
     function (err, data) {
       logger.log('getBucketLocation:', err || data);
-    },
+    }
   );
 }
 
@@ -416,7 +416,7 @@ function putBucketLifecycle() {
     },
     function (err, data) {
       logger.log('putBucketLifecycle:', err || data);
-    },
+    }
   );
 }
 
@@ -428,7 +428,7 @@ function getBucketLifecycle() {
     },
     function (err, data) {
       logger.log('getBucketLifecycle:', err || data);
-    },
+    }
   );
 }
 
@@ -440,7 +440,7 @@ function deleteBucketLifecycle() {
     },
     function (err, data) {
       logger.log('deleteBucketLifecycle:', err || data);
-    },
+    }
   );
 }
 
@@ -455,7 +455,7 @@ function putBucketVersioning() {
     },
     function (err, data) {
       logger.log('putBucketVersioning:', err || data);
-    },
+    }
   );
 }
 
@@ -467,7 +467,7 @@ function getBucketVersioning() {
     },
     function (err, data) {
       logger.log('getBucketVersioning:', err || data);
-    },
+    }
   );
 }
 
@@ -481,7 +481,7 @@ function listObjectVersions() {
     },
     function (err, data) {
       logger.log('listObjectVersions:', err || JSON.stringify(data, null, '    '));
-    },
+    }
   );
 }
 
@@ -508,7 +508,7 @@ function putBucketReplication() {
     },
     function (err, data) {
       logger.log('putBucketReplication:', err || data);
-    },
+    }
   );
 }
 
@@ -520,7 +520,7 @@ function getBucketReplication() {
     },
     function (err, data) {
       logger.log('getBucketReplication:', err || data);
-    },
+    }
   );
 }
 
@@ -532,7 +532,7 @@ function deleteBucketReplication() {
     },
     function (err, data) {
       logger.log('deleteBucketReplication:', err || data);
-    },
+    }
   );
 }
 
@@ -580,7 +580,7 @@ function putBucketWebsite() {
     },
     function (err, data) {
       logger.log('putBucketWebsite:', err || data);
-    },
+    }
   );
 }
 
@@ -592,7 +592,7 @@ function getBucketWebsite() {
     },
     function (err, data) {
       logger.log('getBucketWebsite:', err || data);
-    },
+    }
   );
 }
 
@@ -604,7 +604,7 @@ function deleteBucketWebsite() {
     },
     function (err, data) {
       logger.log('deleteBucketWebsite:', err || data);
-    },
+    }
   );
 }
 
@@ -624,7 +624,7 @@ function putBucketReferer() {
     },
     function (err, data) {
       logger.log('putBucketReferer:', err || data);
-    },
+    }
   );
 }
 
@@ -636,7 +636,7 @@ function getBucketReferer() {
     },
     function (err, data) {
       logger.log('getBucketReferer:', err || JSON.stringify(data, null, '    '));
-    },
+    }
   );
 }
 
@@ -660,7 +660,7 @@ function putBucketDomain() {
     },
     function (err, data) {
       logger.log('putBucketDomain:', err || data);
-    },
+    }
   );
 }
 
@@ -672,7 +672,7 @@ function getBucketDomain() {
     },
     function (err, data) {
       logger.log('getBucketDomain:', err || data);
-    },
+    }
   );
 }
 
@@ -684,7 +684,7 @@ function deleteBucketDomain() {
     },
     function (err, data) {
       logger.log('deleteBucketDomain:', err || data);
-    },
+    }
   );
 }
 
@@ -703,7 +703,7 @@ function putBucketLogging() {
     },
     function (err, data) {
       logger.log('putBucketLogging:', err || data);
-    },
+    }
   );
 }
 
@@ -715,7 +715,7 @@ function getBucketLogging() {
     },
     function (err, data) {
       logger.log('getBucketLogging:', err || data);
-    },
+    }
   );
 }
 
@@ -728,7 +728,7 @@ function deleteBucketLogging() {
     },
     function (err, data) {
       logger.log('deleteBucketLogging:', err || data);
-    },
+    }
   );
 }
 
@@ -771,7 +771,7 @@ function putBucketInventory() {
     },
     function (err, data) {
       logger.log('putBucketInventory:', err || data);
-    },
+    }
   );
 }
 
@@ -819,7 +819,7 @@ function postBucketInventory() {
     },
     function (err, data) {
       logger.log('postBucketInventory:', err || data);
-    },
+    }
   );
 }
 
@@ -832,7 +832,7 @@ function getBucketInventory() {
     },
     function (err, data) {
       logger.log('getBucketInventory:', err || JSON.stringify(data));
-    },
+    }
   );
 }
 
@@ -845,7 +845,7 @@ function deleteBucketInventory() {
     },
     function (err, data) {
       logger.log('deleteBucketInventory:', err || JSON.stringify(data));
-    },
+    }
   );
 }
 
@@ -857,7 +857,7 @@ function listBucketInventory() {
     },
     function (err, data) {
       logger.log('listBucketInventory:', err || JSON.stringify(data));
-    },
+    }
   );
 }
 
@@ -878,7 +878,7 @@ function putBucketEncryption() {
     },
     function (err, data) {
       logger.log('putBucketEncryption:', err || JSON.stringify(data));
-    },
+    }
   );
 }
 
@@ -890,7 +890,7 @@ function getBucketEncryption() {
     },
     function (err, data) {
       logger.log('getBucketEncryption:', err || JSON.stringify(data));
-    },
+    }
   );
 }
 
@@ -902,7 +902,7 @@ function deleteBucketEncryption() {
     },
     function (err, data) {
       logger.log('deleteBucketEncryption:', err || JSON.stringify(data));
-    },
+    }
   );
 }
 
@@ -934,7 +934,7 @@ function putObject() {
     },
     function (err, data) {
       logger.log('putObject:', err || data);
-    },
+    }
   );
 }
 
@@ -976,7 +976,7 @@ function putObject_base64ToBlob() {
     },
     function (err, data) {
       logger.log('putObject:', err || data);
-    },
+    }
   );
 }
 
@@ -991,7 +991,7 @@ function appendObject() {
     },
     function (err, data) {
       logger.log('putObject:', err || data);
-    },
+    }
   );
 }
 
@@ -1018,9 +1018,9 @@ function appendObject_continue() {
           // 也可以取到下一次上传的position继续追加上传
           // var nextPosition = data.headers['x-cos-next-append-position'];
           logger.log('putObject:', err || data);
-        },
+        }
       );
-    },
+    }
   );
 }
 
@@ -1035,7 +1035,7 @@ function putObjectCopy() {
     },
     function (err, data) {
       logger.log('putObjectCopy:', err || data);
-    },
+    }
   );
 }
 
@@ -1051,7 +1051,7 @@ function getObject() {
     },
     function (err, data) {
       logger.log('getObject:', err || data);
-    },
+    }
   );
 }
 
@@ -1064,7 +1064,7 @@ function headObject() {
     },
     function (err, data) {
       logger.log('headObject:', err || data);
-    },
+    }
   );
 }
 
@@ -1095,7 +1095,7 @@ function putObjectAcl() {
     },
     function (err, data) {
       logger.log('putObjectAcl:', err || data);
-    },
+    }
   );
 }
 
@@ -1108,7 +1108,7 @@ function getObjectAcl() {
     },
     function (err, data) {
       logger.log('getObjectAcl:', err || data);
-    },
+    }
   );
 }
 
@@ -1121,7 +1121,7 @@ function deleteObject() {
     },
     function (err, data) {
       logger.log('deleteObject:', err || data);
-    },
+    }
   );
 }
 
@@ -1134,7 +1134,7 @@ function deleteMultipleObject() {
     },
     function (err, data) {
       logger.log('deleteMultipleObject:', err || data);
-    },
+    }
   );
 }
 
@@ -1153,7 +1153,7 @@ function restoreObject() {
     },
     function (err, data) {
       logger.log('restoreObject:', err || data);
-    },
+    }
   );
 }
 
@@ -1195,7 +1195,7 @@ function selectObjectContent() {
     },
     function (err, data) {
       logger.log('selectObjectContent:', err || data);
-    },
+    }
   );
   // 查询 JSON
   cos.selectObjectContent(
@@ -1224,7 +1224,7 @@ function selectObjectContent() {
     },
     function (err, data) {
       logger.log('selectObjectContent:', err || data);
-    },
+    }
   );
 }
 
@@ -1245,7 +1245,7 @@ function abortUploadTask() {
     },
     function (err, data) {
       logger.log('abortUploadTask:', err || data);
-    },
+    }
   );
 }
 
@@ -1267,7 +1267,7 @@ function uploadFile() {
     },
     function (err, data) {
       logger.log('uploadFile:', err || data);
-    },
+    }
   );
 }
 
@@ -1295,7 +1295,7 @@ function sliceUploadFile() {
     },
     function (err, data) {
       logger.log('sliceUploadFile:', err || data);
-    },
+    }
   );
 }
 
@@ -1322,7 +1322,7 @@ function selectFileToUpload() {
         },
         function (err, data) {
           logger.log('selectFileToUpload:', err || data);
-        },
+        }
       );
     } else {
       cos.putObject(
@@ -1343,7 +1343,7 @@ function selectFileToUpload() {
         },
         function (err, data) {
           logger.log('selectFileToUpload:', err || data);
-        },
+        }
       );
     }
   });
@@ -1401,7 +1401,7 @@ function uploadFiles() {
     },
     function (err, data) {
       logger.log('uploadFiles:', err || data);
-    },
+    }
   );
 }
 
@@ -1432,7 +1432,7 @@ function sliceCopyFile() {
       } else {
         logger.log('sliceCopyFile:', data);
       }
-    },
+    }
   );
 }
 
@@ -1469,11 +1469,11 @@ function moveObject() {
             },
             function (err, data) {
               logger.log(err || data);
-            },
+            }
           );
-        },
+        }
       );
-    },
+    }
   );
 }
 
@@ -1491,7 +1491,7 @@ function uploadToFolder() {
       },
       function (err, data) {
         logger.log(err || data);
-      },
+      }
     );
   });
 }
@@ -1507,7 +1507,7 @@ function createFolder() {
     },
     function (err, data) {
       logger.log(err || data);
-    },
+    }
   );
 }
 
@@ -1546,7 +1546,7 @@ function uploadFolder() {
       },
       function (err, data) {
         logger.log('uploadFolder:', err || data);
-      },
+      }
     );
   };
   input.click();
@@ -1594,7 +1594,7 @@ function listFolder() {
     },
     function (err, data) {
       logger.log('listFolder:', err || data);
-    },
+    }
   );
 }
 
@@ -1639,7 +1639,7 @@ function deleteFolder() {
                   errorList.push(item);
                 });
               afterDeleted();
-            },
+            }
           );
         } else {
           afterDeleted();
@@ -1656,7 +1656,7 @@ function deleteFolder() {
     },
     function (err, data) {
       logger.log('deleteFolder:', err || data);
-    },
+    }
   );
 }
 
@@ -1676,7 +1676,7 @@ function request() {
     },
     function (err, data) {
       logger.log('request:', err || data);
-    },
+    }
   );
 }
 
@@ -1792,11 +1792,11 @@ function request() {
     } else {
       html.push(
         '<a href="javascript:void(0)" data-method="' +
-        name +
-        '">' +
-        name +
-        (labelMap[name] ? ' (' + labelMap[name] + ')' : '') +
-        '</a>',
+          name +
+          '">' +
+          name +
+          (labelMap[name] ? ' (' + labelMap[name] + ')' : '') +
+          '</a>'
       );
     }
   });

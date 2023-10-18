@@ -190,7 +190,7 @@ var parseSelectPayload = function (chunk) {
       var headerValue = buf2str(
         chunk,
         offset + headerNameLength + 4,
-        offset + headerNameLength + 4 + headerValueLength,
+        offset + headerNameLength + 4 + headerValueLength
       );
       header[headerName] = headerValue;
       offset += headerNameLength + 4 + headerValueLength;
@@ -223,7 +223,7 @@ var getSourceParams = function (source) {
   var parser = this.options.CopySourceParser;
   if (parser) return parser(source);
   var m = source.match(
-    /^([^.]+-\d+)\.cos(v6|-cdc|-cdz|-internal)?\.([^.]+)\.((myqcloud\.com)|(tencentcos\.cn))\/(.+)$/,
+    /^([^.]+-\d+)\.cos(v6|-cdc|-cdz|-internal)?\.([^.]+)\.((myqcloud\.com)|(tencentcos\.cn))\/(.+)$/
   );
   if (!m) return null;
   return { Bucket: m[1], Region: m[3], Key: m[7] };
@@ -335,7 +335,7 @@ var getBodyMd5 = function (UploadCheckContentMd5, Body, callback, onProgress) {
         function (err, md5) {
           callback(md5);
         },
-        onProgress,
+        onProgress
       );
     } else {
       callback();
@@ -649,7 +649,7 @@ var apiWrapper = function (apiName, apiFn) {
             params.Region !== 'accelerate'
           ) {
             console.warn(
-              'warning: param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224',
+              'warning: param Region format error, find help here: https://cloud.tencent.com/document/product/436/6224'
             );
           }
         }
@@ -666,7 +666,7 @@ var apiWrapper = function (apiName, apiFn) {
           }
           if (params.AppId) {
             console.warn(
-              'warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g Bucket:"test-1250000000" ).',
+              'warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g Bucket:"test-1250000000" ).'
             );
             delete params.AppId;
           }
