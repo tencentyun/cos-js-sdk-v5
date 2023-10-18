@@ -1,6 +1,6 @@
 /**
  * 其他demo集合
-*/
+ */
 
 // 开通数据万象
 export const createCIBucket = {
@@ -8,21 +8,23 @@ export const createCIBucket = {
   fn: function createCIBucket() {
     const host = `${config.Bucket}.pic.${config.Region}.myqcloud.com`;
     const url = `https://${host}`;
-    cos.request({
-      Method: 'PUT', // 固定值，必须
-      Url: url, // 请求的url，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'PUT', // 固定值，必须
+        Url: url, // 请求的url，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
-
 
 // 关闭数据万象
 export const deleteCIBucket = {
@@ -30,20 +32,23 @@ export const deleteCIBucket = {
   fn: function deleteCIBucket() {
     const host = `${config.Bucket}.pic.${config.Region}.myqcloud.com`;
     const url = `https://${host}`;
-    cos.request({
-      Method: 'PUT', // 固定值，必须
-      Url: url, // 请求的url，必须
-      Action: 'unbind'// 固定值
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'PUT', // 固定值，必须
+        Url: url, // 请求的url，必须
+        Action: 'unbind', // 固定值
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询查询数据处理服务
@@ -52,19 +57,22 @@ export const queryCIBucket = {
   fn: function queryCIBucket() {
     const host = `${config.Bucket}.pic.${config.Region}.myqcloud.com`;
     const url = `https://${host}`;
-    cos.request({
-      Method: 'GET', // 固定值，必须
-      Url: url, // 请求的url，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'GET', // 固定值，必须
+        Url: url, // 请求的url，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交病毒检测任务
@@ -85,22 +93,25 @@ export const postVirusDetect = {
         },
       },
     });
-    cos.request({
-      Method: 'POST',
-      Key: 'virus/detect',
-      Url: url,
-      Body: body,
-      ContentType: 'application/xml',
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'POST',
+        Key: 'virus/detect',
+        Url: url,
+        Body: body,
+        ContentType: 'application/xml',
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询病毒检测任务结果
@@ -110,20 +121,23 @@ export const getVirusDetectResult = {
     const jobId = 'ssdb2dab23bcdb11ed9efb5254009411xx'; // 提交病毒检测任务后会返回当前任务的jobId
     const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/virus/detect/' + jobId;
     const url = 'https://' + host;
-    cos.request({
-      Method: 'GET',
-      Key: 'virus/detect/' + jobId,
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'GET',
+        Key: 'virus/detect/' + jobId,
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询防盗链
@@ -132,19 +146,22 @@ export const describeRefer = {
   fn: function describeRefer() {
     const host = config.Bucket + '.pic.' + config.Region + '.myqcloud.com/?hotlink';
     const url = 'https://' + host;
-    cos.request({
-      Method: 'GET',
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'GET',
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 设置防盗链
@@ -159,19 +176,22 @@ export const setRefer = {
         Type: 'white', // 必须，防盗链类型，white 为白名单，black 为黑名单，off 为关闭。
       },
     });
-    cos.request({
-      Method: 'PUT',
-      Url: url,
-      Body: body,
-      ContentType: 'application/xml',
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'PUT',
+        Url: url,
+        Body: body,
+        ContentType: 'application/xml',
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };

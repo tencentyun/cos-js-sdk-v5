@@ -83,7 +83,6 @@ for (let fnName in asr) {
   setContent(fnName, asr, 'asr');
 }
 
-
 (function () {
   const container = document.querySelector('.ci-main');
   const html = [];
@@ -93,9 +92,11 @@ for (let fnName in asr) {
     const content = `<div class="module-item"><h4>${module.title}</h4>`;
     let a = '';
     if (module.functions && module.functions.length > 0) {
-      a += module.functions.map(item => {
-        return `<a href="javascript:void(0)" data-method="${item.fnName}">${item.fnName}(${item.name})</a>`;
-      }).join('');
+      a += module.functions
+        .map((item) => {
+          return `<a href="javascript:void(0)" data-method="${item.fnName}">${item.fnName}(${item.name})</a>`;
+        })
+        .join('');
     }
     html.push(content, a, '</div>');
   }

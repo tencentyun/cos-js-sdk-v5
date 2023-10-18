@@ -1,6 +1,6 @@
 /**
  * 媒体处理demo集合
-*/
+ */
 
 // 查询已经开通数据万象功能的存储桶
 export const describeMediaBuckets = {
@@ -8,27 +8,30 @@ export const describeMediaBuckets = {
   fn: function describeMediaBuckets() {
     const host = 'ci.' + config.Region + '.myqcloud.com';
     const url = 'https://' + host + '/mediabucket';
-    cos.request({
-      Method: 'GET',
-      Key: 'mediabucket', // 固定值，必须
-      Url: url,
-      Query: {
-        pageNumber: '1', // 第几页，非必须
-        pageSize: '10', // 每页个数，非必须
-        // regions: 'ap-chengdu', // 地域信息，例如'ap-beijing'，支持多个值用逗号分隔如'ap-shanghai,ap-beijing'，非必须
-        // bucketNames: 'test-1250000000', // 存储桶名称，精确搜索，例如'test-1250000000'，支持多个值用逗号分隔如'test1-1250000000,test2-1250000000'，非必须
-        // bucketName: 'test', //存储桶名称前缀，前缀搜索，例如'test'，支持多个值用逗号分隔如'test1,test2'，非必须
+    cos.request(
+      {
+        Method: 'GET',
+        Key: 'mediabucket', // 固定值，必须
+        Url: url,
+        Query: {
+          pageNumber: '1', // 第几页，非必须
+          pageSize: '10', // 每页个数，非必须
+          // regions: 'ap-chengdu', // 地域信息，例如'ap-beijing'，支持多个值用逗号分隔如'ap-shanghai,ap-beijing'，非必须
+          // bucketNames: 'test-1250000000', // 存储桶名称，精确搜索，例如'test-1250000000'，支持多个值用逗号分隔如'test1-1250000000,test2-1250000000'，非必须
+          // bucketName: 'test', //存储桶名称前缀，前缀搜索，例如'test'，支持多个值用逗号分隔如'test1,test2'，非必须
+        },
       },
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 搜索媒体处理队列
@@ -38,32 +41,35 @@ export const searchMediaQueue = {
     const key = `queue`; // 固定值
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Method: 'GET', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Query: {
-        // 队列 ID，支持搜索多个，以“,”符号分割字符串，最多填10个。;是否必传：否
-        queueIds: '',
-        // 1. Active 表示队列内的作业会被媒体处理服务调度执行2. Paused 表示队列暂停，作业不再会被媒体处理调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响;是否必传：否
-        state: 'Active',
-        // 1. CateAll：所有类型2. Transcoding：媒体处理队列3. SpeedTranscoding：媒体处理倍速转码队列4. 默认为 Transcoding;是否必传：否
-        category: 'CateAll',
-        // 第几页，默认值1;是否必传：否
-        pageNumber: '',
-        // 每页个数，默认值10;是否必传：否
-        pageSize: '',
+    cos.request(
+      {
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Query: {
+          // 队列 ID，支持搜索多个，以“,”符号分割字符串，最多填10个。;是否必传：否
+          queueIds: '',
+          // 1. Active 表示队列内的作业会被媒体处理服务调度执行2. Paused 表示队列暂停，作业不再会被媒体处理调度执行，队列内的所有作业状态维持在暂停状态，已经执行中的任务不受影响;是否必传：否
+          state: 'Active',
+          // 1. CateAll：所有类型2. Transcoding：媒体处理队列3. SpeedTranscoding：媒体处理倍速转码队列4. 默认为 Transcoding;是否必传：否
+          category: 'CateAll',
+          // 第几页，默认值1;是否必传：否
+          pageNumber: '',
+          // 每页个数，默认值10;是否必传：否
+          pageSize: '',
+        },
       },
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 更新媒体处理队列
@@ -101,47 +107,52 @@ export const updateMediaQueue = {
         },
       },
     });
-    cos.request({
-      Method: 'PUT', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'PUT', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
-
 
 // 获取媒体文件信息同步请求
 export const getMediaInfo = {
   name: '获取媒体文件信息同步请求',
   fn: function getMediaInfo() {
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'GET',
-      Key: 'test.mp4',
-      Query: {
-        'ci-process': 'videoinfo', // 固定值，必须
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'GET',
+        Key: 'test.mp4',
+        Query: {
+          'ci-process': 'videoinfo', // 固定值，必须
+        },
       },
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 获取媒体信息异步任务
@@ -176,22 +187,25 @@ export const postMediaInfo = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 获取媒体文件某个时间的截图
@@ -201,41 +215,43 @@ export const getSnapshot = {
     const key = 'test.mp4'; // ObjectKey: 存在cos的媒体文件路径，比如test.mp4
     const host = `${config.Bucket}.cos.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Method: 'GET', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Query: {
-        // 操作类型，固定使用 snapshot;是否必传：是
-        'ci-process': 'snapshot',
-        // 截图的时间点，单位为秒;是否必传：是
-        time: 1,
-        // 截图的宽。默认为0;是否必传：否
-        width: 0,
-        // 截图的高。默认为0;是否必传：否
-        height: 0,
-        // 截图的格式，支持 jpg 和 png，默认 jpg;是否必传：否
-        format: 'jpg',
-        // 图片旋转方式auto：按视频旋转信息进行自动���转off：不旋转默认值为 auto;是否必传：否
-        rotate: 'auto',
-        // 截帧方式keyframe：截取指定时间点之前的最近的一个关键帧exactframe：截取指定时间点的帧默认值为 exactframe;是否必传：否
-        mode: 'exactframe',
+    cos.request(
+      {
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Query: {
+          // 操作类型，固定使用 snapshot;是否必传：是
+          'ci-process': 'snapshot',
+          // 截图的时间点，单位为秒;是否必传：是
+          time: 1,
+          // 截图的宽。默认为0;是否必传：否
+          width: 0,
+          // 截图的高。默认为0;是否必传：否
+          height: 0,
+          // 截图的格式，支持 jpg 和 png，默认 jpg;是否必传：否
+          format: 'jpg',
+          // 图片旋转方式auto：按视频旋转信息进行自动���转off：不旋转默认值为 auto;是否必传：否
+          rotate: 'auto',
+          // 截帧方式keyframe：截取指定时间点之前的最近的一个关键帧exactframe：截取指定时间点的帧默认值为 exactframe;是否必传：否
+          mode: 'exactframe',
+        },
+        RawBody: true,
+        // 可选返回文件格式为blob
+        DataType: 'blob',
       },
-      RawBody: true,
-      // 可选返回文件格式为blob
-      DataType: 'blob',
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Body);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Body);
+        }
       }
-    });
-  }
+    );
+  },
 };
-
 
 // 提交视频截帧任务
 export const postSnapshot = {
@@ -282,22 +298,25 @@ export const postSnapshot = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 获取私m3u8
@@ -305,28 +324,31 @@ export const getPrivateM3U8 = {
   name: '获取私m3u8',
   fn: function getPrivateM3U8() {
     const key = '视频/peachtest.mp4.m3u8'; // ObjectKey: 存在cos的媒体文件路径，比如test.mp4
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'GET', // 固定值，必须
-      Key: key, // 必须
-      Query: {
-        // 操作类型，固定使用 pm3u8;是否必传：是
-        'ci-process': 'pm3u8',
-        // 私有 ts 资源 url 下载凭证的相对有效期，单位为秒，范围为[3600, 43200];是否必传：是
-        expires: 3600,
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Query: {
+          // 操作类型，固定使用 pm3u8;是否必传：是
+          'ci-process': 'pm3u8',
+          // 私有 ts 资源 url 下载凭证的相对有效期，单位为秒，范围为[3600, 43200];是否必传：是
+          expires: 3600,
+        },
+        RawBody: true, // 固定值，必须
       },
-      RawBody: true, // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Body);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Body);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 音视频转码
@@ -398,22 +420,25 @@ export const postTranscode = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 极速高清
@@ -480,22 +505,25 @@ export const postExtremeHD = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 音视频转封装
@@ -557,24 +585,26 @@ export const postSegment = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
-
 
 // 提交音视频拼接任务
 export const postConcat = {
@@ -636,22 +666,25 @@ export const postConcat = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交视频转动图
@@ -700,22 +733,25 @@ export const postAnimation = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交精彩集锦任务
@@ -764,22 +800,25 @@ export const postVideoMontage = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交视频标签任务
@@ -819,22 +858,25 @@ export const postVideoTag = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交智能封面任务
@@ -880,22 +922,25 @@ export const postSmartCover = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 添加数字水印任务
@@ -944,22 +989,25 @@ export const postDigitalWatermark = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提取数字水印任务
@@ -1001,22 +1049,25 @@ export const postExtractDigitalWatermark = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交图片异步处理任务
@@ -1062,20 +1113,23 @@ export const postPicProcess = {
       },
     });
 
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };

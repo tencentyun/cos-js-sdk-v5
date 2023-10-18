@@ -1,34 +1,37 @@
 /**
  * 内容审核demo集合
-*/
+ */
 
 // 图片同步审核
 export const getImageAuditing = {
   name: '图片同步审核',
   fn: function getImageAuditing() {
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'GET',
-      Key: '1.png', // 与detect-url二选一传递
-      Query: {
-        'ci-process': 'sensitive-content-recognition', // 固定值，必须
-        'biz-type': '', // 审核类型，非必须
-        'detect-url': '', // 审核任意公网可访问的图片链接，非必须
-        interval: 5, // 审核 GIF 动图时，每隔interval帧截取一帧，非必须
-        'max-frames': 5, // 审核 GIF 动图时，最大截帧数，非必须
-        'large-image-detect': '0', // 是否需要压缩图片后再审核，非必须
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'GET',
+        Key: '1.png', // 与detect-url二选一传递
+        Query: {
+          'ci-process': 'sensitive-content-recognition', // 固定值，必须
+          'biz-type': '', // 审核类型，非必须
+          'detect-url': '', // 审核任意公网可访问的图片链接，非必须
+          interval: 5, // 审核 GIF 动图时，每隔interval帧截取一帧，非必须
+          'max-frames': 5, // 审核 GIF 动图时，最大截帧数，非必须
+          'large-image-detect': '0', // 是否需要压缩图片后再审核，非必须
+        },
       },
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 图片批量审核
@@ -52,24 +55,27 @@ export const postImagesAuditing = {
         },
       },
     });
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'POST',
-      Url: url,
-      Key: 'image/auditing',
-      ContentType: 'application/xml',
-      Body: body,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'POST',
+        Url: url,
+        Key: 'image/auditing',
+        ContentType: 'application/xml',
+        Body: body,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询图片审核任务结果
@@ -79,22 +85,25 @@ export const getImageAuditingResult = {
     const jobId = 'si8263213daf3711eca0d1525400d88xxx'; // jobId可以通过图片批量审核返回
     const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
     const url = 'https://' + host + '/image/auditing/' + jobId;
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'GET',
-      Key: '/image/auditing/' + jobId,
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'GET',
+        Key: '/image/auditing/' + jobId,
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 反馈处理结果
@@ -114,24 +123,27 @@ export const reportBadCase = {
         // ModerationTime: '',
       },
     });
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'POST',
-      Url: url,
-      Key: key,
-      ContentType: 'application/xml',
-      Body: body,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'POST',
+        Url: url,
+        Key: key,
+        ContentType: 'application/xml',
+        Body: body,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交视频审核任务
@@ -154,24 +166,27 @@ export const postVideoAuditing = {
         },
       },
     });
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'POST',
-      Url: url,
-      Key: '/video/auditing',
-      ContentType: 'application/xml',
-      Body: body,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'POST',
+        Url: url,
+        Key: '/video/auditing',
+        ContentType: 'application/xml',
+        Body: body,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询视频审核任务结果
@@ -181,22 +196,25 @@ export const getVideoAuditingResult = {
     const jobId = 'av14d9ca15af3a11eca0d6525400d88xxx'; // jobId可以通过提交视频审核任务返回
     const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
     const url = 'https://' + host + '/video/auditing/' + jobId;
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'GET',
-      Key: '/video/auditing/' + jobId,
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'GET',
+        Key: '/video/auditing/' + jobId,
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交音频审核任务
@@ -215,24 +233,27 @@ export const postAudioAuditing = {
         },
       },
     });
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'POST',
-      Url: url,
-      Key: '/audio/auditing',
-      ContentType: 'application/xml',
-      Body: body,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'POST',
+        Url: url,
+        Key: '/audio/auditing',
+        ContentType: 'application/xml',
+        Body: body,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询音频审核任务结果
@@ -242,22 +263,25 @@ export const getAudioAuditingResult = {
     const jobId = 'sa0c28d41daff411ecb23352540078cxxx'; // jobId可以通过提交音频审核任务返回
     const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
     const url = 'https://' + host + '/audio/auditing/' + jobId;
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'GET',
-      Key: '/audio/auditing/' + jobId,
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'GET',
+        Key: '/audio/auditing/' + jobId,
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交文本审核任务
@@ -277,24 +301,27 @@ export const postTextAuditing = {
         },
       },
     });
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'POST',
-      Url: url,
-      Key: '/text/auditing',
-      ContentType: 'application/xml',
-      Body: body,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'POST',
+        Url: url,
+        Key: '/text/auditing',
+        ContentType: 'application/xml',
+        Body: body,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询文本审核任务结果
@@ -304,22 +331,25 @@ export const getTextAuditingResult = {
     const jobId = 'st8d88c664aff511ecb23352540078cxxx'; // jobId可以通过提交文本审核任务返回（Input传入Object）
     const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
     const url = 'https://' + host + '/text/auditing/' + jobId;
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'GET',
-      Key: '/text/auditing/' + jobId,
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'GET',
+        Key: '/text/auditing/' + jobId,
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交文档审核任务
@@ -338,24 +368,27 @@ export const postDocumentAuditing = {
         },
       },
     });
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'POST',
-      Url: url,
-      Key: '/document/auditing',
-      ContentType: 'application/xml',
-      Body: body,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'POST',
+        Url: url,
+        Key: '/document/auditing',
+        ContentType: 'application/xml',
+        Body: body,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询文档审核任务结果
@@ -365,22 +398,25 @@ export const getDocumentAuditingResult = {
     const jobId = 'sd7815c21caff611eca12f525400d88xxx'; // jobId可以通过提交文档审核任务返回
     const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
     const url = 'https://' + host + '/document/auditing/' + jobId;
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'GET',
-      Key: '/document/auditing/' + jobId,
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'GET',
+        Key: '/document/auditing/' + jobId,
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交网页审核任务
@@ -399,24 +435,27 @@ export const postWebpageAuditing = {
         },
       },
     });
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'POST',
-      Url: url,
-      Key: '/webpage/auditing',
-      ContentType: 'application/xml',
-      Body: body,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'POST',
+        Url: url,
+        Key: '/webpage/auditing',
+        ContentType: 'application/xml',
+        Body: body,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询网页审核任务结果
@@ -426,22 +465,25 @@ export const getWebpageAuditingResult = {
     const jobId = 'shce868019aff611ecb1155254009a4xxx'; // jobId可以通过提交网页审核任务返回
     const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
     const url = 'https://' + host + '/webpage/auditing/' + jobId;
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'GET',
-      Key: '/webpage/auditing/' + jobId,
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'GET',
+        Key: '/webpage/auditing/' + jobId,
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 提交直播审核任务
@@ -465,24 +507,27 @@ export const postLiveAuditing = {
         },
       },
     });
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'POST',
-      Url: url,
-      Key: '/video/auditing',
-      ContentType: 'application/xml',
-      Body: body,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'POST',
+        Url: url,
+        Key: '/video/auditing',
+        ContentType: 'application/xml',
+        Body: body,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询直播审核任务结果
@@ -492,22 +537,25 @@ export const getLiveAuditingResult = {
     const jobId = 'av0ca69557bd6111ed904c5254009411xx'; // jobId可以通过提交直播审核任务返回
     const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com';
     const url = 'https://' + host + '/video/auditing/' + jobId;
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'GET',
-      Key: '/video/auditing/' + jobId,
-      Url: url,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'GET',
+        Key: '/video/auditing/' + jobId,
+        Url: url,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 取消直播审核
@@ -518,20 +566,23 @@ export const cancelLiveAuditing = {
     const jobId = 'av8088af71359c11eeb17c525400941xxx';
     const key = `video/cancel_auditing/${jobId}`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Method: 'POST',
-      Url: url,
-      Key: key,
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data);
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'POST',
+        Url: url,
+        Key: key,
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data);
+        }
       }
-    });
-  }
+    );
+  },
 };

@@ -1,6 +1,6 @@
 /**
  * 任务和工作流demo集合
-*/
+ */
 
 // 获取任务列表
 export const DescribeFileProcessJobs = {
@@ -9,48 +9,50 @@ export const DescribeFileProcessJobs = {
     const key = 'jobs'; // 固定值，必须
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Method: 'GET', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Query: {
-        // 拉取该队列 ID 下的任务;是否必传：否
-        // queueId: '',
-        // 拉取队列类型下的任务，和 queueId 不同时生效，同时存在时 queueId 优先;是否必传：否
-        // queueType: '',
-        // 任务的 Tag;是否必传：是，比如查找视频转动图的任务
-        tag: 'Animation',
-        // 触发该任务的工作流ID;是否必传：否
-        workflowId: '',
-        // 触发该任务的存量触发任务ID;是否必传：否
-        // inventoryTriggerJobId: '',
-        // 该任务的输入文件名，暂仅支持精确匹配;是否必传：否
-        // inputObject: '',
-        // Desc 或者 Asc。默认为 Desc;是否必传：否
-        // orderByTime: '',
-        // 请求的上下文，用于翻页。上次返回的值;是否必传：否
-        // nextToken: '',
-        // 拉取的最大任务数。默认为10。最大为100;是否必传：否
-        size: 10,
-        // 拉取该状态的任务，以,分割，支持多状态：All、Submitted、Running、Success、Failed、Pause、Cancel。默认为 All;是否必传：否
-        states: 'All',
-        // 拉取创建时间大于该时间的任务。格式为：%Y-%m-%dT%H:%m:%S%z，示例：2001-01-01T00:00:00+0800;是否必传：否
-        // startCreationTime: '',
-        // 拉取创建时间小于该时间的任务。格式为：%Y-%m-%dT%H:%m:%S%z，示例：2001-01-01T23:59:59+0800;是否必传：否
-        // endCreationTime: '',
+    cos.request(
+      {
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Query: {
+          // 拉取该队列 ID 下的任务;是否必传：否
+          // queueId: '',
+          // 拉取队列类型下的任务，和 queueId 不同时生效，同时存在时 queueId 优先;是否必传：否
+          // queueType: '',
+          // 任务的 Tag;是否必传：是，比如查找视频转动图的任务
+          tag: 'Animation',
+          // 触发该任务的工作流ID;是否必传：否
+          workflowId: '',
+          // 触发该任务的存量触发任务ID;是否必传：否
+          // inventoryTriggerJobId: '',
+          // 该任务的输入文件名，暂仅支持精确匹配;是否必传：否
+          // inputObject: '',
+          // Desc 或者 Asc。默认为 Desc;是否必传：否
+          // orderByTime: '',
+          // 请求的上下文，用于翻页。上次返回的值;是否必传：否
+          // nextToken: '',
+          // 拉取的最大任务数。默认为10。最大为100;是否必传：否
+          size: 10,
+          // 拉取该状态的任务，以,分割，支持多状态：All、Submitted、Running、Success、Failed、Pause、Cancel。默认为 All;是否必传：否
+          states: 'All',
+          // 拉取创建时间大于该时间的任务。格式为：%Y-%m-%dT%H:%m:%S%z，示例：2001-01-01T00:00:00+0800;是否必传：否
+          // startCreationTime: '',
+          // 拉取创建时间小于该时间的任务。格式为：%Y-%m-%dT%H:%m:%S%z，示例：2001-01-01T23:59:59+0800;是否必传：否
+          // endCreationTime: '',
+        },
       },
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
-
 
 // 查看指定任务
 export const getJobDetail = {
@@ -60,20 +62,23 @@ export const getJobDetail = {
     const key = `jobs/${jobId}`; // jobId: 需要查询的jobId;
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Method: 'GET', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询工作流
@@ -83,30 +88,33 @@ export const DescribeWorkflow = {
     const key = 'workflow'; // 固定值
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Method: 'GET', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Query: {
-        // 工作流 ID，以,符号分割字符串;是否必传：否
-        ids: '',
-        // 工作流名称;是否必传：否
-        name: '',
-        // 第几页;是否必传：否
-        pageNumber: '',
-        // 每页个数;是否必传：否
-        pageSize: '',
+    cos.request(
+      {
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Query: {
+          // 工作流 ID，以,符号分割字符串;是否必传：否
+          ids: '',
+          // 工作流名称;是否必传：否
+          name: '',
+          // 第几页;是否必传：否
+          pageNumber: '',
+          // 每页个数;是否必传：否
+          pageSize: '',
+        },
       },
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 新增工作流
@@ -123,7 +131,7 @@ export const CreateWorkflow = {
     const animationTemplate = 'xxx'; // 视频转动图模板
     const concatTemplate = 'xxx'; // 音视频拼接模板
     const voiceSeparateTemplate = 'xxx'; // 人声分离模板
-    const videoMontageTemplate = 'xxx';  // 精彩集锦模板
+    const videoMontageTemplate = 'xxx'; // 精彩集锦模板
     const watermarkTemplate = 'xxx'; // 视频水印模板
     const videoProcessTemplate = 'xxx'; // 视频增强模板
     const superResolutionTemplate = 'xxx'; // 超分辨率模板
@@ -294,22 +302,25 @@ export const CreateWorkflow = {
         },
       },
     });
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 更新工作流
@@ -327,7 +338,7 @@ export const UpdateWorkflow = {
     const animationTemplate = 'xxx'; // 视频转动图模板
     const concatTemplate = 'xxx'; // 音视频拼接模板
     const voiceSeparateTemplate = 'xxx'; // 人声分离模板
-    const videoMontageTemplate = 'xxx';  // 精彩集锦模板
+    const videoMontageTemplate = 'xxx'; // 精彩集锦模板
     const watermarkTemplate = 'xxx'; // 视频水印模板
     const videoProcessTemplate = 'xxx'; // 视频增强模板
     const superResolutionTemplate = 'xxx'; // 超分辨率模板
@@ -498,22 +509,25 @@ export const UpdateWorkflow = {
         },
       },
     });
-    cos.request({
-      Method: 'PUT', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'PUT', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 删除工作流
@@ -524,20 +538,23 @@ export const DeleteWorkflow = {
     const key = `workflow/${workflowId}`; // 固定格式
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Method: 'DELETE', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'DELETE', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 工作流实例列表
@@ -548,31 +565,34 @@ export const DescribeWorkflowExecutions = {
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
 
-    cos.request({
-      Method: 'GET', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Query: {
-        workflowId: 'xxx', // 工作流 ID，非必须
-        // name: '', // 文件名称，非必须
-        // orderByTime: 'Desc', // Desc 或者 Asc。默认为 Desc，非必须
-        // size: '10', // 拉取的最大任务数。默认为10。最大为100，非必须
-        // states: 'All', // 工作流实例状态，以,分割支持多状态，非必须
-        // startCreationTime: '', // 拉取创建时间大于等于该时间。格式为：%Y-%m-%dT%H:%m:%S%z，非必须
-        // endCreationTime: '', // 拉取创建时间小于等于该时间。格式为：%Y-%m-%dT%H:%m:%S%z，非必须
-        // nextToken: '', // 请求的上下文，用于翻页。下一页输入 token，非必须
-        // jobId: '' // 批量触发工作流任务 ID，用于扫描出批量触发任务 ID 对应执行的工作流实例，非必须
+    cos.request(
+      {
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Query: {
+          workflowId: 'xxx', // 工作流 ID，非必须
+          // name: '', // 文件名称，非必须
+          // orderByTime: 'Desc', // Desc 或者 Asc。默认为 Desc，非必须
+          // size: '10', // 拉取的最大任务数。默认为10。最大为100，非必须
+          // states: 'All', // 工作流实例状态，以,分割支持多状态，非必须
+          // startCreationTime: '', // 拉取创建时间大于等于该时间。格式为：%Y-%m-%dT%H:%m:%S%z，非必须
+          // endCreationTime: '', // 拉取创建时间小于等于该时间。格式为：%Y-%m-%dT%H:%m:%S%z，非必须
+          // nextToken: '', // 请求的上下文，用于翻页。下一页输入 token，非必须
+          // jobId: '' // 批量触发工作流任务 ID，用于扫描出批量触发任务 ID 对应执行的工作流实例，非必须
+        },
       },
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 获取工作流实例详情
@@ -583,20 +603,23 @@ export const DescribeWorkflowExecution = {
     const key = `workflowexecution/${runId}`; // 固定格式
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Method: 'GET', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 手动触发工作流
@@ -606,28 +629,31 @@ export const TriggerWorkflow = {
     const key = 'triggerworkflow'; // 固定值
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Query: {
-        // 需要触发的工作流 ID;是否必传：是
-        workflowId: 'xxxx',
-        // 需要进行工作流处理的对象名称, 需要进行 url 编码;是否必传：是
-        object: 'test.mp4',
-        // 存量触发任务名称，支持中文、英文、数字、—和_，长度限制128字符，默认为空;是否必传：否
-        // name: '',
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Query: {
+          // 需要触发的工作流 ID;是否必传：是
+          workflowId: 'xxxx',
+          // 需要进行工作流处理的对象名称, 需要进行 url 编码;是否必传：是
+          object: 'test.mp4',
+          // 存量触发任务名称，支持中文、英文、数字、—和_，长度限制128字符，默认为空;是否必传：否
+          // name: '',
+        },
       },
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 取消任务
@@ -638,21 +664,24 @@ export const CancelMediaJob = {
     const key = `jobs/${jobId}`; // 固定格式
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Method: 'PUT', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Action: 'cancel', // 固定值
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'PUT', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Action: 'cancel', // 固定值
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 任务列表
@@ -662,32 +691,35 @@ export const DescribeMediaJobs = {
     const key = 'jobs'; // 固定格式
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Method: 'GET', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Query: {
-        tag: 'Animation', // 任务的 Tag，这里以视频转动图任务Animation为例，必须
-        // workflowId: '', // 触发该任务的工作流ID，非必须
-        // inventoryTriggerJobId: '', // 触发该任务的存量触发任务 ID，非必须
-        // inputObject: '', // 该任务的输入文件名，暂仅支持精确匹配，非必须
-        // orderByTime: 'Desc', // Desc 或者 Asc。默认为 Desc，非必须
-        // size: '10', // 拉取的最大任务数。默认为10。最大为100，非必须
-        // states: 'All', // 工作流实例状态，以,分割支持多状态，非必须
-        // startCreationTime: '', // 拉取创建时间大于等于该时间。格式为：%Y-%m-%dT%H:%m:%S%z，非必须
-        // endCreationTime: '', // 拉取创建时间小于等于该时间。格式为：%Y-%m-%dT%H:%m:%S%z，非必须
-        // nextToken: '', // 请求的上下文，用于翻页。下一页输入 token，非必须
+    cos.request(
+      {
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Query: {
+          tag: 'Animation', // 任务的 Tag，这里以视频转动图任务Animation为例，必须
+          // workflowId: '', // 触发该任务的工作流ID，非必须
+          // inventoryTriggerJobId: '', // 触发该任务的存量触发任务 ID，非必须
+          // inputObject: '', // 该任务的输入文件名，暂仅支持精确匹配，非必须
+          // orderByTime: 'Desc', // Desc 或者 Asc。默认为 Desc，非必须
+          // size: '10', // 拉取的最大任务数。默认为10。最大为100，非必须
+          // states: 'All', // 工作流实例状态，以,分割支持多状态，非必须
+          // startCreationTime: '', // 拉取创建时间大于等于该时间。格式为：%Y-%m-%dT%H:%m:%S%z，非必须
+          // endCreationTime: '', // 拉取创建时间小于等于该时间。格式为：%Y-%m-%dT%H:%m:%S%z，非必须
+          // nextToken: '', // 请求的上下文，用于翻页。下一页输入 token，非必须
+        },
       },
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询模板列表
@@ -697,28 +729,31 @@ export const DescribeMediaTemplates = {
     const key = 'template'; // 固定格式
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Method: 'GET', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Query: {
-        tag: 'All', // 模板类型，默认值: All
-        // category: '', // Official(系统预设模板)，Custom(自定义模板)，默认值: Custom，非必须
-        // ids: '', // 模板 ID，以,符号分割字符串，非必须
-        // name: '', // 模板名称前缀，非必须
-        // pageNumber: '1', // 第几页，默认值:1，非必须
-        // pageSize: '10', // 每页个数，默认值:10，非必须
+    cos.request(
+      {
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Query: {
+          tag: 'All', // 模板类型，默认值: All
+          // category: '', // Official(系统预设模板)，Custom(自定义模板)，默认值: Custom，非必须
+          // ids: '', // 模板 ID，以,符号分割字符串，非必须
+          // name: '', // 模板名称前缀，非必须
+          // pageNumber: '1', // 第几页，默认值:1，非必须
+          // pageSize: '10', // 每页个数，默认值:10，非必须
+        },
       },
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 创建模板
@@ -745,22 +780,25 @@ export const CreateMediaTemplate = {
         },
       },
     });
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 更新模版
@@ -788,22 +826,25 @@ export const UpdateMediaTemplate = {
         },
       },
     });
-    cos.request({
-      Method: 'PUT', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'PUT', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 删除模板
@@ -814,20 +855,23 @@ export const DeleteMediaTemplate = {
     const key = `template/${templateId}`; // 固定格式
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Method: 'DELETE', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'DELETE', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 创建批量任务
@@ -842,7 +886,7 @@ export const CreateInventoryTriggerJob = {
         Name: 'demo', // 批量触发任务名称，支持中文、英文、数字、—和_，长度限制128字符
         Type: 'Workflow', // 批量处理任务类型: Workflow，也支持设置为Job
         Input: {
-          Prefix: 'inputtest',  // Object 前缀
+          Prefix: 'inputtest', // Object 前缀
         },
         Operation: {
           TimeInterval: {
@@ -853,22 +897,25 @@ export const CreateInventoryTriggerJob = {
         },
       },
     });
-    cos.request({
-      Method: 'POST', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Body: body, // 请求体参数，必须
-      ContentType: 'application/xml', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'POST', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Body: body, // 请求体参数，必须
+        ContentType: 'application/xml', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 取消批量任务
@@ -879,21 +926,24 @@ export const CancelInventoryTriggerJob = {
     const key = `inventorytriggerjob/${jobId}`; // 固定格式
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Method: 'PUT', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Action: 'cancel', // 固定值，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'PUT', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Action: 'cancel', // 固定值，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 查询单个批量任务
@@ -904,20 +954,23 @@ export const DescribeInventoryTriggerJob = {
     const key = `inventorytriggerjob/${jobId}`; // 固定格式
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Method: 'GET', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+    cos.request(
+      {
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+      },
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };
 
 // 批量任务列表
@@ -927,30 +980,33 @@ export const DescribeInventoryTriggerJobs = {
     const key = 'inventorytriggerjob'; // 固定格式
     const host = `${config.Bucket}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
-    cos.request({
-      Method: 'GET', // 固定值，必须
-      Key: key, // 必须
-      Url: url, // 请求的url，必须
-      Query: {
-        // nextToken: '', // 请求的上下文，用于翻页。下一页输入 token，非必须
-        // size: '10', // 拉取的最大任务数。默认为10。最大为100，非必须
-        // type: 'Workflow', // 拉取批量任务类型，工作流类型 Workflow 、任务类型 Job，非必须
-        // orderByTime: 'Desc', // Desc 或者 Asc。默认为 Desc，非必须
-        // states: 'All', // 工作流实例状态，以,分割支持多状态，非必须
-        // startCreationTime: '', // 拉取创建时间大于等于该时间。格式为：%Y-%m-%dT%H:%m:%S%z，非必须
-        // endCreationTime: '', // 拉取创建时间小于等于该时间。格式为：%Y-%m-%dT%H:%m:%S%z，非必须
-        // workflowId: '', // 工作流 ID，非必须
-        // jobId: '', // 批量触发任务 ID，非必须
-        // name: '', // 批量触发任务名称
+    cos.request(
+      {
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Query: {
+          // nextToken: '', // 请求的上下文，用于翻页。下一页输入 token，非必须
+          // size: '10', // 拉取的最大任务数。默认为10。最大为100，非必须
+          // type: 'Workflow', // 拉取批量任务类型，工作流类型 Workflow 、任务类型 Job，非必须
+          // orderByTime: 'Desc', // Desc 或者 Asc。默认为 Desc，非必须
+          // states: 'All', // 工作流实例状态，以,分割支持多状态，非必须
+          // startCreationTime: '', // 拉取创建时间大于等于该时间。格式为：%Y-%m-%dT%H:%m:%S%z，非必须
+          // endCreationTime: '', // 拉取创建时间小于等于该时间。格式为：%Y-%m-%dT%H:%m:%S%z，非必须
+          // workflowId: '', // 工作流 ID，非必须
+          // jobId: '', // 批量触发任务 ID，非必须
+          // name: '', // 批量触发任务名称
+        },
       },
-    }, function (err, data) {
-      if (err) {
-        // 处理请求失败
-        console.log(err);
-      } else {
-        // 处理请求成功
-        console.log(data.Response);
+      function (err, data) {
+        if (err) {
+          // 处理请求失败
+          console.log(err);
+        } else {
+          // 处理请求成功
+          console.log(data.Response);
+        }
       }
-    });
-  }
+    );
+  },
 };

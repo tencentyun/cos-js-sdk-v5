@@ -173,7 +173,7 @@ const sliceUploadMethods = [
 ];
 
 const uploadApi = ['putObject', 'postObject', 'appendObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].concat(
-  sliceUploadMethods,
+  sliceUploadMethods
 );
 const downloadApi = ['getObject'];
 
