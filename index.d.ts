@@ -409,6 +409,16 @@ declare namespace COS {
   }
   /** getBucket 接口返回值 */
   interface GetBucketResult extends GeneralResult {
+    /** 存储桶的名称，格式为<BucketName-APPID>，例如examplebucket-1250000000 */
+    Name: string;
+    /** 对象键匹配前缀，对应请求中的 prefix 参数 */
+    Prefix: string;
+    /** 起始对象键标记，从该标记之后（不含）按照 UTF-8 字典序返回对象键条目，对应请求中的 marker 参数 */
+    Marker: string;
+    /** 单次响应返回结果的最大条目数量，对应请求中的 max-keys 参数 */
+    MaxKeys: string;
+    /** 编码格式，对应请求中的 encoding-type 参数，且仅当请求中指定了 encoding-type 参数才会返回该节点 */
+    EncodingType?: string;
     /** 对象条目 */
     Contents: CosObject[];
     /** 从 prefix 或从头（如未指定 prefix）到首个 delimiter 之间相同的部分，定义为 Common Prefix。仅当请求中指定了 delimiter 参数才有可能返回该节点 */
