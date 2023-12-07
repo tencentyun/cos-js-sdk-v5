@@ -41,6 +41,7 @@ var defaultOptions = {
   DeepTracker: false, // 上报时是否对每个分块上传做单独上报
   TrackerDelay: 5000, // 周期性上报，单位毫秒。0代表实时上报
   CustomId: '', // 自定义上报id
+  AutoSwitchHost: true, // 重试请求自动切换cos备用域名
 };
 
 // 对外暴露的类
@@ -75,6 +76,12 @@ var COS = function (options) {
     console.warn(
       'warning: cos-js-sdk-v5 does not support nodejs environment. Please use cos-nodejs-sdk-v5 instead. See: https://cloud.tencent.com/document/product/436/8629'
     );
+  }
+  if (this.options.ForcePathStyle) {
+    console.warn(
+      'cos-js-sdk-v5不再支持不支持使用path-style，仅支持使用virtual-hosted-style，参考文档：https://cloud.tencent.com/document/product/436/96243'
+    );
+    throw new Error('ForcePathStyle is not supported');
   }
   event.init(this);
   task.init(this);

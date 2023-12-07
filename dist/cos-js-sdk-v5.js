@@ -8687,7 +8687,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.4.22\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.5.0\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -13393,7 +13393,7 @@ function getAuthorizationAsync(params, callback) {
 
   // 获取凭证的回调，避免用户 callback 多次
   var cbDone = false;
-  var cb = function cb(err, AuthData) {
+  var cb = function cb(err, AuthData, signInfo) {
     if (cbDone) return;
     cbDone = true;
     if (AuthData && AuthData.XCosSecurityToken && !AuthData.SecurityToken) {
@@ -13401,7 +13401,7 @@ function getAuthorizationAsync(params, callback) {
       AuthData.SecurityToken = AuthData.XCosSecurityToken;
       delete AuthData.XCosSecurityToken;
     }
-    callback && callback(err, AuthData);
+    callback && callback(err, AuthData, signInfo);
   };
   var self = this;
   var Bucket = params.Bucket || '';
@@ -13469,7 +13469,9 @@ function getAuthorizationAsync(params, callback) {
       ClientIP: StsData.ClientIP || '',
       ClientUA: StsData.ClientUA || ''
     };
-    cb(null, AuthData);
+    cb(null, AuthData, {
+      signFrom: 'client'
+    });
   };
   var checkAuthError = function checkAuthError(AuthData) {
     if (AuthData.Authorization) {
@@ -13570,7 +13572,9 @@ function getAuthorizationAsync(params, callback) {
         Authorization: Authorization,
         SecurityToken: self.options.SecurityToken || self.options.XCosSecurityToken
       };
-      cb(null, AuthData);
+      cb(null, AuthData, {
+        signFrom: 'client'
+      });
       return AuthData;
     }();
   }
@@ -13599,9 +13603,25 @@ function allowRetry(err) {
       }
     } else if (Math.floor(err.statusCode / 100) === 5) {
       allowRetry = true;
+    } else if (err.message === 'CORS blocked or network error') {
+      // 跨域/网络错误都包含在内，针对域名封禁的错误依然要重试
+      allowRetry = true;
     }
   }
   return allowRetry;
+}
+
+// cos 主域名切到备用域名
+function canSwitchHost(err, signInfo) {
+  var requestUrl = err.url || '';
+  if (!requestUrl) return false;
+  var clientCalcSign = signInfo && signInfo.signFrom === 'client';
+  if (!clientCalcSign) return;
+  var commonReg = /^https?:\/\/[^\/]*\.cos\.[^\/]*\.myqcloud\.com(\/.*)?$/;
+  var accelerateReg = /^https?:\/\/[^\/]*\.cos\.accelerate\.myqcloud\.com(\/.*)?$/;
+  // 当前域名是cos主域名才切换
+  var isCommonCosHost = commonReg.test(requestUrl) && !accelerateReg.test(requestUrl);
+  return isCommonCosHost;
 }
 
 // 获取签名并发起请求
@@ -13621,6 +13641,11 @@ function submitRequest(params, callback) {
   params.qs && (params.qs = util.clearKey(params.qs));
   var Query = util.clone(params.qs);
   params.action && (Query[params.action] = '');
+
+  /**
+   * 手动传params.SignHost的场景：cos.getService、cos.getObjectUrl
+   * 手动传Url的场景：cos.request
+  */
   var paramsUrl = params.url || params.Url;
   var SignHost = params.SignHost || getSignHost.call(this, {
     Bucket: params.Bucket,
@@ -13634,6 +13659,10 @@ function submitRequest(params, callback) {
       signStartTime: new Date().getTime(),
       retryTimes: tryTimes - 1
     });
+    if (params.SwitchHost) {
+      // 更换要签的host
+      SignHost = SignHost.replace(/myqcloud.com/, 'tencentcos.cn');
+    }
     getAuthorizationAsync.call(self, {
       Bucket: params.Bucket || '',
       Region: params.Region || '',
@@ -13645,8 +13674,9 @@ function submitRequest(params, callback) {
       Action: params.Action,
       ResourceKey: params.ResourceKey,
       Scope: params.Scope,
-      ForceSignHost: self.options.ForceSignHost
-    }, function (err, AuthData) {
+      ForceSignHost: self.options.ForceSignHost,
+      SwitchHost: params.SwitchHost
+    }, function (err, AuthData, signInfo) {
       if (err) {
         callback(err);
         return;
@@ -13669,6 +13699,9 @@ function submitRequest(params, callback) {
             params.headers['x-cos-security-token'] && delete params.headers['x-cos-security-token'];
             params.headers['x-ci-security-token'] && delete params.headers['x-ci-security-token'];
           }
+          // 进入重试逻辑时 需判断是否需要切换cos备用域名
+          var switchHost = canSwitchHost.call(self, err, signInfo);
+          params.SwitchHost = switchHost;
           next(tryTimes + 1);
         } else {
           callback(err, data);
@@ -13704,6 +13737,10 @@ function _submitRequest(params, callback) {
     region: region,
     object: object
   });
+  if (params.SwitchHost) {
+    // 更换请求的url
+    url = url.replace(/myqcloud.com/, 'tencentcos.cn');
+  }
   if (params.action) {
     // 已知问题，某些版本的qq会对url自动拼接（比如/upload被拼接成/upload=(null)）导致签名错误，这里做下兼容。
     url = url + '?' + (util.isIOS_QQ ? "".concat(params.action, "=") : params.action);
@@ -13806,6 +13843,7 @@ function _submitRequest(params, callback) {
       response && response.statusCode && (attrs.statusCode = response.statusCode);
       response && response.headers && (attrs.headers = response.headers);
       if (err) {
+        url && (attrs.url = url);
         err = util.extend(err || {}, attrs);
         callback(err, null);
       } else {
@@ -14043,7 +14081,9 @@ var defaultOptions = {
   // 上报时是否对每个分块上传做单独上报
   TrackerDelay: 5000,
   // 周期性上报，单位毫秒。0代表实时上报
-  CustomId: '' // 自定义上报id
+  CustomId: '',
+  // 自定义上报id
+  AutoSwitchHost: true // 重试请求自动切换cos备用域名
 };
 
 // 对外暴露的类
@@ -14072,6 +14112,10 @@ var COS = function COS(options) {
   if (util.isNode()) {
     console.warn('warning: cos-js-sdk-v5 不支持 nodejs 环境使用，请改用 cos-nodejs-sdk-v5，参考文档： https://cloud.tencent.com/document/product/436/8629');
     console.warn('warning: cos-js-sdk-v5 does not support nodejs environment. Please use cos-nodejs-sdk-v5 instead. See: https://cloud.tencent.com/document/product/436/8629');
+  }
+  if (this.options.ForcePathStyle) {
+    console.warn('cos-js-sdk-v5不再支持不支持使用path-style，仅支持使用virtual-hosted-style，参考文档：https://cloud.tencent.com/document/product/436/96243');
+    throw new Error('ForcePathStyle is not supported');
   }
   event.init(this);
   task.init(this);

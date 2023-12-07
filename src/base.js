@@ -3606,7 +3606,7 @@ function getAuthorizationAsync(params, callback) {
 
   // 获取凭证的回调，避免用户 callback 多次
   var cbDone = false;
-  var cb = function (err, AuthData) {
+  var cb = function (err, AuthData, signInfo) {
     if (cbDone) return;
     cbDone = true;
     if (AuthData && AuthData.XCosSecurityToken && !AuthData.SecurityToken) {
@@ -3614,7 +3614,7 @@ function getAuthorizationAsync(params, callback) {
       AuthData.SecurityToken = AuthData.XCosSecurityToken;
       delete AuthData.XCosSecurityToken;
     }
-    callback && callback(err, AuthData);
+    callback && callback(err, AuthData, signInfo);
   };
 
   var self = this;
@@ -3688,7 +3688,7 @@ function getAuthorizationAsync(params, callback) {
       ClientIP: StsData.ClientIP || '',
       ClientUA: StsData.ClientUA || '',
     };
-    cb(null, AuthData);
+    cb(null, AuthData, { signFrom: 'client' });
   };
   var checkAuthError = function (AuthData) {
     if (AuthData.Authorization) {
@@ -3811,7 +3811,7 @@ function getAuthorizationAsync(params, callback) {
         Authorization: Authorization,
         SecurityToken: self.options.SecurityToken || self.options.XCosSecurityToken,
       };
-      cb(null, AuthData);
+      cb(null, AuthData, { signFrom: 'client' });
       return AuthData;
     })();
   }
@@ -3846,9 +3846,25 @@ function allowRetry(err) {
       }
     } else if (Math.floor(err.statusCode / 100) === 5) {
       allowRetry = true;
+    } else if (err.message === 'CORS blocked or network error') {
+      // 跨域/网络错误都包含在内，针对域名封禁的错误依然要重试
+      allowRetry = true;
     }
   }
   return allowRetry;
+}
+
+// cos 主域名切到备用域名
+function canSwitchHost(err, signInfo) {
+  const requestUrl = err.url || '';
+  if (!requestUrl) return false;
+  const clientCalcSign = signInfo && signInfo.signFrom === 'client';
+  if (!clientCalcSign) return;
+  const commonReg = /^https?:\/\/[^\/]*\.cos\.[^\/]*\.myqcloud\.com(\/.*)?$/;
+  const accelerateReg = /^https?:\/\/[^\/]*\.cos\.accelerate\.myqcloud\.com(\/.*)?$/;
+  // 当前域名是cos主域名才切换
+  const isCommonCosHost = commonReg.test(requestUrl) && !accelerateReg.test(requestUrl);
+  return isCommonCosHost;
 }
 
 // 获取签名并发起请求
@@ -3870,6 +3886,10 @@ function submitRequest(params, callback) {
   var Query = util.clone(params.qs);
   params.action && (Query[params.action] = '');
 
+  /**
+   * 手动传params.SignHost的场景：cos.getService、cos.getObjectUrl
+   * 手动传Url的场景：cos.request
+   */
   var paramsUrl = params.url || params.Url;
   var SignHost =
     params.SignHost || getSignHost.call(this, { Bucket: params.Bucket, Region: params.Region, Url: paramsUrl });
@@ -3877,6 +3897,10 @@ function submitRequest(params, callback) {
   var next = function (tryTimes) {
     var oldClockOffset = self.options.SystemClockOffset;
     tracker && tracker.setParams({ signStartTime: new Date().getTime(), retryTimes: tryTimes - 1 });
+    if (params.SwitchHost) {
+      // 更换要签的host
+      SignHost = SignHost.replace(/myqcloud.com/, 'tencentcos.cn');
+    }
     getAuthorizationAsync.call(
       self,
       {
@@ -3891,8 +3915,9 @@ function submitRequest(params, callback) {
         ResourceKey: params.ResourceKey,
         Scope: params.Scope,
         ForceSignHost: self.options.ForceSignHost,
+        SwitchHost: params.SwitchHost,
       },
-      function (err, AuthData) {
+      function (err, AuthData, signInfo) {
         if (err) {
           callback(err);
           return;
@@ -3914,6 +3939,9 @@ function submitRequest(params, callback) {
               params.headers['x-cos-security-token'] && delete params.headers['x-cos-security-token'];
               params.headers['x-ci-security-token'] && delete params.headers['x-ci-security-token'];
             }
+            // 进入重试逻辑时 需判断是否需要切换cos备用域名
+            const switchHost = canSwitchHost.call(self, err, signInfo);
+            params.SwitchHost = switchHost;
             next(tryTimes + 1);
           } else {
             callback(err, data);
@@ -3953,6 +3981,11 @@ function _submitRequest(params, callback) {
       region: region,
       object: object,
     });
+
+  if (params.SwitchHost) {
+    // 更换请求的url
+    url = url.replace(/myqcloud.com/, 'tencentcos.cn');
+  }
   if (params.action) {
     // 已知问题，某些版本的qq会对url自动拼接（比如/upload被拼接成/upload=(null)）导致签名错误，这里做下兼容。
     url = url + '?' + (util.isIOS_QQ ? `${params.action}=` : params.action);
@@ -4055,6 +4088,7 @@ function _submitRequest(params, callback) {
       response && response.headers && (attrs.headers = response.headers);
 
       if (err) {
+        url && (attrs.url = url);
         err = util.extend(err || {}, attrs);
         callback(err, null);
       } else {
