@@ -13613,6 +13613,7 @@ function allowRetry(err) {
 
 // cos 主域名切到备用域名
 function canSwitchHost(err, signInfo) {
+  if (!this.options.AutoSwitchHost) return false;
   var requestUrl = err.url || '';
   if (!requestUrl) return false;
   var clientCalcSign = signInfo && signInfo.signFrom === 'client';
@@ -13645,7 +13646,7 @@ function submitRequest(params, callback) {
   /**
    * 手动传params.SignHost的场景：cos.getService、cos.getObjectUrl
    * 手动传Url的场景：cos.request
-  */
+   */
   var paramsUrl = params.url || params.Url;
   var SignHost = params.SignHost || getSignHost.call(this, {
     Bucket: params.Bucket,
@@ -13691,6 +13692,11 @@ function submitRequest(params, callback) {
           httpEndTime: new Date().getTime()
         });
         if (err && tryTimes < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
+          // 如果是网络错误 但配置了不切换域名 则不需要重试
+          if (!self.options.AutoSwitchHost && (err === null || err === void 0 ? void 0 : err.message) === 'CORS blocked or network error') {
+            callback(err, data);
+            return;
+          }
           if (params.headers) {
             delete params.headers.Authorization;
             delete params.headers['token'];

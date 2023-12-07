@@ -3856,6 +3856,7 @@ function allowRetry(err) {
 
 // cos 主域名切到备用域名
 function canSwitchHost(err, signInfo) {
+  if (!this.options.AutoSwitchHost) return false;
   const requestUrl = err.url || '';
   if (!requestUrl) return false;
   const clientCalcSign = signInfo && signInfo.signFrom === 'client';
@@ -3931,6 +3932,11 @@ function submitRequest(params, callback) {
             tryTimes < 2 &&
             (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))
           ) {
+            // 如果是网络错误 但配置了不切换域名 则不需要重试
+            if (!self.options.AutoSwitchHost && err?.message === 'CORS blocked or network error') {
+              callback(err, data);
+              return;
+            }
             if (params.headers) {
               delete params.headers.Authorization;
               delete params.headers['token'];
