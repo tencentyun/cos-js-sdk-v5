@@ -191,6 +191,7 @@ declare namespace COS {
     DeepTracker?: boolean;
     TrackerDelay?: number;
     CustomId?: string;
+    /** 请求失败时是否用备用域名重试，默认为true */
     AutoSwitchHost?: boolean;
     /** 链路上报 */
     /** 获取签名的回调方法，如果没有 SecretId、SecretKey 时，必选 */

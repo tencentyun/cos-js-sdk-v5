@@ -79,7 +79,7 @@ var COS = function (options) {
   }
   if (this.options.ForcePathStyle) {
     console.warn(
-      'cos-js-sdk-v5不再支持不支持使用path-style，仅支持使用virtual-hosted-style，参考文档：https://cloud.tencent.com/document/product/436/96243'
+      'cos-js-sdk-v5不再支持使用path-style，仅支持使用virtual-hosted-style，参考文档：https://cloud.tencent.com/document/product/436/96243'
     );
     throw new Error('ForcePathStyle is not supported');
   }
