@@ -13393,7 +13393,7 @@ function getAuthorizationAsync(params, callback) {
 
   // 获取凭证的回调，避免用户 callback 多次
   var cbDone = false;
-  var cb = function cb(err, AuthData, signInfo) {
+  var cb = function cb(err, AuthData) {
     if (cbDone) return;
     cbDone = true;
     if (AuthData && AuthData.XCosSecurityToken && !AuthData.SecurityToken) {
@@ -13401,7 +13401,7 @@ function getAuthorizationAsync(params, callback) {
       AuthData.SecurityToken = AuthData.XCosSecurityToken;
       delete AuthData.XCosSecurityToken;
     }
-    callback && callback(err, AuthData, signInfo);
+    callback && callback(err, AuthData);
   };
   var self = this;
   var Bucket = params.Bucket || '';
@@ -13467,11 +13467,10 @@ function getAuthorizationAsync(params, callback) {
       SecurityToken: StsData.SecurityToken || StsData.XCosSecurityToken || '',
       Token: StsData.Token || '',
       ClientIP: StsData.ClientIP || '',
-      ClientUA: StsData.ClientUA || ''
+      ClientUA: StsData.ClientUA || '',
+      SignFrom: 'client'
     };
-    cb(null, AuthData, {
-      signFrom: 'client'
-    });
+    cb(null, AuthData);
   };
   var checkAuthError = function checkAuthError(AuthData) {
     if (AuthData.Authorization) {
@@ -13570,21 +13569,22 @@ function getAuthorizationAsync(params, callback) {
       });
       var AuthData = {
         Authorization: Authorization,
-        SecurityToken: self.options.SecurityToken || self.options.XCosSecurityToken
+        SecurityToken: self.options.SecurityToken || self.options.XCosSecurityToken,
+        SignFrom: 'client'
       };
-      cb(null, AuthData, {
-        signFrom: 'client'
-      });
+      cb(null, AuthData);
       return AuthData;
     }();
   }
   return '';
 }
 
-// 调整时间偏差
+// 判断当前请求出错时能否重试
 function allowRetry(err) {
-  var allowRetry = false;
+  var self = this;
+  var canRetry = false;
   var isTimeError = false;
+  var networkError = false;
   var serverDate = err.headers && (err.headers.date || err.headers.Date) || err.error && err.error.ServerTime;
   try {
     var errorCode = err.error.Code;
@@ -13594,30 +13594,42 @@ function allowRetry(err) {
     }
   } catch (e) {}
   if (err) {
+    // 调整时间偏差
     if (isTimeError && serverDate) {
       var serverTime = Date.parse(serverDate);
       if (this.options.CorrectClockSkew && Math.abs(util.getSkewTime(this.options.SystemClockOffset) - serverTime) >= 30000) {
         console.error('error: Local time is too skewed.');
         this.options.SystemClockOffset = serverTime - Date.now();
-        allowRetry = true;
+        canRetry = true;
       }
     } else if (Math.floor(err.statusCode / 100) === 5) {
-      allowRetry = true;
+      canRetry = true;
     } else if (err.message === 'CORS blocked or network error') {
-      // 跨域/网络错误都包含在内，针对域名封禁的错误依然要重试
-      allowRetry = true;
+      // 跨域/网络错误都包含在内，针对域名封禁的错误依然要重试，支持手动设置不重试
+      networkError = true;
+      canRetry = self.options.AutoSwitchHost;
     }
   }
-  return allowRetry;
+  return {
+    canRetry: canRetry,
+    networkError: networkError
+  };
 }
 
-// cos 主域名切到备用域名
-function canSwitchHost(err, signInfo) {
+/**
+ * 判断能否从cos主域名切到备用域名
+ * requestUrl：请求的url，用于判断是否cos主域名，true才切
+ * clientCalcSign：是否客户端计算签名，服务端返回的签名不能切，true才切
+ * networkError：是否未知网络错误，true才切
+ * */
+function canSwitchHost(_ref) {
+  var requestUrl = _ref.requestUrl,
+    clientCalcSign = _ref.clientCalcSign,
+    networkError = _ref.networkError;
   if (!this.options.AutoSwitchHost) return false;
-  var requestUrl = err.url || '';
   if (!requestUrl) return false;
-  var clientCalcSign = signInfo && signInfo.signFrom === 'client';
-  if (!clientCalcSign) return;
+  if (!clientCalcSign) return false;
+  if (!networkError) return false;
   var commonReg = /^https?:\/\/[^\/]*\.cos\.[^\/]*\.myqcloud\.com(\/.*)?$/;
   var accelerateReg = /^https?:\/\/[^\/]*\.cos\.accelerate\.myqcloud\.com(\/.*)?$/;
   // 当前域名是cos主域名才切换
@@ -13677,7 +13689,7 @@ function submitRequest(params, callback) {
       Scope: params.Scope,
       ForceSignHost: self.options.ForceSignHost,
       SwitchHost: params.SwitchHost
-    }, function (err, AuthData, signInfo) {
+    }, function (err, AuthData) {
       if (err) {
         callback(err);
         return;
@@ -13691,12 +13703,14 @@ function submitRequest(params, callback) {
         tracker && tracker.setParams({
           httpEndTime: new Date().getTime()
         });
-        if (err && tryTimes < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
-          // 如果是网络错误 但配置了不切换域名 则不需要重试
-          if (!self.options.AutoSwitchHost && (err === null || err === void 0 ? void 0 : err.message) === 'CORS blocked or network error') {
-            callback(err, data);
-            return;
-          }
+        var canRetry = false;
+        var networkError = false;
+        if (err) {
+          var info = allowRetry.call(self, err);
+          canRetry = info.canRetry || oldClockOffset !== self.options.SystemClockOffset;
+          networkError = info.networkError;
+        }
+        if (err && tryTimes < 2 && canRetry) {
           if (params.headers) {
             delete params.headers.Authorization;
             delete params.headers['token'];
@@ -13706,7 +13720,11 @@ function submitRequest(params, callback) {
             params.headers['x-ci-security-token'] && delete params.headers['x-ci-security-token'];
           }
           // 进入重试逻辑时 需判断是否需要切换cos备用域名
-          var switchHost = canSwitchHost.call(self, err, signInfo);
+          var switchHost = canSwitchHost.call(self, {
+            requestUrl: (err === null || err === void 0 ? void 0 : err.url) || '',
+            clientCalcSign: AuthData.SignFrom === 'client',
+            networkError: networkError
+          });
           params.SwitchHost = switchHost;
           next(tryTimes + 1);
         } else {
@@ -13849,7 +13867,8 @@ function _submitRequest(params, callback) {
       response && response.statusCode && (attrs.statusCode = response.statusCode);
       response && response.headers && (attrs.headers = response.headers);
       if (err) {
-        url && (attrs.url = url);
+        opt.url && (attrs.url = opt.url);
+        opt.method && (attrs.method = opt.method);
         err = util.extend(err || {}, attrs);
         callback(err, null);
       } else {
