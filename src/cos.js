@@ -41,7 +41,7 @@ var defaultOptions = {
   DeepTracker: false, // 上报时是否对每个分块上传做单独上报
   TrackerDelay: 5000, // 周期性上报，单位毫秒。0代表实时上报
   CustomId: '', // 自定义上报id
-  AutoSwitchHost: true, // 重试请求自动切换cos备用域名
+  AutoSwitchHost: true,
 };
 
 // 对外暴露的类
