@@ -2119,22 +2119,18 @@ module.exports = function (obj, options) {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(process, global, module) {var __WEBPACK_AMD_DEFINE_RESULT__;var _typeof = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_modules/@babel/runtime/helpers/typeof.js");
+/* WEBPACK VAR INJECTION */(function(module) {var __WEBPACK_AMD_DEFINE_RESULT__;var _typeof = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_modules/@babel/runtime/helpers/typeof.js");
 /* https://github.com/emn178/js-md5 */
 (function () {
   'use strict';
 
-  var ERROR = 'input is invalid type';
   var WINDOW = (typeof window === "undefined" ? "undefined" : _typeof(window)) === 'object';
   var root = WINDOW ? window : {};
   if (root.JS_MD5_NO_WINDOW) {
     WINDOW = false;
   }
   var WEB_WORKER = !WINDOW && (typeof self === "undefined" ? "undefined" : _typeof(self)) === 'object';
-  var NODE_JS = !root.JS_MD5_NO_NODE_JS && (typeof process === "undefined" ? "undefined" : _typeof(process)) === 'object' && process.versions && process.versions.node;
-  if (NODE_JS) {
-    root = global;
-  } else if (WEB_WORKER) {
+  if (WEB_WORKER) {
     root = self;
   }
   var COMMON_JS = !root.JS_MD5_NO_COMMON_JS && ( false ? undefined : _typeof(module)) === 'object' && module.exports;
@@ -2248,9 +2244,6 @@ module.exports = function (obj, options) {
    */
   var createMethod = function createMethod() {
     var method = createOutputMethod('hex');
-    if (NODE_JS) {
-      method = nodeWrap(method);
-    }
     method.getCtx = method.create = function () {
       return new Md5();
     };
@@ -2262,27 +2255,6 @@ module.exports = function (obj, options) {
       method[type] = createOutputMethod(type);
     }
     return method;
-  };
-  var nodeWrap = function nodeWrap(method) {
-    var crypto = eval("require('crypto')");
-    var Buffer = eval("require('buffer').Buffer");
-    var nodeMethod = function nodeMethod(message) {
-      if (typeof message === 'string') {
-        return crypto.createHash('md5').update(message, 'utf8').digest('hex');
-      } else {
-        if (message === null || message === undefined) {
-          throw ERROR;
-        } else if (message.constructor === ArrayBuffer) {
-          message = new Uint8Array(message);
-        }
-      }
-      if (Array.isArray(message) || ArrayBuffer.isView(message) || message.constructor === Buffer) {
-        return crypto.createHash('md5').update(new Buffer(message)).digest('hex');
-      } else {
-        return method(message);
-      }
-    };
-    return nodeMethod;
   };
 
   /**
@@ -2738,7 +2710,7 @@ module.exports = function (obj, options) {
     }
   }
 })();
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/process/browser.js */ "./node_modules/process/browser.js"), __webpack_require__(/*! ./../node_modules/webpack/buildin/global.js */ "./node_modules/webpack/buildin/global.js"), __webpack_require__(/*! ./../node_modules/webpack/buildin/module.js */ "./node_modules/webpack/buildin/module.js")(module)))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/webpack/buildin/module.js */ "./node_modules/webpack/buildin/module.js")(module)))
 
 /***/ }),
 
@@ -2855,6 +2827,7 @@ var request = function request(opt, callback) {
 
   // success 2xx/3xx/4xx
   xhr.onload = function () {
+    console.log('2xx/3xx/4xx');
     callback(xhrRes(null, xhr, xhrBody(xhr, opt.dataType)));
   };
 
@@ -2867,6 +2840,8 @@ var request = function request(opt, callback) {
     } else {
       // 0
       var error = xhr.statusText;
+      console.log('err========', JSON.stringify(err));
+      console.log('error==========', JSON.stringify(error));
       if (!error && xhr.status === 0) error = new Error('CORS blocked or network error');
       callback(xhrRes(error, xhr, body));
     }
@@ -8616,37 +8591,6 @@ module.exports = __webpack_amd_options__;
 
 /***/ }),
 
-/***/ "./node_modules/webpack/buildin/global.js":
-/*!***********************************!*\
-  !*** (webpack)/buildin/global.js ***!
-  \***********************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-var g;
-
-// This works in non-strict mode
-g = (function() {
-	return this;
-})();
-
-try {
-	// This works if eval is allowed (see CSP)
-	g = g || new Function("return this")();
-} catch (e) {
-	// This works if the window reference is available
-	if (typeof window === "object") g = window;
-}
-
-// g can still be undefined, but nothing to do about it...
-// We return undefined, instead of nothing here, so it's
-// easier to handle this case. if(!global) { ...}
-
-module.exports = g;
-
-
-/***/ }),
-
 /***/ "./node_modules/webpack/buildin/module.js":
 /*!***********************************!*\
   !*** (webpack)/buildin/module.js ***!
@@ -13372,9 +13316,7 @@ var getSignHost = function getSignHost(opt) {
     region: useAccelerate ? 'accelerate' : opt.Region
   });
   var urlHost = url.replace(/^https?:\/\/([^/]+)(\/.*)?$/, '$1');
-  var standardHostReg = new RegExp('^([a-z\\d-]+-\\d+\\.)?(cos|cosv6|ci|pic)\\.([a-z\\d-]+)\\.myqcloud\\.com$');
-  if (standardHostReg.test(urlHost)) return urlHost;
-  return '';
+  return urlHost;
 };
 
 // 异步获取签名
