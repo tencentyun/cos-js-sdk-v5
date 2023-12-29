@@ -2999,7 +2999,7 @@ function multipartComplete(params, callback) {
   }
 
   var xml = util.json2xml({ CompleteMultipartUpload: { Part: Parts } });
-  // CSP/ceph CompleteMultipartUpload 接口 body 写死了限制 1MB，这里醉倒 10000 片时，xml 字符串去掉空格853KB
+  // CSP/ceph CompleteMultipartUpload 接口 body 写死了限制 1MB，这里最多 10000 片时，xml 字符串去掉空格853KB
   xml = xml.replace(/\n\s*/g, '');
 
   var headers = params.Headers;
@@ -3937,6 +3937,7 @@ function submitRequest(params, callback) {
           let canRetry = false;
           let networkError = false;
           if (err) {
+            console.log('_submitRequest err', JSON.stringify(err));
             const info = allowRetry.call(self, err);
             canRetry = info.canRetry || oldClockOffset !== self.options.SystemClockOffset;
             networkError = info.networkError;

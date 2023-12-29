@@ -12783,7 +12783,7 @@ function multipartComplete(params, callback) {
       Part: Parts
     }
   });
-  // CSP/ceph CompleteMultipartUpload 接口 body 写死了限制 1MB，这里醉倒 10000 片时，xml 字符串去掉空格853KB
+  // CSP/ceph CompleteMultipartUpload 接口 body 写死了限制 1MB，这里最多 10000 片时，xml 字符串去掉空格853KB
   xml = xml.replace(/\n\s*/g, '');
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
@@ -13647,6 +13647,7 @@ function submitRequest(params, callback) {
         var canRetry = false;
         var networkError = false;
         if (err) {
+          console.log('_submitRequest err', JSON.stringify(err));
           var info = allowRetry.call(self, err);
           canRetry = info.canRetry || oldClockOffset !== self.options.SystemClockOffset;
           networkError = info.networkError;
