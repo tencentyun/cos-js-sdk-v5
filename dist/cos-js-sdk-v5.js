@@ -2827,7 +2827,6 @@ var request = function request(opt, callback) {
 
   // success 2xx/3xx/4xx
   xhr.onload = function () {
-    console.log('2xx/3xx/4xx');
     callback(xhrRes(null, xhr, xhrBody(xhr, opt.dataType)));
   };
 
@@ -2840,8 +2839,6 @@ var request = function request(opt, callback) {
     } else {
       // 0
       var error = xhr.statusText;
-      console.log('err========', JSON.stringify(err));
-      console.log('error==========', JSON.stringify(error));
       if (!error && xhr.status === 0) error = new Error('CORS blocked or network error');
       callback(xhrRes(error, xhr, body));
     }
@@ -13647,7 +13644,6 @@ function submitRequest(params, callback) {
         var canRetry = false;
         var networkError = false;
         if (err) {
-          console.log('_submitRequest err', JSON.stringify(err));
           var info = allowRetry.call(self, err);
           canRetry = info.canRetry || oldClockOffset !== self.options.SystemClockOffset;
           networkError = info.networkError;
@@ -15342,7 +15338,7 @@ var hasMissingParams = function hasMissingParams(apiName, params) {
   if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList' || apiName === 'listObjectVersions') {
     if (checkBucket && !Bucket) return 'Bucket';
     if (checkRegion && !Region) return 'Region';
-  } else if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask') {
+  } else if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask' || apiName === 'uploadFile') {
     if (checkBucket && !Bucket) return 'Bucket';
     if (checkRegion && !Region) return 'Region';
     if (!Key) return 'Key';

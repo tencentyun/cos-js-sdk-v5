@@ -3937,7 +3937,6 @@ function submitRequest(params, callback) {
           let canRetry = false;
           let networkError = false;
           if (err) {
-            console.log('_submitRequest err', JSON.stringify(err));
             const info = allowRetry.call(self, err);
             canRetry = info.canRetry || oldClockOffset !== self.options.SystemClockOffset;
             networkError = info.networkError;
