@@ -5,7 +5,7 @@
   "main": "dist/cos-js-sdk-v5.js",
   "types": "index.d.ts",
   "scripts": {
-    "prettier": "prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js index.d.ts",
+    "prettier": "prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js lib/request.js index.d.ts",
     "server": "node server/sts.js",
     "dev": "cross-env NODE_ENV=development webpack -w --mode=development",
     "build": "cross-env NODE_ENV=production webpack --mode=production",
