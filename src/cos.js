@@ -41,6 +41,7 @@ var defaultOptions = {
   DeepTracker: false, // 上报时是否对每个分块上传做单独上报
   TrackerDelay: 5000, // 周期性上报，单位毫秒。0代表实时上报
   CustomId: '', // 自定义上报id
+  AutoSwitchHost: true,
 };
 
 // 对外暴露的类
@@ -69,12 +70,19 @@ var COS = function (options) {
     console.error('error: SecretKey format is incorrect. Please check');
   }
   if (util.isNode()) {
+    console.log('Tip: Next.js、Nuxt.js 等服务端渲染技术可正常使用JavaScript SDK，请忽略下方 nodejs 环境警告');
     console.warn(
       'warning: cos-js-sdk-v5 不支持 nodejs 环境使用，请改用 cos-nodejs-sdk-v5，参考文档： https://cloud.tencent.com/document/product/436/8629'
     );
     console.warn(
       'warning: cos-js-sdk-v5 does not support nodejs environment. Please use cos-nodejs-sdk-v5 instead. See: https://cloud.tencent.com/document/product/436/8629'
     );
+  }
+  if (this.options.ForcePathStyle) {
+    console.warn(
+      'cos-js-sdk-v5不再支持使用path-style，仅支持使用virtual-hosted-style，参考文档：https://cloud.tencent.com/document/product/436/96243'
+    );
+    throw new Error('ForcePathStyle is not supported');
   }
   event.init(this);
   task.init(this);

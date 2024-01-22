@@ -8628,7 +8628,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.5.0\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.6.0\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js lib/request.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -12780,7 +12780,7 @@ function multipartComplete(params, callback) {
       Part: Parts
     }
   });
-  // CSP/ceph CompleteMultipartUpload 接口 body 写死了限制 1MB，这里醉倒 10000 片时，xml 字符串去掉空格853KB
+  // CSP/ceph CompleteMultipartUpload 接口 body 写死了限制 1MB，这里最多 10000 片时，xml 字符串去掉空格853KB
   xml = xml.replace(/\n\s*/g, '');
   var headers = params.Headers;
   headers['Content-Type'] = 'application/xml';
@@ -13406,7 +13406,8 @@ function getAuthorizationAsync(params, callback) {
       SecurityToken: StsData.SecurityToken || StsData.XCosSecurityToken || '',
       Token: StsData.Token || '',
       ClientIP: StsData.ClientIP || '',
-      ClientUA: StsData.ClientUA || ''
+      ClientUA: StsData.ClientUA || '',
+      SignFrom: 'client'
     };
     cb(null, AuthData);
   };
@@ -13507,7 +13508,8 @@ function getAuthorizationAsync(params, callback) {
       });
       var AuthData = {
         Authorization: Authorization,
-        SecurityToken: self.options.SecurityToken || self.options.XCosSecurityToken
+        SecurityToken: self.options.SecurityToken || self.options.XCosSecurityToken,
+        SignFrom: 'client'
       };
       cb(null, AuthData);
       return AuthData;
@@ -13516,10 +13518,12 @@ function getAuthorizationAsync(params, callback) {
   return '';
 }
 
-// 调整时间偏差
+// 判断当前请求出错时能否重试
 function allowRetry(err) {
-  var allowRetry = false;
+  var self = this;
+  var canRetry = false;
   var isTimeError = false;
+  var networkError = false;
   var serverDate = err.headers && (err.headers.date || err.headers.Date) || err.error && err.error.ServerTime;
   try {
     var errorCode = err.error.Code;
@@ -13529,18 +13533,46 @@ function allowRetry(err) {
     }
   } catch (e) {}
   if (err) {
+    // 调整时间偏差
     if (isTimeError && serverDate) {
       var serverTime = Date.parse(serverDate);
       if (this.options.CorrectClockSkew && Math.abs(util.getSkewTime(this.options.SystemClockOffset) - serverTime) >= 30000) {
         console.error('error: Local time is too skewed.');
         this.options.SystemClockOffset = serverTime - Date.now();
-        allowRetry = true;
+        canRetry = true;
       }
     } else if (Math.floor(err.statusCode / 100) === 5) {
-      allowRetry = true;
+      canRetry = true;
+    } else if (err.message === 'CORS blocked or network error') {
+      // 跨域/网络错误都包含在内
+      networkError = true;
+      canRetry = self.options.AutoSwitchHost;
     }
   }
-  return allowRetry;
+  return {
+    canRetry: canRetry,
+    networkError: networkError
+  };
+}
+
+/**
+ * requestUrl：请求的url，用于判断是否cos主域名，true才切
+ * clientCalcSign：是否客户端计算签名，服务端返回的签名不能切，true才切
+ * networkError：是否未知网络错误，true才切
+ * */
+function canSwitchHost(_ref) {
+  var requestUrl = _ref.requestUrl,
+    clientCalcSign = _ref.clientCalcSign,
+    networkError = _ref.networkError;
+  if (!this.options.AutoSwitchHost) return false;
+  if (!requestUrl) return false;
+  if (!clientCalcSign) return false;
+  if (!networkError) return false;
+  var commonReg = /^https?:\/\/[^\/]*\.cos\.[^\/]*\.myqcloud\.com(\/.*)?$/;
+  var accelerateReg = /^https?:\/\/[^\/]*\.cos\.accelerate\.myqcloud\.com(\/.*)?$/;
+  // 当前域名是cos主域名才切换
+  var isCommonCosHost = commonReg.test(requestUrl) && !accelerateReg.test(requestUrl);
+  return isCommonCosHost;
 }
 
 // 获取签名并发起请求
@@ -13560,6 +13592,11 @@ function submitRequest(params, callback) {
   params.qs && (params.qs = util.clearKey(params.qs));
   var Query = util.clone(params.qs);
   params.action && (Query[params.action] = '');
+
+  /**
+   * 手动传params.SignHost的场景：cos.getService、cos.getObjectUrl
+   * 手动传Url的场景：cos.request
+   */
   var paramsUrl = params.url || params.Url;
   var SignHost = params.SignHost || getSignHost.call(this, {
     Bucket: params.Bucket,
@@ -13573,6 +13610,10 @@ function submitRequest(params, callback) {
       signStartTime: new Date().getTime(),
       retryTimes: tryTimes - 1
     });
+    if (params.SwitchHost) {
+      // 更换要签的host
+      SignHost = SignHost.replace(/myqcloud.com/, 'tencentcos.cn');
+    }
     getAuthorizationAsync.call(self, {
       Bucket: params.Bucket || '',
       Region: params.Region || '',
@@ -13584,7 +13625,8 @@ function submitRequest(params, callback) {
       Action: params.Action,
       ResourceKey: params.ResourceKey,
       Scope: params.Scope,
-      ForceSignHost: self.options.ForceSignHost
+      ForceSignHost: self.options.ForceSignHost,
+      SwitchHost: params.SwitchHost
     }, function (err, AuthData) {
       if (err) {
         callback(err);
@@ -13599,7 +13641,14 @@ function submitRequest(params, callback) {
         tracker && tracker.setParams({
           httpEndTime: new Date().getTime()
         });
-        if (err && tryTimes < 2 && (oldClockOffset !== self.options.SystemClockOffset || allowRetry.call(self, err))) {
+        var canRetry = false;
+        var networkError = false;
+        if (err) {
+          var info = allowRetry.call(self, err);
+          canRetry = info.canRetry || oldClockOffset !== self.options.SystemClockOffset;
+          networkError = info.networkError;
+        }
+        if (err && tryTimes < 2 && canRetry) {
           if (params.headers) {
             delete params.headers.Authorization;
             delete params.headers['token'];
@@ -13608,6 +13657,13 @@ function submitRequest(params, callback) {
             params.headers['x-cos-security-token'] && delete params.headers['x-cos-security-token'];
             params.headers['x-ci-security-token'] && delete params.headers['x-ci-security-token'];
           }
+          // 进入重试逻辑时 需判断是否需要切换cos备用域名
+          var switchHost = canSwitchHost.call(self, {
+            requestUrl: (err === null || err === void 0 ? void 0 : err.url) || '',
+            clientCalcSign: AuthData.SignFrom === 'client',
+            networkError: networkError
+          });
+          params.SwitchHost = switchHost;
           next(tryTimes + 1);
         } else {
           callback(err, data);
@@ -13643,6 +13699,10 @@ function _submitRequest(params, callback) {
     region: region,
     object: object
   });
+  if (params.SwitchHost) {
+    // 更换请求的url
+    url = url.replace(/myqcloud.com/, 'tencentcos.cn');
+  }
   if (params.action) {
     // 已知问题，某些版本的qq会对url自动拼接（比如/upload被拼接成/upload=(null)）导致签名错误，这里做下兼容。
     url = url + '?' + (util.isIOS_QQ ? "".concat(params.action, "=") : params.action);
@@ -13745,6 +13805,8 @@ function _submitRequest(params, callback) {
       response && response.statusCode && (attrs.statusCode = response.statusCode);
       response && response.headers && (attrs.headers = response.headers);
       if (err) {
+        opt.url && (attrs.url = opt.url);
+        opt.method && (attrs.method = opt.method);
         err = util.extend(err || {}, attrs);
         callback(err, null);
       } else {
@@ -13982,7 +14044,9 @@ var defaultOptions = {
   // 上报时是否对每个分块上传做单独上报
   TrackerDelay: 5000,
   // 周期性上报，单位毫秒。0代表实时上报
-  CustomId: '' // 自定义上报id
+  CustomId: '',
+  // 自定义上报id
+  AutoSwitchHost: true
 };
 
 // 对外暴露的类
@@ -14009,8 +14073,13 @@ var COS = function COS(options) {
     console.error('error: SecretKey format is incorrect. Please check');
   }
   if (util.isNode()) {
+    console.log('Tip: Next.js、Nuxt.js 等服务端渲染技术可正常使用JavaScript SDK，请忽略下方 nodejs 环境警告');
     console.warn('warning: cos-js-sdk-v5 不支持 nodejs 环境使用，请改用 cos-nodejs-sdk-v5，参考文档： https://cloud.tencent.com/document/product/436/8629');
     console.warn('warning: cos-js-sdk-v5 does not support nodejs environment. Please use cos-nodejs-sdk-v5 instead. See: https://cloud.tencent.com/document/product/436/8629');
+  }
+  if (this.options.ForcePathStyle) {
+    console.warn('cos-js-sdk-v5不再支持使用path-style，仅支持使用virtual-hosted-style，参考文档：https://cloud.tencent.com/document/product/436/96243');
+    throw new Error('ForcePathStyle is not supported');
   }
   event.init(this);
   task.init(this);
@@ -15270,7 +15339,7 @@ var hasMissingParams = function hasMissingParams(apiName, params) {
   if (apiName.indexOf('Bucket') > -1 || apiName === 'deleteMultipleObject' || apiName === 'multipartList' || apiName === 'listObjectVersions') {
     if (checkBucket && !Bucket) return 'Bucket';
     if (checkRegion && !Region) return 'Region';
-  } else if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask') {
+  } else if (apiName.indexOf('Object') > -1 || apiName.indexOf('multipart') > -1 || apiName === 'sliceUploadFile' || apiName === 'abortUploadTask' || apiName === 'uploadFile') {
     if (checkBucket && !Bucket) return 'Bucket';
     if (checkRegion && !Region) return 'Region';
     if (!Key) return 'Key';

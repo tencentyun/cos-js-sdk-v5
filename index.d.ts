@@ -191,6 +191,7 @@ declare namespace COS {
     DeepTracker?: boolean;
     TrackerDelay?: number;
     CustomId?: string;
+    AutoSwitchHost?: boolean;
     /** 链路上报 */
     /** 获取签名的回调方法，如果没有 SecretId、SecretKey 时，必选 */
     getAuthorization?: (
@@ -298,6 +299,10 @@ declare namespace COS {
     message: string;
     /** 兼容老的错误信息字段，不建议使用，可能是参数错误、客户端出错、或服务端返回的错误 */
     error: string | Error | { Code: string; Message: string };
+    /** 当前请求的Url */
+    url: string;
+    /** 当前请求的method */
+    method: string;
   }
   /** 回调的错误格式，其中服务端返回错误码可查看 @see https://cloud.tencent.com/document/product/436/7730 */
   type CosError = null | CosSdkError;
