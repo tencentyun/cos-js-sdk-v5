@@ -223,9 +223,7 @@ var parseSelectPayload = function (chunk) {
 var getSourceParams = function (source) {
   var parser = this.options.CopySourceParser;
   if (parser) return parser(source);
-  var m = source.match(
-    /^([^.]+-\d+)\.cos(v6|-cdc|-cdz|-internal)?\.([^.]+)\.((myqcloud\.com)|(tencentcos\.cn))\/(.+)$/
-  );
+  var m = source.match(/^([^.]+-\d+)\.cos(v6|-cdc|-cdz|-internal)?\.([^.]+)\.((([^\/]+)))\/(.+)$/);
   if (!m) return null;
   return { Bucket: m[1], Region: m[3], Key: m[7] };
 };
