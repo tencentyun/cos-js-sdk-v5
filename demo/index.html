@@ -107,6 +107,7 @@
       </div>
     </div>
 
+    <script src="../demo/common/beacon.min.js"></script>
     <script src="../dist/cos-js-sdk-v5.js"></script>
     <script src="./demo.js"></script>
     <script type="module" src="./CIDemos/index.js"></script>
@@ -236,8 +237,9 @@
           //     // SecurityToken: credentials.sessionToken, // 如果使用临时密钥，需要传 SecurityToken
           // });
         };
-
         var cos = new COS({
+          // EnableTracker: true, // 开启灯塔上报
+          // Beacon: BeaconAction,
           getAuthorization: getAuthorization,
           UploadCheckContentMd5: true,
         });

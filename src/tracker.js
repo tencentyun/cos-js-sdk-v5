@@ -1,11 +1,13 @@
 const pkg = require('../package.json');
 let beacon = null;
 
-const getBeacon = (delay) => {
+const getBeacon = (Beacon, delay) => {
   if (!beacon) {
-    // 不放在顶层是避免首次引入就被加载，从而避免在某些环境比如webworker里加载灯塔sdk内window相关对象报错
-    const BeaconAction = require('../lib/beacon.min');
-    beacon = new BeaconAction({
+    // 生成 beacon
+    if (!Beacon || typeof Beacon !== 'function') {
+      throw new Error('Beacon not found');
+    }
+    beacon = new Beacon({
       appkey: '0AND0VEVB24UBGDU',
       versionCode: pkg.version,
       channelID: 'js_sdk', //渠道,选填
@@ -263,8 +265,20 @@ function formatParams(params) {
 // 链路追踪器
 class Tracker {
   constructor(opt) {
-    const { parent, traceId, bucket, region, apiName, fileKey, fileSize, accelerate, customId, delay, deepTracker } =
-      opt;
+    const {
+      parent,
+      traceId,
+      bucket,
+      region,
+      apiName,
+      fileKey,
+      fileSize,
+      accelerate,
+      customId,
+      delay,
+      deepTracker,
+      Beacon,
+    } = opt;
     const appid = (bucket && bucket.substr(bucket.lastIndexOf('-') + 1)) || '';
     this.parent = parent;
     this.deepTracker = deepTracker;
@@ -314,7 +328,7 @@ class Tracker {
       startTime: new Date().getTime(), // sdk api调用起始时间，不是纯网络耗时
       endTime: 0, //  sdk api调用结束时间，不是纯网络耗时
     };
-    this.beacon = getBeacon(delay);
+    this.beacon = getBeacon(Beacon, delay);
   }
 
   // 格式化sdk回调
