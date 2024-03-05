@@ -126,6 +126,8 @@ declare namespace COS {
   /** 上传/下载的进度回调方法 */
   type onProgress = (params: ProgressInfo) => any;
 
+  type CopySourceParserFunction = (source: string) => null | { Bucket: string; Region: string; Key: string };
+
   // 实例参数
   interface COSOptions {
     /** 固定密钥的 SecretId，可从{@link https://console.cloud.tencent.com/cam/capi|API密钥管理}获取 */
@@ -193,7 +195,7 @@ declare namespace COS {
     CustomId?: string;
     /** 链路上报 */
     AutoSwitchHost?: boolean;
-    CopySourceParser?: (source: string) => null | { Bucket: string; Region: string; Key: string };
+    CopySourceParser?: null | CopySourceParserFunction;
     /** 获取签名的回调方法，如果没有 SecretId、SecretKey 时，必选 */
     getAuthorization?: (
       options: GetAuthorizationOptions,
