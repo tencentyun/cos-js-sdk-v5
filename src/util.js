@@ -593,6 +593,7 @@ var apiWrapper = function (apiName, apiFn) {
             typeof params.Body === 'string' ? params.Body.length : params.Body.size || params.Body.byteLength || -1;
         }
         tracker = new Tracker({
+          Beacon: self.options.Beacon,
           bucket: params.Bucket,
           region: params.Region,
           apiName: apiName,

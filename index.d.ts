@@ -191,8 +191,9 @@ declare namespace COS {
     DeepTracker?: boolean;
     TrackerDelay?: number;
     CustomId?: string;
-    AutoSwitchHost?: boolean;
     /** 链路上报 */
+    AutoSwitchHost?: boolean;
+    CopySourceParser?: (source: string) => null | { Bucket: string; Region: string; Key: string };
     /** 获取签名的回调方法，如果没有 SecretId、SecretKey 时，必选 */
     getAuthorization?: (
       options: GetAuthorizationOptions,
