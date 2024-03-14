@@ -37,13 +37,14 @@ var defaultOptions = {
   UploadIdCacheLimit: 50,
   UseAccelerate: false,
   ForceSignHost: true, // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
-  EnableTracker: false, // 默认关闭上报
-  DeepTracker: false, // 上报时是否对每个分块上传做单独上报
-  Beacon: null, // 灯塔上报组件，如有需要请自行传入
-  TrackerDelay: 5000, // 周期性上报，单位毫秒。0代表实时上报
-  CustomId: '', // 自定义上报id
   AutoSwitchHost: true,
   CopySourceParser: null, // 自定义拷贝源解析器
+  /** 上报相关 **/
+  DeepTracker: false, // 上报时是否对每个分块上传做单独上报
+  TrackerDelay: 5000, // 周期性上报，单位毫秒。0代表实时上报
+  CustomId: '', // 自定义上报id
+  Beacon: null, // 灯塔上报组件，如有需要请自行传入，传入即代表开启上报
+  ClsReporter: null, // cls 上报组件，如有需要请自行传入，传入即代表开启上报
 };
 
 // 对外暴露的类
@@ -58,6 +59,8 @@ var COS = function (options) {
   this.options.CopySliceSize = Math.max(0, this.options.CopySliceSize);
   this.options.MaxPartNumber = Math.max(1024, Math.min(10000, this.options.MaxPartNumber));
   this.options.Timeout = Math.max(0, this.options.Timeout);
+  this.options.EnableReporter = this.options.Beacon || this.options.ClsReporter;
+
   if (this.options.AppId) {
     console.warn(
       'warning: AppId has been deprecated, Please put it at the end of parameter Bucket(E.g: "test-1250000000").'

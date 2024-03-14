@@ -339,6 +339,7 @@ declare namespace COS {
     Region?: Region;
     /** 发请求时带上的 Header 字段 */
     Headers?: Headers;
+    tracker?: any;
   }
   /** getService 接口返回值 */
   interface GetServiceResult extends GeneralResult {
