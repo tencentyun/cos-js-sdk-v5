@@ -43,7 +43,7 @@ var defaultOptions = {
   DeepTracker: false, // 上报时是否对每个分块上传做单独上报
   TrackerDelay: 5000, // 周期性上报，单位毫秒。0代表实时上报
   CustomId: '', // 自定义上报id
-  Beacon: null, // 灯塔上报组件，如有需要请自行传入，传入即代表开启上报
+  BeaconReporter: null, // 灯塔上报组件，如有需要请自行传入，传入即代表开启上报
   ClsReporter: null, // cls 上报组件，如有需要请自行传入，传入即代表开启上报
 };
 
@@ -59,7 +59,7 @@ var COS = function (options) {
   this.options.CopySliceSize = Math.max(0, this.options.CopySliceSize);
   this.options.MaxPartNumber = Math.max(1024, Math.min(10000, this.options.MaxPartNumber));
   this.options.Timeout = Math.max(0, this.options.Timeout);
-  this.options.EnableReporter = this.options.Beacon || this.options.ClsReporter;
+  this.options.EnableReporter = this.options.BeaconReporter || this.options.ClsReporter;
 
   if (this.options.AppId) {
     console.warn(

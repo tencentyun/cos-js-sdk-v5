@@ -596,7 +596,7 @@ var apiWrapper = function (apiName, apiFn) {
           self.options.UseAccelerate ||
           (typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.'));
         tracker = new Tracker({
-          Beacon: self.options.Beacon,
+          Beacon: self.options.BeaconReporter,
           bucket: params.Bucket,
           region: params.Region,
           apiName: apiName,

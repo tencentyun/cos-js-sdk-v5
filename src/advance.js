@@ -917,7 +917,7 @@ function uploadFile(params, callback) {
       (typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.'));
     const realApi = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
     params.tracker = new Tracker({
-      Beacon: self.options.Beacon,
+      Beacon: self.options.BeaconReporter,
       bucket: params.Bucket,
       region: params.Region,
       apiName: 'uploadFile',
@@ -1020,7 +1020,7 @@ function uploadFiles(params, callback) {
           (typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.'));
         const realApi = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
         fileParams.tracker = new Tracker({
-          Beacon: self.options.Beacon,
+          Beacon: self.options.BeaconReporter,
           bucket: fileParams.Bucket,
           region: fileParams.Region,
           apiName: 'uploadFiles',
