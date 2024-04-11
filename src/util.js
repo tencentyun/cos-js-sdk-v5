@@ -744,20 +744,22 @@ var throttleOnProgress = function (total, onProgress) {
 var getFileSize = function (api, params, callback) {
   var size;
   if (typeof params.Body === 'string') {
-    params.Body = new Blob([params.Body], { type: 'text/plain' });
+    // 借助 Blob 来计算包大小
+    size = new Blob([params.Body], { type: 'text/plain' }).size;
   } else if (params.Body instanceof ArrayBuffer) {
-    params.Body = new Blob([params.Body]);
-  }
-  if (
-    params.Body &&
-    (params.Body instanceof Blob ||
-      params.Body.toString() === '[object File]' ||
-      params.Body.toString() === '[object Blob]')
-  ) {
-    size = params.Body.size;
+    size = params.Body.byteLength;
   } else {
-    callback(util.error(new Error('params body format error, Only allow File|Blob|String.')));
-    return;
+    if (
+      params.Body &&
+      (params.Body instanceof Blob ||
+        params.Body.toString() === '[object File]' ||
+        params.Body.toString() === '[object Blob]')
+    ) {
+      size = params.Body.size;
+    } else {
+      callback(util.error(new Error('params body format error, Only allow File|Blob|String.')));
+      return;
+    }
   }
   params.ContentLength = size;
   callback(null, size);
