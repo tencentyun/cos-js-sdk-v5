@@ -135,7 +135,7 @@ export const getAsrQueue = {
 export const updateAsrQueue = {
   name: '更新语音识别队列',
   fn: function updateAsrQueue() {
-    // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
+    // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/79394)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
     const queueId = 'pcc77499e85c311edb9865254008618d9';
     const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/asrqueue/' + queueId;
     const url = 'https://' + host;

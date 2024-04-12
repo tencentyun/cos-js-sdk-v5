@@ -918,6 +918,7 @@ function uploadFile(params, callback) {
     const realApi = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
     params.tracker = new Tracker({
       Beacon: self.options.BeaconReporter,
+      clsReporter: self.options.ClsReporter,
       bucket: params.Bucket,
       region: params.Region,
       apiName: 'uploadFile',
@@ -928,7 +929,6 @@ function uploadFile(params, callback) {
       deepTracker: self.options.DeepTracker,
       customId: self.options.CustomId,
       delay: self.options.TrackerDelay,
-      clsReporter: self.options.ClsReporter,
     });
   }
 
@@ -1021,6 +1021,7 @@ function uploadFiles(params, callback) {
         const realApi = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
         fileParams.tracker = new Tracker({
           Beacon: self.options.BeaconReporter,
+          clsReporter: self.options.ClsReporter,
           bucket: fileParams.Bucket,
           region: fileParams.Region,
           apiName: 'uploadFiles',
@@ -1031,7 +1032,6 @@ function uploadFiles(params, callback) {
           deepTracker: self.options.DeepTracker,
           customId: self.options.CustomId,
           delay: self.options.TrackerDelay,
-          clsReporter: self.options.ClsReporter,
         });
       }
 

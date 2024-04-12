@@ -404,7 +404,7 @@ export const describePicProcessQueues = {
 export const updatePicProcessQueue = {
   name: '更新图片处理队列',
   fn: function updatePicProcessQueue() {
-    // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
+    // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/79395)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
     const queueId = 'p882d181160d84feca27d9376e17c4xxx';
     const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/picqueue/' + queueId;
     const url = 'https://' + host;

@@ -8134,6 +8134,7 @@ function uploadFile(params, callback) {
     var realApi = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
     params.tracker = new Tracker({
       Beacon: self.options.BeaconReporter,
+      clsReporter: self.options.ClsReporter,
       bucket: params.Bucket,
       region: params.Region,
       apiName: 'uploadFile',
@@ -8143,8 +8144,7 @@ function uploadFile(params, callback) {
       accelerate: accelerate,
       deepTracker: self.options.DeepTracker,
       customId: self.options.CustomId,
-      delay: self.options.TrackerDelay,
-      clsReporter: self.options.ClsReporter
+      delay: self.options.TrackerDelay
     });
   }
 
@@ -8238,6 +8238,7 @@ function uploadFiles(params, callback) {
         var realApi = FileSize > SliceSize ? 'sliceUploadFile' : 'putObject';
         fileParams.tracker = new Tracker({
           Beacon: self.options.BeaconReporter,
+          clsReporter: self.options.ClsReporter,
           bucket: fileParams.Bucket,
           region: fileParams.Region,
           apiName: 'uploadFiles',
@@ -8247,8 +8248,7 @@ function uploadFiles(params, callback) {
           accelerate: accelerate,
           deepTracker: self.options.DeepTracker,
           customId: self.options.CustomId,
-          delay: self.options.TrackerDelay,
-          clsReporter: self.options.ClsReporter
+          delay: self.options.TrackerDelay
         });
       }
 
@@ -14235,6 +14235,7 @@ var apiWrapper = function apiWrapper(apiName, apiFn) {
         var accelerate = self.options.UseAccelerate || typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.');
         tracker = new Tracker({
           Beacon: self.options.BeaconReporter,
+          clsReporter: self.options.ClsReporter,
           bucket: params.Bucket,
           region: params.Region,
           apiName: apiName,
@@ -14244,8 +14245,7 @@ var apiWrapper = function apiWrapper(apiName, apiFn) {
           fileSize: fileSize,
           deepTracker: self.options.DeepTracker,
           customId: self.options.CustomId,
-          delay: self.options.TrackerDelay,
-          clsReporter: self.options.ClsReporter
+          delay: self.options.TrackerDelay
         });
       }
     }

@@ -597,6 +597,7 @@ var apiWrapper = function (apiName, apiFn) {
           (typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.'));
         tracker = new Tracker({
           Beacon: self.options.BeaconReporter,
+          clsReporter: self.options.ClsReporter,
           bucket: params.Bucket,
           region: params.Region,
           apiName: apiName,
@@ -607,7 +608,6 @@ var apiWrapper = function (apiName, apiFn) {
           deepTracker: self.options.DeepTracker,
           customId: self.options.CustomId,
           delay: self.options.TrackerDelay,
-          clsReporter: self.options.ClsReporter,
         });
       }
     }
