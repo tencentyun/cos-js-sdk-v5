@@ -108,6 +108,7 @@
     </div>
 
     <script src="../demo/common/beacon.min.js"></script>
+    <script src="../demo/common/cls.min.js"></script>
     <script src="../dist/cos-js-sdk-v5.js"></script>
     <script src="./demo.js"></script>
     <script type="module" src="./CIDemos/index.js"></script>
@@ -237,11 +238,19 @@
           //     // SecurityToken: credentials.sessionToken, // 如果使用临时密钥，需要传 SecurityToken
           // });
         };
+
+        const clsClient = new ClsClient({
+          topicId: 'xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx', // 日志主题 id
+          region: 'ap-guangzhou', // 日志主题所在地域，比如 ap-guangzhou
+          maxRetainDuration: 30, // 默认 30s
+          maxRetainSize: 20, // 默认20条
+        });
+
         var cos = new COS({
-          // EnableTracker: true, // 开启灯塔上报
-          // Beacon: BeaconAction,
           getAuthorization: getAuthorization,
           UploadCheckContentMd5: true,
+          // BeaconReporter: BeaconAction, // 开启灯塔上报
+          // ClsReporter: clsClient,  // 开启 cls 上报
         });
 
         var util = {
