@@ -109,31 +109,6 @@ const devicePlatform = isMobile ? mobileOsType : pcOsType;
 const ua = utils.getUA();
 const protocol = utils.getProtocol();
 
-// 分块上传原子方法
-const sliceUploadMethods = [
-  'multipartInit',
-  'multipartUpload',
-  'multipartComplete',
-  'multipartList',
-  'multipartListPart',
-  'multipartAbort',
-];
-
-const uploadApi = ['putObject', 'postObject', 'appendObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].concat(
-  sliceUploadMethods
-);
-const downloadApi = ['getObject'];
-
-function getEventCode(apiName) {
-  if (uploadApi.includes(apiName)) {
-    return 'cos_upload';
-  }
-  if (downloadApi.includes(apiName)) {
-    return 'cos_download';
-  }
-  return 'base_service';
-}
-
 const transApiName = (api) => {
   if (['putObject', 'sliceUploadFile', 'uploadFile', 'uploadFiles'].includes(api)) {
     return 'UploadTask';
@@ -402,7 +377,6 @@ class Tracker {
     if (isSliceUploadFile && !this.deepTracker) {
       return;
     }
-    // const eventCode = getEventCode(this.params.requestName);
     const eventCode = 'qcloud_track_cos_sdk';
 
     if (this.delay === 0) {
