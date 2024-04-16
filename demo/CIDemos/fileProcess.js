@@ -346,7 +346,7 @@ export const describeFileProcessQueues = {
 export const updateFileProcessQueue = {
   name: '更新文件处理队列',
   fn: function updateFileProcessQueue() {
-    // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/46946)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
+    // 任务所在的队列 ID，请使用查询队列(https://cloud.tencent.com/document/product/460/86421)获取或前往万象控制台(https://cloud.tencent.com/document/product/460/46487)在存储桶中查询
     const queueId = 'p6160ada105a7408e95aac015f4bf8xxx';
     const host = config.Bucket + '.ci.' + config.Region + '.myqcloud.com/file_queue/' + queueId;
     const url = 'https://' + host;

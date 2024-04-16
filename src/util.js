@@ -579,24 +579,30 @@ var apiWrapper = function (apiName, apiFn) {
 
     // tracker传递
     var tracker;
-    if (self.options.EnableTracker) {
-      if (params.calledBySdk === 'sliceUploadFile') {
+    if (self.options.EnableReporter) {
+      if (params.calledBySdk === 'sliceUploadFile' || params.calledBySdk === 'sliceCopyFile') {
         // 分块上传内部方法使用sliceUploadFile的子链路
         tracker = params.tracker && params.tracker.generateSubTracker({ apiName });
       } else if (['uploadFile', 'uploadFiles'].includes(apiName)) {
         // uploadFile、uploadFiles方法在内部处理，此处不处理
         tracker = null;
       } else {
-        var fileSize = -1;
+        var fileSize = 0;
         if (params.Body) {
           fileSize =
-            typeof params.Body === 'string' ? params.Body.length : params.Body.size || params.Body.byteLength || -1;
+            typeof params.Body === 'string' ? params.Body.length : params.Body.size || params.Body.byteLength || 0;
         }
+        const accelerate =
+          self.options.UseAccelerate ||
+          (typeof self.options.Domain === 'string' && self.options.Domain.includes('accelerate.'));
         tracker = new Tracker({
-          Beacon: self.options.Beacon,
+          Beacon: self.options.BeaconReporter,
+          clsReporter: self.options.ClsReporter,
           bucket: params.Bucket,
           region: params.Region,
           apiName: apiName,
+          realApi: apiName,
+          accelerate,
           fileKey: params.Key,
           fileSize: fileSize,
           deepTracker: self.options.DeepTracker,
@@ -619,7 +625,7 @@ var apiWrapper = function (apiName, apiFn) {
     };
     var _callback = function (err, data) {
       // 格式化上报参数并上报
-      tracker && tracker.formatResult(err, data);
+      tracker && tracker.report(err, data);
       callback && callback(formatResult(err), formatResult(data));
     };
 

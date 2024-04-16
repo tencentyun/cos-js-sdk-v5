@@ -50,6 +50,7 @@ function getService(params, callback) {
       method: 'GET',
       headers: params.Headers,
       SignHost: SignHost,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -105,6 +106,7 @@ function putBucket(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       body: xml,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -144,6 +146,7 @@ function headBucket(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       method: 'HEAD',
+      tracker: params.tracker,
     },
     callback
   );
@@ -182,6 +185,7 @@ function getBucket(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       qs: reqParams,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -224,6 +228,7 @@ function deleteBucket(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       method: 'DELETE',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -286,6 +291,7 @@ function putBucketAcl(params, callback) {
       headers: headers,
       action: 'acl',
       body: xml,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -317,6 +323,7 @@ function getBucketAcl(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'acl',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -382,6 +389,7 @@ function putBucketCors(params, callback) {
       body: xml,
       action: 'cors',
       headers: headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -413,6 +421,7 @@ function getBucketCors(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'cors',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) {
@@ -471,6 +480,7 @@ function deleteBucketCors(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'cors',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -505,6 +515,7 @@ function getBucketLocation(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'location',
+      tracker: params.tracker,
     },
     callback
   );
@@ -533,6 +544,7 @@ function putBucketPolicy(params, callback) {
       action: 'policy',
       body: PolicyStr,
       headers: headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -568,6 +580,7 @@ function getBucketPolicy(params, callback) {
       headers: params.Headers,
       action: 'policy',
       rawBody: true,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) {
@@ -614,6 +627,7 @@ function deleteBucketPolicy(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'policy',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -659,6 +673,7 @@ function putBucketTagging(params, callback) {
       body: xml,
       action: 'tagging',
       headers: headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -693,6 +708,7 @@ function getBucketTagging(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'tagging',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) {
@@ -741,6 +757,7 @@ function deleteBucketTagging(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'tagging',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -776,6 +793,7 @@ function putBucketLifecycle(params, callback) {
       body: xml,
       action: 'lifecycle',
       headers: headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -801,6 +819,7 @@ function getBucketLifecycle(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'lifecycle',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) {
@@ -840,6 +859,7 @@ function deleteBucketLifecycle(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'lifecycle',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -877,6 +897,7 @@ function putBucketVersioning(params, callback) {
       body: xml,
       action: 'versioning',
       headers: headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -902,6 +923,7 @@ function getBucketVersioning(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'versioning',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (!err) {
@@ -932,6 +954,7 @@ function putBucketReplication(params, callback) {
       body: xml,
       action: 'replication',
       headers: headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -957,6 +980,7 @@ function getBucketReplication(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'replication',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) {
@@ -996,6 +1020,7 @@ function deleteBucketReplication(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'replication',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -1053,6 +1078,7 @@ function putBucketWebsite(params, callback) {
       body: xml,
       action: 'website',
       headers: headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -1088,6 +1114,7 @@ function getBucketWebsite(params, callback) {
       Key: params.Key,
       headers: params.Headers,
       action: 'website',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) {
@@ -1139,6 +1166,7 @@ function deleteBucketWebsite(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'website',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -1195,6 +1223,7 @@ function putBucketReferer(params, callback) {
       body: xml,
       action: 'referer',
       headers: headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -1230,6 +1259,7 @@ function getBucketReferer(params, callback) {
       Key: params.Key,
       headers: params.Headers,
       action: 'referer',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) {
@@ -1290,6 +1320,7 @@ function putBucketDomain(params, callback) {
       body: xml,
       action: 'domain',
       headers: headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -1324,6 +1355,7 @@ function getBucketDomain(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'domain',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -1361,6 +1393,7 @@ function deleteBucketDomain(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'domain',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -1405,6 +1438,7 @@ function putBucketOrigin(params, callback) {
       body: xml,
       action: 'origin',
       headers: headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -1439,6 +1473,7 @@ function getBucketOrigin(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'origin',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -1476,6 +1511,7 @@ function deleteBucketOrigin(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'origin',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -1520,6 +1556,7 @@ function putBucketLogging(params, callback) {
       body: xml,
       action: 'logging',
       headers: headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -1554,6 +1591,7 @@ function getBucketLogging(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'logging',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -1622,6 +1660,7 @@ function submitBucketInventory(method, params, callback) {
         id: params['Id'],
       },
       headers: headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -1674,6 +1713,7 @@ function getBucketInventory(params, callback) {
       qs: {
         id: params['Id'],
       },
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -1734,6 +1774,7 @@ function listBucketInventory(params, callback) {
       qs: {
         'continuation-token': params['ContinuationToken'],
       },
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -1801,6 +1842,7 @@ function deleteBucketInventory(params, callback) {
       qs: {
         id: params['Id'],
       },
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -1841,6 +1883,7 @@ function putBucketAccelerate(params, callback) {
       body: xml,
       action: 'accelerate',
       headers: headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -1861,6 +1904,7 @@ function getBucketAccelerate(params, callback) {
       Bucket: params.Bucket,
       Region: params.Region,
       action: 'accelerate',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (!err) {
@@ -1890,6 +1934,7 @@ function putBucketEncryption(params, callback) {
       body: xml,
       action: 'encryption',
       headers: headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -1915,6 +1960,7 @@ function getBucketEncryption(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'encryption',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) {
@@ -1947,6 +1993,7 @@ function deleteBucketEncryption(params, callback) {
       Region: params.Region,
       headers: params.Headers,
       action: 'encryption',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -1987,6 +2034,7 @@ function headObject(params, callback) {
       Key: params.Key,
       VersionId: params.VersionId,
       headers: params.Headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) {
@@ -2025,6 +2073,7 @@ function listObjectVersions(params, callback) {
       headers: params.Headers,
       qs: reqParams,
       action: 'versions',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -2240,6 +2289,7 @@ function deleteObject(params, callback) {
       headers: params.Headers,
       VersionId: params.VersionId,
       action: params.Recursive ? 'recursive' : '',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) {
@@ -2285,6 +2335,7 @@ function getObjectAcl(params, callback) {
       headers: params.Headers,
       qs: reqParams,
       action: 'acl',
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -2353,6 +2404,7 @@ function putObjectAcl(params, callback) {
       action: 'acl',
       headers: headers,
       body: xml,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -2389,6 +2441,7 @@ function optionsObject(params, callback) {
       Region: params.Region,
       Key: params.Key,
       headers: headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) {
@@ -2482,6 +2535,7 @@ function putObjectCopy(params, callback) {
       Key: params.Key,
       VersionId: params.VersionId,
       headers: params.Headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -2544,6 +2598,7 @@ function uploadPartCopy(params, callback) {
         uploadId: params['UploadId'],
       },
       headers: params.Headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -2587,6 +2642,7 @@ function deleteMultipleObject(params, callback) {
       body: xml,
       action: 'delete',
       headers: headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -2634,6 +2690,7 @@ function restoreObject(params, callback) {
       body: xml,
       action: 'restore',
       headers: headers,
+      tracker: params.tracker,
     },
     callback
   );
@@ -2671,6 +2728,7 @@ function putObjectTagging(params, callback) {
       action: 'tagging',
       headers: headers,
       VersionId: params.VersionId,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -2707,6 +2765,7 @@ function getObjectTagging(params, callback) {
       headers: params.Headers,
       action: 'tagging',
       VersionId: params.VersionId,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) {
@@ -2757,6 +2816,7 @@ function deleteObjectTagging(params, callback) {
       headers: params.Headers,
       action: 'tagging',
       VersionId: params.VersionId,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -2810,6 +2870,7 @@ function selectObjectContent(params, callback) {
       body: xml,
       DataType: 'arraybuffer',
       rawBody: true,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err && err.statusCode === 204) {
@@ -3162,6 +3223,7 @@ function multipartListPart(params, callback) {
       Key: params.Key,
       headers: params.Headers,
       qs: reqParams,
+      tracker,
     },
     function (err, data) {
       if (err) {
@@ -3208,6 +3270,7 @@ function multipartAbort(params, callback) {
       Key: params.Key,
       headers: params.Headers,
       qs: reqParams,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -3245,6 +3308,7 @@ function request(params, callback) {
       Url: params.Url,
       rawBody: params.RawBody,
       DataType: params.DataType,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -3305,6 +3369,7 @@ function appendObject(params, callback) {
         position: params.Position,
       },
       headers: params.Headers,
+      tracker: params.tracker,
     },
     function (err, data) {
       if (err) return callback(err);
@@ -3904,7 +3969,7 @@ function submitRequest(params, callback) {
   var tracker = params.tracker;
   var next = function (tryTimes) {
     var oldClockOffset = self.options.SystemClockOffset;
-    tracker && tracker.setParams({ signStartTime: new Date().getTime(), retryTimes: tryTimes - 1 });
+    tracker && tracker.setParams({ signStartTime: new Date().getTime(), httpRetryTimes: tryTimes - 1 });
     if (params.SwitchHost) {
       // 更换要签的host
       SignHost = SignHost.replace(/myqcloud.com/, 'tencentcos.cn');
@@ -4001,6 +4066,8 @@ function _submitRequest(params, callback) {
     // 更换请求的url
     url = url.replace(/myqcloud.com/, 'tencentcos.cn');
   }
+  const repoterUrl = object ? url : '';
+
   if (params.action) {
     // 已知问题，某些版本的qq会对url自动拼接（比如/upload被拼接成/upload=(null)）导致签名错误，这里做下兼容。
     url = url + '?' + (util.isIOS_QQ ? `${params.action}=` : params.action);
@@ -4066,11 +4133,20 @@ function _submitRequest(params, callback) {
         .join('&')
     : '';
   var fullUrl = queryString ? opt.url + '?' + queryString : opt.url;
-  params.tracker && params.tracker.setParams({ reqUrl: fullUrl, accelerate: useAccelerate ? 'Y' : 'N' });
-  // 分块上传时给父级tracker设置url信息
-  params.tracker &&
-    params.tracker.parent &&
-    params.tracker.parent.setParams({ reqUrl: fullUrl, accelerate: useAccelerate ? 'Y' : 'N' });
+
+  if (params.tracker) {
+    params.tracker.setParams({
+      url: fullUrl,
+      httpMethod: opt.method,
+      accelerate: useAccelerate,
+      httpSize: opt.body?.size || 0,
+    });
+    // 分块上传时给父级tracker设置url信息
+    if (params.tracker.parent && !params.tracker.parent.params.url) {
+      params.tracker.parent.setParams({ url: repoterUrl, accelerate: useAccelerate });
+    }
+  }
+
   var sender = (self.options.Request || REQUEST)(opt, function (r) {
     if (r && r.error === 'abort') return;
 

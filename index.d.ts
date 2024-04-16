@@ -188,13 +188,14 @@ declare namespace COS {
     UseAccelerate?: boolean;
     /** 默认为true，将host加入签名计算，关闭后可能导致越权风险，建议保持为true */
     ForceSignHost?: boolean;
+    AutoSwitchHost?: boolean;
     /** 链路上报 */
-    EnableTracker?: boolean;
     DeepTracker?: boolean;
     TrackerDelay?: number;
     CustomId?: string;
+    BeaconReporter?: any;
+    ClsReporter?: any;
     /** 链路上报 */
-    AutoSwitchHost?: boolean;
     CopySourceParser?: null | CopySourceParserFunction;
     /** 获取签名的回调方法，如果没有 SecretId、SecretKey 时，必选 */
     getAuthorization?: (
@@ -339,6 +340,7 @@ declare namespace COS {
     Region?: Region;
     /** 发请求时带上的 Header 字段 */
     Headers?: Headers;
+    tracker?: any;
   }
   /** getService 接口返回值 */
   interface GetServiceResult extends GeneralResult {
