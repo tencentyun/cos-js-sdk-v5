@@ -75,7 +75,9 @@ var util = {
     var opt = {};
     options.type && (opt.type = options.type);
     var blob = new Blob([buffer], options);
-    return blob;
+    var file = new File([blob], `file-${Date.now()}.txt`, {type: 'text/plain', lastModified: Date.now(), lastModifiedDate: new Date() });
+    file.lastModifiedDate = new Date();
+    return file;
   },
   str2blob: function (str) {
     var size = str.length;
@@ -985,6 +987,9 @@ group('sliceUploadFile() 续传', function () {
                 Region: config.Region,
                 Key: filename,
                 Body: blob,
+                TaskReady: function(id) {
+                 
+                },
               },
               function (err, data) {
                 assert.ok(!err);
