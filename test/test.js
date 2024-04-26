@@ -4,6 +4,7 @@
 import { describe, expect, jest, test } from '@jest/globals';
 import COS from '../index.js';
 import Beacon from '../demo/common/beacon.min';
+import ClsClient from '../demo/common/cls.min';
 
 // config 替换成自己的桶信息
 var config = {
@@ -240,33 +241,6 @@ var assert = {
     expect(Boolean(val)).toBeTruthy();
   },
 };
-
-group('uploadFile() 上报', function () {
-  test('uploadFile() 上报', function (done) {
-    var cos = new COS({
-      // 必选参数
-      SecretId: config.SecretId,
-      SecretKey: config.SecretKey,
-      BeaconReporter: Beacon,
-      DeepTracker: true,
-    });
-    cos.uploadFile(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Key: '30mb.zip',
-        Body: util.createFile({ size: 1024 * 1024 * 30 }),
-        ChunkSize: 1024 * 1024,
-      },
-      function (err, data) {
-        assert.ok(data);
-        done();
-      }
-    );
-  });
-});
-
-
 
 group('init cos', function () {
   const putFile = function (cosIns, done, canSuccess = true) {
@@ -5801,7 +5775,27 @@ group('multipartAbort()', function () {
   });
 });
 
-group('uploadFile() 上报', function () {
+group('上报', function () {
+  test('uploadFile() 上报异常', function (done) {
+    var cos = new COS({
+      // 必选参数
+      SecretId: config.SecretId,
+      SecretKey: config.SecretKey,
+      BeaconReporter:  {},
+      DeepTracker: true,
+      CustomId: 'sdk-unit-test',
+    });
+    cos.headBucket(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+      },
+      function (err, data) {
+        assert.ok(data);
+        done();
+      }
+    );
+  });
   test('uploadFile() 上报', function (done) {
     var cos = new COS({
       // 必选参数
@@ -5809,6 +5803,7 @@ group('uploadFile() 上报', function () {
       SecretKey: config.SecretKey,
       BeaconReporter: Beacon,
       DeepTracker: true,
+      CustomId: 'sdk-unit-test',
     });
     cos.uploadFile(
       {
@@ -5816,11 +5811,106 @@ group('uploadFile() 上报', function () {
         Region: config.Region,
         Key: '30mb.zip',
         Body: util.createFile({ size: 1024 * 1024 * 30 }),
-        ChunkSize: 1024 * 1024,
+        ChunkSize: 1024 * 1024 * 8,
       },
       function (err, data) {
         assert.ok(data);
         done();
+      }
+    );
+  });
+  test('sliceUploadFile() 上报', function (done) {
+    const clsClient = new ClsClient({
+      topicId: 'xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx', // 日志主题 id
+      region: 'ap-guangzhou', // 日志主题所在地域，比如 ap-guangzhou
+      maxRetainDuration: 30, // 默认 30s
+      maxRetainSize: 20, // 默认20条
+    });
+    var cos = new COS({
+      // 必选参数
+      SecretId: config.SecretId,
+      SecretKey: config.SecretKey,
+      ClsReporter: clsClient,  // 开启 cls 上报
+      CustomId: 'sdk-unit-test',
+    });
+    cos.sliceUploadFile(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '10mb.zip',
+        Body: util.createFile({ size: 1024 * 1024 * 10 }),
+      },
+      function (err, data) {
+        assert.ok(data);
+        done();
+      }
+    );
+  });
+  test('getObject() 上报', function (done) {
+    var cos = new COS({
+      // 必选参数
+      SecretId: config.SecretId,
+      SecretKey: config.SecretKey,
+      BeaconReporter: Beacon,
+      TrackerDelay: 0,
+      CustomId: 'sdk-unit-test',
+    });
+    cos.uploadFile(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '2mb.zip',
+        Body: util.createFile({ size: 1024 * 1024 * 2 }),
+        ChunkSize: 1024 * 1024,
+      },
+      function (err, data) {
+        cos.getObject(
+          {
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '1mb.zip',
+          },
+          function (err, data) {
+            assert.ok(data);
+            done();
+          }
+        );
+      }
+    );
+  });
+  test('sliceCopyFile() 上报', function (done) {
+    var cos = new COS({
+      // 必选参数
+      SecretId: config.SecretId,
+      SecretKey: config.SecretKey,
+      BeaconReporter: Beacon,
+      DeepTracker: true,
+      CustomId: 'sdk-unit-test',
+    });
+    var key = '10mb.zip';
+    cos.uploadFile(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: key,
+        Body: util.createFile({ size: 1024 * 1024 * 10 }),
+        ChunkSize: 1024 * 1024 * 5,
+        ACL: 'public-read'
+      },
+      function (err, data) {
+        cos.sliceCopyFile(
+          {
+            Bucket: config.Bucket, // Bucket 格式：test-1250000000
+            Region: config.Region,
+            Key: 'sliceCopyFile-' + key,
+            CopySource: `${config.Bucket}.cos.${config.Region}.myqcloud.com/${key}`,
+            SliceSize: 2 * 1024 * 1024, // 指定文件多大时用分片复制，小于数值则用单片复制
+          },
+          function (err, data) {
+            assert.ok(data);
+            done();
+          }
+        );
       }
     );
   });
