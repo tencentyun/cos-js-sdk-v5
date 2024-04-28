@@ -6032,48 +6032,48 @@ group('上报', function () {
   });
 });
 
-// group('sliceUploadFile() 续传', function () {
-//   test('sliceUploadFile() 续传', function (done) {
-//     var Key = '3.zip';
-//     cos.multipartInit(
-//       {
-//         Bucket: config.Bucket,
-//         Region: config.Region,
-//         Key: Key,
-//       },
-//       function (err, data) {
-//         assert.ok(!err);
-//         var UploadId = data.UploadId;
-//         cos.multipartUpload(
-//           {
-//             Bucket: config.Bucket,
-//             Region: config.Region,
-//             Key: Key,
-//             UploadId: UploadId,
-//             PartNumber: 1,
-//             Body: util.createFile({ size: 1024 * 1024 }),
-//           },
-//           function (err, data) {
-//             assert.ok(!err);
-//             cos.sliceUploadFile(
-//               {
-//                 Bucket: config.Bucket,
-//                 Region: config.Region,
-//                 Key: Key,
-//                 Body: util.createFile({ size: 1024 * 1024 * 3 }),
-//                 ChunkSize: 1024 * 1024,
-//               },
-//               function (err, data) {
-//                 assert.ok(data);
-//                 done();
-//               }
-//             );
-//           }
-//         );
-//       }
-//     );
-//   });
-// });
+group('sliceUploadFile() 续传', function () {
+  test('sliceUploadFile() 续传', function (done) {
+    var Key = '3.zip';
+    cos.multipartInit(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: Key,
+      },
+      function (err, data) {
+        assert.ok(!err);
+        var UploadId = data.UploadId;
+        cos.multipartUpload(
+          {
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: Key,
+            UploadId: UploadId,
+            PartNumber: 1,
+            Body: util.createFile({ size: 1024 * 1024 }),
+          },
+          function (err, data) {
+            assert.ok(!err);
+            cos.sliceUploadFile(
+              {
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: Key,
+                Body: util.createFile({ size: 1024 * 1024 * 3 }),
+                ChunkSize: 1024 * 1024,
+              },
+              function (err, data) {
+                assert.ok(data);
+                done();
+              }
+            );
+          }
+        );
+      }
+    );
+  });
+});
 
 group('appendObject', function () {
   test('appendObject()', function (done) {
