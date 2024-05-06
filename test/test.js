@@ -191,7 +191,7 @@ var tempCOS = new COS({
   getAuthorization: function (options, callback) {
     var url = 'http://9.134.125.65:3333/sts'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', url, true);
+    xhr.open('get', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onload = function (e) {
       try {
@@ -215,11 +215,11 @@ var tempCOS = new COS({
 });
 
 var oldTempCOS = new COS({
-  UseAccelerate: true,
+  // UseAccelerate: true,
   getAuthorization: function (options, callback) {
     var url = 'http://9.134.125.65:3333/sts'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', url, true);
+    xhr.open('get', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onload = function (e) {
       try {
@@ -242,8 +242,30 @@ var oldTempCOS = new COS({
   },
 });
 
+var getSignCOS = new COS({
+  // UseAccelerate: true,
+  getAuthorization: function (options, callback) {
+    var url = 'http://9.134.125.65:3333/uploadSign'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
+    var xhr = new XMLHttpRequest();
+    xhr.open('get', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onload = function (e) {
+      try {
+        var data = JSON.parse(e.target.responseText);
+      } catch (e) {}
+      if (!data) {
+        return console.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
+      }
+      callback({
+        Authorization: data?.signMap?.PutObject
+      });
+    };
+    xhr.send();
+  },
+});
+
 var getStsCOS = new COS({
-  UseAccelerate: true,
+  // UseAccelerate: true,
   getSTS: function (options, callback) {
     var url = 'http://9.134.125.65:3333/sts'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     var xhr = new XMLHttpRequest();
@@ -257,7 +279,14 @@ var getStsCOS = new COS({
       if (!data || !credentials) {
         return logger.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
       }
-      callback(credentials);
+      callback({
+        TmpSecretId: credentials.TmpSecretId || credentials.tmpSecretId,
+        TmpSecretKey: credentials.TmpSecretKey || credentials.tmpSecretKey,
+        SecurityToken: credentials.SessionToken || credentials.sessionToken,
+        StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+        ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000000
+        ScopeLimit: true, // 细粒度控制权限需要设为 true，会限制密钥只在相同请求时重复使用
+      });
     };
     xhr.send();
   },
@@ -445,6 +474,35 @@ group('init cos', function () {
       }
     );
   });
+  test('getStsCOS 使用下发的签名 putObject', function (done) {
+    getSignCOS.putObject(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '1.txt',
+        Body: '12345',
+      },
+      function (err, data) {
+        assert.ok(!err);
+        done();
+      }
+    );
+  });
+  test('getAuthorization 使用下发的签名 sliceUploadFile', function (done) {
+    const file = createFileSync(20 * 1024 * 1024);
+    getSignCOS.sliceUploadFile(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '1.txt',
+        Body: file,
+      },
+      function (err, data) {
+        assert.ok(err);
+        done();
+      }
+    );
+  });
 });
 
 group('task 队列', function () {
@@ -577,7 +635,7 @@ group('putBucket()', function () {
   test('deleteBucket() deleteBucket 不存在', function (done) {
     cos.deleteBucket(
       {
-        Bucket: config.Bucket + Date.now().toString(36),
+        Bucket: Date.now().toString(36) + config.Bucket,
         Region: config.Region,
       },
       function (err, data) {
@@ -867,6 +925,9 @@ group('sliceUploadFile() 完整上传文件', function () {
             Region: config.Region,
             Key: filename,
             Body: blob,
+            Headers: {
+              'x-cos-mime-limit': 819200
+            },
             onTaskReady: function (taskId) {
               TaskId = taskId;
             },
@@ -1985,7 +2046,7 @@ group('sliceCopyFile()', function () {
           {
             Bucket: config.Bucket,
             Region: config.Region,
-            Key: Key,
+            Key: 'empty-copy',
             CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + sourceKey,
           },
           function (err, data) {
@@ -2326,6 +2387,18 @@ group('ObjectAcl', function () {
                 AccessControlPolicy.Owner.ID = data.Owner.ID;
                 AccessControlPolicy2.Owner.ID = data.Owner.ID;
                 assert.ok(data.Grants.length === 1);
+                done();
+              }
+            );
+            cos.getObjectAcl(
+              {
+                Bucket: config.Bucket,
+                Region: config.Region,
+                Key: '1.txt',
+                VersionId: 1,
+              },
+              function (err, data) {
+                assert.ok(err);
                 done();
               }
             );
@@ -5955,6 +6028,40 @@ group('上报', function () {
         Region: config.Region,
         Key: '10mb.zip',
         Body: util.createFile({ size: 1024 * 1024 * 10 }),
+      },
+      function (err, data) {
+        assert.ok(data);
+        done();
+      }
+    );
+  });
+  test('uploadFiles() 上报', function (done) {
+    const clsClient = new ClsClient({
+      topicId: 'xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx', // 日志主题 id
+      region: 'ap-guangzhou', // 日志主题所在地域，比如 ap-guangzhou
+      maxRetainDuration: 30, // 默认 30s
+      maxRetainSize: 20, // 默认20条
+    });
+    var cos = new COS({
+      // 必选参数
+      SecretId: config.SecretId,
+      SecretKey: config.SecretKey,
+      ClsReporter: clsClient,  // 开启 cls 上报
+      CustomId: 'sdk-unit-test',
+    });
+    cos.uploadFiles(
+      {
+        files: [{
+          Bucket: config.Bucket,
+          Region: config.Region,
+          Key: '10mb-1.zip',
+          Body: util.createFile({ size: 1024 * 1024 * 10 }),
+        }, {
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '/10mb-2.zip',
+            Body: util.createFile({ size: 1024 * 1024 * 10 }),
+        }]
       },
       function (err, data) {
         assert.ok(data);

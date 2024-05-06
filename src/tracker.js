@@ -351,7 +351,6 @@ class Tracker {
     if (!this.beacon && !this.clsReporter) return;
     this.formatResult(err, data);
     const formattedParams = formatParams(this.params);
-    console.log(formattedParams);
     if (this.beacon) {
       this.sendEventsToBeacon(formattedParams);
     }
