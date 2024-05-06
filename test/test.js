@@ -886,8 +886,51 @@ group('putObject(),cancelTask()', function () {
 });
 
 group('putObject 测试老参数', function () {
+  test('putObject() options.AppId', function (done) {
+    var filename = '/1m.zip';
+    const file = createFileSync(1 * 1024 * 1024);
+    var cos = new COS({
+      SecretId: config.SecretId,
+      SecretKey: config.SecretKey,
+      AppId,
+      UseRawKey: true,
+    });
+    cos.putObject(
+      {
+        Bucket: BucketShortName,
+        Region: config.Region,
+        Key: filename,
+        Body: file,
+      },
+      function (err, data) {
+        assert.ok(!err);
+        done();
+      }
+    );
+  });
+  test('putObject() options.CompatibilityMode', function (done) {
+    var filename = '/1m.zip';
+    const file = createFileSync(1 * 1024 * 1024);
+    var cos = new COS({
+      SecretId: config.SecretId,
+      SecretKey: config.SecretKey,
+      CompatibilityMode: true,
+    });
+    cos.putObject(
+      {
+        Bucket: BucketShortName,
+        Region: config.Region,
+        Key: filename,
+        Body: file,
+      },
+      function (err, data) {
+        assert.ok(err);
+        done();
+      }
+    );
+  });
   test('putObject() BucketShortName', function (done) {
-    var filename = '1m.zip';
+    var filename = '/1m.zip';
     const file = createFileSync(1 * 1024 * 1024);
     cos.putObject(
       {
@@ -899,6 +942,35 @@ group('putObject 测试老参数', function () {
       },
       function (err, data) {
         assert.ok(!err);
+        done();
+      }
+    );
+  });
+  test('putObject() error Body', function (done) {
+    cos.putObject(
+      {
+        Bucket: BucketShortName,
+        AppId: AppId,
+        Region: config.Region,
+        Key: COS.util.encodeBase64('转base64'),
+        Body: { a: 1 },
+      },
+      function (err, data) {
+        assert.ok(err);
+        done();
+      }
+    );
+  });
+  test('putObject() missing Key', function (done) {
+    cos.putObject(
+      {
+        Bucket: BucketShortName,
+        AppId: AppId,
+        Region: config.Region,
+        Body: file,
+      },
+      function (err, data) {
+        assert.ok(err);
         done();
       }
     );
@@ -1133,7 +1205,7 @@ group('sliceUploadFile() 续传', function () {
                 Key: filename,
                 Body: blob,
                 TaskReady: function(id) {
-                 
+                 console.log('TaskReady', id);
                 },
               },
               function (err, data) {
@@ -1367,6 +1439,9 @@ group('putObject()', function () {
         onProgress: function (info) {
           lastPercent = info.percent;
         },
+        TaskReady: function(id) {
+          console.log('TaskReady', id);
+         },
       },
       function (err, data) {
         if (err) throw err;
@@ -1392,6 +1467,9 @@ group('putObject()', function () {
         onProgress: function (info) {
           lastPercent = info.percent;
         },
+        TaskReady: function(id) {
+          console.log('TaskReady', id);
+         },
       },
       function (err, data) {
         if (err) throw err;
@@ -1932,7 +2010,7 @@ group('sliceCopyFile()', function () {
                   Region: config.Region,
                   Key: Key,
                   CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + filename,
-                  SliceSize: 10 * 1024 * 1024,
+                  CopySliceSize: 10 * 1024 * 1024,
                 },
                 function (err, data) {
                   if (err) throw err;
@@ -1977,7 +2055,7 @@ group('sliceCopyFile()', function () {
         });
     }, 2000);
   });
-  test('CopySource nor found', function (done) {
+  test('CopySource not found', function (done) {
     cos.sliceCopyFile(
       {
         Bucket: config.Bucket,
@@ -2048,6 +2126,7 @@ group('sliceCopyFile()', function () {
             Region: config.Region,
             Key: 'empty-copy',
             CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + sourceKey,
+            CopySliceSize: 1,
           },
           function (err, data) {
             assert.ok(err !== null);
@@ -3804,7 +3883,7 @@ group('复制文件', function () {
             Region: config.Region,
             Key: Key,
             CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + filename,
-            SliceSize: 5 * 1024 * 1024,
+            CopySliceSize: 5 * 1024 * 1024,
             onProgress: function (info) {
               lastPercent = info.percent;
             },
@@ -3827,7 +3906,7 @@ group('复制文件', function () {
         Region: config.Region,
         Key: Key,
         CopySource: config.Bucket + '.cos.' + config.Region + '.myqcloud.com/' + filename,
-        SliceSize: 10 * 1024 * 1024,
+        CopySliceSize: 10 * 1024 * 1024,
       },
       function (err, data) {
         if (err) throw err;
@@ -6008,6 +6087,31 @@ group('上报', function () {
       }
     );
   });
+  test('headBucket() 上报', function (done) {
+    const clsClient = new ClsClient({
+      topicId: 'xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx', // 日志主题 id
+      region: 'ap-guangzhou', // 日志主题所在地域，比如 ap-guangzhou
+      maxRetainDuration: 30, // 默认 30s
+      maxRetainSize: 20, // 默认20条
+    });
+    var cos = new COS({
+      // 必选参数
+      SecretId: config.SecretId,
+      SecretKey: config.SecretKey,
+      ClsReporter: clsClient,  // 开启 cls 上报
+      CustomId: 'sdk-unit-test',
+    });
+    cos.headBucket(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+      },
+      function (err, data) {
+        assert.ok(data);
+        done();
+      }
+    );
+  });
   test('sliceUploadFile() 上报', function (done) {
     const clsClient = new ClsClient({
       topicId: 'xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx', // 日志主题 id
@@ -6127,7 +6231,7 @@ group('上报', function () {
             Region: config.Region,
             Key: 'sliceCopyFile-' + key,
             CopySource: `${config.Bucket}.cos.${config.Region}.myqcloud.com/${key}`,
-            SliceSize: 2 * 1024 * 1024, // 指定文件多大时用分片复制，小于数值则用单片复制
+            CopySliceSize: 2 * 1024 * 1024, // 指定文件多大时用分片复制，小于数值则用单片复制
           },
           function (err, data) {
             assert.ok(data);
