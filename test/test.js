@@ -192,6 +192,8 @@ var cos = new COS({
   // getAuthorization: getAuthorization,
 });
 
+console.log('config.StsUrl========', config.StsUrl);
+
 // 使用临时密钥
 var tempCOS = new COS({
   getAuthorization: function (options, callback) {
@@ -205,7 +207,7 @@ var tempCOS = new COS({
         var credentials = data.credentials;
       } catch (e) {}
       if (!data || !credentials) {
-        return logger.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
+        return console.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
       }
       callback({
         TmpSecretId: credentials.tmpSecretId,
@@ -234,7 +236,7 @@ var oldTempCOS = new COS({
         var credentials = data.credentials;
       } catch (e) {}
       if (!data || !credentials) {
-        return logger.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
+        return console.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
       }
       callback({
         TmpSecretId: credentials.tmpSecretId,
@@ -285,7 +287,7 @@ var getStsCOS = new COS({
         var credentials = data.credentials;
       } catch (e) {}
       if (!data || !credentials) {
-        return logger.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
+        return console.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
       }
       callback({
         TmpSecretId: credentials.tmpSecretId,
