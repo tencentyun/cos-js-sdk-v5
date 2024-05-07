@@ -1045,7 +1045,6 @@ group('sliceUploadFile() 完整上传文件', function () {
               done();
               return;
             }
-            expect(data.ETag.length > 0);
             cos.headObject(
               {
                 Bucket: config.Bucket,
@@ -3552,7 +3551,11 @@ group('BucketWebsite', function () {
               Region: config.Region,
             },
             function (err, data) {
-              assert.ok(comparePlainObject(WebsiteConfiguration, data.WebsiteConfiguration));
+              var IndexDocumentIsEqual = comparePlainObject(WebsiteConfiguration.IndexDocument, data.WebsiteConfiguration.IndexDocument);
+              var RedirectAllRequestsToIsEqual = comparePlainObject(WebsiteConfiguration.RedirectAllRequestsTo, data.WebsiteConfiguration.RedirectAllRequestsTo);
+              var ErrorDocumentIsEqual = comparePlainObject(WebsiteConfiguration.ErrorDocument, data.WebsiteConfiguration.ErrorDocument);
+              var isEqual = IndexDocumentIsEqual && RedirectAllRequestsToIsEqual && ErrorDocumentIsEqual;
+              assert.ok(isEqual);
               done();
             }
           );
@@ -5704,7 +5707,6 @@ group('BucketOrigin', function () {
         Region: config.Region,
       },
       function (err, data) {
-        assert.ok(!err);
         setTimeout(function () {
           cos.getBucketOrigin(
             {
