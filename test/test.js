@@ -330,7 +330,6 @@ var assert = {
   },
 };
 
-
 group('init cos', function () {
   const putFile = function (cosIns, done, canSuccess = true) {
     var key = '1.txt';
@@ -1070,7 +1069,7 @@ group('sliceUploadFile() 完整上传文件', function () {
     var filename = Date.now().toString() + '-10m.zip';
     var blob = util.createFile({ size: 1024 * 1024 * 10 });
     var paused = false;
-    var updateFn = function(info) {
+    var updateFn = function (info) {
       var task = info.list.find((item) => item.Key === filename);
       if (task && task.state === 'success') {
         console.log('任务成功');
@@ -1078,7 +1077,7 @@ group('sliceUploadFile() 完整上传文件', function () {
         assert.ok(1);
         done();
       }
-    }
+    };
     cos.abortUploadTask(
       {
         Bucket: config.Bucket,
@@ -1722,6 +1721,20 @@ group('putObject()', function () {
   });
 });
 
+function getObjectErrorKey(Key, done) {
+  cos.getObject(
+    {
+      Bucket: config.Bucket,
+      Region: config.Region,
+      Key,
+    },
+    function (err, data) {
+      assert.ok(err.message === 'Key format error');
+      done();
+    }
+  );
+}
+
 group('getObject()', function () {
   test('getObject() body', function (done) {
     var key = '1.txt';
@@ -1834,6 +1847,21 @@ group('getObject()', function () {
         );
       }
     );
+  });
+  test('getObject() object key format error 1', function (done) {
+    getObjectErrorKey('///////', done);
+  });
+  test('getObject() object key format error 2', function (done) {
+    getObjectErrorKey('/abc/../', done);
+  });
+  test('getObject() object key format error 3', function (done) {
+    getObjectErrorKey('/./', done);
+  });
+  test('getObject() object key format error 4', function (done) {
+    getObjectErrorKey('///abc/.//def//../../', done);
+  });
+  test('getObject() object key format error 5', function (done) {
+    getObjectErrorKey('/././///abc/.//def//../../', done);
   });
 });
 
@@ -3528,9 +3556,18 @@ group('BucketWebsite', function () {
               Region: config.Region,
             },
             function (err, data) {
-              var IndexDocumentIsEqual = comparePlainObject(WebsiteConfiguration.IndexDocument, data.WebsiteConfiguration.IndexDocument);
-              var RedirectAllRequestsToIsEqual = comparePlainObject(WebsiteConfiguration.RedirectAllRequestsTo, data.WebsiteConfiguration.RedirectAllRequestsTo);
-              var ErrorDocumentIsEqual = comparePlainObject(WebsiteConfiguration.ErrorDocument, data.WebsiteConfiguration.ErrorDocument);
+              var IndexDocumentIsEqual = comparePlainObject(
+                WebsiteConfiguration.IndexDocument,
+                data.WebsiteConfiguration.IndexDocument
+              );
+              var RedirectAllRequestsToIsEqual = comparePlainObject(
+                WebsiteConfiguration.RedirectAllRequestsTo,
+                data.WebsiteConfiguration.RedirectAllRequestsTo
+              );
+              var ErrorDocumentIsEqual = comparePlainObject(
+                WebsiteConfiguration.ErrorDocument,
+                data.WebsiteConfiguration.ErrorDocument
+              );
               var isEqual = IndexDocumentIsEqual && RedirectAllRequestsToIsEqual && ErrorDocumentIsEqual;
               assert.ok(isEqual);
               done();
@@ -3557,9 +3594,18 @@ group('BucketWebsite', function () {
               Region: config.Region,
             },
             function (err, data) {
-              var IndexDocumentIsEqual = comparePlainObject(WebsiteConfiguration.IndexDocument, data.WebsiteConfiguration.IndexDocument);
-              var RedirectAllRequestsToIsEqual = comparePlainObject(WebsiteConfiguration.RedirectAllRequestsTo, data.WebsiteConfiguration.RedirectAllRequestsTo);
-              var ErrorDocumentIsEqual = comparePlainObject(WebsiteConfiguration.ErrorDocument, data.WebsiteConfiguration.ErrorDocument);
+              var IndexDocumentIsEqual = comparePlainObject(
+                WebsiteConfiguration.IndexDocument,
+                data.WebsiteConfiguration.IndexDocument
+              );
+              var RedirectAllRequestsToIsEqual = comparePlainObject(
+                WebsiteConfiguration.RedirectAllRequestsTo,
+                data.WebsiteConfiguration.RedirectAllRequestsTo
+              );
+              var ErrorDocumentIsEqual = comparePlainObject(
+                WebsiteConfiguration.ErrorDocument,
+                data.WebsiteConfiguration.ErrorDocument
+              );
               var isEqual = IndexDocumentIsEqual && RedirectAllRequestsToIsEqual && ErrorDocumentIsEqual;
               assert.ok(isEqual);
               done();
