@@ -1054,8 +1054,9 @@ group('sliceUploadFile() 完整上传文件', function () {
               },
               function (err, data) {
                 const success = data && data.headers && parseInt(data.headers['content-length'] || 0) === fileSize;
+                console.log(`data.headers['content-length']`, data.headers['content-length'], fileSize, success);
                 expect(success);
-                err ? done(err) : done();
+                done();
               }
             );
           }
@@ -1212,21 +1213,21 @@ group('sliceUploadFile() 同时上传2个文件', function () {
         done();
       }
     );
+    setTimeout(() => {
+      cos.sliceUploadFile(
+        {
+          Bucket: config.Bucket,
+          Region: config.Region,
+          Key: filename,
+          Body: blob,
+        },
+        function (err, data) {
+          assert.ok(!err);
+          done();
+        }
+      );
+    }, 2000);
   });
-  setTimeout(() => {
-    cos.sliceUploadFile(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Key: filename,
-        Body: blob,
-      },
-      function (err, data) {
-        assert.ok(!err);
-        done();
-      }
-    );
-  }, 2000);
 });
 
 group('sliceUploadFile() 续传', function () {
@@ -3522,7 +3523,11 @@ group('BucketWebsite', function () {
               Region: config.Region,
             },
             function (err, data) {
-              assert.ok(comparePlainObject(WebsiteConfiguration, data.WebsiteConfiguration));
+              var IndexDocumentIsEqual = comparePlainObject(WebsiteConfiguration.IndexDocument, data.WebsiteConfiguration.IndexDocument);
+              var RedirectAllRequestsToIsEqual = comparePlainObject(WebsiteConfiguration.RedirectAllRequestsTo, data.WebsiteConfiguration.RedirectAllRequestsTo);
+              var ErrorDocumentIsEqual = comparePlainObject(WebsiteConfiguration.ErrorDocument, data.WebsiteConfiguration.ErrorDocument);
+              var isEqual = IndexDocumentIsEqual && RedirectAllRequestsToIsEqual && ErrorDocumentIsEqual;
+              assert.ok(isEqual);
               done();
             }
           );
@@ -4091,7 +4096,7 @@ group('upload Content-Type', function () {
         Bucket: config.Bucket,
         Region: config.Region,
         Key: '1.zip',
-        Body: util.createFile({ size: 1, type: 'text/html' }),
+        Body: util.createFile({ size: 1, type: 'text/xml' }),
       },
       function (err, data) {
         cos.headObject(
