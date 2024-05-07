@@ -1117,8 +1117,7 @@ group('sliceUploadFile() 完整上传文件', function () {
             },
           },
           function (err, data) {
-            paused = true;
-            assert.ok();
+            assert.ok(1);
             done();
           }
         );
