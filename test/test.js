@@ -15,6 +15,7 @@ var config = {
   ReplicationBucket: process.env.ReplicationBucket, // 存储桶复制时用到的桶，需提前创建并设置跨域
   ReplicationRegion: process.env.ReplicationRegion, // 存储桶复制时用到的桶的地域
   Uin: process.env.Uin,
+  StsUrl: process.env.jssdkStsUrl,
 };
 
 // mock localStroage
@@ -194,7 +195,7 @@ var cos = new COS({
 // 使用临时密钥
 var tempCOS = new COS({
   getAuthorization: function (options, callback) {
-    var url = 'http://9.134.125.65:3333/sts'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
+    var url = `${config.StsUrl}/sts`; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     var xhr = new XMLHttpRequest();
     xhr.open('get', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
@@ -223,7 +224,7 @@ var tempCOS = new COS({
 var oldTempCOS = new COS({
   // UseAccelerate: true,
   getAuthorization: function (options, callback) {
-    var url = 'http://9.134.125.65:3333/sts'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
+    var url = `${config.StsUrl}/sts`; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     var xhr = new XMLHttpRequest();
     xhr.open('get', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
@@ -252,7 +253,7 @@ var oldTempCOS = new COS({
 var getSignCOS = new COS({
   // UseAccelerate: true,
   getAuthorization: function (options, callback) {
-    var url = 'http://9.134.125.65:3333/uploadSign'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
+    var url = `${config.StsUrl}/uploadSign`; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     var xhr = new XMLHttpRequest();
     xhr.open('get', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
@@ -274,7 +275,7 @@ var getSignCOS = new COS({
 var getStsCOS = new COS({
   // UseAccelerate: true,
   getSTS: function (options, callback) {
-    var url = 'http://9.134.125.65:3333/sts'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
+    var url = `${config.StsUrl}/sts`; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     var xhr = new XMLHttpRequest();
     xhr.open('POST', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
@@ -1721,20 +1722,6 @@ group('putObject()', function () {
   });
 });
 
-function getObjectErrorKey(Key, done) {
-  cos.getObject(
-    {
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Key,
-    },
-    function (err, data) {
-      assert.ok(err.message === 'Key format error');
-      done();
-    }
-  );
-}
-
 group('getObject()', function () {
   test('getObject() body', function (done) {
     var key = '1.txt';
@@ -1847,21 +1834,6 @@ group('getObject()', function () {
         );
       }
     );
-  });
-  test('getObject() object key format error 1', function (done) {
-    getObjectErrorKey('///////', done);
-  });
-  test('getObject() object key format error 2', function (done) {
-    getObjectErrorKey('/abc/../', done);
-  });
-  test('getObject() object key format error 3', function (done) {
-    getObjectErrorKey('/./', done);
-  });
-  test('getObject() object key format error 4', function (done) {
-    getObjectErrorKey('///abc/.//def//../../', done);
-  });
-  test('getObject() object key format error 5', function (done) {
-    getObjectErrorKey('/././///abc/.//def//../../', done);
   });
 });
 
