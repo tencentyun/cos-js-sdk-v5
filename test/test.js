@@ -6484,3 +6484,5 @@ group('request', function () {
     );
   });
 });
+
+process.exit(0);
