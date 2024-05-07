@@ -1070,14 +1070,15 @@ group('sliceUploadFile() 完整上传文件', function () {
     var filename = Date.now().toString() + '-10m.zip';
     var blob = util.createFile({ size: 1024 * 1024 * 10 });
     var paused = false;
-    cos.on('list-update', function (info) {
+    var updateFn = function(info) {
       var task = info.list.find((item) => item.Key === filename);
       if (task && task.state === 'success') {
         console.log('任务成功');
+        cos.off('list-update', updateFn);
         assert.ok(1);
         done();
       }
-    });
+    }
     cos.abortUploadTask(
       {
         Bucket: config.Bucket,
@@ -1105,17 +1106,20 @@ group('sliceUploadFile() 完整上传文件', function () {
                 cos.pauseTask(TaskId);
                 paused = true;
                 console.log('任务暂停');
+                cos.on('list-update', updateFn);
                 setTimeout(function () {
                   if (paused) {
                     console.log('任务重启');
                     cos.restartTask(TaskId);
                   }
-                }, 1000);
+                }, 10);
               }
             },
           },
           function (err, data) {
             paused = true;
+            assert.ok();
+            done();
           }
         );
       }
