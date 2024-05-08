@@ -8738,10 +8738,6 @@ var util = __webpack_require__(/*! ./util */ "./src/util.js");
  * @param  {Function}  callback     回调函数，必须
  */
 function getService(params, callback) {
-  if (typeof params === 'function') {
-    callback = params;
-    params = {};
-  }
   var protocol = this.options.Protocol || (util.isBrowser && (typeof location === "undefined" ? "undefined" : _typeof(location)) === 'object' && location.protocol === 'http:' ? 'http:' : 'https:');
   var domain = this.options.ServiceDomain;
   var appId = params.AppId || this.options.appId;
@@ -13140,10 +13136,6 @@ var initTask = function initTask(cos) {
     var waiting = task && task.state === 'waiting';
     var running = task && (task.state === 'checking' || task.state === 'uploading');
     if (switchToState === 'canceled' && task.state !== 'canceled' || switchToState === 'paused' && waiting || switchToState === 'paused' && running) {
-      if (switchToState === 'paused' && task.params.Body && typeof task.params.Body.pipe === 'function') {
-        console.error('stream not support pause');
-        return;
-      }
       task.state = switchToState;
       cos.emit('inner-kill-task', {
         TaskId: id,
@@ -13614,7 +13606,6 @@ var Tracker = /*#__PURE__*/function () {
       if (!this.beacon && !this.clsReporter) return;
       this.formatResult(err, data);
       var formattedParams = formatParams(this.params);
-      console.log(formattedParams);
       if (this.beacon) {
         this.sendEventsToBeacon(formattedParams);
       }

@@ -10,10 +10,6 @@ var util = require('./util');
  * @param  {Function}  callback     回调函数，必须
  */
 function getService(params, callback) {
-  if (typeof params === 'function') {
-    callback = params;
-    params = {};
-  }
   var protocol =
     this.options.Protocol ||
     (util.isBrowser && typeof location === 'object' && location.protocol === 'http:' ? 'http:' : 'https:');

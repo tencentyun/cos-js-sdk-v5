@@ -123,10 +123,6 @@ var initTask = function (cos) {
       (switchToState === 'paused' && waiting) ||
       (switchToState === 'paused' && running)
     ) {
-      if (switchToState === 'paused' && task.params.Body && typeof task.params.Body.pipe === 'function') {
-        console.error('stream not support pause');
-        return;
-      }
       task.state = switchToState;
       cos.emit('inner-kill-task', { TaskId: id, toState: switchToState });
       try {
