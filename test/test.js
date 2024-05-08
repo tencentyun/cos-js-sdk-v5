@@ -76,7 +76,7 @@ var util = {
     var opt = {};
     options.type && (opt.type = options.type);
     var blob = new Blob([buffer], options);
-    var file = new File([blob], `file-${Date.now()}.txt`, {
+    var file = new File([blob], `file-${Date.now()}`, {
       type: options.type,
       lastModified: Date.now(),
       lastModifiedDate: new Date(),
