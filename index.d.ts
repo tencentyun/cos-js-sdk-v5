@@ -2047,8 +2047,9 @@ declare class COS {
 
   // 实例方法
   /** 获取用户的 bucket 列表 @see https://cloud.tencent.com/document/product/436/8291 */
+  getService(callback: (err: COS.CosError, data: COS.GetServiceResult) => void): void;
   getService(params: COS.GetServiceParams, callback: (err: COS.CosError, data: COS.GetServiceResult) => void): void;
-  getService(params: COS.GetServiceParams): Promise<COS.GetServiceResult>;
+  getService(params?: COS.GetServiceParams): Promise<COS.GetServiceResult>;
 
   /** 创建 Bucket，并初始化访问权限 @see https://cloud.tencent.com/document/product/436/7738 */
   putBucket(params: COS.PutBucketParams, callback: (err: COS.CosError, data: COS.PutBucketResult) => void): void;
@@ -2558,10 +2559,6 @@ declare class COS {
 
   /** 判断上传队列是否有未完成的任务 */
   isUploadRunning(): boolean;
-
-  /** 分片复制文件 */
-  request(params: COS.RequestParams, callback: (err: COS.CosError, data: COS.RequestResult) => void): void;
-  request(params: COS.RequestParams): Promise<COS.RequestResult>;
 
   /** 获取文件下载链接 @see https://cloud.tencent.com/document/product/436/35651 */
   getObjectUrl(
