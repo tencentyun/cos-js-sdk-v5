@@ -1777,7 +1777,18 @@ group('getObject() 手动关闭 Key 校验', function () {
     );
   }
   test('getObject() The Getobject Key is illegal 1', function (done) {
-    getObjectGetBucket('///////', done);
+    cos.getObject(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '///////'
+      },
+      function (err, data) {
+        // 请求变成了 getBucket
+        assert.ok(data.Body.includes('ListBucketResult'));
+        done();
+      }
+    );
   });
   test('getObject() The Getobject Key is illegal 2', function (done) {
     getObjectGetBucket('/abc/../', done);
