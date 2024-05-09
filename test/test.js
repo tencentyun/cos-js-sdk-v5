@@ -1738,19 +1738,19 @@ group('getObject() 默认开启合并 Key 校验', function () {
       }
     );
   }
-  test('getObject() object key format error 1', function (done) {
+  test('getObject() The Getobject Key is illegal 1', function (done) {
     getObjectErrorKey('///////', done);
   });
-  test('getObject() object key format error 2', function (done) {
+  test('getObject() The Getobject Key is illegal 2', function (done) {
     getObjectErrorKey('/abc/../', done);
   });
-  test('getObject() object key format error 3', function (done) {
+  test('getObject() The Getobject Key is illegal 3', function (done) {
     getObjectErrorKey('/./', done);
   });
-  test('getObject() object key format error 4', function (done) {
+  test('getObject() The Getobject Key is illegal 4', function (done) {
     getObjectErrorKey('///abc/.//def//../../', done);
   });
-  test('getObject() object key format error 5', function (done) {
+  test('getObject() The Getobject Key is illegal 5', function (done) {
     getObjectErrorKey('/././///abc/.//def//../../', done);
   });
 });
@@ -1777,19 +1777,19 @@ group('getObject() 手动关闭 Key 校验', function () {
       }
     );
   }
-  test('getObject() object key format error 1', function (done) {
+  test('getObject() The Getobject Key is illegal 1', function (done) {
     getObjectGetBucket('///////', done);
   });
-  test('getObject() object key format error 2', function (done) {
+  test('getObject() The Getobject Key is illegal 2', function (done) {
     getObjectGetBucket('/abc/../', done);
   });
-  test('getObject() object key format error 3', function (done) {
+  test('getObject() The Getobject Key is illegal 3', function (done) {
     getObjectGetBucket('/./', done);
   });
-  test('getObject() object key format error 4', function (done) {
+  test('getObject() The Getobject Key is illegal 4', function (done) {
     getObjectGetBucket('///abc/.//def//../../', done);
   });
-  test('getObject() object key format error 5', function (done) {
+  test('getObject() The Getobject Key is illegal 5', function (done) {
     getObjectGetBucket('/././///abc/.//def//../../', done);
   });
 });

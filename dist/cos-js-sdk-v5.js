@@ -10641,7 +10641,7 @@ function listObjectVersions(params, callback) {
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
 function getObject(params, callback) {
-  if (this.Options.ObjectKeySimplifyCheck) {
+  if (this.options.ObjectKeySimplifyCheck) {
     // getObject 的 Key 需要校验，避免调用成 getBucket
     var formatKey = util.simplifyPath(params.Key);
     if (formatKey === '/') {
@@ -12796,7 +12796,7 @@ var defaultOptions = {
   CopySourceParser: null,
   // 自定义拷贝源解析器
   ObjectKeySimplifyCheck: true,
-  // 开启校验 getObject Key
+  // 开启合并校验 getObject Key
   /** 上报相关 **/
   DeepTracker: false,
   // 上报时是否对每个分块上传做单独上报
