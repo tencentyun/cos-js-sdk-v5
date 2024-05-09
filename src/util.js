@@ -845,18 +845,15 @@ var encodeBase64 = function (str, safe) {
 };
 
 var simplifyPath = function (path) {
-  var stack = [];
-  var parts = path.split('/');
-  for (var i = 0; i < parts.length; i++) {
-    var part = parts[i];
-    if (part === '.' || part === '') {
-      continue;
-    } else if (part === '..') {
-      if (stack.length > 0) {
+  const names = path.split('/');
+  const stack = [];
+  for (const name of names) {
+    if (name === '..') {
+      if (stack.length) {
         stack.pop();
       }
-    } else {
-      stack.push(part);
+    } else if (name.length && name !== '.') {
+      stack.push(name);
     }
   }
   return '/' + stack.join('/');

@@ -10641,15 +10641,13 @@ function listObjectVersions(params, callback) {
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
 function getObject(params, callback) {
-  // getObject 的 Key 需要格式化，避免调用成 getBucket
-  var formatKey = util.simplifyPath(params.Key);
-  if (formatKey === '/' || formatKey === '') {
-    callback(util.error(new Error('Key format error')));
-    return;
-  }
-  // 去掉第一个斜杆
-  if (formatKey.startsWith('/')) {
-    formatKey = formatKey.substr(1);
+  if (this.Options.CheckGetObjectKey) {
+    // getObject 的 Key 需要校验，避免调用成 getBucket
+    var formatKey = util.simplifyPath(params.Key);
+    if (formatKey === '/') {
+      callback(util.error(new Error('Key format error')));
+      return;
+    }
   }
   var reqParams = params.Query || {};
   var reqParamsStr = params.QueryString || '';
@@ -10671,7 +10669,7 @@ function getObject(params, callback) {
     method: 'GET',
     Bucket: params.Bucket,
     Region: params.Region,
-    Key: formatKey,
+    Key: params.Key,
     VersionId: params.VersionId,
     DataType: params.DataType,
     headers: params.Headers,
@@ -12797,6 +12795,8 @@ var defaultOptions = {
   AutoSwitchHost: true,
   CopySourceParser: null,
   // 自定义拷贝源解析器
+  CheckGetObjectKey: true,
+  // 开启校验 getObject Key
   /** 上报相关 **/
   DeepTracker: false,
   // 上报时是否对每个分块上传做单独上报
@@ -13700,6 +13700,9 @@ module.exports = Tracker;
 /* WEBPACK VAR INJECTION */(function(process) {
 
 var _typeof = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_modules/@babel/runtime/helpers/typeof.js");
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
 var md5 = __webpack_require__(/*! ../lib/md5 */ "./lib/md5.js");
 var CryptoJS = __webpack_require__(/*! ../lib/crypto */ "./lib/crypto.js");
 var xml2json = __webpack_require__(/*! ../lib/xml2json */ "./lib/xml2json.js");
@@ -14448,19 +14451,25 @@ var encodeBase64 = function encodeBase64(str, safe) {
   return base64Str;
 };
 var simplifyPath = function simplifyPath(path) {
+  var names = path.split('/');
   var stack = [];
-  var parts = path.split('/');
-  for (var i = 0; i < parts.length; i++) {
-    var part = parts[i];
-    if (part === '.' || part === '') {
-      continue;
-    } else if (part === '..') {
-      if (stack.length > 0) {
-        stack.pop();
+  var _iterator = _createForOfIteratorHelper(names),
+    _step;
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var name = _step.value;
+      if (name === '..') {
+        if (stack.length) {
+          stack.pop();
+        }
+      } else if (name.length && name !== '.') {
+        stack.push(name);
       }
-    } else {
-      stack.push(part);
     }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
   }
   return '/' + stack.join('/');
 };
