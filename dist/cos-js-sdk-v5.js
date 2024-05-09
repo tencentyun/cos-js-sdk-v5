@@ -10641,11 +10641,11 @@ function listObjectVersions(params, callback) {
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
 function getObject(params, callback) {
-  if (this.Options.CheckGetObjectKey) {
+  if (this.Options.ObjectKeySimplifyCheck) {
     // getObject 的 Key 需要校验，避免调用成 getBucket
     var formatKey = util.simplifyPath(params.Key);
     if (formatKey === '/') {
-      callback(util.error(new Error('Key format error')));
+      callback(util.error(new Error('The Getobject Key is illegal')));
       return;
     }
   }
@@ -12795,7 +12795,7 @@ var defaultOptions = {
   AutoSwitchHost: true,
   CopySourceParser: null,
   // 自定义拷贝源解析器
-  CheckGetObjectKey: true,
+  ObjectKeySimplifyCheck: true,
   // 开启校验 getObject Key
   /** 上报相关 **/
   DeepTracker: false,

@@ -1724,19 +1724,75 @@ group('putObject()', function () {
   });
 });
 
-function getObjectErrorKey(Key, done) {
-  cos.getObject(
-    {
-      Bucket: config.Bucket,
-      Region: config.Region,
-      Key,
-    },
-    function (err, data) {
-      assert.ok(err.message === 'Key format error');
-      done();
-    }
-  );
-}
+group('getObject() 默认开启合并 Key 校验', function () {
+  function getObjectErrorKey(Key, done) {
+    cos.getObject(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key,
+      },
+      function (err, data) {
+        assert.ok(err.message === 'The Getobject Key is illegal');
+        done();
+      }
+    );
+  }
+  test('getObject() object key format error 1', function (done) {
+    getObjectErrorKey('///////', done);
+  });
+  test('getObject() object key format error 2', function (done) {
+    getObjectErrorKey('/abc/../', done);
+  });
+  test('getObject() object key format error 3', function (done) {
+    getObjectErrorKey('/./', done);
+  });
+  test('getObject() object key format error 4', function (done) {
+    getObjectErrorKey('///abc/.//def//../../', done);
+  });
+  test('getObject() object key format error 5', function (done) {
+    getObjectErrorKey('/././///abc/.//def//../../', done);
+  });
+});
+
+group('getObject() 手动关闭 Key 校验', function () {
+  var cos = new COS({
+    // 必选参数
+    SecretId: config.SecretId,
+    SecretKey: config.SecretKey,
+    Protocol: 'http',
+    ObjectKeySimplifyCheck: false,
+  });
+  function getObjectGetBucket(Key, done) {
+    cos.getObject(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key,
+      },
+      function (err, data) {
+        const hasObjects = data.Contents && data.Contents.length > 0;
+        assert.ok(hasObjects);
+        done();
+      }
+    );
+  }
+  test('getObject() object key format error 1', function (done) {
+    getObjectGetBucket('///////', done);
+  });
+  test('getObject() object key format error 2', function (done) {
+    getObjectGetBucket('/abc/../', done);
+  });
+  test('getObject() object key format error 3', function (done) {
+    getObjectGetBucket('/./', done);
+  });
+  test('getObject() object key format error 4', function (done) {
+    getObjectGetBucket('///abc/.//def//../../', done);
+  });
+  test('getObject() object key format error 5', function (done) {
+    getObjectGetBucket('/././///abc/.//def//../../', done);
+  });
+});
 
 group('getObject()', function () {
   test('getObject() body', function (done) {
@@ -1850,21 +1906,6 @@ group('getObject()', function () {
         );
       }
     );
-  });
-  test('getObject() object key format error 1', function (done) {
-    getObjectErrorKey('///////', done);
-  });
-  test('getObject() object key format error 2', function (done) {
-    getObjectErrorKey('/abc/../', done);
-  });
-  test('getObject() object key format error 3', function (done) {
-    getObjectErrorKey('/./', done);
-  });
-  test('getObject() object key format error 4', function (done) {
-    getObjectErrorKey('///abc/.//def//../../', done);
-  });
-  test('getObject() object key format error 5', function (done) {
-    getObjectErrorKey('/././///abc/.//def//../../', done);
   });
 });
 

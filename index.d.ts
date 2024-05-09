@@ -189,7 +189,7 @@ declare namespace COS {
     /** 默认为true，将host加入签名计算，关闭后可能导致越权风险，建议保持为true */
     ForceSignHost?: boolean;
     AutoSwitchHost?: boolean;
-    CheckGetObjectKey?: boolean;
+    ObjectKeySimplifyCheck?: boolean;
     /** 链路上报 */
     DeepTracker?: boolean;
     TrackerDelay?: number;
