@@ -15,6 +15,7 @@ var config = {
   ReplicationBucket: process.env.ReplicationBucket, // 存储桶复制时用到的桶，需提前创建并设置跨域
   ReplicationRegion: process.env.ReplicationRegion, // 存储桶复制时用到的桶的地域
   Uin: process.env.Uin,
+  StsUrl: process.env.jssdkStsUrl,
 };
 
 // mock localStroage
@@ -75,7 +76,7 @@ var util = {
     var opt = {};
     options.type && (opt.type = options.type);
     var blob = new Blob([buffer], options);
-    var file = new File([blob], `file-${Date.now()}.txt`, {
+    var file = new File([blob], `file-${Date.now()}`, {
       type: options.type,
       lastModified: Date.now(),
       lastModifiedDate: new Date(),
@@ -191,10 +192,12 @@ var cos = new COS({
   // getAuthorization: getAuthorization,
 });
 
+console.log('config.StsUrl========', config.StsUrl);
+
 // 使用临时密钥
 var tempCOS = new COS({
   getAuthorization: function (options, callback) {
-    var url = 'http://9.134.125.65:3333/sts'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
+    var url = `${config.StsUrl}/sts`; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     var xhr = new XMLHttpRequest();
     xhr.open('get', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
@@ -204,7 +207,7 @@ var tempCOS = new COS({
         var credentials = data.credentials;
       } catch (e) {}
       if (!data || !credentials) {
-        return logger.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
+        return console.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
       }
       callback({
         TmpSecretId: credentials.tmpSecretId,
@@ -223,7 +226,7 @@ var tempCOS = new COS({
 var oldTempCOS = new COS({
   // UseAccelerate: true,
   getAuthorization: function (options, callback) {
-    var url = 'http://9.134.125.65:3333/sts'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
+    var url = `${config.StsUrl}/sts`; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     var xhr = new XMLHttpRequest();
     xhr.open('get', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
@@ -233,7 +236,7 @@ var oldTempCOS = new COS({
         var credentials = data.credentials;
       } catch (e) {}
       if (!data || !credentials) {
-        return logger.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
+        return console.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
       }
       callback({
         TmpSecretId: credentials.tmpSecretId,
@@ -252,7 +255,7 @@ var oldTempCOS = new COS({
 var getSignCOS = new COS({
   // UseAccelerate: true,
   getAuthorization: function (options, callback) {
-    var url = 'http://9.134.125.65:3333/uploadSign'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
+    var url = `${config.StsUrl}/uploadSign`; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     var xhr = new XMLHttpRequest();
     xhr.open('get', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
@@ -274,7 +277,7 @@ var getSignCOS = new COS({
 var getStsCOS = new COS({
   // UseAccelerate: true,
   getSTS: function (options, callback) {
-    var url = 'http://9.134.125.65:3333/sts'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
+    var url = `${config.StsUrl}/sts`; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     var xhr = new XMLHttpRequest();
     xhr.open('POST', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
@@ -284,7 +287,7 @@ var getStsCOS = new COS({
         var credentials = data.credentials;
       } catch (e) {}
       if (!data || !credentials) {
-        return logger.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
+        return console.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
       }
       callback({
         TmpSecretId: credentials.tmpSecretId,
