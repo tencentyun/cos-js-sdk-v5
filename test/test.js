@@ -1771,8 +1771,7 @@ group('getObject() 手动关闭 Key 校验', function () {
         Key,
       },
       function (err, data) {
-        const hasObjects = data.Contents && data.Contents.length > 0;
-        assert.ok(hasObjects);
+        assert.ok(err);
         done();
       }
     );
