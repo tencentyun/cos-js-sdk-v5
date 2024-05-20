@@ -107,6 +107,16 @@
       </div>
     </div>
 
+    <script>
+        // config 替换成自己的存储桶和账号信息
+        var config = {
+          Bucket: 'test-1250000000',
+          Region: 'ap-guangzhou',
+          Uin: '10001',
+        };
+        window.config = config;
+    </script>
+
     <script src="../demo/common/beacon.min.js"></script>
     <script src="../demo/common/cls.min.js"></script>
     <script src="../dist/cos-js-sdk-v5.js"></script>
@@ -132,12 +142,7 @@
           ciMain.className = 'main cos-main show';
         });
 
-        // config 替换成自己的存储桶和账号信息
-        var config = {
-          Bucket: 'test-1250000000',
-          Region: 'ap-guangzhou',
-          Uin: '10001',
-        };
+
         var getAuthorization = function (options, callback) {
           // 格式一、（推荐）后端通过获取临时密钥给到前端，前端计算签名
           // 服务端 JS 和 PHP 例子：https://github.com/tencentyun/cos-js-sdk-v5/blob/master/server/
@@ -332,7 +337,6 @@
         /**
          * 这里demo为了方便挂在了window上 实际使用请结合项目比如可使用模块导出
          * */
-        window.config = config;
         window.cos = cos;
         window.util = util;
         window.logger = logger;

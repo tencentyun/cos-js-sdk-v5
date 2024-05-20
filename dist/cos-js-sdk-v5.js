@@ -679,7 +679,6 @@ var process_to_xml = function process_to_xml(node_data, options) {
           ret.push(fn(v, 1, level + 1));
           //entries that are values of an array are the only ones that can be special node descriptors
         });
-
         options.prettyPrint && ret.push('\n');
         return ret.join('');
         break;
@@ -1546,7 +1545,6 @@ var xmlToJSON = function () {
     // collapse multiple spaces to single space
     stripElemPrefix: true // for elements of same name in diff namespaces, you can enable namespaces and access the nskey property
   };
-
   var prefixMatch = new RegExp(/(?!xmlns)^.*:/);
   var trimMatch = new RegExp(/^\s+|\s+$/g);
   this.grokType = function (sValue) {
@@ -12578,9 +12576,23 @@ function _submitRequest(params, callback) {
     var statusSuccess = Math.floor(statusCode / 100) === 2; // 200 202 204 206
 
     // 不对 body 进行转换，body 直接挂载返回
-    if (rawBody && statusSuccess) return cb(null, {
-      body: body
-    });
+    if (rawBody) {
+      if (statusSuccess) {
+        return cb(null, {
+          body: body
+        });
+      } else {
+        // 兼容body返回了 json 格式的 error
+        var errorBody = {};
+        try {
+          errorBody = JSON.parse(body);
+        } catch (e) {}
+        return cb(util.error(new Error(errorBody.Message || 'response body error'), {
+          code: errorBody.Code,
+          error: errorBody
+        }));
+      }
+    }
 
     // 解析 xml body
     var json;
@@ -13309,7 +13321,6 @@ var getBeacon = function getBeacon(Beacon, delay) {
       sessionDuration: 60 * 1000 // session变更的时间间隔, 一个用户持续30分钟(默认值)没有任何上报则算另一次 session,每变更一次session上报一次启动事件(rqd_applaunched),使用毫秒(ms),最小值30秒,选填
     });
   }
-
   return beacon;
 };
 
@@ -13364,7 +13375,6 @@ var utils = {
     if ((typeof navigator === "undefined" ? "undefined" : _typeof(navigator)) === 'object' && navigator.userAgent.match(exp)) {
       return true; // 移动端
     }
-
     return false; // PC端
   },
   isAndroid: function isAndroid() {

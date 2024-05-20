@@ -7,6 +7,7 @@ import * as docPreview from './docPreview.js';
 import * as audit from './audit.js';
 import * as fileProcess from './fileProcess.js';
 import * as asr from './asr.js';
+import * as meta from './meta.js';
 
 // 函数集合
 const moduleFn = {};
@@ -48,6 +49,10 @@ const contentMap = {
     title: '智能语音',
     functions: [],
   },
+  meta: {
+    title: '元数据',
+    functions: [],
+  },
 };
 
 function setContent(fnName, module, moduleName) {
@@ -81,6 +86,9 @@ for (let fnName in fileProcess) {
 }
 for (let fnName in asr) {
   setContent(fnName, asr, 'asr');
+}
+for (let fnName in meta) {
+  setContent(fnName, meta, 'meta');
 }
 
 (function () {

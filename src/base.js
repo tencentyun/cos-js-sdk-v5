@@ -4202,7 +4202,20 @@ function _submitRequest(params, callback) {
     var statusSuccess = Math.floor(statusCode / 100) === 2; // 200 202 204 206
 
     // 不对 body 进行转换，body 直接挂载返回
-    if (rawBody && statusSuccess) return cb(null, { body: body });
+    if (rawBody) {
+      if (statusSuccess) {
+        return cb(null, { body: body });
+      } else {
+        // 兼容body返回了 json 格式的 error
+        var errorBody = {};
+        try {
+          errorBody = JSON.parse(body);
+        } catch (e) {}
+        return cb(
+          util.error(new Error(errorBody.Message || 'response body error'), { code: errorBody.Code, error: errorBody })
+        );
+      }
+    }
 
     // 解析 xml body
     var json;
