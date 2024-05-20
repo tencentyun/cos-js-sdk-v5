@@ -6593,7 +6593,6 @@ group('get json body', function () {
       const key = 'dataset'; // 固定值
       const host = `${AppId}.ci.${config.Region}.myqcloud.com`;
       const url = `https://${host}/${key}`;
-  
       cos.request(
         {
           Method: 'GET', // 固定值，必须
@@ -6614,7 +6613,12 @@ group('get json body', function () {
           },
         },
         function (err, data) {
-          assert.ok(err.message === 'dataset not created');
+          // TODO 元数据当前只支持北京园区，万象对其他园区没有抛错误码
+          if (config.Region === 'ap-beijing') {
+            assert.ok(err.message === 'dataset not created');
+          } else {
+            assert.ok(JSON.parse(data).Body.Response === null);
+          }
           done();
         }
       );

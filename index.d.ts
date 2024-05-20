@@ -1959,6 +1959,7 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
   /** Request 接口返回值 */
   interface RequestResult extends GeneralResult {
     Body?: string | Blob | ArrayBuffer;
+    Response?: any; // 万象接口可能返回 Response
   }
 
   // getObjectUrl
