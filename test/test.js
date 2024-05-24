@@ -1724,6 +1724,86 @@ group('putObject()', function () {
   });
 });
 
+group('getObject() 默认开启合并 Key 校验', function () {
+  function getObjectErrorKey(Key, done) {
+    cos.getObject(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key,
+      },
+      function (err, data) {
+        assert.ok(err.message === 'The Getobject Key is illegal');
+        done();
+      }
+    );
+  }
+  test('getObject() The Getobject Key is illegal 1', function (done) {
+    getObjectErrorKey('///////', done);
+  });
+  test('getObject() The Getobject Key is illegal 2', function (done) {
+    getObjectErrorKey('/abc/../', done);
+  });
+  test('getObject() The Getobject Key is illegal 3', function (done) {
+    getObjectErrorKey('/./', done);
+  });
+  test('getObject() The Getobject Key is illegal 4', function (done) {
+    getObjectErrorKey('///abc/.//def//../../', done);
+  });
+  test('getObject() The Getobject Key is illegal 5', function (done) {
+    getObjectErrorKey('/././///abc/.//def//../../', done);
+  });
+});
+
+group('getObject() 手动关闭 Key 校验', function () {
+  var cos = new COS({
+    // 必选参数
+    SecretId: config.SecretId,
+    SecretKey: config.SecretKey,
+    Protocol: 'http',
+    ObjectKeySimplifyCheck: false,
+  });
+  function getObjectGetBucket(Key, done) {
+    cos.getObject(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key,
+      },
+      function (err, data) {
+        assert.ok(err);
+        done();
+      }
+    );
+  }
+  test('getObject() The Getobject Key is illegal 1', function (done) {
+    cos.getObject(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '///////',
+      },
+      function (err, data) {
+        // 请求变成了 getBucket
+        assert.ok(data.Body.includes('ListBucketResult'));
+        done();
+      }
+    );
+  });
+  test('getObject() The Getobject Key is illegal 2', function (done) {
+    getObjectGetBucket('/abc/../', done);
+  });
+  test('getObject() The Getobject Key is illegal 3', function (done) {
+    getObjectGetBucket('/./', done);
+  });
+  test('getObject() The Getobject Key is illegal 4', function (done) {
+    getObjectGetBucket('///abc/.//def//../../', done);
+  });
+  test('getObject() The Getobject Key is illegal 5', function (done) {
+    getObjectGetBucket('/././///abc/.//def//../../', done);
+  });
+});
+
 group('getObject()', function () {
   test('getObject() body', function (done) {
     var key = '1.txt';
@@ -6504,3 +6584,43 @@ group('request', function () {
     );
   });
 });
+
+
+// group('get json body', function () {
+//   // 从 Bucket 里拆出 AppId
+//   const AppId = config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1);
+//   test('json error()', function (done) {
+//       const key = 'dataset'; // 固定值
+//       const host = `${AppId}.ci.${config.Region}.myqcloud.com`;
+//       const url = `https://${host}/${key}`;
+//       cos.request(
+//         {
+//           Method: 'GET', // 固定值，必须
+//           Key: key, // 必须
+//           Url: url, // 请求的url，必须
+//           Query: {
+//             // 数据集名称，同一个账户下唯一。;是否必传：是
+//             datasetname: 'test-not-found-112233',
+//             // 是否需要实时统计数据集中文件相关信息。有效值： false：不统计，返回的文件的总大小、数量信息可能不正确也可能都为0。 true：需要统计，返回数据集中当前的文件的总大小、数量信息。 默认值为false。;是否必传：否
+//             statistics: false,
+//           },
+//           RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
+//           Headers: {
+//             // 设置请求体为 json，固定值，必须
+//             'Content-Type': 'application/json',
+//             // 设置响应体为json，固定值，必须
+//             Accept: 'application/json',
+//           },
+//         },
+//         function (err, data) {
+//           // TODO 元数据当前只支持北京园区，万象对其他园区没有抛错误码
+//           if (config.Region === 'ap-beijing') {
+//             assert.ok(err.message === 'dataset not created');
+//           } else {
+//             assert.ok(JSON.parse(data).Body.Response === null);
+//           }
+//           done();
+//         }
+//       );
+//   });
+// });

@@ -2116,6 +2116,14 @@ function listObjectVersions(params, callback) {
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
 function getObject(params, callback) {
+  if (this.options.ObjectKeySimplifyCheck) {
+    // getObject 的 Key 需要校验，避免调用成 getBucket
+    var formatKey = util.simplifyPath(params.Key);
+    if (formatKey === '/') {
+      callback(util.error(new Error('The Getobject Key is illegal')));
+      return;
+    }
+  }
   var reqParams = params.Query || {};
   var reqParamsStr = params.QueryString || '';
   var onProgress = util.throttleOnProgress.call(this, 0, params.onProgress);
@@ -4195,6 +4203,20 @@ function _submitRequest(params, callback) {
 
     // 不对 body 进行转换，body 直接挂载返回
     if (rawBody && statusSuccess) return cb(null, { body: body });
+    // if (rawBody) {
+    //   if (statusSuccess) {
+    //     return cb(null, { body: body });
+    //   } else {
+    //     // 兼容body返回了 json 格式的 error
+    //     var errorBody = {};
+    //     try {
+    //       errorBody = JSON.parse(body);
+    //     } catch (e) {}
+    //     return cb(
+    //       util.error(new Error(errorBody.Message || 'response body error'), { code: errorBody.Code, error: errorBody })
+    //     );
+    //   }
+    // }
 
     // 解析 xml body
     var json;

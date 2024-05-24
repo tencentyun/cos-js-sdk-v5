@@ -189,6 +189,7 @@ declare namespace COS {
     /** 默认为true，将host加入签名计算，关闭后可能导致越权风险，建议保持为true */
     ForceSignHost?: boolean;
     AutoSwitchHost?: boolean;
+    ObjectKeySimplifyCheck?: boolean;
     /** 链路上报 */
     DeepTracker?: boolean;
     TrackerDelay?: number;
@@ -1958,6 +1959,7 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
   /** Request 接口返回值 */
   interface RequestResult extends GeneralResult {
     Body?: string | Blob | ArrayBuffer;
+    Response?: any; // 万象接口可能返回 Response
   }
 
   // getObjectUrl

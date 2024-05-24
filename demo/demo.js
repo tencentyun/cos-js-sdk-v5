@@ -1,5 +1,13 @@
 var TaskId;
 
+if (typeof logger === 'undefined') {
+  logger = console;
+}
+
+if (typeof config === 'undefined' || !config || !config.Bucket || !config.Region) {
+  console.error('请到 demo/index.html 中设置config初始化信息');
+}
+
 function getObjectUrl() {
   var url = cos.getObjectUrl(
     {
@@ -92,15 +100,16 @@ function headBucket() {
 }
 
 function deleteBucket() {
-  cos.deleteBucket(
-    {
-      Bucket: 'testnew-' + config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1),
-      Region: 'ap-guangzhou',
-    },
-    function (err, data) {
-      logger.log('deleteBucket:', err || data);
-    }
-  );
+  // 谨慎使用，会删除存储桶
+  // cos.deleteBucket(
+  //   {
+  //     Bucket: config.Bucket,
+  //     Region: config.Region,
+  //   },
+  //   function (err, data) {
+  //     logger.log('deleteBucket:', err || data);
+  //   }
+  // );
 }
 
 function putBucketAcl() {
@@ -205,15 +214,16 @@ function getBucketCors() {
 }
 
 function deleteBucketCors() {
-  cos.deleteBucketCors(
-    {
-      Bucket: config.Bucket, // Bucket 格式：test-1250000000
-      Region: config.Region,
-    },
-    function (err, data) {
-      logger.log('deleteBucketCors:', err || data);
-    }
-  );
+  // 浏览器端不建议使用
+  // cos.deleteBucketCors(
+  //   {
+  //     Bucket: config.Bucket, // Bucket 格式：test-1250000000
+  //     Region: config.Region,
+  //   },
+  //   function (err, data) {
+  //     logger.log('deleteBucketCors:', err || data);
+  //   }
+  // );
 }
 
 function putBucketTagging() {
@@ -916,6 +926,7 @@ function putObject() {
       Bucket: config.Bucket, // Bucket 格式：test-1250000000
       Region: config.Region,
       Key: filename, // 必须
+      // 常见场景是使用 input[type="file"] 标签选择文件后上传，可参考 selectFileToUpload
       Body: blob,
       onTaskReady: function (tid) {
         TaskId = tid;
@@ -980,49 +991,50 @@ function putObject_base64ToBlob() {
   );
 }
 
-function appendObject() {
-  cos.appendObject(
-    {
-      Bucket: config.Bucket, // Bucket 格式：test-1250000000
-      Region: config.Region,
-      Key: 'append.txt', // 必须
-      Body: '12345',
-      Position: 0,
-    },
-    function (err, data) {
-      logger.log('putObject:', err || data);
-    }
-  );
-}
+// 追加上传
+// function appendObject() {
+//   cos.appendObject(
+//     {
+//       Bucket: config.Bucket, // Bucket 格式：test-1250000000
+//       Region: config.Region,
+//       Key: 'append.txt', // 必须
+//       Body: '12345',
+//       Position: 0,
+//     },
+//     function (err, data) {
+//       logger.log('putObject:', err || data);
+//     }
+//   );
+// }
 
-function appendObject_continue() {
-  cos.headObject(
-    {
-      Bucket: config.Bucket, // Bucket 格式：test-1250000000
-      Region: config.Region,
-      Key: 'append.txt', // 必须
-    },
-    function (err, data) {
-      if (err) return console.log(err);
-      // 首先取到要追加的文件当前长度，即需要上送的Position
-      var position = data.headers['content-length'];
-      cos.appendObject(
-        {
-          Bucket: config.Bucket, // Bucket 格式：test-1250000000
-          Region: config.Region,
-          Key: 'append.txt', // 必须
-          Body: '66666',
-          Position: position,
-        },
-        function (err, data) {
-          // 也可以取到下一次上传的position继续追加上传
-          // var nextPosition = data.headers['x-cos-next-append-position'];
-          logger.log('putObject:', err || data);
-        }
-      );
-    }
-  );
-}
+// function appendObject_continue() {
+//   cos.headObject(
+//     {
+//       Bucket: config.Bucket, // Bucket 格式：test-1250000000
+//       Region: config.Region,
+//       Key: 'append.txt', // 必须
+//     },
+//     function (err, data) {
+//       if (err) return console.log(err);
+//       // 首先取到要追加的文件当前长度，即需要上送的Position
+//       var position = data.headers['content-length'];
+//       cos.appendObject(
+//         {
+//           Bucket: config.Bucket, // Bucket 格式：test-1250000000
+//           Region: config.Region,
+//           Key: 'append.txt', // 必须
+//           Body: '66666',
+//           Position: position,
+//         },
+//         function (err, data) {
+//           // 也可以取到下一次上传的position继续追加上传
+//           // var nextPosition = data.headers['x-cos-next-append-position'];
+//           logger.log('putObject:', err || data);
+//         }
+//       );
+//     }
+//   );
+// }
 
 function putObjectCopy() {
   cos.putObjectCopy(
@@ -1277,10 +1289,10 @@ function sliceUploadFile() {
     {
       Bucket: config.Bucket, // Bucket 格式：test-1250000000
       Region: config.Region,
-      Key: '3mb.zip', // 必须
+      Key: '3mb.jpg', // 必须
       Body: blob,
       Headers: {
-        // 万象持久化接口，上传时持久化
+        // 支持万象持久化接口，上传时持久化
         // 'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "test.jpg", "rule": "imageMogr2/thumbnail/!50p"}]}'
       },
       onTaskReady: function (tid) {
@@ -1300,6 +1312,7 @@ function sliceUploadFile() {
 }
 
 function selectFileToUpload() {
+  // 选择本地文件上传
   util.selectLocalFile(function (files) {
     var file = files && files[0];
     if (!file) return;
@@ -1312,9 +1325,6 @@ function selectFileToUpload() {
           Body: file,
           onTaskReady: function (tid) {
             TaskId = tid;
-          },
-          onHashProgress: function (progressData) {
-            logger.log('onHashProgress', JSON.stringify(progressData));
           },
           onProgress: function (progressData) {
             logger.log('onProgress', JSON.stringify(progressData));
@@ -1333,9 +1343,6 @@ function selectFileToUpload() {
           Body: file,
           onTaskReady: function (tid) {
             TaskId = tid;
-          },
-          onHashProgress: function (progressData) {
-            logger.log('onHashProgress', JSON.stringify(progressData));
           },
           onProgress: function (progressData) {
             logger.log(JSON.stringify(progressData));
@@ -1419,7 +1426,7 @@ function sliceCopyFile() {
       Region: config.Region,
       Key: Key,
       CopySource: sourcePath,
-      SliceSize: 2 * 1024 * 1024, // 指定文件多大时用分片复制，小于数值则用单片复制
+      CopySliceSize: 5 * 1024 * 1024, // 指定文件多大时用分片复制，小于数值则用单片复制
       onProgress: function (info) {
         var percent = Math.floor(info.percent * 10000) / 100;
         var speed = Math.floor((info.speed / 1024 / 1024) * 100) / 100;
@@ -1670,8 +1677,10 @@ function request() {
       Action: 'image_process',
       Headers: {
         // 通过 imageMogr2 接口使用图片缩放功能：指定图片宽度为 200，宽度等比压缩
-        'Pic-Operations':
-          '{"is_pic_info": 1, "rules": [{"fileid": "desample_photo.jpg", "rule": "imageMogr2/thumbnail/200x/"}]}',
+        'Pic-Operations': JSON.stringify({
+          is_pic_info: 1,
+          rules: [{ fileid: 'desample_photo.jpg', rule: 'imageMogr2/thumbnail/200x/' }],
+        }),
       },
     },
     function (err, data) {
@@ -1747,8 +1756,8 @@ function request() {
     'selectObjectContent',
     'putObject',
     'putObject_base64ToBlob',
-    'appendObject',
-    'appendObject_continue',
+    // 'appendObject',
+    // 'appendObject_continue',
 
     'header-高级操作',
     'uploadFile',

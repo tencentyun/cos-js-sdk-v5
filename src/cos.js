@@ -39,6 +39,7 @@ var defaultOptions = {
   ForceSignHost: true, // 默认将host加入签名计算，关闭后可能导致越权风险，建议保持为true
   AutoSwitchHost: true,
   CopySourceParser: null, // 自定义拷贝源解析器
+  ObjectKeySimplifyCheck: true, // 开启合并校验 getObject Key
   /** 上报相关 **/
   DeepTracker: false, // 上报时是否对每个分块上传做单独上报
   TrackerDelay: 5000, // 周期性上报，单位毫秒。0代表实时上报
