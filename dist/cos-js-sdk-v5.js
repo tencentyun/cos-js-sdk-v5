@@ -679,7 +679,6 @@ var process_to_xml = function process_to_xml(node_data, options) {
           ret.push(fn(v, 1, level + 1));
           //entries that are values of an array are the only ones that can be special node descriptors
         });
-
         options.prettyPrint && ret.push('\n');
         return ret.join('');
         break;
@@ -1546,7 +1545,6 @@ var xmlToJSON = function () {
     // collapse multiple spaces to single space
     stripElemPrefix: true // for elements of same name in diff namespaces, you can enable namespaces and access the nskey property
   };
-
   var prefixMatch = new RegExp(/(?!xmlns)^.*:/);
   var trimMatch = new RegExp(/^\s+|\s+$/g);
   this.grokType = function (sValue) {
@@ -7283,7 +7281,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.7.1\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js lib/request.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.8.0\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js lib/request.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -10641,6 +10639,14 @@ function listObjectVersions(params, callback) {
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
 function getObject(params, callback) {
+  if (this.options.ObjectKeySimplifyCheck) {
+    // getObject 的 Key 需要校验，避免调用成 getBucket
+    var formatKey = util.simplifyPath(params.Key);
+    if (formatKey === '/') {
+      callback(util.error(new Error('The Getobject Key is illegal')));
+      return;
+    }
+  }
   var reqParams = params.Query || {};
   var reqParamsStr = params.QueryString || '';
   var onProgress = util.throttleOnProgress.call(this, 0, params.onProgress);
@@ -12573,6 +12579,20 @@ function _submitRequest(params, callback) {
     if (rawBody && statusSuccess) return cb(null, {
       body: body
     });
+    // if (rawBody) {
+    //   if (statusSuccess) {
+    //     return cb(null, { body: body });
+    //   } else {
+    //     // 兼容body返回了 json 格式的 error
+    //     var errorBody = {};
+    //     try {
+    //       errorBody = JSON.parse(body);
+    //     } catch (e) {}
+    //     return cb(
+    //       util.error(new Error(errorBody.Message || 'response body error'), { code: errorBody.Code, error: errorBody })
+    //     );
+    //   }
+    // }
 
     // 解析 xml body
     var json;
@@ -12787,6 +12807,8 @@ var defaultOptions = {
   AutoSwitchHost: true,
   CopySourceParser: null,
   // 自定义拷贝源解析器
+  ObjectKeySimplifyCheck: true,
+  // 开启合并校验 getObject Key
   /** 上报相关 **/
   DeepTracker: false,
   // 上报时是否对每个分块上传做单独上报
@@ -13299,7 +13321,6 @@ var getBeacon = function getBeacon(Beacon, delay) {
       sessionDuration: 60 * 1000 // session变更的时间间隔, 一个用户持续30分钟(默认值)没有任何上报则算另一次 session,每变更一次session上报一次启动事件(rqd_applaunched),使用毫秒(ms),最小值30秒,选填
     });
   }
-
   return beacon;
 };
 
@@ -13354,7 +13375,6 @@ var utils = {
     if ((typeof navigator === "undefined" ? "undefined" : _typeof(navigator)) === 'object' && navigator.userAgent.match(exp)) {
       return true; // 移动端
     }
-
     return false; // PC端
   },
   isAndroid: function isAndroid() {
@@ -13690,6 +13710,9 @@ module.exports = Tracker;
 /* WEBPACK VAR INJECTION */(function(process) {
 
 var _typeof = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_modules/@babel/runtime/helpers/typeof.js");
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
 var md5 = __webpack_require__(/*! ../lib/md5 */ "./lib/md5.js");
 var CryptoJS = __webpack_require__(/*! ../lib/crypto */ "./lib/crypto.js");
 var xml2json = __webpack_require__(/*! ../lib/xml2json */ "./lib/xml2json.js");
@@ -14437,6 +14460,29 @@ var encodeBase64 = function encodeBase64(str, safe) {
   }
   return base64Str;
 };
+var simplifyPath = function simplifyPath(path) {
+  var names = path.split('/');
+  var stack = [];
+  var _iterator = _createForOfIteratorHelper(names),
+    _step;
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var name = _step.value;
+      if (name === '..') {
+        if (stack.length) {
+          stack.pop();
+        }
+      } else if (name.length && name !== '.') {
+        stack.push(name);
+      }
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+  return '/' + stack.join('/');
+};
 var util = {
   noop: noop,
   formatParams: formatParams,
@@ -14472,7 +14518,8 @@ var util = {
   isNode: isNode,
   isCIHost: isCIHost,
   isIOS_QQ: isIOS && isQQ,
-  encodeBase64: encodeBase64
+  encodeBase64: encodeBase64,
+  simplifyPath: simplifyPath
 };
 module.exports = util;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/process/browser.js */ "./node_modules/process/browser.js")))
