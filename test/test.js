@@ -6585,42 +6585,40 @@ group('request', function () {
   });
 });
 
-
-// group('get json body', function () {
-//   // 从 Bucket 里拆出 AppId
-//   const AppId = config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1);
-//   test('json error()', function (done) {
-//       const key = 'dataset'; // 固定值
-//       const host = `${AppId}.ci.${config.Region}.myqcloud.com`;
-//       const url = `https://${host}/${key}`;
-//       cos.request(
-//         {
-//           Method: 'GET', // 固定值，必须
-//           Key: key, // 必须
-//           Url: url, // 请求的url，必须
-//           Query: {
-//             // 数据集名称，同一个账户下唯一。;是否必传：是
-//             datasetname: 'test-not-found-112233',
-//             // 是否需要实时统计数据集中文件相关信息。有效值： false：不统计，返回的文件的总大小、数量信息可能不正确也可能都为0。 true：需要统计，返回数据集中当前的文件的总大小、数量信息。 默认值为false。;是否必传：否
-//             statistics: false,
-//           },
-//           RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
-//           Headers: {
-//             // 设置请求体为 json，固定值，必须
-//             'Content-Type': 'application/json',
-//             // 设置响应体为json，固定值，必须
-//             Accept: 'application/json',
-//           },
-//         },
-//         function (err, data) {
-//           // TODO 元数据当前只支持北京园区，万象对其他园区没有抛错误码
-//           if (config.Region === 'ap-beijing') {
-//             assert.ok(err.message === 'dataset not created');
-//           } else {
-//             assert.ok(JSON.parse(data).Body.Response === null);
-//           }
-//           done();
-//         }
-//       );
-//   });
-// });
+group('get json body', function () {
+  // 从 Bucket 里拆出 AppId
+  const AppId = config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1);
+  test('json error()', function (done) {
+      const key = 'dataset'; // 固定值
+      const host = `${AppId}.ci.${config.Region}.myqcloud.com`;
+      const url = `https://${host}/${key}`;
+      cos.request(
+        {
+          Method: 'GET', // 固定值，必须
+          Key: key, // 必须
+          Url: url, // 请求的url，必须
+          Query: {
+            // 数据集名称，同一个账户下唯一。;是否必传：是
+            datasetname: 'test-not-found-112233',
+            // 是否需要实时统计数据集中文件相关信息。有效值： false：不统计，返回的文件的总大小、数量信息可能不正确也可能都为0。 true：需要统计，返回数据集中当前的文件的总大小、数量信息。 默认值为false。;是否必传：否
+            statistics: false,
+          },
+          RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
+          Headers: {
+            // 设置请求体为 json，固定值，必须
+            'Content-Type': 'application/json',
+            // 设置响应体为json，固定值，必须
+            Accept: 'application/json',
+          },
+        },
+        function (err, data) {
+          if (config.Region === 'ap-beijing') {
+            assert.ok(err.message === 'dataset not created');
+          } else {
+            assert.ok(err.code === 'InvalidUrl');
+          }
+          done();
+        }
+      );
+  });
+});

@@ -49,10 +49,10 @@ const contentMap = {
     title: '智能语音',
     functions: [],
   },
-  // meta: {
-  //   title: '元数据',
-  //   functions: [],
-  // },
+  meta: {
+    title: '元数据',
+    functions: [],
+  },
 };
 
 function setContent(fnName, module, moduleName) {
@@ -87,9 +87,9 @@ for (let fnName in fileProcess) {
 for (let fnName in asr) {
   setContent(fnName, asr, 'asr');
 }
-// for (let fnName in meta) {
-//   setContent(fnName, meta, 'meta');
-// }
+for (let fnName in meta) {
+  setContent(fnName, meta, 'meta');
+}
 
 (function () {
   const container = document.querySelector('.ci-main');
