@@ -12588,6 +12588,8 @@ function _submitRequest(params, callback) {
       } catch (e) {}
       if (!isXml) {
         try {
+          // 替换 json 中的换行符为空格，否则解析会出错
+          responseBody = responseBody.replace(/\n/g, ' ');
           parsedBody = JSON.parse(responseBody);
         } catch (e) {}
       }
