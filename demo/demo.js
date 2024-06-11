@@ -944,7 +944,7 @@ function putObject() {
       },
     },
     function (err, data) {
-      logger.log('putObject:', err || data);
+      logger.log('putObject:', err.code || data);
     }
   );
 }

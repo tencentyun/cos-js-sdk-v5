@@ -4201,16 +4201,49 @@ function _submitRequest(params, callback) {
     var statusCode = response.statusCode;
     var statusSuccess = Math.floor(statusCode / 100) === 2; // 200 202 204 206
 
+    // 响应错误时兼容 xml 和 json
+    var parseError = function (responseBody) {
+      var parsedBody = {};
+      var isXml = false;
+      try {
+        if (responseBody.indexOf('<') > -1 && responseBody.indexOf('>') > -1) {
+          var json = util.xml2json(responseBody) || {};
+          parsedBody = json && json.Error;
+          isXml = true;
+        }
+      } catch (e) {}
+      if (!isXml) {
+        try {
+          parsedBody = JSON.parse(responseBody);
+        } catch (e) {}
+      }
+      return parsedBody;
+    };
+
     // 不对 body 进行转换，body 直接挂载返回
     if (rawBody) {
       if (statusSuccess) {
         return cb(null, { body: body });
       } else {
-        // 兼容body返回了 json 格式的 error
         var errorBody = {};
-        try {
-          errorBody = JSON.parse(body);
-        } catch (e) {}
+        // 报错但是返回了 blob，需要解析成 string
+        if (body instanceof Blob) {
+          util.readAsBinaryString(body, function (content) {
+            errorBody = parseError(content);
+            return cb(
+              util.error(new Error(errorBody.Message || 'response body error'), {
+                code: errorBody.Code,
+                error: errorBody,
+              })
+            );
+          });
+          return;
+        }
+        if (typeof body === 'string') {
+          errorBody = parseError(body);
+        } else {
+          errorBody = body;
+        }
         return cb(
           util.error(new Error(errorBody.Message || 'response body error'), { code: errorBody.Code, error: errorBody })
         );

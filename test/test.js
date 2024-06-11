@@ -6585,40 +6585,95 @@ group('request', function () {
   });
 });
 
-group('get json body', function () {
+group('RawBody error', function () {
   // 从 Bucket 里拆出 AppId
   const AppId = config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1);
-  test('json error()', function (done) {
-      const key = 'dataset'; // 固定值
-      const host = `${AppId}.ci.${config.Region}.myqcloud.com`;
-      const url = `https://${host}/${key}`;
-      cos.request(
-        {
-          Method: 'GET', // 固定值，必须
-          Key: key, // 必须
-          Url: url, // 请求的url，必须
-          Query: {
-            // 数据集名称，同一个账户下唯一。;是否必传：是
-            datasetname: 'test-not-found-112233',
-            // 是否需要实时统计数据集中文件相关信息。有效值： false：不统计，返回的文件的总大小、数量信息可能不正确也可能都为0。 true：需要统计，返回数据集中当前的文件的总大小、数量信息。 默认值为false。;是否必传：否
-            statistics: false,
-          },
-          RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
-          Headers: {
-            // 设置请求体为 json，固定值，必须
-            'Content-Type': 'application/json',
-            // 设置响应体为json，固定值，必须
-            Accept: 'application/json',
-          },
+  test('body is json', function (done) {
+    const key = 'dataset'; // 固定值
+    const host = `${AppId}.ci.${config.Region}.myqcloud.com`;
+    const url = `https://${host}/${key}`;
+    cos.request(
+      {
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Query: {
+          // 数据集名称，同一个账户下唯一。;是否必传：是
+          datasetname: 'test-not-found-112233',
+          // 是否需要实时统计数据集中文件相关信息。有效值： false：不统计，返回的文件的总大小、数量信息可能不正确也可能都为0。 true：需要统计，返回数据集中当前的文件的总大小、数量信息。 默认值为false。;是否必传：否
+          statistics: false,
         },
-        function (err, data) {
-          if (config.Region === 'ap-beijing') {
-            assert.ok(err.message === 'dataset not created');
-          } else {
-            assert.ok(err.code === 'InvalidUrl');
-          }
-          done();
+        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
+        Headers: {
+          // 设置响应体为json，固定值，必须
+          Accept: 'application/json',
+        },
+      },
+      function (err, data) {
+        if (config.Region === 'ap-beijing') {
+          assert.ok(err.message === 'dataset not created');
+        } else {
+          assert.ok(err.code === 'InvalidUrl');
         }
-      );
+        done();
+      }
+    );
+  });
+  test('body is Blob', function (done) {
+    const key = '2221333test.mp4'; // ObjectKey: 存在cos的媒体文件路径，比如test.mp4
+    const host = `${config.Bucket}.cos.${config.Region}.tencentcos.cn`;
+    const url = `https://${host}/${key}`;
+    cos.request(
+      {
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Url: url, // 请求的url，必须
+        Query: {
+          // 操作类型，固定使用 snapshot;是否必传：是
+          'ci-process': 'snapshot',
+          // 截图的时间点，单位为秒;是否必传：是
+          time: 1,
+          // 截图的宽。默认为0;是否必传：否
+          width: 0,
+          // 截图的高。默认为0;是否必传：否
+          height: 0,
+          // 截图的格式，支持 jpg 和 png，默认 jpg;是否必传：否
+          format: 'jpg',
+          // 图片旋转方式auto：按视频旋转信息进行自动���转off：不旋转默认值为 auto;是否必传：否
+          rotate: 'auto',
+          // 截帧方式keyframe：截取指定时间点之前的最近的一个关键帧exactframe：截取指定时间点的帧默认值为 exactframe;是否必传：否
+          mode: 'exactframe',
+        },
+        RawBody: true,
+        // 可选返回文件格式为blob
+        DataType: 'blob',
+      },
+      function (err, data) {
+        assert.ok(err.code === 'NoSuchKey');
+        done();
+      }
+    );
+  });
+  test('body is xml', function (done) {
+    const key = '2视频/peachtest.mp4.m3u8'; // ObjectKey: 存在cos的媒体文件路径，比如test.mp4
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Query: {
+          // 操作类型，固定使用 pm3u8;是否必传：是
+          'ci-process': 'pm3u8',
+          // 私有 ts 资源 url 下载凭证的相对有效期，单位为秒，范围为[3600, 43200];是否必传：是
+          expires: 3600,
+        },
+        RawBody: true, // 固定值，必须
+      },
+      function (err, data) {
+        assert.ok(err.code === 'NoSuchKey');
+        done();
+      }
+    );
   });
 });

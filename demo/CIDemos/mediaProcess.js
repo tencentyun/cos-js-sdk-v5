@@ -213,7 +213,7 @@ export const getSnapshot = {
   name: '获取媒体文件某个时间的截图',
   fn: function getSnapshot() {
     const key = 'test.mp4'; // ObjectKey: 存在cos的媒体文件路径，比如test.mp4
-    const host = `${config.Bucket}.cos.${config.Region}.myqcloud.com`;
+    const host = `${config.Bucket}.cos.${config.Region}.tencentcos.cn`;
     const url = `https://${host}/${key}`;
     cos.request(
       {
@@ -243,7 +243,7 @@ export const getSnapshot = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.code);
         } else {
           // 处理请求成功
           console.log(data.Body);
@@ -341,7 +341,7 @@ export const getPrivateM3U8 = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.code);
         } else {
           // 处理请求成功
           console.log(data.Body);

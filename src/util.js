@@ -896,6 +896,7 @@ var util = {
   isIOS_QQ: isIOS && isQQ,
   encodeBase64: encodeBase64,
   simplifyPath: simplifyPath,
+  readAsBinaryString: readAsBinaryString,
 };
 
 module.exports = util;
