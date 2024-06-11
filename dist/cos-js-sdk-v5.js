@@ -14488,9 +14488,8 @@ var simplifyPath = function simplifyPath(path) {
 var parseResBody = function parseResBody(responseBody) {
   var json;
   if (responseBody && typeof responseBody === 'string') {
-    var trimBody = responseBody.trim();
-    var isXml = trimBody.startsWith('<') && trimBody.endsWith('>');
-    var isJson = trimBody.startsWith('{') && trimBody.endsWith('}');
+    var isXml = responseBody.trim().indexOf('<') === 0;
+    var isJson = responseBody.trim().indexOf('{') === 0;
     if (isXml) {
       // xml 解析，解析失败返回{}
       json = util.xml2json(responseBody) || {};
