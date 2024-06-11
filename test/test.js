@@ -6603,7 +6603,6 @@ group('RawBody error', function () {
           // 是否需要实时统计数据集中文件相关信息。有效值： false：不统计，返回的文件的总大小、数量信息可能不正确也可能都为0。 true：需要统计，返回数据集中当前的文件的总大小、数量信息。 默认值为false。;是否必传：否
           statistics: false,
         },
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置响应体为json，固定值，必须
           Accept: 'application/json',
@@ -6654,7 +6653,7 @@ group('RawBody error', function () {
       }
     );
   });
-  test('body is xml', function (done) {
+  test('body is xml with RawBody', function (done) {
     const key = '2视频/peachtest.mp4.m3u8'; // ObjectKey: 存在cos的媒体文件路径，比如test.mp4
     cos.request(
       {
@@ -6669,6 +6668,27 @@ group('RawBody error', function () {
           expires: 3600,
         },
         RawBody: true, // 固定值，必须
+      },
+      function (err, data) {
+        assert.ok(err.code === 'NoSuchKey');
+        done();
+      }
+    );
+  });
+  test('body is xml without RawBody', function (done) {
+    const key = '2视频/peachtest.mp4.m3u8'; // ObjectKey: 存在cos的媒体文件路径，比如test.mp4
+    cos.request(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Method: 'GET', // 固定值，必须
+        Key: key, // 必须
+        Query: {
+          // 操作类型，固定使用 pm3u8;是否必传：是
+          'ci-process': 'pm3u8',
+          // 私有 ts 资源 url 下载凭证的相对有效期，单位为秒，范围为[3600, 43200];是否必传：是
+          expires: 3600,
+        },
       },
       function (err, data) {
         assert.ok(err.code === 'NoSuchKey');
