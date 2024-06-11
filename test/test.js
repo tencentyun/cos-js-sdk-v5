@@ -6609,6 +6609,7 @@ group('RawBody error', function () {
         },
       },
       function (err, data) {
+        console.log('body is json===', err || data);
         if (config.Region === 'ap-beijing') {
           assert.ok(err.message === 'dataset not created');
         } else {
@@ -6648,6 +6649,7 @@ group('RawBody error', function () {
         DataType: 'blob',
       },
       function (err, data) {
+        console.log('body is Blob===', err || data);
         assert.ok(err.code === 'NoSuchKey');
         done();
       }
@@ -6670,6 +6672,7 @@ group('RawBody error', function () {
         RawBody: true, // 固定值，必须
       },
       function (err, data) {
+        console.log('body is xml with RawBody===', err || data);
         assert.ok(err.code === 'NoSuchKey');
         done();
       }
@@ -6691,6 +6694,7 @@ group('RawBody error', function () {
         },
       },
       function (err, data) {
+        console.log('body is xml without RawBody===', err || data);
         assert.ok(err.code === 'NoSuchKey');
         done();
       }
