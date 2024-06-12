@@ -1960,6 +1960,8 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
   interface RequestResult extends GeneralResult {
     Body?: string | Blob | ArrayBuffer;
     Response?: any; // 万象接口可能返回 Response
+    // 待细化万象响应
+    [key: string]: any;
   }
 
   // getObjectUrl
