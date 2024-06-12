@@ -9,16 +9,16 @@ const AppId = config.Bucket.substr(config.Bucket.lastIndexOf('-') + 1);
 export const createDataset = {
   name: '创建数据集',
   fn: function createDataset() {
-    const key = 'dataset/create'; // 固定值
+    const key = 'dataset'; // 固定值
     const host = `${AppId}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
     const body = JSON.stringify({
       // 数据集名称，同一个账户下唯一。命名规则如下： - 长度为1~128字符 - 只能包含英文字母，数字，短划线（-）和下划线（） - 必须以英文字母和下划线（）开头;是否必传：是
-      DatasetName: 'test-dataset-imagesearch2',
+      DatasetName: 'test-dataset-base',
       // 数据集描述信息。长度为1~256个英文或中文字符，默认值为空。;是否必传：否
       Description: 'test-dataset-desc',
       // 指模板，在建立元数据索引时，后端将根据模板来决定收集哪些元数据。每个模板都包含一个或多个算子，不同的算子表示不同的元数据。目前支持的模板： Official:DefaultEmptyId：默认为空的模板，表示不进行元数据的采集。 Official:COSBasicMeta：基础信息模板，包含 COS 文件基础元信息算子，表示采集 COS 文件的名称、类型、ACL等基础元信息数据。 Official:FaceSearch：人脸检索模板，包含人脸检索、COS 文件基础元信息算子。Official:ImageSearch：图像检索模板，包含图像检索、COS 文件基础元信息算子。;是否必传：否
-      TemplateId: 'Official:ImageSearch',
+      TemplateId: 'Official:COSBasicMeta',
     });
 
     cos.request(
@@ -27,7 +27,6 @@ export const createDataset = {
         Key: key, // 必须
         Url: url, // 请求的url，必须
         Body: body, // 请求体参数，必须
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置请求体为 json，固定值，必须
           'Content-Type': 'application/json',
@@ -38,7 +37,7 @@ export const createDataset = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.message);
         } else {
           // 处理请求成功
           console.log(data.Body && JSON.parse(data.Body));
@@ -52,25 +51,24 @@ export const createDataset = {
 export const updateDataset = {
   name: '更新数据集',
   fn: function updateDataset() {
-    const key = 'dataset/update'; // 固定值
+    const key = 'dataset'; // 固定值
     const host = `${AppId}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
     const body = JSON.stringify({
       // 数据集名称，同一个账户下唯一。;是否必传：是
-      DatasetName: 'test-dataset-facesearch',
+      DatasetName: 'test-dataset-base',
       // 数据集描述信息。长度为1~256个英文或中文字符，默认值为空。;是否必传：否
-      Description: 'test-dataset-facesearch-desc',
+      Description: 'test-dataset-base-desc1',
       // 该参数表示模板，在建立元数据索引时，后端将根据模板来决定收集哪些元数据。每个模板都包含一个或多个算子，不同的算子表示不同的元数据。目前支持的模板： Official:Empty：默认为空的模板，表示不进行元数据的采集。 Official:COSBasicMeta：基础信息模板，包含COS文件基础元信息算子，表示采集cos文件的名称、类型、acl等基础元信息数据。;是否必传：否
-      TemplateId: 'Official:FaceSearch',
+      TemplateId: 'Official:COSBasicMeta',
     });
 
     cos.request(
       {
-        Method: 'POST', // 固定值，必须
+        Method: 'PUT', // 固定值，必须
         Key: key, // 必须
         Url: url, // 请求的url，必须
         Body: body, // 请求体参数，必须
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置请求体为 json，固定值，必须
           'Content-Type': 'application/json',
@@ -81,7 +79,7 @@ export const updateDataset = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.code, err.message);
         } else {
           // 处理请求成功
           console.log(data.Body && JSON.parse(data.Body));
@@ -100,7 +98,7 @@ export const deleteDataset = {
     const url = `https://${host}/${key}`;
     const body = JSON.stringify({
       // 数据集名称，同一个账户下唯一。;是否必传：是
-      DatasetName: 'test-dataset',
+      DatasetName: 'test-dataset-base',
     });
 
     cos.request(
@@ -109,7 +107,6 @@ export const deleteDataset = {
         Key: key, // 必须
         Url: url, // 请求的url，必须
         Body: body, // 请求体参数，必须
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置请求体为 json，固定值，必须
           'Content-Type': 'application/json',
@@ -120,7 +117,7 @@ export const deleteDataset = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.code, err.message);
         } else {
           // 处理请求成功
           console.log(data.Body && JSON.parse(data.Body));
@@ -150,7 +147,6 @@ export const describeDatasets = {
           // 数据集名称前缀。;是否必传：否
           // prefix: 'test',
         },
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置响应体为json，固定值，必须
           Accept: 'application/json',
@@ -159,7 +155,7 @@ export const describeDatasets = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.code, err.message);
         } else {
           // 处理请求成功
           console.log(data.Body && JSON.parse(data.Body));
@@ -184,11 +180,10 @@ export const describeDataset = {
         Url: url, // 请求的url，必须
         Query: {
           // 数据集名称，同一个账户下唯一。;是否必传：是
-          datasetname: 'test-dataset-base22',
+          datasetname: 'test-dataset-base',
           // 是否需要实时统计数据集中文件相关信息。有效值： false：不统计，返回的文件的总大小、数量信息可能不正确也可能都为0。 true：需要统计，返回数据集中当前的文件的总大小、数量信息。 默认值为false。;是否必传：否
           statistics: false,
         },
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置请求体为 json，固定值，必须
           'Content-Type': 'application/json',
@@ -213,7 +208,7 @@ export const describeDataset = {
 export const createDatasetBinding = {
   name: '绑定存储桶与数据集',
   fn: function createDatasetBinding() {
-    const key = 'datasetbinding/create'; // 固定值
+    const key = 'datasetbinding'; // 固定值
     const host = `${AppId}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
     const body = JSON.stringify({
@@ -229,7 +224,6 @@ export const createDatasetBinding = {
         Key: key, // 必须
         Url: url, // 请求的url，必须
         Body: body, // 请求体参数，必须
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置请求体为 json，固定值，必须
           'Content-Type': 'application/json',
@@ -240,7 +234,7 @@ export const createDatasetBinding = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.code, err.message);
         } else {
           // 处理请求成功
           console.log(data.Body && JSON.parse(data.Body));
@@ -259,7 +253,7 @@ export const deleteDatasetBinding = {
     const url = `https://${host}/${key}`;
     const body = JSON.stringify({
       // 数据集名称，同一个账户下唯一。;是否必传：是
-      DatasetName: 'test-dataset-facesearch',
+      DatasetName: 'test-dataset-imagesearch2',
       // 资源标识字段，表示需要与数据集绑定的资源，当前仅支持COS存储桶，字段规则：cos://，其中BucketName表示COS存储桶名称，例如：cos://examplebucket-1250000000;是否必传：是
       URI: `cos://${config.Bucket}`,
     });
@@ -270,7 +264,6 @@ export const deleteDatasetBinding = {
         Key: key, // 必须
         Url: url, // 请求的url，必须
         Body: body, // 请求体参数，必须
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置请求体为 json，固定值，必须
           'Content-Type': 'application/json',
@@ -281,7 +274,7 @@ export const deleteDatasetBinding = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.code, err.message);
         } else {
           // 处理请求成功
           console.log(data.Body && JSON.parse(data.Body));
@@ -306,11 +299,10 @@ export const describeDatasetBinding = {
         Url: url, // 请求的url，必须
         Query: {
           // 数据集名称，同一个账户下唯一。;是否必传：是
-          datasetname: 'test-dataset-base',
+          datasetname: 'test-dataset-imagesearch2',
           // 资源标识字段，表示需要与数据集绑定的资源，当前仅支持COS存储桶，字段规则：cos://，其中BucketName表示COS存储桶名称，例如（需要进行urlencode）：cos%3A%2F%2Fexample-125000;是否必传：是
           uri: `cos://${config.Bucket}`,
         },
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置响应体为json，固定值，必须
           Accept: 'application/json',
@@ -344,13 +336,12 @@ export const describeDatasetBindings = {
         Url: url, // 请求的url，必须
         Query: {
           // 数据集名称，同一个账户下唯一。;是否必传：否
-          datasetname: 'test-dataset-base',
+          datasetname: 'test-dataset-imagesearch2',
           // 返回绑定关系的最大个数，取值范围为0~200。不设置此参数或者设置为0时，则默认值为100。;是否必传：否
           maxresults: 100,
           // 当绑定关系总数大于设置的MaxResults时，用于翻页的token。从NextToken开始按字典序返回绑定关系信息列表。第一次调用此接口时，设置为空。;是否必传：是
           // nexttoken: '',
         },
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置响应体为json，固定值，必须
           Accept: 'application/json',
@@ -359,7 +350,7 @@ export const describeDatasetBindings = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.code, err.message);
         } else {
           // 处理请求成功
           console.log(data.Body && JSON.parse(data.Body));
@@ -373,7 +364,7 @@ export const describeDatasetBindings = {
 export const createFileMetaIndex = {
   name: '创建元数据索引',
   fn: function createFileMetaIndex() {
-    const key = 'filemeta/create'; // 固定值
+    const key = 'filemeta'; // 固定值
     const host = `${AppId}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
     const body = JSON.stringify({
@@ -407,7 +398,6 @@ export const createFileMetaIndex = {
         Key: key, // 必须
         Url: url, // 请求的url，必须
         Body: body, // 请求体参数，必须
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置请求体为 json，固定值，必须
           'Content-Type': 'application/json',
@@ -418,7 +408,7 @@ export const createFileMetaIndex = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.code, err.message);
         } else {
           // 处理请求成功
           console.log(data.Body && JSON.parse(data.Body));
@@ -437,7 +427,7 @@ export const deleteFileMetaIndex = {
     const url = `https://${host}/${key}`;
     const body = JSON.stringify({
       // 数据集名称，同一个账户下唯一。;是否必传：是
-      DatasetName: 'test-dataset-base',
+      DatasetName: 'test-dataset-imagesearch2',
       // 资源标识字段，表示需要建立索引的文件地址。;是否必传：是
       URI: `cos://${config.Bucket}/1.png`,
     });
@@ -448,7 +438,6 @@ export const deleteFileMetaIndex = {
         Key: key, // 必须
         Url: url, // 请求的url，必须
         Body: body, // 请求体参数，必须
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置请求体为 json，固定值，必须
           'Content-Type': 'application/json',
@@ -459,7 +448,7 @@ export const deleteFileMetaIndex = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.code, err.message);
         } else {
           // 处理请求成功
           console.log(data.Body && JSON.parse(data.Body));
@@ -484,11 +473,10 @@ export const describeFileMetaIndex = {
         Url: url, // 请求的url，必须
         Query: {
           // 数据集名称，同一个账户下唯一。;是否必传：是
-          datasetname: 'test-dataset-base',
+          datasetname: 'test-dataset-imagesearch2',
           // 资源标识字段，表示需要建立索引的文件地址，当前仅支持COS上的文件，字段规则：cos:///，其中BucketName表示COS存储桶名称，ObjectKey表示文件完整路径，例如：cos://examplebucket-1250000000/test1/img.jpg。 注意： 1、仅支持本账号内的COS文件 2、不支持HTTP开头的地址 3、需UrlEncode;是否必传：是
-          uri: `cos://${config.Bucket}/1.png`,
+          uri: `cos://${config.Bucket}/ci/dog.jpeg`,
         },
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置响应体为json，固定值，必须
           Accept: 'application/json',
@@ -511,12 +499,12 @@ export const describeFileMetaIndex = {
 export const updateFileMetaIndex = {
   name: '更新元数据索引',
   fn: function updateFileMetaIndex() {
-    const key = 'filemeta/update'; // 固定值
+    const key = 'filemeta'; // 固定值
     const host = `${AppId}.ci.${config.Region}.myqcloud.com`;
     const url = `https://${host}/${key}`;
     const body = JSON.stringify({
       // 数据集名称，同一个账户下唯一。;是否必传：是
-      DatasetName: 'test-dataset-base',
+      DatasetName: 'test-dataset-imagesearch2',
       // 元数据索引结果（以回调形式发送至您的回调地址，支持以 http:// 或者 https:// 开头的地址，例如： http://www.callback.com;是否必传：是
       // Callback: 'http://www.callback.com',
       // 用于建立索引的文件信息。;是否必传：是
@@ -530,7 +518,7 @@ export const updateFileMetaIndex = {
         // 可选项，文件内容类型（MIME Type），如image/jpeg。  ;是否必传：否
         ContentType: 'image/jpeg',
         // 资源标识字段，表示需要建立索引的文件地址，当前仅支持COS上的文件，字段规则：cos:///，其中BucketName表示COS存储桶名称，ObjectKey表示文件完整路径，例如：cos://examplebucket-1250000000/test1/img.jpg。 注意： 1、仅支持本账号内的COS文件 2、不支持HTTP开头的地址;是否必传：是
-        URI: `cos://${config.Bucket}/1.png`,
+        URI: `cos://${config.Bucket}/ci/dog.jpeg`,
         // 自定义人物属性(仅当数据集模板 ID 为 Official:FaceSearch 有效)。;是否必传：否
         // Persons: {},
       },
@@ -538,11 +526,10 @@ export const updateFileMetaIndex = {
 
     cos.request(
       {
-        Method: 'POST', // 固定值，必须
+        Method: 'PUT', // 固定值，必须
         Key: key, // 必须
         Url: url, // 请求的url，必须
         Body: body, // 请求体参数，必须
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置请求体为 json，固定值，必须
           'Content-Type': 'application/json',
@@ -553,7 +540,7 @@ export const updateFileMetaIndex = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.code, err.message);
         } else {
           // 处理请求成功
           console.log(data.Body && JSON.parse(data.Body));
@@ -588,7 +575,7 @@ export const datasetSimpleQuery = {
       // 返回文件元数据的最大个数，取值范围为0200。 使用聚合参数时，该值表示返回分组的最大个数，取值范围为02000。 不设置此参数或者设置为0时，则取默认值100。;是否必传：否
       MaxResults: 100,
       // 排序字段列表。请参考字段和操作符的支持列表。 多个排序字段可使用半角逗号（,）分隔，例如：Size,Filename。 最多可设置5个排序字段。 排序字段顺序即为排序优先级顺序。;是否必传：是
-      Sort: 'CustomId',
+      // Sort: 'CustomId',
       // 排序字段的排序方式。取值如下： asc：升序； desc（默认）：降序。 多个排序方式可使用半角逗号（,）分隔，例如：asc,desc。 排序方式不可多于排序字段，即参数Order的元素数量需小于等于参数Sort的元素数量。例如Sort取值为Size,Filename时，Order可取值为asc,desc或asc。 排序方式少于排序字段时，未排序的字段默认取值asc。例如Sort取值为Size,Filename，Order取值为asc时，Filename默认排序方式为asc，即升序排列;是否必传：是
       Order: 'desc',
       // 聚合字段信息列表。 当您使用聚合查询时，仅返回聚合结果，不再返回匹配到的元信息列表。;是否必传：否
@@ -604,7 +591,6 @@ export const datasetSimpleQuery = {
         Key: key, // 必须
         Url: url, // 请求的url，必须
         Body: body, // 请求体参数，必须
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置请求体为 json，固定值，必须
           'Content-Type': 'application/json',
@@ -615,7 +601,7 @@ export const datasetSimpleQuery = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.code, err.message);
         } else {
           // 处理请求成功
           console.log(data.Body && JSON.parse(data.Body));
@@ -634,7 +620,7 @@ export const datasetFaceSearch = {
     const url = `https://${host}/${key}`;
     const body = JSON.stringify({
       // 数据集名称，同一个账户下唯一。;是否必传：是
-      DatasetName: 'test-dataset-facesearch2',
+      DatasetName: 'test-dataset-facesearch',
       // 资源标识字段，表示需要建立索引的文件地址。;是否必传：是
       URI: `cos://${config.Bucket}/ci/1.jpg`,
       // 输入图片中检索的人脸数量，默认值为1(传0或不传采用默认值)，最大值为10。;是否必传：否
@@ -651,7 +637,6 @@ export const datasetFaceSearch = {
         Key: key, // 必须
         Url: url, // 请求的url，必须
         Body: body, // 请求体参数，必须
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置请求体为 json，固定值，必须
           'Content-Type': 'application/json',
@@ -663,7 +648,7 @@ export const datasetFaceSearch = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.code, err.message);
         } else {
           // 处理请求成功
           console.log(data.Body && JSON.parse(data.Body));
@@ -699,7 +684,6 @@ export const searchImage = {
         Key: key, // 必须
         Url: url, // 请求的url，必须
         Body: body, // 请求体参数，必须
-        RawBody: true, // 设置返回原始响应体，sdk 内部不做解析，固定值，必须
         Headers: {
           // 设置请求体为 json，固定值，必须
           'Content-Type': 'application/json',
@@ -711,7 +695,7 @@ export const searchImage = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.code, err.message);
         } else {
           // 处理请求成功
           console.log(data.Body && JSON.parse(data.Body));

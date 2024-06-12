@@ -7281,7 +7281,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.8.0\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js lib/request.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.8.1\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js lib/request.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -7340,7 +7340,9 @@ function sliceUploadFile(params, callback) {
     var metaHeaders = {};
     util.each(params.Headers, function (val, k) {
       var shortKey = k.toLowerCase();
-      if (shortKey.indexOf('x-cos-meta-') === 0 || shortKey === 'pic-operations') metaHeaders[k] = val;
+      if (shortKey.indexOf('x-cos-meta-') === 0 || shortKey === 'pic-operations') {
+        metaHeaders[k] = val;
+      }
     });
     uploadSliceComplete.call(self, {
       Bucket: Bucket,
@@ -12576,42 +12578,40 @@ function _submitRequest(params, callback) {
     var statusSuccess = Math.floor(statusCode / 100) === 2; // 200 202 204 206
 
     // 不对 body 进行转换，body 直接挂载返回
-    if (rawBody && statusSuccess) return cb(null, {
-      body: body
-    });
-    // if (rawBody) {
-    //   if (statusSuccess) {
-    //     return cb(null, { body: body });
-    //   } else {
-    //     // 兼容body返回了 json 格式的 error
-    //     var errorBody = {};
-    //     try {
-    //       errorBody = JSON.parse(body);
-    //     } catch (e) {}
-    //     return cb(
-    //       util.error(new Error(errorBody.Message || 'response body error'), { code: errorBody.Code, error: errorBody })
-    //     );
-    //   }
-    // }
-
-    // 解析 xml body
-    var json;
-    try {
-      json = body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body) || {};
-    } catch (e) {
-      json = {};
+    if (rawBody) {
+      if (statusSuccess) {
+        return cb(null, {
+          body: body
+        });
+      } else {
+        // 兼容报错时返回了 blob，需要解析成 string
+        if (body instanceof Blob) {
+          util.readAsBinaryString(body, function (content) {
+            var json = util.parseResBody(content);
+            var errorBody = json.Error || json;
+            return cb(util.error(new Error(errorBody.Message || 'response body error'), {
+              code: errorBody.Code,
+              error: errorBody
+            }));
+          });
+          return;
+        }
+      }
     }
 
+    // 解析body，兼容 xml、json，解析失败时完整返回
+    var json = util.parseResBody(body);
+
     // 处理返回值
-    var xmlError = json && json.Error;
+    var errorBody = json.Error || json;
     if (statusSuccess) {
       // 正确返回，状态码 2xx 时，body 不会有 Error
       cb(null, json);
-    } else if (xmlError) {
+    } else if (errorBody) {
       // 正常返回了 xml body，且有 Error 节点
-      cb(util.error(new Error(xmlError.Message), {
-        code: xmlError.Code,
-        error: xmlError
+      cb(util.error(new Error(errorBody.Message), {
+        code: errorBody.Code,
+        error: errorBody
       }));
     } else if (statusCode) {
       // 有错误的状态码
@@ -14483,6 +14483,40 @@ var simplifyPath = function simplifyPath(path) {
   }
   return '/' + stack.join('/');
 };
+
+// 解析响应体，兼容 xml、json
+var parseResBody = function parseResBody(responseBody) {
+  var json;
+  if (responseBody && typeof responseBody === 'string') {
+    var trimBody = responseBody.trim();
+    var isXml = trimBody.indexOf('<') === 0;
+    var isJson = trimBody.indexOf('{') === 0;
+    if (isXml) {
+      // xml 解析，解析失败返回{}
+      json = util.xml2json(responseBody) || {};
+    } else if (isJson) {
+      // json解析，解析失败返回原始 Body
+      try {
+        // 替换 json 中的换行符为空格，否则解析会出错
+        var formatBody = responseBody.replace(/\n/g, ' ');
+        var parsedBody = JSON.parse(formatBody);
+        // 确保解析出 json 对象
+        if (Object.prototype.toString.call(parsedBody) === '[object Object]') {
+          json = parsedBody;
+        } else {
+          json = responseBody;
+        }
+      } catch (e) {
+        json = responseBody;
+      }
+    } else {
+      json = responseBody;
+    }
+  } else {
+    json = responseBody || {};
+  }
+  return json;
+};
 var util = {
   noop: noop,
   formatParams: formatParams,
@@ -14519,7 +14553,9 @@ var util = {
   isCIHost: isCIHost,
   isIOS_QQ: isIOS && isQQ,
   encodeBase64: encodeBase64,
-  simplifyPath: simplifyPath
+  simplifyPath: simplifyPath,
+  readAsBinaryString: readAsBinaryString,
+  parseResBody: parseResBody
 };
 module.exports = util;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/process/browser.js */ "./node_modules/process/browser.js")))

@@ -243,7 +243,7 @@ export const getSnapshot = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.code);
         } else {
           // 处理请求成功
           console.log(data.Body);
@@ -341,7 +341,7 @@ export const getPrivateM3U8 = {
       function (err, data) {
         if (err) {
           // 处理请求失败
-          console.log(err);
+          console.log(err.code);
         } else {
           // 处理请求成功
           console.log(data.Body);

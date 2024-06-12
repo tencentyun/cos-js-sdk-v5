@@ -4202,38 +4202,38 @@ function _submitRequest(params, callback) {
     var statusSuccess = Math.floor(statusCode / 100) === 2; // 200 202 204 206
 
     // 不对 body 进行转换，body 直接挂载返回
-    if (rawBody && statusSuccess) return cb(null, { body: body });
-    // if (rawBody) {
-    //   if (statusSuccess) {
-    //     return cb(null, { body: body });
-    //   } else {
-    //     // 兼容body返回了 json 格式的 error
-    //     var errorBody = {};
-    //     try {
-    //       errorBody = JSON.parse(body);
-    //     } catch (e) {}
-    //     return cb(
-    //       util.error(new Error(errorBody.Message || 'response body error'), { code: errorBody.Code, error: errorBody })
-    //     );
-    //   }
-    // }
-
-    // 解析 xml body
-    var json;
-    try {
-      json = (body && body.indexOf('<') > -1 && body.indexOf('>') > -1 && util.xml2json(body)) || {};
-    } catch (e) {
-      json = {};
+    if (rawBody) {
+      if (statusSuccess) {
+        return cb(null, { body: body });
+      } else {
+        // 兼容报错时返回了 blob，需要解析成 string
+        if (body instanceof Blob) {
+          util.readAsBinaryString(body, function (content) {
+            var json = util.parseResBody(content);
+            var errorBody = json.Error || json;
+            return cb(
+              util.error(new Error(errorBody.Message || 'response body error'), {
+                code: errorBody.Code,
+                error: errorBody,
+              })
+            );
+          });
+          return;
+        }
+      }
     }
 
+    // 解析body，兼容 xml、json，解析失败时完整返回
+    var json = util.parseResBody(body);
+
     // 处理返回值
-    var xmlError = json && json.Error;
+    var errorBody = json.Error || json;
     if (statusSuccess) {
       // 正确返回，状态码 2xx 时，body 不会有 Error
       cb(null, json);
-    } else if (xmlError) {
+    } else if (errorBody) {
       // 正常返回了 xml body，且有 Error 节点
-      cb(util.error(new Error(xmlError.Message), { code: xmlError.Code, error: xmlError }));
+      cb(util.error(new Error(errorBody.Message), { code: errorBody.Code, error: errorBody }));
     } else if (statusCode) {
       // 有错误的状态码
       cb(util.error(new Error(response.statusMessage), { code: '' + statusCode }));
