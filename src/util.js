@@ -865,8 +865,9 @@ var simplifyPath = function (path) {
 var parseResBody = function (responseBody) {
   var json;
   if (responseBody && typeof responseBody === 'string') {
-    var isXml = responseBody.trim().indexOf('<') === 0;
-    var isJson = responseBody.trim().indexOf('{') === 0;
+    var trimBody = responseBody.trim();
+    var isXml = trimBody.indexOf('<') === 0;
+    var isJson = trimBody.indexOf('{') === 0;
     if (isXml) {
       // xml 解析，解析失败返回{}
       json = util.xml2json(responseBody) || {};

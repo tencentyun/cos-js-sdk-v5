@@ -7340,7 +7340,9 @@ function sliceUploadFile(params, callback) {
     var metaHeaders = {};
     util.each(params.Headers, function (val, k) {
       var shortKey = k.toLowerCase();
-      if (shortKey.indexOf('x-cos-meta-') === 0 || shortKey === 'pic-operations' || shortKey === 'x-cos-return-body') metaHeaders[k] = val;
+      if (shortKey.indexOf('x-cos-meta-') === 0 || shortKey === 'pic-operations' || shortKey === 'x-cos-return-body') {
+        metaHeaders[k] = val;
+      }
     });
     uploadSliceComplete.call(self, {
       Bucket: Bucket,
@@ -14488,8 +14490,9 @@ var simplifyPath = function simplifyPath(path) {
 var parseResBody = function parseResBody(responseBody) {
   var json;
   if (responseBody && typeof responseBody === 'string') {
-    var isXml = responseBody.trim().indexOf('<') === 0;
-    var isJson = responseBody.trim().indexOf('{') === 0;
+    var trimBody = responseBody.trim();
+    var isXml = trimBody.indexOf('<') === 0;
+    var isJson = trimBody.indexOf('{') === 0;
     if (isXml) {
       // xml 解析，解析失败返回{}
       json = util.xml2json(responseBody) || {};
