@@ -7340,7 +7340,7 @@ function sliceUploadFile(params, callback) {
     var metaHeaders = {};
     util.each(params.Headers, function (val, k) {
       var shortKey = k.toLowerCase();
-      if (shortKey.indexOf('x-cos-meta-') === 0 || shortKey === 'pic-operations' || shortKey === 'x-cos-return-body') {
+      if (shortKey.indexOf('x-cos-meta-') === 0 || shortKey === 'pic-operations') {
         metaHeaders[k] = val;
       }
     });
@@ -14190,9 +14190,7 @@ var formatParams = function formatParams(apiName, params) {
         'x-cos-server-side-encryption-cos-kms-key-id': 'SSEKMSKeyId',
         'x-cos-server-side-encryption-context': 'SSEContext',
         // 上传时图片处理
-        'Pic-Operations': 'PicOperations',
-        // 上传返回 body
-        'x-cos-return-body': 'ReturnBody'
+        'Pic-Operations': 'PicOperations'
       };
       util.each(headerMap, function (paramKey, headerKey) {
         if (params[paramKey] !== undefined) {

@@ -550,8 +550,6 @@ var formatParams = function (apiName, params) {
         'x-cos-server-side-encryption-context': 'SSEContext',
         // 上传时图片处理
         'Pic-Operations': 'PicOperations',
-        // 上传返回 body
-        'x-cos-return-body': 'ReturnBody',
       };
       util.each(headerMap, function (paramKey, headerKey) {
         if (params[paramKey] !== undefined) {
