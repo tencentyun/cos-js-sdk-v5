@@ -40,7 +40,7 @@ export const createDataset = {
           console.log(err.message);
         } else {
           // 处理请求成功
-          console.log(data.Body && JSON.parse(data.Body));
+          console.log(data);
         }
       }
     );
@@ -82,7 +82,7 @@ export const updateDataset = {
           console.log(err.code, err.message);
         } else {
           // 处理请求成功
-          console.log(data.Body && JSON.parse(data.Body));
+          console.log(data);
         }
       }
     );
@@ -120,7 +120,7 @@ export const deleteDataset = {
           console.log(err.code, err.message);
         } else {
           // 处理请求成功
-          console.log(data.Body && JSON.parse(data.Body));
+          console.log(data);
         }
       }
     );
@@ -158,7 +158,7 @@ export const describeDatasets = {
           console.log(err.code, err.message);
         } else {
           // 处理请求成功
-          console.log(data.Body && JSON.parse(data.Body));
+          console.log(data);
         }
       }
     );
@@ -197,7 +197,7 @@ export const describeDataset = {
           console.log(err.code, err.message);
         } else {
           // 处理请求成功
-          console.log(data.Body && JSON.parse(data.Body));
+          console.log(data);
         }
       }
     );
@@ -237,7 +237,7 @@ export const createDatasetBinding = {
           console.log(err.code, err.message);
         } else {
           // 处理请求成功
-          console.log(data.Body && JSON.parse(data.Body));
+          console.log(data);
         }
       }
     );
@@ -277,7 +277,7 @@ export const deleteDatasetBinding = {
           console.log(err.code, err.message);
         } else {
           // 处理请求成功
-          console.log(data.Body && JSON.parse(data.Body));
+          console.log(data);
         }
       }
     );
@@ -314,7 +314,7 @@ export const describeDatasetBinding = {
           console.log(err.code, err.message);
         } else {
           // 处理请求成功
-          console.log(data.Body && JSON.parse(data.Body));
+          console.log(data);
         }
       }
     );
@@ -353,7 +353,7 @@ export const describeDatasetBindings = {
           console.log(err.code, err.message);
         } else {
           // 处理请求成功
-          console.log(data.Body && JSON.parse(data.Body));
+          console.log(data);
         }
       }
     );
@@ -411,7 +411,7 @@ export const createFileMetaIndex = {
           console.log(err.code, err.message);
         } else {
           // 处理请求成功
-          console.log(data.Body && JSON.parse(data.Body));
+          console.log(data);
         }
       }
     );
@@ -451,7 +451,7 @@ export const deleteFileMetaIndex = {
           console.log(err.code, err.message);
         } else {
           // 处理请求成功
-          console.log(data.Body && JSON.parse(data.Body));
+          console.log(data);
         }
       }
     );
@@ -488,7 +488,7 @@ export const describeFileMetaIndex = {
           console.log(err.message);
         } else {
           // 处理请求成功
-          console.log(data.Body && JSON.parse(data.Body));
+          console.log(data);
         }
       }
     );
@@ -543,7 +543,7 @@ export const updateFileMetaIndex = {
           console.log(err.code, err.message);
         } else {
           // 处理请求成功
-          console.log(data.Body && JSON.parse(data.Body));
+          console.log(data);
         }
       }
     );
@@ -604,7 +604,7 @@ export const datasetSimpleQuery = {
           console.log(err.code, err.message);
         } else {
           // 处理请求成功
-          console.log(data.Body && JSON.parse(data.Body));
+          console.log(data);
         }
       }
     );
@@ -651,7 +651,7 @@ export const datasetFaceSearch = {
           console.log(err.code, err.message);
         } else {
           // 处理请求成功
-          console.log(data.Body && JSON.parse(data.Body));
+          console.log(data);
         }
       }
     );
@@ -698,7 +698,7 @@ export const searchImage = {
           console.log(err.code, err.message);
         } else {
           // 处理请求成功
-          console.log(data.Body && JSON.parse(data.Body));
+          console.log(data);
         }
       }
     );
