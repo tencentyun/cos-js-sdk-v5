@@ -4227,26 +4227,18 @@ function _submitRequest(params, callback) {
             pHeaders[key] = params.headers[i];
           }
           if (pHeaders['x-cos-callback']) {
-            var callbackBody;
-            var callbackError;
             if (data.Error) {
-              callbackError = util.clone(data.Error);
-              data.CallbackError = callbackError;
+              data.CallbackError = util.clone(data.Error);
               delete data.Error;
             } else {
-              callbackBody = util.clone(data);
-              data.CallbackBody = callbackBody;
+              data.CallbackBody = util.clone(data);
             }
           } else if (pHeaders['x-cos-return-body']) {
-            var returnBody;
-            var returnError;
             if (data.Error) {
-              returnError = util.clone(data.Error);
-              data.ReturnError = returnError;
+              data.ReturnError = util.clone(data.Error);
               delete data.Error;
             } else {
-              returnBody = util.clone(data);
-              data.ReturnBody = returnBody;
+              data.ReturnBody = util.clone(data);
             }
           }
         }
