@@ -917,11 +917,12 @@ function deleteBucketEncryption() {
 }
 
 var callback = {
-  callbackUrl: 'https://xxx/index',
+  callbackUrl: 'http://xxx/callback',
   callbackHost: 'xxx',
-  callbackBody: 'bucket=${bucket}&object=${object}&etag=${etag}&test=test_123',
+  callbackBody: 'key=${object}&etag=${etag}&my_var=${x:my_var}&my_var1=123',
   callbackBodyType: 'application/x-www-form-urlencoded',
 };
+var callbackVar = { 'x:my_var': 'value1' };
 
 var returnBody = {
   bucket: '${bucket}',
@@ -1362,6 +1363,7 @@ function selectFileToUpload() {
           Key: file.name,
           Body: file,
           // Callback: COS.util.encodeBase64(JSON.stringify(callback)),
+          // CallbackVar: COS.util.encodeBase64(JSON.stringify(callbackVar)),
           // ReturnBody: COS.util.encodeBase64(JSON.stringify(returnBody)),
           // PicOperations: '{"is_pic_info": 1, "rules": [{"fileid": "test.jpg", "rule": "imageMogr2/thumbnail/!50p"}]}',
         },
@@ -1377,6 +1379,7 @@ function selectFileToUpload() {
           Key: file.name,
           Body: file,
           // Callback: COS.util.encodeBase64(JSON.stringify(callback)),
+          // CallbackVar: COS.util.encodeBase64(JSON.stringify(callbackVar)),
           // ReturnBody: COS.util.encodeBase64(JSON.stringify(returnBody)),
           // PicOperations: '{"is_pic_info": 1, "rules": [{"fileid": "test.jpg", "rule": "imageMogr2/thumbnail/!50p"}]}',
         },

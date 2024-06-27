@@ -50,7 +50,7 @@ function sliceUploadFile(params, callback) {
       var shortKey = k.toLowerCase();
       if (
         shortKey.indexOf('x-cos-meta-') === 0 ||
-        ['pic-operations', 'x-cos-callback', 'x-cos-return-body'].includes(shortKey)
+        ['pic-operations', 'x-cos-callback', 'x-cos-callback-var', 'x-cos-return-body'].includes(shortKey)
       ) {
         metaHeaders[k] = val;
       }

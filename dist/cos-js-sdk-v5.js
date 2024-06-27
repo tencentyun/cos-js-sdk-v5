@@ -7340,7 +7340,7 @@ function sliceUploadFile(params, callback) {
     var metaHeaders = {};
     util.each(params.Headers, function (val, k) {
       var shortKey = k.toLowerCase();
-      if (shortKey.indexOf('x-cos-meta-') === 0 || ['pic-operations', 'x-cos-callback', 'x-cos-return-body'].includes(shortKey)) {
+      if (shortKey.indexOf('x-cos-meta-') === 0 || ['pic-operations', 'x-cos-callback', 'x-cos-callback-var', 'x-cos-return-body'].includes(shortKey)) {
         metaHeaders[k] = val;
       }
     });
@@ -14246,6 +14246,7 @@ var formatParams = function formatParams(apiName, params) {
         // 上传时图片处理
         'Pic-Operations': 'PicOperations',
         'x-cos-callback': 'Callback',
+        'x-cos-callback-var': 'CallbackVar',
         'x-cos-return-body': 'ReturnBody'
       };
       util.each(headerMap, function (paramKey, headerKey) {

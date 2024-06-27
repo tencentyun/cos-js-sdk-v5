@@ -551,6 +551,7 @@ var formatParams = function (apiName, params) {
         // 上传时图片处理
         'Pic-Operations': 'PicOperations',
         'x-cos-callback': 'Callback',
+        'x-cos-callback-var': 'CallbackVar',
         'x-cos-return-body': 'ReturnBody',
       };
       util.each(headerMap, function (paramKey, headerKey) {
