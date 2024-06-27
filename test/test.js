@@ -6711,24 +6711,10 @@ group('callback', function () {
   // 需要转为Blob上传
   var body = dataURLtoBlob(base64Url);
   var callback = {
-    callbackUrl: 'https://114.132.67.183/index',
-    callbackHost: '114.132.67.183',
+    callbackUrl: 'https://1.1.1.1/index',
+    callbackHost: '1.1.1.1',
     callbackBody: 'bucket=${bucket}&object=${object}&etag=${etag}&test=test_123',
     callbackBodyType: 'application/x-www-form-urlencoded',
-  };
-  var returnBody = {
-    bucket: '${bucket}',
-    key: '${object}',
-    filesize: '${size}',
-    mime_type: '${mimeType}',
-    // 视频类型
-    // video_bit_rate: '${videoInfo.video.bit_rate}',
-    // "video_codec_name": "${videoInfo.video.codec_name}",
-    // "video_profile": "${videoInfo.video.profile}",
-    // "video_pix_fmt": "${videoInfo.video.pix_fmt}",
-    // "audio_bit_rate": "${videoInfo.audio.bit_rate}",
-    // "audio_codec_name": "${videoInfo.audio.codec_name}",
-    // "duration": "${videoInfo.format.duration}",
   };
   test('putObject callback error', function (done) {
     cos.putObject(
