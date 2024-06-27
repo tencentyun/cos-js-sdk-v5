@@ -94,7 +94,6 @@ if (process.env.NODE_ENV === 'production') {
     'demo/queue/index.js',
     'test/test.js',
     'server/sts.js',
-    'server/sts.php',
   ]);
   module.exports.output.filename = 'cos-js-sdk-v5.min.js';
   module.exports.optimization = {

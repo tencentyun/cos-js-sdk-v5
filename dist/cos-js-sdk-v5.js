@@ -7281,7 +7281,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.8.1\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js lib/request.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.8.2\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js lib/request.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"@xmldom/xmldom\":\"^0.8.6\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -7340,7 +7340,7 @@ function sliceUploadFile(params, callback) {
     var metaHeaders = {};
     util.each(params.Headers, function (val, k) {
       var shortKey = k.toLowerCase();
-      if (shortKey.indexOf('x-cos-meta-') === 0 || shortKey === 'pic-operations') {
+      if (shortKey.indexOf('x-cos-meta-') === 0 || ['pic-operations', 'x-cos-callback', 'x-cos-return-body'].includes(shortKey)) {
         metaHeaders[k] = val;
       }
     });
@@ -11556,20 +11556,51 @@ function multipartComplete(params, callback) {
       isLocation: true
     });
     var res = data.CompleteMultipartUploadResult || {};
+    // pic-operations 处理
     if (res.ProcessResults) {
-      if (res && res.ProcessResults) {
-        res.UploadResult = {
-          OriginalInfo: {
-            Key: res.Key,
-            Location: url,
-            ETag: res.ETag,
-            ImageInfo: res.ImageInfo
-          },
-          ProcessResults: res.ProcessResults
-        };
-        delete res.ImageInfo;
-        delete res.ProcessResults;
+      res.UploadResult = {
+        OriginalInfo: {
+          Key: res.Key,
+          Location: url,
+          ETag: res.ETag,
+          ImageInfo: res.ImageInfo
+        },
+        ProcessResults: res.ProcessResults
+      };
+      delete res.ImageInfo;
+      delete res.ProcessResults;
+    }
+    // callback 处理
+    if (res.CallbackResult) {
+      var callbackResult = res.CallbackResult;
+      if (callbackResult.Status === '200' && callbackResult.CallbackBody) {
+        try {
+          res.CallbackBody = JSON.parse(util.decodeBase64(callbackResult.CallbackBody));
+        } catch (e) {
+          res.CallbackBody = {};
+        }
+      } else {
+        res.CallbackError = callbackResult.Error || {};
       }
+      delete res.CallbackResult;
+    }
+    // returnBody 处理
+    if (res.ReturnBodyResult) {
+      var returnBodyResult = res.ReturnBodyResult;
+      if (returnBodyResult.Status === '200' && returnBodyResult.ReturnBody) {
+        try {
+          res.ReturnBody = JSON.parse(util.decodeBase64(returnBodyResult.ReturnBody));
+        } catch (e) {
+          res.ReturnBody = {};
+        }
+      } else {
+        res.ReturnError = {
+          Code: returnBodyResult.Code,
+          Message: returnBodyResult.Message,
+          Status: returnBodyResult.Status
+        };
+      }
+      delete res.ReturnBodyResult;
     }
     var result = util.extend(res, {
       Location: url,
@@ -12564,6 +12595,37 @@ function _submitRequest(params, callback) {
         err = util.extend(err || {}, attrs);
         callback(err, null);
       } else {
+        // putObject 返回回调处理
+        if (params.Action === 'name/cos:PutObject') {
+          var pHeaders = {};
+          for (var i in params.headers) {
+            var key = i.toLowerCase();
+            pHeaders[key] = params.headers[i];
+          }
+          if (pHeaders['x-cos-callback']) {
+            var callbackBody;
+            var callbackError;
+            if (data.Error) {
+              callbackError = util.clone(data.Error);
+              data.CallbackError = callbackError;
+              delete data.Error;
+            } else {
+              callbackBody = util.clone(data);
+              data.CallbackBody = callbackBody;
+            }
+          } else if (pHeaders['x-cos-return-body']) {
+            var returnBody;
+            var returnError;
+            if (data.Error) {
+              returnError = util.clone(data.Error);
+              data.ReturnError = returnError;
+              delete data.Error;
+            } else {
+              returnBody = util.clone(data);
+              data.ReturnBody = returnBody;
+            }
+          }
+        }
         data = util.extend(data || {}, attrs);
         callback(null, data);
       }
@@ -14190,7 +14252,9 @@ var formatParams = function formatParams(apiName, params) {
         'x-cos-server-side-encryption-cos-kms-key-id': 'SSEKMSKeyId',
         'x-cos-server-side-encryption-context': 'SSEContext',
         // 上传时图片处理
-        'Pic-Operations': 'PicOperations'
+        'Pic-Operations': 'PicOperations',
+        'x-cos-callback': 'Callback',
+        'x-cos-return-body': 'ReturnBody'
       };
       util.each(headerMap, function (paramKey, headerKey) {
         if (params[paramKey] !== undefined) {
@@ -14460,6 +14524,10 @@ var encodeBase64 = function encodeBase64(str, safe) {
   }
   return base64Str;
 };
+var decodeBase64 = function decodeBase64(base64Str) {
+  if (!base64Str) return '';
+  return base64.decode(base64Str);
+};
 var simplifyPath = function simplifyPath(path) {
   var names = path.split('/');
   var stack = [];
@@ -14553,6 +14621,7 @@ var util = {
   isCIHost: isCIHost,
   isIOS_QQ: isIOS && isQQ,
   encodeBase64: encodeBase64,
+  decodeBase64: decodeBase64,
   simplifyPath: simplifyPath,
   readAsBinaryString: readAsBinaryString,
   parseResBody: parseResBody

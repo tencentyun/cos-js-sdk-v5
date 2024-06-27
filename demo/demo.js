@@ -916,6 +916,28 @@ function deleteBucketEncryption() {
   );
 }
 
+var callback = {
+  callbackUrl: 'https://114.132.67.183/index',
+  callbackHost: '114.132.67.183',
+  callbackBody: 'bucket=${bucket}&object=${object}&etag=${etag}&test=test_123',
+  callbackBodyType: 'application/x-www-form-urlencoded',
+};
+
+var returnBody = {
+  bucket: '${bucket}',
+  key: '${object}',
+  filesize: '${size}',
+  mime_type: '${mimeType}',
+  // 视频类型
+  // video_bit_rate: '${videoInfo.video.bit_rate}',
+  // "video_codec_name": "${videoInfo.video.codec_name}",
+  // "video_profile": "${videoInfo.video.profile}",
+  // "video_pix_fmt": "${videoInfo.video.pix_fmt}",
+  // "audio_bit_rate": "${videoInfo.audio.bit_rate}",
+  // "audio_codec_name": "${videoInfo.audio.codec_name}",
+  // "duration": "${videoInfo.format.duration}",
+};
+
 function putObject() {
   // 创建测试文件
   var filename = '1mb.zip';
@@ -928,23 +950,29 @@ function putObject() {
       Key: filename, // 必须
       // 常见场景是使用 input[type="file"] 标签选择文件后上传，可参考 selectFileToUpload
       Body: blob,
+      // Callback: COS.util.encodeBase64(JSON.stringify(callback)),
+      // ReturnBody: COS.util.encodeBase64(JSON.stringify(returnBody)),
+      // PicOperations: '{"is_pic_info": 1, "rules": [{"fileid": "test.jpg", "rule": "imageMogr2/thumbnail/!50p"}]}',
       onTaskReady: function (tid) {
         TaskId = tid;
         logger.log('onTaskReady', tid);
       },
-      onTaskStart: function (info) {
-        logger.log('onTaskStart', info);
-      },
       onProgress: function (progressData) {
         logger.log(JSON.stringify(progressData));
       },
-      Headers: {
-        // 万象持久化接口，上传时持久化
-        // 'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "test.jpg", "rule": "imageMogr2/thumbnail/!50p"}]}'
-      },
     },
     function (err, data) {
-      logger.log('putObject:', err.code || data);
+      if (err) {
+        console.log('上传失败');
+      } else {
+        console.log('上传成功');
+        if (data.CallbackError) {
+          console.log('回调失败', data.CallbackError?.Code);
+        } else {
+          console.log('回调成功', data.CallbackBody);
+        }
+      }
+      logger.log('putObject:', err || data);
     }
   );
 }
@@ -1271,6 +1299,9 @@ function uploadFile() {
       Key: filename,
       Body: blob,
       SliceSize: 1024 * 1024 * 5, // 大于5mb才进行分块上传
+      // Callback: COS.util.encodeBase64(JSON.stringify(callback)),
+      // ReturnBody: COS.util.encodeBase64(JSON.stringify(returnBody)),
+      // PicOperations: '{"is_pic_info": 1, "rules": [{"fileid": "test.jpg", "rule": "imageMogr2/thumbnail/!50p"}]}',
       onProgress: function (info) {
         var percent = Math.floor(info.percent * 10000) / 100;
         var speed = Math.floor((info.speed / 1024 / 1024) * 100) / 100;
@@ -1278,6 +1309,16 @@ function uploadFile() {
       },
     },
     function (err, data) {
+      if (err) {
+        console.log('上传失败');
+      } else {
+        console.log('上传成功');
+        if (data.CallbackError) {
+          console.log('回调失败', data.CallbackError?.Code);
+        } else {
+          console.log('回调成功', data.CallbackBody);
+        }
+      }
       logger.log('uploadFile:', err || data);
     }
   );
@@ -1291,10 +1332,7 @@ function sliceUploadFile() {
       Region: config.Region,
       Key: '3mb.jpg', // 必须
       Body: blob,
-      Headers: {
-        // 支持万象持久化接口，上传时持久化
-        // 'Pic-Operations': '{"is_pic_info": 1, "rules": [{"fileid": "test.jpg", "rule": "imageMogr2/thumbnail/!50p"}]}'
-      },
+      // Callback: COS.util.encodeBase64(JSON.stringify(callback)),
       onTaskReady: function (tid) {
         TaskId = tid;
       },
@@ -1316,19 +1354,16 @@ function selectFileToUpload() {
   util.selectLocalFile(function (files) {
     var file = files && files[0];
     if (!file) return;
-    if (file.size > 1024 * 1024) {
+    if (file.size > 1024 * 1024 * 3) {
       cos.sliceUploadFile(
         {
           Bucket: config.Bucket, // Bucket 格式：test-1250000000
           Region: config.Region,
           Key: file.name,
           Body: file,
-          onTaskReady: function (tid) {
-            TaskId = tid;
-          },
-          onProgress: function (progressData) {
-            logger.log('onProgress', JSON.stringify(progressData));
-          },
+          // Callback: COS.util.encodeBase64(JSON.stringify(callback)),
+          // ReturnBody: COS.util.encodeBase64(JSON.stringify(returnBody)),
+          // PicOperations: '{"is_pic_info": 1, "rules": [{"fileid": "test.jpg", "rule": "imageMogr2/thumbnail/!50p"}]}',
         },
         function (err, data) {
           logger.log('selectFileToUpload:', err || data);
@@ -1341,12 +1376,9 @@ function selectFileToUpload() {
           Region: config.Region,
           Key: file.name,
           Body: file,
-          onTaskReady: function (tid) {
-            TaskId = tid;
-          },
-          onProgress: function (progressData) {
-            logger.log(JSON.stringify(progressData));
-          },
+          // Callback: COS.util.encodeBase64(JSON.stringify(callback)),
+          // ReturnBody: COS.util.encodeBase64(JSON.stringify(returnBody)),
+          // PicOperations: '{"is_pic_info": 1, "rules": [{"fileid": "test.jpg", "rule": "imageMogr2/thumbnail/!50p"}]}',
         },
         function (err, data) {
           logger.log('selectFileToUpload:', err || data);

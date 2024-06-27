@@ -1317,6 +1317,10 @@ declare namespace COS {
     Location: string;
     /** 对象的版本 ID */
     VersionId?: VersionId;
+    CallbackBody?: Record<string, any>;
+    CallbackError?: Record<string, any>;
+    ReturnBody?: Record<string, any>;
+    ReturnError?: Record<string, any>;
   }
 
   /** appendObject 接口参数 */
@@ -1802,6 +1806,10 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     Location: string;
     /** 对象的版本 ID */
     VersionId?: VersionId;
+    CallbackBody?: Record<string, any>;
+    CallbackError?: Record<string, any>;
+    ReturnBody?: Record<string, any>;
+    ReturnError?: Record<string, any>;
   }
 
   // abortUploadTask
@@ -1883,6 +1891,10 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     Location: string;
     /** 对象的版本 ID */
     VersionId?: VersionId;
+    CallbackBody?: Record<string, any>;
+    CallbackError?: Record<string, any>;
+    ReturnBody?: Record<string, any>;
+    ReturnError?: Record<string, any>;
   }
 
   // sliceCopyFile
