@@ -1299,6 +1299,10 @@ declare namespace COS {
     StorageClass?: StorageClass;
     /** 上传文件时计算文件内容 md5 并设置为文件 x-cos-meta-md5 元数据 Header 字段 */
     UploadAddMetaMd5?: boolean;
+    Callback?: string;
+    CallbackVar?: string;
+    ReturnBody?: string;
+    PicOperations?: string;
     /** 包括用户自定义元数据头部后缀和用户自定义元数据信息，将作为对象元数据保存，大小限制为2KB，注意：用户自定义元数据信息支持下划线（_），但用户自定义元数据头部后缀不支持下划线，仅支持减号（-） */
     'x-cos-meta-*'?: string;
     /** 任务开始上传的回调方法 */
@@ -1788,6 +1792,10 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     GrantFullControl?: Grant;
     /** 对象存储类型。枚举值 STANDARD | STANDARD_IA | ARCHIVE | DEEP_ARCHIVE | INTELLIGENT_TIERING | MAZ_STANDARD | MAZ_STANDARD_IA | MAZ_INTELLIGENT_TIERING @see https://cloud.tencent.com/document/product/436/33417 */
     StorageClass?: StorageClass;
+    Callback?: string;
+    CallbackVar?: string;
+    ReturnBody?: string;
+    PicOperations?: string;
     /** 包括用户自定义元数据头部后缀和用户自定义元数据信息，将作为对象元数据保存，大小限制为2KB，注意：用户自定义元数据信息支持下划线（_），但用户自定义元数据头部后缀不支持下划线，仅支持减号（-） */
     'x-cos-meta-*'?: string;
     /** 任务开始上传的回调方法 */
