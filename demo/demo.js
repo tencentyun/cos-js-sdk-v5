@@ -1300,7 +1300,7 @@ function uploadFile() {
       Key: filename,
       Body: blob,
       SliceSize: 1024 * 1024 * 5, // 大于5mb才进行分块上传
-      Callback: COS.util.encodeBase64(JSON.stringify(callback)),
+      // Callback: COS.util.encodeBase64(JSON.stringify(callback)),
       // ReturnBody: COS.util.encodeBase64(JSON.stringify(returnBody)),
       // PicOperations: '{"is_pic_info": 1, "rules": [{"fileid": "test.jpg", "rule": "imageMogr2/thumbnail/!50p"}]}',
       onProgress: function (info) {
