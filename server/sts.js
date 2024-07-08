@@ -143,11 +143,21 @@ app.all('/', (req, res, next) => res.redirect('/demo/'));
 app.use(bodyParser.json());
 
 // 获取临时密钥
-function getSts() {
+function getSts(key) {
   return new Promise((resolve, reject) => {
     // 获取临时密钥
     var AppId = config.bucket.substr(config.bucket.lastIndexOf('-') + 1);
     // 数据万象DescribeMediaBuckets接口需要resource为*,参考 https://cloud.tencent.com/document/product/460/41741
+    var resource =
+      'qcs::cos:' +
+      config.region +
+      ':uid/' +
+      AppId +
+      ':' +
+      config.bucket +
+      '/' +
+      config.allowPrefix +
+      `${key} ? /${key} : ''`;
     var policy = {
       version: '2.0',
       statement: [
@@ -156,7 +166,7 @@ function getSts() {
           effect: 'allow',
           resource: [
             // cos相关授权路径
-            'qcs::cos:' + config.region + ':uid/' + AppId + ':' + config.bucket + '/' + config.allowPrefix,
+            resource,
             // ci相关授权路径 按需使用
             'qcs::ci:' + config.region + ':uid/' + AppId + ':bucket/' + config.bucket + '/' + 'job/*',
           ],
@@ -187,7 +197,7 @@ function getSts() {
 }
 
 // 返回临时密钥，客户端自行计算签名
-app.all('/sts', function (req, res, next) {
+app.get('/sts', function (req, res, next) {
   // TODO 这里根据自己业务需要做好放行判断
   if (config.allowPrefix === '_ALLOW_DIR_/*') {
     res.send({ error: '请修改 allowPrefix 配置项，指定允许上传的路径前缀' });
@@ -196,6 +206,34 @@ app.all('/sts', function (req, res, next) {
   getSts()
     .then((data) => {
       res.send(data);
+    })
+    .catch((err) => {
+      res.send(err);
+    });
+});
+
+// 返回临时密钥和上传信息，客户端自行计算签名
+app.get('/getKeyAndCredentials', function (req, res, next) {
+  // TODO 这里根据自己业务需要做好放行判断
+  if (config.allowPrefix === '_ALLOW_DIR_/*') {
+    res.send({ error: '请修改 allowPrefix 配置项，指定允许上传的路径前缀' });
+    return;
+  }
+  var ext = req.query.ext;
+  var cosKey = generateCosKey(ext);
+  // 可控制临时密钥只授权cosKey的权限
+  getSts(cosKey)
+    .then((data) => {
+      res.send({
+        TmpSecretId: data.credentials.tmpSecretId,
+        TmpSecretKey: data.credentials.tmpSecretKey,
+        SessionToken: data.credentials.sessionToken,
+        StartTime: Math.round(Date.now() / 1000),
+        ExpiredTime: data.expiredTime,
+        Bucket: config.bucket,
+        Region: config.region,
+        Key: cosKey,
+      });
     })
     .catch((err) => {
       res.send(err);

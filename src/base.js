@@ -3894,6 +3894,12 @@ function getAuthorizationAsync(params, callback) {
   } else {
     // 内部计算获取签名
     return (function () {
+      var KeyTime = '';
+      if (self.options.StartTime && params.Expires) {
+        KeyTime = self.options.StartTime + ';' + (self.options.StartTime + params.Expires * 1);
+      } else if (self.options.StartTime && self.options.ExpiredTime) {
+        KeyTime = self.options.StartTime + ';' + self.options.ExpiredTime;
+      }
       var Authorization = util.getAuth({
         SecretId: params.SecretId || self.options.SecretId,
         SecretKey: params.SecretKey || self.options.SecretKey,
@@ -3902,6 +3908,7 @@ function getAuthorizationAsync(params, callback) {
         Query: params.Query,
         Headers: headers,
         Expires: params.Expires,
+        KeyTime,
         UseRawKey: self.options.UseRawKey,
         SystemClockOffset: self.options.SystemClockOffset,
         ForceSignHost: forceSignHost,

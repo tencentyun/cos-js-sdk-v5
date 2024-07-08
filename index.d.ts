@@ -138,6 +138,10 @@ declare namespace COS {
     SecurityToken?: string;
     /** 同 SecurityToken，推荐用 SecurityToken */
     XCosSecurityToken?: string;
+    /** 临时密钥起始时间 */
+    StartTime?: number;
+    /** 临时密钥过期时间 */
+    ExpiredTime?: number;
     /** 分块上传及分块复制时，出错重试次数，默认值3（加第一次，请求共4次） */
     ChunkRetryTimes?: number;
     /** 同一个实例下上传的文件并发数，默认值3 */

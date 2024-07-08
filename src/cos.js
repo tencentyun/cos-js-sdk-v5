@@ -12,6 +12,8 @@ var defaultOptions = {
   SecretId: '',
   SecretKey: '',
   SecurityToken: '', // 使用临时密钥需要注意自行刷新 Token
+  StartTime: 0, // 临时密钥返回起始时间
+  ExpiredTime: 0, // 临时密钥过期时间
   ChunkRetryTimes: 2,
   FileParallelLimit: 3,
   ChunkParallelLimit: 3,
