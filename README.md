@@ -38,7 +38,16 @@ const Bucket = 'test-1250000000';
 // 关于地域的详情见 https://cloud.tencent.com/document/product/436/6224
 const Region = 'ap-guangzhou';
 
-// 初始化实例
+// 初始化实例，详情参考：https://cloud.tencent.com/document/product/436/11459
+
+// 1、方式一：传入临时密钥
+const cos = new COS({
+  SecretId: 'your_tmpSecretId',
+  SecretKey: 'your_tmpSecretKey',
+  SecurityToken: 'your_sessionToken',
+});
+
+// 2、方式二：传入获取临时密钥回调
 const cos = new COS({
     // getAuthorization 必选参数
     getAuthorization: function (options, callback) {
