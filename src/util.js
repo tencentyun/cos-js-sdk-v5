@@ -550,6 +550,9 @@ var formatParams = function (apiName, params) {
         'x-cos-server-side-encryption-context': 'SSEContext',
         // 上传时图片处理
         'Pic-Operations': 'PicOperations',
+        'x-cos-callback': 'Callback',
+        'x-cos-callback-var': 'CallbackVar',
+        'x-cos-return-body': 'ReturnBody',
       };
       util.each(headerMap, function (paramKey, headerKey) {
         if (params[paramKey] !== undefined) {
@@ -844,6 +847,11 @@ var encodeBase64 = function (str, safe) {
   return base64Str;
 };
 
+var decodeBase64 = function (base64Str) {
+  if (!base64Str) return '';
+  return base64.decode(base64Str);
+};
+
 var simplifyPath = function (path) {
   const names = path.split('/');
   const stack = [];
@@ -929,6 +937,7 @@ var util = {
   isCIHost: isCIHost,
   isIOS_QQ: isIOS && isQQ,
   encodeBase64: encodeBase64,
+  decodeBase64: decodeBase64,
   simplifyPath: simplifyPath,
   readAsBinaryString: readAsBinaryString,
   parseResBody: parseResBody,

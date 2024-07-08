@@ -3101,20 +3101,51 @@ function multipartComplete(params, callback) {
         isLocation: true,
       });
       var res = data.CompleteMultipartUploadResult || {};
+      // pic-operations 处理
       if (res.ProcessResults) {
-        if (res && res.ProcessResults) {
-          res.UploadResult = {
-            OriginalInfo: {
-              Key: res.Key,
-              Location: url,
-              ETag: res.ETag,
-              ImageInfo: res.ImageInfo,
-            },
-            ProcessResults: res.ProcessResults,
-          };
-          delete res.ImageInfo;
-          delete res.ProcessResults;
+        res.UploadResult = {
+          OriginalInfo: {
+            Key: res.Key,
+            Location: url,
+            ETag: res.ETag,
+            ImageInfo: res.ImageInfo,
+          },
+          ProcessResults: res.ProcessResults,
+        };
+        delete res.ImageInfo;
+        delete res.ProcessResults;
+      }
+      // callback 处理
+      if (res.CallbackResult) {
+        var callbackResult = res.CallbackResult;
+        if (callbackResult.Status === '200' && callbackResult.CallbackBody) {
+          try {
+            res.CallbackBody = JSON.parse(util.decodeBase64(callbackResult.CallbackBody));
+          } catch (e) {
+            res.CallbackBody = {};
+          }
+        } else {
+          res.CallbackError = callbackResult.Error || {};
         }
+        delete res.CallbackResult;
+      }
+      // returnBody 处理
+      if (res.ReturnBodyResult) {
+        var returnBodyResult = res.ReturnBodyResult;
+        if (returnBodyResult.Status === '200' && returnBodyResult.ReturnBody) {
+          try {
+            res.ReturnBody = JSON.parse(util.decodeBase64(returnBodyResult.ReturnBody));
+          } catch (e) {
+            res.ReturnBody = {};
+          }
+        } else {
+          res.ReturnError = {
+            Code: returnBodyResult.Code,
+            Message: returnBodyResult.Message,
+            Status: returnBodyResult.Status,
+          };
+        }
+        delete res.ReturnBodyResult;
       }
       var result = util.extend(res, {
         Location: url,
@@ -4195,6 +4226,29 @@ function _submitRequest(params, callback) {
         err = util.extend(err || {}, attrs);
         callback(err, null);
       } else {
+        // putObject 返回回调处理
+        if (params.Action === 'name/cos:PutObject') {
+          var pHeaders = {};
+          for (var i in params.headers) {
+            var key = i.toLowerCase();
+            pHeaders[key] = params.headers[i];
+          }
+          if (pHeaders['x-cos-callback']) {
+            if (data.Error) {
+              data.CallbackError = util.clone(data.Error);
+              delete data.Error;
+            } else {
+              data.CallbackBody = util.clone(data);
+            }
+          } else if (pHeaders['x-cos-return-body']) {
+            if (data.Error) {
+              data.ReturnError = util.clone(data.Error);
+              delete data.Error;
+            } else {
+              data.ReturnBody = util.clone(data);
+            }
+          }
+        }
         data = util.extend(data || {}, attrs);
         callback(null, data);
       }

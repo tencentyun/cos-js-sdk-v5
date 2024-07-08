@@ -7340,7 +7340,7 @@ function sliceUploadFile(params, callback) {
     var metaHeaders = {};
     util.each(params.Headers, function (val, k) {
       var shortKey = k.toLowerCase();
-      if (shortKey.indexOf('x-cos-meta-') === 0 || shortKey === 'pic-operations') {
+      if (shortKey.indexOf('x-cos-meta-') === 0 || ['pic-operations', 'x-cos-callback', 'x-cos-callback-var', 'x-cos-return-body'].includes(shortKey)) {
         metaHeaders[k] = val;
       }
     });
@@ -11556,20 +11556,51 @@ function multipartComplete(params, callback) {
       isLocation: true
     });
     var res = data.CompleteMultipartUploadResult || {};
+    // pic-operations 处理
     if (res.ProcessResults) {
-      if (res && res.ProcessResults) {
-        res.UploadResult = {
-          OriginalInfo: {
-            Key: res.Key,
-            Location: url,
-            ETag: res.ETag,
-            ImageInfo: res.ImageInfo
-          },
-          ProcessResults: res.ProcessResults
-        };
-        delete res.ImageInfo;
-        delete res.ProcessResults;
+      res.UploadResult = {
+        OriginalInfo: {
+          Key: res.Key,
+          Location: url,
+          ETag: res.ETag,
+          ImageInfo: res.ImageInfo
+        },
+        ProcessResults: res.ProcessResults
+      };
+      delete res.ImageInfo;
+      delete res.ProcessResults;
+    }
+    // callback 处理
+    if (res.CallbackResult) {
+      var callbackResult = res.CallbackResult;
+      if (callbackResult.Status === '200' && callbackResult.CallbackBody) {
+        try {
+          res.CallbackBody = JSON.parse(util.decodeBase64(callbackResult.CallbackBody));
+        } catch (e) {
+          res.CallbackBody = {};
+        }
+      } else {
+        res.CallbackError = callbackResult.Error || {};
       }
+      delete res.CallbackResult;
+    }
+    // returnBody 处理
+    if (res.ReturnBodyResult) {
+      var returnBodyResult = res.ReturnBodyResult;
+      if (returnBodyResult.Status === '200' && returnBodyResult.ReturnBody) {
+        try {
+          res.ReturnBody = JSON.parse(util.decodeBase64(returnBodyResult.ReturnBody));
+        } catch (e) {
+          res.ReturnBody = {};
+        }
+      } else {
+        res.ReturnError = {
+          Code: returnBodyResult.Code,
+          Message: returnBodyResult.Message,
+          Status: returnBodyResult.Status
+        };
+      }
+      delete res.ReturnBodyResult;
     }
     var result = util.extend(res, {
       Location: url,
@@ -12571,6 +12602,29 @@ function _submitRequest(params, callback) {
         err = util.extend(err || {}, attrs);
         callback(err, null);
       } else {
+        // putObject 返回回调处理
+        if (params.Action === 'name/cos:PutObject') {
+          var pHeaders = {};
+          for (var i in params.headers) {
+            var key = i.toLowerCase();
+            pHeaders[key] = params.headers[i];
+          }
+          if (pHeaders['x-cos-callback']) {
+            if (data.Error) {
+              data.CallbackError = util.clone(data.Error);
+              delete data.Error;
+            } else {
+              data.CallbackBody = util.clone(data);
+            }
+          } else if (pHeaders['x-cos-return-body']) {
+            if (data.Error) {
+              data.ReturnError = util.clone(data.Error);
+              delete data.Error;
+            } else {
+              data.ReturnBody = util.clone(data);
+            }
+          }
+        }
         data = util.extend(data || {}, attrs);
         callback(null, data);
       }
@@ -14201,7 +14255,10 @@ var formatParams = function formatParams(apiName, params) {
         'x-cos-server-side-encryption-cos-kms-key-id': 'SSEKMSKeyId',
         'x-cos-server-side-encryption-context': 'SSEContext',
         // 上传时图片处理
-        'Pic-Operations': 'PicOperations'
+        'Pic-Operations': 'PicOperations',
+        'x-cos-callback': 'Callback',
+        'x-cos-callback-var': 'CallbackVar',
+        'x-cos-return-body': 'ReturnBody'
       };
       util.each(headerMap, function (paramKey, headerKey) {
         if (params[paramKey] !== undefined) {
@@ -14471,6 +14528,10 @@ var encodeBase64 = function encodeBase64(str, safe) {
   }
   return base64Str;
 };
+var decodeBase64 = function decodeBase64(base64Str) {
+  if (!base64Str) return '';
+  return base64.decode(base64Str);
+};
 var simplifyPath = function simplifyPath(path) {
   var names = path.split('/');
   var stack = [];
@@ -14564,6 +14625,7 @@ var util = {
   isCIHost: isCIHost,
   isIOS_QQ: isIOS && isQQ,
   encodeBase64: encodeBase64,
+  decodeBase64: decodeBase64,
   simplifyPath: simplifyPath,
   readAsBinaryString: readAsBinaryString,
   parseResBody: parseResBody
