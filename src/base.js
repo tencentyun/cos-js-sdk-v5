@@ -4064,6 +4064,7 @@ function submitRequest(params, callback) {
               networkError,
             });
             params.SwitchHost = switchHost;
+            params.retry = true;
             next(tryTimes + 1);
           } else {
             callback(err, data);
@@ -4145,6 +4146,9 @@ function _submitRequest(params, callback) {
 
   // 清理 undefined 和 null 字段
   opt.headers && (opt.headers = util.clearKey(opt.headers));
+  if (params.retry) {
+    opt.headers['x-cos-sdk-retry'] = true;
+  }
   opt = util.clearKey(opt);
 
   // progress
