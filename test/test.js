@@ -366,7 +366,7 @@ group('callback', function () {
         Callback: COS.util.encodeBase64(JSON.stringify(callback)),
       },
       function (err, data) {
-        console.log('data.CallbackError', data.CallbackError);
+        console.log('data.CallbackError', err);
         assert.ok(data.CallbackError);
         done();
       }
@@ -382,7 +382,7 @@ group('callback', function () {
         Callback: COS.util.encodeBase64(JSON.stringify(callback)),
       },
       function (err, data) {
-        console.log('data.CallbackError', data.CallbackError);
+        console.log('data.CallbackError', err);
         assert.ok(data.CallbackError);
         done();
       }
