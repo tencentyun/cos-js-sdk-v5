@@ -156,8 +156,10 @@ function getSts(key) {
       ':' +
       config.bucket +
       '/' +
-      config.allowPrefix +
-      `${key} ? /${key} : ''`;
+      config.allowPrefix;
+      if (key) {
+        resource += key;
+      }
     var policy = {
       version: '2.0',
       statement: [
