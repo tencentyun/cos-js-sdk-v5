@@ -8875,9 +8875,18 @@ function getAuthorizationAsync(params, callback) {
     return function () {
       var KeyTime = '';
       if (self.options.StartTime && params.Expires) {
+        if (self.options.StartTime.toString().length !== 10) {
+          return cb(util.error(new Error('params "StartTime" should be 10 digits')));
+        }
         KeyTime = self.options.StartTime + ';' + (self.options.StartTime + params.Expires * 1);
       } else if (self.options.StartTime && self.options.ExpiredTime) {
-        KeyTime = self.options.StartTime + ';' + self.options.ExpiredTime;
+        if (self.options.StartTime.toString().length !== 10) {
+          return cb(util.error(new Error('params "StartTime" should be 10 digits')));
+        }
+        if (self.options.ExpiredTime.toString().length !== 10) {
+          return cb(util.error(new Error('params "ExpiredTime" should be 10 digits')));
+        }
+        KeyTime = self.options.StartTime + ';' + self.options.ExpiredTime * 1;
       }
       var Authorization = util.getAuth({
         SecretId: params.SecretId || self.options.SecretId,
