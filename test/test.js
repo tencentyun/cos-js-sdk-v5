@@ -197,22 +197,28 @@ console.log('config.StsUrl========', config.StsUrl);
 function getSts() {
   return new Promise((resolve, reject) => {
     var url = `${config.StsUrl}/sts`; // 如果是 npm run sts.js 起的 nodejs server，使用这个
-    fetch(url)
-      .then(response => response.json())
-      .then(data => {
-        if (!data || !data.credentials) {
-          console.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
-          reject();
-        }
-        const credentials = data.credentials;
-        resolve({
-          TmpSecretId: credentials.tmpSecretId,
-          TmpSecretKey: credentials.tmpSecretKey,
-          SecurityToken: credentials.sessionToken,
-          StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
-          ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000000
-        });
+    var xhr = new XMLHttpRequest();
+    xhr.open('get', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onload = function (e) {
+      var data,credentials;
+      try {
+        data = JSON.parse(e.target.responseText);
+        credentials = data.credentials;
+      } catch (e) {}
+      if (!data || !credentials) {
+        console.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
+        reject();
+      }
+      resolve({
+        TmpSecretId: credentials.tmpSecretId,
+        TmpSecretKey: credentials.tmpSecretKey,
+        SecurityToken: credentials.sessionToken,
+        StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+        ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000000
       });
+    };
+    xhr.send(JSON.stringify(options.Scope));
   });
 }
 
@@ -261,8 +267,8 @@ var getSignCOS = new COS({
   getAuthorization: function (options, callback) {
     var url = `${config.StsUrl}/uploadSign`; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     fetch(url)
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         callback({
           Authorization: data?.signMap?.PutObject,
         });
