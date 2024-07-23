@@ -1350,43 +1350,63 @@ function sliceUploadFile() {
   );
 }
 
+function upload(file) {
+  // stsUrl 是上方搭建的临时密钥服务
+  const stsUrl = 'http://127.0.0.1:3000/getKeyAndCredentials';
+  return new Promise((resolve, reject) => {
+    fetch(stsUrl)
+      .then((response) => response.json())
+      .then((data) => {
+        // 服务端接口需要返回：上传的存储桶、地域、随机路径的对象键、临时密钥
+        console.log('getKeyAndCredentials:', data);
+        // 在返回值里取临时密钥信息，上传的文件路径信息
+        const { TmpSecretId, TmpSecretKey, SessionToken, StartTime, ExpiredTime, Bucket, Region, Key } = data;
+        // 创建 JS SDK 实例，传入临时密钥参数
+        // 其他配置项可参考下方 初始化配置项
+        const cos = new COS({
+          SecretId: TmpSecretId,
+          SecretKey: TmpSecretKey,
+          SecurityToken: SessionToken,
+          StartTime: StartTime,
+          ExpiredTime: ExpiredTime,
+        });
+        // 上传文件
+        cos.uploadFile(
+          {
+            Bucket,
+            Region,
+            Key,
+            Body: file, // 要上传的文件对象。
+            onProgress: function (progressData) {
+              console.log('上传进度：', progressData);
+            },
+          },
+          function (err, data) {
+            console.log('上传结束', err || data);
+            if (err) {
+              reject(err);
+            } else {
+              resolve(data);
+            }
+          }
+        );
+      })
+      .catch((error) => {
+        console.error('获取上传路径和临时密钥失败', error);
+        reject(error);
+      });
+  });
+}
+
 function selectFileToUpload() {
   // 选择本地文件上传
-  util.selectLocalFile(function (files) {
+  util.selectLocalFile(async function (files) {
     var file = files && files[0];
     if (!file) return;
-    if (file.size > 1024 * 1024 * 3) {
-      cos.sliceUploadFile(
-        {
-          Bucket: config.Bucket, // Bucket 格式：test-1250000000
-          Region: config.Region,
-          Key: file.name,
-          Body: file,
-          // Callback: COS.util.encodeBase64(JSON.stringify(callback)),
-          // CallbackVar: COS.util.encodeBase64(JSON.stringify(callbackVar)),
-          // ReturnBody: COS.util.encodeBase64(JSON.stringify(returnBody)),
-          // PicOperations: '{"is_pic_info": 1, "rules": [{"fileid": "test.jpg", "rule": "imageMogr2/thumbnail/!50p"}]}',
-        },
-        function (err, data) {
-          logger.log('selectFileToUpload:', err || data);
-        }
-      );
-    } else {
-      cos.putObject(
-        {
-          Bucket: config.Bucket, // Bucket 格式：test-1250000000
-          Region: config.Region,
-          Key: file.name,
-          Body: file,
-          // Callback: COS.util.encodeBase64(JSON.stringify(callback)),
-          // CallbackVar: COS.util.encodeBase64(JSON.stringify(callbackVar)),
-          // ReturnBody: COS.util.encodeBase64(JSON.stringify(returnBody)),
-          // PicOperations: '{"is_pic_info": 1, "rules": [{"fileid": "test.jpg", "rule": "imageMogr2/thumbnail/!50p"}]}',
-        },
-        function (err, data) {
-          logger.log('selectFileToUpload:', err || data);
-        }
-      );
+    try {
+      const res = await upload(file);
+    } catch (e) {
+      console.log(e);
     }
   });
 }
