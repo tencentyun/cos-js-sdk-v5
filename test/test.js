@@ -524,7 +524,7 @@ group('init cos', function () {
       }
     );
   });
-  test('getAuthorization 使用下发的签名 sliceUploadFile', function (done) {
+  test('getAuthorization 使用下发的签名 sliceUploadFile 没权限', function (done) {
     const file = createFileSync(20 * 1024 * 1024);
     getSignCOS.sliceUploadFile(
       {
@@ -551,7 +551,7 @@ group('init cos', function () {
       {
         Bucket: config.Bucket,
         Region: config.Region,
-        Key: '1.txt',
+        Key: tempCOSPrefix + '1.txt',
         Body: '12345',
       },
       function (err, data) {
@@ -573,7 +573,7 @@ group('init cos', function () {
       {
         Bucket: config.Bucket,
         Region: config.Region,
-        Key: '1.txt',
+        Key: tempCOSPrefix + '1.txt',
         Body: '12345',
       },
       function (err, data) {
@@ -594,7 +594,7 @@ group('init cos', function () {
       {
         Bucket: config.Bucket,
         Region: config.Region,
-        Key: '1.txt',
+        Key: tempCOSPrefix + '1.txt',
         Body: '12345',
       },
       function (err, data) {
@@ -615,7 +615,7 @@ group('init cos', function () {
       {
         Bucket: config.Bucket,
         Region: config.Region,
-        Key: '1.txt',
+        Key: tempCOSPrefix + '1.txt',
         Expires: Date.now() * 1000,
       },
       function (err, data) {
