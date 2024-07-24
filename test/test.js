@@ -194,7 +194,7 @@ var cos = new COS({
 
 console.log('config.StsUrl========', config.StsUrl);
 
-function getSts() {
+function getSts(options) {
   return new Promise((resolve, reject) => {
     var url = `${config.StsUrl}/sts`; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     var xhr = new XMLHttpRequest();
@@ -218,15 +218,21 @@ function getSts() {
         ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000000
       });
     };
-    xhr.send(JSON.stringify(options.Scope));
+    xhr.send(JSON.stringify(options?.Scope));
   });
 }
+
+// todo 只能这么提前获取
+const sts = {};
+getSts().then(data => {
+  Object.assign(sts, data);
+});
 
 // 使用临时密钥
 var tempCOS = new COS({
   getAuthorization: async function (options, callback) {
     try {
-      const res = await getSts();
+      const res = await getSts(options);
       callback({
         TmpSecretId: res.TmpSecretId,
         TmpSecretKey: res.TmpSecretKey,
@@ -246,7 +252,7 @@ var oldTempCOS = new COS({
   // UseAccelerate: true,
   getAuthorization: async function (options, callback) {
     try {
-      const res = await getSts();
+      const res = await getSts(options);
       callback({
         TmpSecretId: res.TmpSecretId,
         TmpSecretKey: res.TmpSecretKey,
@@ -266,13 +272,21 @@ var getSignCOS = new COS({
   // UseAccelerate: true,
   getAuthorization: function (options, callback) {
     var url = `${config.StsUrl}/uploadSign`; // 如果是 npm run sts.js 起的 nodejs server，使用这个
-    fetch(url)
-      .then((response) => response.json())
-      .then((data) => {
-        callback({
-          Authorization: data?.signMap?.PutObject,
-        });
+    var xhr = new XMLHttpRequest();
+    xhr.open('get', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onload = function (e) {
+      try {
+        var data = JSON.parse(e.target.responseText);
+      } catch (e) {}
+      if (!data) {
+        return console.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
+      }
+      callback({
+        Authorization: data?.signMap?.PutObject,
       });
+    };
+    xhr.send();
   },
 });
 
@@ -280,7 +294,7 @@ var getStsCOS = new COS({
   // UseAccelerate: true,
   getSTS: async function (options, callback) {
     try {
-      const res = await getSts();
+      const res = await getSts(options);
       callback({
         TmpSecretId: res.TmpSecretId,
         TmpSecretKey: res.TmpSecretKey,
@@ -315,7 +329,7 @@ var group = function (name, fn) {
   if (!checkEnvParams()) return;
   console.log(`${name}进行中....`);
   describe(name, function () {
-    jest.setTimeout(2 * 60 * 1000);
+    jest.setTimeout(1 * 60 * 1000);
     fn.apply(this, arguments);
   });
 };
@@ -525,109 +539,91 @@ group('init cos', function () {
       }
     );
   });
-  test('推荐初始化方式 putObject 成功', async function (done) {
-    try {
-      const sts = await getSts();
-      const cos = new COS({
-        SecretId: sts.TmpSecretId,
-        SecretKey: sts.TmpSecretKey,
-        SecurityToken: sts.SecurityToken,
-        StartTime: sts.StartTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
-        ExpiredTime: sts.ExpiredTime, // 时间戳，单位秒，如：1580000000
-      });
-      cos.putObject(
-        {
-          Bucket: config.Bucket,
-          Region: config.Region,
-          Key: '1.txt',
-          Body: '12345',
-        },
-        function (err, data) {
-          assert.ok(!err);
-          done();
-        }
-      );
-    } catch (e) {
-      done();
-    }
+  test('推荐初始化方式 putObject 成功', function (done) {
+    const cos = new COS({
+      SecretId: sts.TmpSecretId,
+      SecretKey: sts.TmpSecretKey,
+      SecurityToken: sts.SecurityToken,
+      StartTime: sts.StartTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+      ExpiredTime: sts.ExpiredTime, // 时间戳，单位秒，如：1580000000
+    });
+    cos.putObject(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '1.txt',
+        Body: '12345',
+      },
+      function (err, data) {
+        console.log(' putObject 成功', err || data);
+        assert.ok(!err);
+        done();
+      }
+    );
   });
-  test('推荐初始化方式 putObject invalid StartTime', async function (done) {
-    try {
-      const sts = await getSts();
-      const cos = new COS({
-        SecretId: sts.TmpSecretId,
-        SecretKey: sts.TmpSecretKey,
-        SecurityToken: sts.SecurityToken,
-        StartTime: sts.StartTime * 1000, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
-        ExpiredTime: sts.ExpiredTime, // 时间戳，单位秒，如：1580000000
-      });
-      cos.putObject(
-        {
-          Bucket: config.Bucket,
-          Region: config.Region,
-          Key: '1.txt',
-          Body: '12345',
-        },
-        function (err, data) {
-          assert.ok(err);
-          done();
-        }
-      );
-    } catch (e) {
-      done();
-    }
+  test('推荐初始化方式 putObject invalid StartTime', function (done) {
+    const cos = new COS({
+      SecretId: sts.TmpSecretId,
+      SecretKey: sts.TmpSecretKey,
+      SecurityToken: sts.SecurityToken,
+      StartTime: sts.StartTime * 1000, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+      ExpiredTime: sts.ExpiredTime, // 时间戳，单位秒，如：1580000000
+    });
+    cos.putObject(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '1.txt',
+        Body: '12345',
+      },
+      function (err, data) {
+        assert.ok(err);
+        done();
+      }
+    );
   });
-  test('推荐初始化方式 putObject invalid ExpiredTime', async function (done) {
-    try {
-      const sts = await getSts();
-      const cos = new COS({
-        SecretId: sts.TmpSecretId,
-        SecretKey: sts.TmpSecretKey,
-        SecurityToken: sts.SecurityToken,
-        StartTime: sts.StartTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
-        ExpiredTime: sts.ExpiredTime * 1000, // 时间戳，单位秒，如：1580000000
-      });
-      cos.putObject(
-        {
-          Bucket: config.Bucket,
-          Region: config.Region,
-          Key: '1.txt',
-          Body: '12345',
-        },
-        function (err, data) {
-          assert.ok(err);
-          done();
-        }
-      );
-    } catch (e) {
-      done();
-    }
+  test('推荐初始化方式 putObject invalid ExpiredTime', function (done) {
+    const cos = new COS({
+      SecretId: sts.TmpSecretId,
+      SecretKey: sts.TmpSecretKey,
+      SecurityToken: sts.SecurityToken,
+      StartTime: sts.StartTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+      ExpiredTime: sts.ExpiredTime * 1000, // 时间戳，单位秒，如：1580000000
+    });
+    cos.putObject(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '1.txt',
+        Body: '12345',
+      },
+      function (err, data) {
+        assert.ok(err);
+        done();
+      }
+    );
   });
-  test('推荐初始化方式 getObjectUrl invalid ExpiredTime', async function (done) {
-    try {
-      const sts = await getSts();
-      const cos = new COS({
-        SecretId: sts.TmpSecretId,
-        SecretKey: sts.TmpSecretKey,
-        SecurityToken: sts.SecurityToken,
-        StartTime: sts.StartTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
-        ExpiredTime: sts.ExpiredTime * 1000, // 时间戳，单位秒，如：1580000000
-      });
-      cos.getObjectUrl(
-        {
-          Bucket: config.Bucket,
-          Region: config.Region,
-          Key: '1.txt',
-          Expires: Date.now() * 1000,
-        },
-        function (err, data) {
-          assert.ok(err);
-          done();
-        }
-      );
-    } catch (e) {
-      done();
-    }
+  test('推荐初始化方式 getObjectUrl invalid StartTime', function (done) {
+    const cos = new COS({
+      SecretId: sts.TmpSecretId,
+      SecretKey: sts.TmpSecretKey,
+      SecurityToken: sts.SecurityToken,
+      StartTime: sts.StartTime * 1000, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+      ExpiredTime: sts.ExpiredTime, // 时间戳，单位秒，如：1580000000
+    });
+    cos.getObjectUrl(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '1.txt',
+        Expires: Date.now() * 1000,
+      },
+      function (err, data) {
+        console.log('getObjectUrl invalid ExpiredTime', err||data);
+        assert.ok(err);
+        done();
+      }
+    );
   });
 });
 
