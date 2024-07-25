@@ -1352,7 +1352,7 @@ function sliceUploadFile() {
 
 function upload(file) {
   // stsUrl 是上方搭建的临时密钥服务
-  const stsUrl = 'http://127.0.0.1:3000/getKeyAndCredentials';
+  const stsUrl = `http://127.0.0.1:3000/getKeyAndCredentials?filename=${file.name}`;
   return new Promise((resolve, reject) => {
     fetch(stsUrl)
       .then((response) => response.json())
