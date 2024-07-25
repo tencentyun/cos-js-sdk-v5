@@ -148,16 +148,10 @@ function getSts(key) {
     // 获取临时密钥
     var AppId = config.bucket.substr(config.bucket.lastIndexOf('-') + 1);
     // 数据万象DescribeMediaBuckets接口需要resource为*,参考 https://cloud.tencent.com/document/product/460/41741
-    var resource =
-      'qcs::cos:' +
-      config.region +
-      ':uid/' +
-      AppId +
-      ':' +
-      config.bucket +
-      '/' +
-      config.allowPrefix +
-      `${key} ? /${key} : ''`;
+    var resource = 'qcs::cos:' + config.region + ':uid/' + AppId + ':' + config.bucket + '/' + config.allowPrefix;
+    if (key) {
+      resource += key;
+    }
     var policy = {
       version: '2.0',
       statement: [
