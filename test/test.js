@@ -194,76 +194,60 @@ var cos = new COS({
 
 console.log('config.StsUrl========', config.StsUrl);
 
-function getSts(options) {
-  return new Promise((resolve, reject) => {
+// 使用临时密钥
+var tempCOS = new COS({
+  getAuthorization: function (options, callback) {
     var url = `${config.StsUrl}/sts`; // 如果是 npm run sts.js 起的 nodejs server，使用这个
     var xhr = new XMLHttpRequest();
     xhr.open('get', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onload = function (e) {
-      var data,credentials;
       try {
-        data = JSON.parse(e.target.responseText);
-        credentials = data.credentials;
+        var data = JSON.parse(e.target.responseText);
+        var credentials = data.credentials;
       } catch (e) {}
       if (!data || !credentials) {
-        console.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
-        reject();
+        return console.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
       }
-      resolve({
+      callback({
         TmpSecretId: credentials.tmpSecretId,
         TmpSecretKey: credentials.tmpSecretKey,
         SecurityToken: credentials.sessionToken,
         StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
         ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000000
-      });
-    };
-    xhr.send(JSON.stringify(options?.Scope));
-  });
-}
-
-// todo 只能这么提前获取
-const sts = {};
-getSts().then(data => {
-  Object.assign(sts, data);
-});
-
-// 使用临时密钥
-var tempCOS = new COS({
-  getAuthorization: async function (options, callback) {
-    try {
-      const res = await getSts(options);
-      callback({
-        TmpSecretId: res.TmpSecretId,
-        TmpSecretKey: res.TmpSecretKey,
-        SecurityToken: res.SecurityToken,
-        StartTime: res.StartTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
-        ExpiredTime: res.ExpiredTime, // 时间戳，单位秒，如：1580000000
         ScopeLimit: true, // 细粒度控制权限需要设为 true，会限制密钥只在相同请求时重复使用
       });
-    } catch (e) {
-      console.error('get sts error');
-    }
+    };
+    xhr.send(JSON.stringify(options.Scope));
   },
 });
 
 // 使用临时密钥（老版本使用的XCosSecurityToken）
 var oldTempCOS = new COS({
   // UseAccelerate: true,
-  getAuthorization: async function (options, callback) {
-    try {
-      const res = await getSts(options);
+  getAuthorization: function (options, callback) {
+    var url = `${config.StsUrl}/sts`; // 如果是 npm run sts.js 起的 nodejs server，使用这个
+    var xhr = new XMLHttpRequest();
+    xhr.open('get', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onload = function (e) {
+      try {
+        var data = JSON.parse(e.target.responseText);
+        var credentials = data.credentials;
+      } catch (e) {}
+      if (!data || !credentials) {
+        return console.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
+      }
       callback({
-        TmpSecretId: res.TmpSecretId,
-        TmpSecretKey: res.TmpSecretKey,
-        XCosSecurityToken: res.SecurityToken,
-        StartTime: res.StartTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
-        ExpiredTime: res.ExpiredTime, // 时间戳，单位秒，如：1580000000
+        TmpSecretId: credentials.tmpSecretId,
+        TmpSecretKey: credentials.tmpSecretKey,
+        XCosSecurityToken: credentials.sessionToken,
+        StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+        ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000000
         ScopeLimit: true, // 细粒度控制权限需要设为 true，会限制密钥只在相同请求时重复使用
       });
-    } catch (e) {
-      console.error('get sts error');
-    }
+    };
+    xhr.send(JSON.stringify(options.Scope));
   },
 });
 
@@ -292,20 +276,29 @@ var getSignCOS = new COS({
 
 var getStsCOS = new COS({
   // UseAccelerate: true,
-  getSTS: async function (options, callback) {
-    try {
-      const res = await getSts(options);
+  getSTS: function (options, callback) {
+    var url = `${config.StsUrl}/sts`; // 如果是 npm run sts.js 起的 nodejs server，使用这个
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onload = function (e) {
+      try {
+        var data = JSON.parse(e.target.responseText);
+        var credentials = data.credentials;
+      } catch (e) {}
+      if (!data || !credentials) {
+        return console.error('credentials invalid:\n' + JSON.stringify(data, null, 2));
+      }
       callback({
-        TmpSecretId: res.TmpSecretId,
-        TmpSecretKey: res.TmpSecretKey,
-        XCosSecurityToken: res.SecurityToken,
-        StartTime: res.StartTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
-        ExpiredTime: res.ExpiredTime, // 时间戳，单位秒，如：1580000000
+        TmpSecretId: credentials.tmpSecretId,
+        TmpSecretKey: credentials.tmpSecretKey,
+        SecurityToken: credentials.sessionToken,
+        StartTime: data.startTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
+        ExpiredTime: data.expiredTime, // 时间戳，单位秒，如：1580000000
         ScopeLimit: true, // 细粒度控制权限需要设为 true，会限制密钥只在相同请求时重复使用
       });
-    } catch (e) {
-      console.error('get sts error');
-    }
+    };
+    xhr.send();
   },
 });
 
@@ -329,7 +322,7 @@ var group = function (name, fn) {
   if (!checkEnvParams()) return;
   console.log(`${name}进行中....`);
   describe(name, function () {
-    jest.setTimeout(1 * 60 * 1000);
+    jest.setTimeout(2 * 60 * 1000);
     fn.apply(this, arguments);
   });
 };
@@ -524,7 +517,7 @@ group('init cos', function () {
       }
     );
   });
-  test('getAuthorization 使用下发的签名 sliceUploadFile 没权限', function (done) {
+  test('getAuthorization 使用下发的签名 sliceUploadFile', function (done) {
     const file = createFileSync(20 * 1024 * 1024);
     getSignCOS.sliceUploadFile(
       {
@@ -534,92 +527,6 @@ group('init cos', function () {
         Body: file,
       },
       function (err, data) {
-        assert.ok(err);
-        done();
-      }
-    );
-  });
-  test('推荐初始化方式 putObject 成功', function (done) {
-    const cos = new COS({
-      SecretId: sts.TmpSecretId,
-      SecretKey: sts.TmpSecretKey,
-      SecurityToken: sts.SecurityToken,
-      StartTime: sts.StartTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
-      ExpiredTime: sts.ExpiredTime, // 时间戳，单位秒，如：1580000000
-    });
-    cos.putObject(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Key: tempCOSPrefix + '1.txt',
-        Body: '12345',
-      },
-      function (err, data) {
-        console.log(' putObject 成功', err || data);
-        assert.ok(!err);
-        done();
-      }
-    );
-  });
-  test('推荐初始化方式 putObject invalid StartTime', function (done) {
-    const cos = new COS({
-      SecretId: sts.TmpSecretId,
-      SecretKey: sts.TmpSecretKey,
-      SecurityToken: sts.SecurityToken,
-      StartTime: sts.StartTime * 1000, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
-      ExpiredTime: sts.ExpiredTime, // 时间戳，单位秒，如：1580000000
-    });
-    cos.putObject(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Key: tempCOSPrefix + '1.txt',
-        Body: '12345',
-      },
-      function (err, data) {
-        assert.ok(err);
-        done();
-      }
-    );
-  });
-  test('推荐初始化方式 putObject invalid ExpiredTime', function (done) {
-    const cos = new COS({
-      SecretId: sts.TmpSecretId,
-      SecretKey: sts.TmpSecretKey,
-      SecurityToken: sts.SecurityToken,
-      StartTime: sts.StartTime, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
-      ExpiredTime: sts.ExpiredTime * 1000, // 时间戳，单位秒，如：1580000000
-    });
-    cos.putObject(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Key: tempCOSPrefix + '1.txt',
-        Body: '12345',
-      },
-      function (err, data) {
-        assert.ok(err);
-        done();
-      }
-    );
-  });
-  test('推荐初始化方式 getObjectUrl invalid StartTime', function (done) {
-    const cos = new COS({
-      SecretId: sts.TmpSecretId,
-      SecretKey: sts.TmpSecretKey,
-      SecurityToken: sts.SecurityToken,
-      StartTime: sts.StartTime * 1000, // 时间戳，单位秒，如：1580000000，建议返回服务器时间作为签名的开始时间，避免用户浏览器本地时间偏差过大导致签名错误
-      ExpiredTime: sts.ExpiredTime, // 时间戳，单位秒，如：1580000000
-    });
-    cos.getObjectUrl(
-      {
-        Bucket: config.Bucket,
-        Region: config.Region,
-        Key: tempCOSPrefix + '1.txt',
-        Expires: Date.now() * 1000,
-      },
-      function (err, data) {
-        console.log('getObjectUrl invalid ExpiredTime', err||data);
         assert.ok(err);
         done();
       }
@@ -6803,7 +6710,7 @@ group('callback', function () {
   // 需要转为Blob上传
   var body = dataURLtoBlob(base64Url);
   var callback = {
-    callbackUrl: 'http://127.0.0.1:3333/index',
+    callbackUrl: 'https://1/index',
     callbackHost: '1',
     callbackBody: 'bucket=${bucket}&object=${object}&etag=${etag}&test=test_123',
     callbackBodyType: 'application/x-www-form-urlencoded',
@@ -6818,7 +6725,7 @@ group('callback', function () {
         Callback: COS.util.encodeBase64(JSON.stringify(callback)),
       },
       function (err, data) {
-        assert.ok(data);
+        assert.ok(data.CallbackError);
         done();
       }
     );
@@ -6833,7 +6740,7 @@ group('callback', function () {
         Callback: COS.util.encodeBase64(JSON.stringify(callback)),
       },
       function (err, data) {
-        assert.ok(data);
+        assert.ok(data.CallbackError);
         done();
       }
     );

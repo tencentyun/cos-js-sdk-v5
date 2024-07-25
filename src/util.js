@@ -2,27 +2,10 @@
 
 var md5 = require('../lib/md5');
 var CryptoJS = require('../lib/crypto');
-var { XMLParser, XMLBuilder } = require('fast-xml-parser');
-var xmlParser = new XMLParser({
-  ignoreDeclaration: true, // 忽略 XML 声明
-  ignoreAttributes: true, // 忽略属性
-  parseTagValue: false, // 关闭自动解析
-});
-var xmlBuilder = new XMLBuilder();
+var xml2json = require('../lib/xml2json');
+var json2xml = require('../lib/json2xml');
 var base64 = require('../lib/base64');
 var Tracker = require('./tracker');
-
-// XML 对象转 JSON 对象
-var xml2json = function (bodyStr) {
-  var d = xmlParser.parse(bodyStr);
-  return d;
-};
-
-// JSON 对象转 XML 对象
-var json2xml = function (json) {
-  var xml = xmlBuilder.build(json);
-  return xml;
-};
 
 function camSafeUrlEncode(str) {
   return encodeURIComponent(str)
