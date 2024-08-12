@@ -1309,6 +1309,13 @@ declare namespace COS {
     PicOperations?: string;
     /** 包括用户自定义元数据头部后缀和用户自定义元数据信息，将作为对象元数据保存，大小限制为2KB，注意：用户自定义元数据信息支持下划线（_），但用户自定义元数据头部后缀不支持下划线，仅支持减号（-） */
     'x-cos-meta-*'?: string;
+    /** 加密相关 */
+    ServerSideEncryption?: string;
+    SSECustomerAlgorithm?: string;
+    SSECustomerKey?: string;
+    SSECustomerKeyMD5?: string;
+    SSEKMSKeyId?: string;
+    SSEContext?: string;
     /** 任务开始上传的回调方法 */
     onTaskReady?: (TaskId: COS.TaskId) => void;
     onTaskStart?: (TaskInfo: COS.Task) => void;
@@ -1802,6 +1809,13 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     PicOperations?: string;
     /** 包括用户自定义元数据头部后缀和用户自定义元数据信息，将作为对象元数据保存，大小限制为2KB，注意：用户自定义元数据信息支持下划线（_），但用户自定义元数据头部后缀不支持下划线，仅支持减号（-） */
     'x-cos-meta-*'?: string;
+    /** 加密相关 */
+    ServerSideEncryption?: string;
+    SSECustomerAlgorithm?: string;
+    SSECustomerKey?: string;
+    SSECustomerKeyMD5?: string;
+    SSEKMSKeyId?: string;
+    SSEContext?: string;
     /** 任务开始上传的回调方法 */
     onTaskReady?: (TaskId: COS.TaskId) => void;
     onTaskStart?: (TaskInfo: COS.Task) => void;
