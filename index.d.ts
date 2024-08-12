@@ -336,6 +336,13 @@ declare namespace COS {
     /** 发请求时带上的 Header 字段 */
     Headers?: Headers;
     tracker?: any;
+    /** 加密相关 */
+    ServerSideEncryption?: string;
+    SSECustomerAlgorithm?: string;
+    SSECustomerKey?: string;
+    SSECustomerKeyMD5?: string;
+    SSEKMSKeyId?: string;
+    SSEContext?: string;
   }
 
   // 所有接口的入参和出参
@@ -1627,8 +1634,6 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     Body: UploadBody;
     /** 要上传分片内容大小 */
     ContentLength?: number;
-    /** 服务端加密算法 */
-    ServerSideEncryption?: string;
   }
   /** multipartUpload 接口返回值 */
   interface MultipartUploadResult extends GeneralResult {
