@@ -1634,6 +1634,8 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     Body: UploadBody;
     /** 要上传分片内容大小 */
     ContentLength?: number;
+    /** 服务端加密算法 */
+    ServerSideEncryption?: string;
   }
   /** multipartUpload 接口返回值 */
   interface MultipartUploadResult extends GeneralResult {
