@@ -142,14 +142,13 @@
           ciMain.className = 'main cos-main show';
         });
 
-
         var getAuthorization = function (options, callback) {
           // 格式一、（推荐）后端通过获取临时密钥给到前端，前端计算签名
           // 服务端 JS 和 PHP 例子：https://github.com/tencentyun/cos-js-sdk-v5/blob/master/server/
           // 服务端其他语言参考 COS STS SDK ：https://github.com/tencentyun/qcloud-cos-sts-sdk
           var url = '/sts'; // 如果是 npm run sts.js 起的 nodejs server，使用这个
           var xhr = new XMLHttpRequest();
-          xhr.open('POST', url, true);
+          xhr.open('get', url, true);
           xhr.setRequestHeader('Content-Type', 'application/json');
           xhr.onload = function (e) {
             try {

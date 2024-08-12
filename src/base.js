@@ -3896,9 +3896,18 @@ function getAuthorizationAsync(params, callback) {
     return (function () {
       var KeyTime = '';
       if (self.options.StartTime && params.Expires) {
+        if (self.options.StartTime.toString().length !== 10) {
+          return cb(util.error(new Error('params "StartTime" should be 10 digits')));
+        }
         KeyTime = self.options.StartTime + ';' + (self.options.StartTime + params.Expires * 1);
       } else if (self.options.StartTime && self.options.ExpiredTime) {
-        KeyTime = self.options.StartTime + ';' + self.options.ExpiredTime;
+        if (self.options.StartTime.toString().length !== 10) {
+          return cb(util.error(new Error('params "StartTime" should be 10 digits')));
+        }
+        if (self.options.ExpiredTime.toString().length !== 10) {
+          return cb(util.error(new Error('params "ExpiredTime" should be 10 digits')));
+        }
+        KeyTime = self.options.StartTime + ';' + self.options.ExpiredTime * 1;
       }
       var Authorization = util.getAuth({
         SecretId: params.SecretId || self.options.SecretId,
@@ -4064,6 +4073,7 @@ function submitRequest(params, callback) {
               networkError,
             });
             params.SwitchHost = switchHost;
+            params.retry = true;
             next(tryTimes + 1);
           } else {
             callback(err, data);
@@ -4145,6 +4155,9 @@ function _submitRequest(params, callback) {
 
   // 清理 undefined 和 null 字段
   opt.headers && (opt.headers = util.clearKey(opt.headers));
+  if (params.retry) {
+    opt.headers['x-cos-sdk-retry'] = true;
+  }
   opt = util.clearKey(opt);
 
   // progress
