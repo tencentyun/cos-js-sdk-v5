@@ -3571,7 +3571,7 @@ function decodeAcl(AccessControlPolicy) {
     util.each(Grant, function (item) {
       if (
         item.Grantee.ID === 'qcs::cam::anyone:anyone' ||
-        item.Grantee.URI === 'http://cam.qcloud.com/groups/global/AllUsers'
+        item.Grantee.URI.endsWith('/groups/global/AllUsers')
       ) {
         PublicAcl[item.Permission] = 1;
       } else if (item.Grantee.ID !== AccessControlPolicy.Owner.ID) {
