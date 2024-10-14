@@ -8592,7 +8592,8 @@ function decodeAcl(AccessControlPolicy) {
     FULL_CONTROL: 0
   };
   Grant && Grant.length && util.each(Grant, function (item) {
-    if (item.Grantee.ID === 'qcs::cam::anyone:anyone' || item.Grantee.URI.endsWith('/groups/global/AllUsers')) {
+    var uriMatch = item.Grantee.URI && item.Grantee.URI.endsWith('/groups/global/AllUsers');
+    if (item.Grantee.ID === 'qcs::cam::anyone:anyone' || uriMatch) {
       PublicAcl[item.Permission] = 1;
     } else if (item.Grantee.ID !== AccessControlPolicy.Owner.ID) {
       result[GrantMap[item.Permission]].push('id="' + item.Grantee.ID + '"');
