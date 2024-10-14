@@ -3569,9 +3569,10 @@ function decodeAcl(AccessControlPolicy) {
   Grant &&
     Grant.length &&
     util.each(Grant, function (item) {
+      var uriMatch = item.Grantee.URI && item.Grantee.URI.endsWith('/groups/global/AllUsers');
       if (
         item.Grantee.ID === 'qcs::cam::anyone:anyone' ||
-        item.Grantee.URI === 'http://cam.qcloud.com/groups/global/AllUsers'
+        uriMatch
       ) {
         PublicAcl[item.Permission] = 1;
       } else if (item.Grantee.ID !== AccessControlPolicy.Owner.ID) {
