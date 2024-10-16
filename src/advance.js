@@ -28,6 +28,9 @@ function sliceUploadFile(params, callback) {
   // 上传过程中出现错误，返回错误
   ep.on('error', function (err) {
     if (!self._isRunningTask(TaskId)) return;
+    if (params.UploadData.UploadId) {
+      session.removeUsing(params.UploadData.UploadId);
+    }
     err.UploadId = params.UploadData.UploadId || '';
     return callback(err);
   });
