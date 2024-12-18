@@ -1276,7 +1276,7 @@ declare namespace COS {
     /** 上传的文件大小，单位 Byte 字节，如果不传且 Body 是流，会走服务端流式上传 */
     ContentLength?: number;
     /** 请求里的 Url Query 参数 */
-    Query?: string;
+    Query?: Query;
     /** RFC 2616 中定义的缓存指令，将作为对象元数据保存 */
     CacheControl?: string;
     /** RFC 2616 中定义的文件名称，将作为对象元数据保存 */
@@ -1778,7 +1778,7 @@ Bulk：批量模式，恢复时间为24 - 48小时。 */
     /** 分块上传时，并发数，默认值1 */
     AsyncLimit?: number;
     /** 请求里的 Url Query 参数 */
-    Query?: string;
+    Query?: Query;
     /** RFC 2616 中定义的缓存指令，将作为对象元数据保存 */
     CacheControl?: string;
     /** RFC 2616 中定义的文件名称，将作为对象元数据保存 */
