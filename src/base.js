@@ -4153,6 +4153,8 @@ function _submitRequest(params, callback) {
   params.AuthData.ClientIP && (opt.headers['clientIP'] = params.AuthData.ClientIP);
   params.AuthData.ClientUA && (opt.headers['clientUA'] = params.AuthData.ClientUA);
   params.AuthData.SecurityToken && (opt.headers[token] = params.AuthData.SecurityToken);
+  params.Action && (opt.action = params.Action);
+  opt.key = params.Key || params.ResourceKey;
 
   // 清理 undefined 和 null 字段
   opt.headers && (opt.headers = util.clearKey(opt.headers));
