@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/tencentyun/cos-js-sdk-v5#readme",
   "dependencies": {
-    "fast-xml-parser": "^4.4.0"
+    "fast-xml-parser": "4.5.0"
   },
   "devDependencies": {
     "@babel/core": "7.17.9",
