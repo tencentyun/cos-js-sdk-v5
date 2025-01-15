@@ -3932,7 +3932,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.8.7\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js lib/request.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"fast-xml-parser\":\"4.5.0\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.9.0\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js lib/request.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"fast-xml-parser\":\"4.5.0\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -8750,10 +8750,14 @@ var getSignHost = function getSignHost(opt) {
 
 // 异步获取签名
 function getAuthorizationAsync(params, callback) {
+  var object = params.Key;
+  var url = params.Url || params.url;
   var headers = util.clone(params.Headers);
   var headerHost = '';
   util.each(headers, function (v, k) {
-    (v === '' || ['content-type', 'cache-control', 'expires'].indexOf(k.toLowerCase()) > -1) && delete headers[k];
+    if (v === '') {
+      delete headers[k];
+    }
     if (k.toLowerCase() === 'host') headerHost = v;
   });
   // ForceSignHost明确传入false才不加入host签名
@@ -8784,6 +8788,24 @@ function getAuthorizationAsync(params, callback) {
     KeyName = Bucket + '/' + KeyName;
   }
   var Pathname = '/' + KeyName;
+  url = url || getUrl({
+    ForcePathStyle: self.options.ForcePathStyle,
+    protocol: self.options.Protocol,
+    domain: self.options.Domain,
+    bucket: Bucket,
+    region: Region,
+    object: object
+  });
+  if (params.SwitchHost) {
+    // 更换请求的url
+    url = url.replace(/myqcloud.com/, 'tencentcos.cn');
+  }
+
+  // 兼容ci接口
+  var token = 'x-cos-security-token';
+  if (util.isCIHost(url)) {
+    token = 'x-ci-security-token';
+  }
 
   // Action、ResourceKey
   var StsData = {};
@@ -8819,7 +8841,13 @@ function getAuthorizationAsync(params, callback) {
   })();
   var calcAuthByTmpKey = function calcAuthByTmpKey() {
     var KeyTime = '';
-    if (StsData.StartTime && params.Expires) KeyTime = StsData.StartTime + ';' + (StsData.StartTime + params.Expires * 1);else if (StsData.StartTime && StsData.ExpiredTime) KeyTime = StsData.StartTime + ';' + StsData.ExpiredTime;
+    if (StsData.StartTime && params.Expires) {
+      KeyTime = StsData.StartTime + ';' + (StsData.StartTime + params.Expires * 1);
+    } else if (StsData.StartTime && StsData.ExpiredTime) {
+      KeyTime = StsData.StartTime + ';' + StsData.ExpiredTime;
+    }
+    // SecurityToken加入签名计算
+    headers[token] = StsData.SecurityToken;
     var Authorization = util.getAuth({
       SecretId: StsData.TmpSecretId,
       SecretKey: StsData.TmpSecretKey,
@@ -8904,6 +8932,8 @@ function getAuthorizationAsync(params, callback) {
         StsData.Scope = Scope;
         StsData.ScopeKey = ScopeKey;
         self._StsCache.push(StsData);
+        // SecurityToken加入签名计算
+        headers[token] = StsData.SecurityToken;
         calcAuthByTmpKey();
       }
     });
@@ -8941,6 +8971,8 @@ function getAuthorizationAsync(params, callback) {
         }
         KeyTime = self.options.StartTime + ';' + self.options.ExpiredTime * 1;
       }
+      // SecurityToken加入签名计算
+      headers[token] = self.options.SecurityToken || self.options.XCosSecurityToken;
       var Authorization = util.getAuth({
         SecretId: params.SecretId || self.options.SecretId,
         SecretKey: params.SecretKey || self.options.SecretKey,
@@ -9038,8 +9070,38 @@ function submitRequest(params, callback) {
   // 清理 undefined 和 null 字段
   params.headers && (params.headers = util.clearKey(params.headers));
   params.qs && (params.qs = util.clearKey(params.qs));
+  var contentType = '';
+  var contentLength = '';
+  var defaultContentType = 'text/plain'; // 指定一个默认的 content-type，浏览器默认是 text/plain;charset=UTF-8
+  util.each(params.headers, function (value, key) {
+    if (key.toLowerCase() === 'content-type') {
+      contentType = value;
+    }
+    if (key.toLowerCase() === 'content-length') {
+      contentLength = value;
+    }
+  });
   var Query = util.clone(params.qs);
   params.action && (Query[params.action] = '');
+  var method = params.method.toLowerCase();
+  // 非 get、head 请求的空请求体需补充 content-length = 0
+  var noContentLengthMethods = ['get', 'head'].includes(method);
+  if (!params.body && !noContentLengthMethods) {
+    params.headers['Content-Length'] = 0;
+  }
+  // 传了请求体需补充 content-length
+  var body = params.body;
+  if (body && !contentLength) {
+    var size = util.getContentLength(body);
+    if (!size) {
+      callback(util.error(new Error('params body format error, Only allow File|Blob|String.')));
+      return;
+    }
+  }
+  // 补充默认 content-type
+  if (!contentType) {
+    params.headers['Content-Type'] = defaultContentType;
+  }
 
   /**
    * 手动传params.SignHost的场景：cos.getService、cos.getObjectUrl
@@ -9067,6 +9129,7 @@ function submitRequest(params, callback) {
       Region: params.Region || '',
       Method: params.method,
       Key: params.Key,
+      Url: paramsUrl,
       Query: Query,
       Headers: params.headers,
       SignHost: SignHost,
@@ -9112,7 +9175,8 @@ function submitRequest(params, callback) {
             networkError: networkError
           });
           params.SwitchHost = switchHost;
-          params.retry = true;
+          // 重试时增加请求体
+          params.headers['x-cos-sdk-retry'] = true;
           next(tryTimes + 1);
         } else {
           callback(err, data);
@@ -9189,9 +9253,6 @@ function _submitRequest(params, callback) {
 
   // 清理 undefined 和 null 字段
   opt.headers && (opt.headers = util.clearKey(opt.headers));
-  if (params.retry) {
-    opt.headers['x-cos-sdk-retry'] = true;
-  }
   opt = util.clearKey(opt);
 
   // progress
@@ -10513,12 +10574,12 @@ var obj2str = function obj2str(obj, lowerCaseKey) {
 };
 
 // 可以签入签名的headers
-var signHeaders = ['cache-control', 'content-disposition', 'content-encoding', 'content-length', 'content-md5', 'expect', 'expires', 'host', 'if-match', 'if-modified-since', 'if-none-match', 'if-unmodified-since', 'origin', 'range', 'transfer-encoding', 'pic-operations'];
+var signHeaders = ['cache-control', 'content-disposition', 'content-encoding', 'content-length', 'content-md5', 'content-type', 'expect', 'expires', 'host', 'if-match', 'if-modified-since', 'if-none-match', 'if-unmodified-since', 'origin', 'range', 'transfer-encoding', 'pic-operations'];
 var getSignHeaderObj = function getSignHeaderObj(headers) {
   var signHeaderObj = {};
   for (var i in headers) {
     var key = i.toLowerCase();
-    if (key.indexOf('x-cos-') > -1 || signHeaders.indexOf(key) > -1) {
+    if (key.indexOf('x-cos-') > -1 || key.indexOf('x-ci-') > -1 || signHeaders.indexOf(key) > -1) {
       signHeaderObj[i] = headers[i];
     }
   }
@@ -11151,6 +11212,20 @@ var getFileSize = function getFileSize(api, params, callback) {
   callback(null, size);
 };
 
+// 获取请求体 content-length
+var getContentLength = function getContentLength(body) {
+  var size = null;
+  var haveSize = body instanceof ArrayBuffer || body instanceof Blob || body.toString() === '[object File]' || body.toString() === '[object Blob]';
+  if (typeof body === 'string') {
+    var encoder = new TextEncoder();
+    var data = encoder.encode(body);
+    size = data.length;
+  } else if (haveSize) {
+    size = body.size;
+  }
+  return size;
+};
+
 // 获取调正的时间戳
 var getSkewTime = function getSkewTime(offset) {
   return Date.now() + (offset || 0);
@@ -11305,6 +11380,7 @@ var util = {
   camSafeUrlEncode: camSafeUrlEncode,
   throttleOnProgress: throttleOnProgress,
   getFileSize: getFileSize,
+  getContentLength: getContentLength,
   getSkewTime: getSkewTime,
   error: error,
   obj2str: obj2str,

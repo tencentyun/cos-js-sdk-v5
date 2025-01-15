@@ -74,6 +74,7 @@ var signHeaders = [
   'content-encoding',
   'content-length',
   'content-md5',
+  'content-type',
   'expect',
   'expires',
   'host',
@@ -91,7 +92,7 @@ var getSignHeaderObj = function (headers) {
   var signHeaderObj = {};
   for (var i in headers) {
     var key = i.toLowerCase();
-    if (key.indexOf('x-cos-') > -1 || signHeaders.indexOf(key) > -1) {
+    if (key.indexOf('x-cos-') > -1 || key.indexOf('x-ci-') > -1 || signHeaders.indexOf(key) > -1) {
       signHeaderObj[i] = headers[i];
     }
   }
@@ -789,6 +790,24 @@ var getFileSize = function (api, params, callback) {
   callback(null, size);
 };
 
+// 获取请求体 content-length
+var getContentLength = function (body) {
+  var size = null;
+  var haveSize =
+    body instanceof ArrayBuffer ||
+    body instanceof Blob ||
+    body.toString() === '[object File]' ||
+    body.toString() === '[object Blob]';
+  if (typeof body === 'string') {
+    var encoder = new TextEncoder();
+    var data = encoder.encode(body);
+    size = data.length;
+  } else if (haveSize) {
+    size = body.size;
+  }
+  return size;
+};
+
 // 获取调正的时间戳
 var getSkewTime = function (offset) {
   return Date.now() + (offset || 0);
@@ -943,6 +962,7 @@ var util = {
   camSafeUrlEncode: camSafeUrlEncode,
   throttleOnProgress: throttleOnProgress,
   getFileSize: getFileSize,
+  getContentLength: getContentLength,
   getSkewTime: getSkewTime,
   error: error,
   obj2str: obj2str,

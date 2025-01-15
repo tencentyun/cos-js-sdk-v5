@@ -3570,10 +3570,7 @@ function decodeAcl(AccessControlPolicy) {
     Grant.length &&
     util.each(Grant, function (item) {
       var uriMatch = item.Grantee.URI && item.Grantee.URI.endsWith('/groups/global/AllUsers');
-      if (
-        item.Grantee.ID === 'qcs::cam::anyone:anyone' ||
-        uriMatch
-      ) {
+      if (item.Grantee.ID === 'qcs::cam::anyone:anyone' || uriMatch) {
         PublicAcl[item.Permission] = 1;
       } else if (item.Grantee.ID !== AccessControlPolicy.Owner.ID) {
         result[GrantMap[item.Permission]].push('id="' + item.Grantee.ID + '"');
@@ -3691,10 +3688,14 @@ var getSignHost = function (opt) {
 
 // 异步获取签名
 function getAuthorizationAsync(params, callback) {
+  var object = params.Key;
+  var url = params.Url || params.url;
   var headers = util.clone(params.Headers);
   var headerHost = '';
   util.each(headers, function (v, k) {
-    (v === '' || ['content-type', 'cache-control', 'expires'].indexOf(k.toLowerCase()) > -1) && delete headers[k];
+    if (v === '') {
+      delete headers[k];
+    }
     if (k.toLowerCase() === 'host') headerHost = v;
   });
   // ForceSignHost明确传入false才不加入host签名
@@ -3726,6 +3727,27 @@ function getAuthorizationAsync(params, callback) {
     KeyName = Bucket + '/' + KeyName;
   }
   var Pathname = '/' + KeyName;
+
+  url =
+    url ||
+    getUrl({
+      ForcePathStyle: self.options.ForcePathStyle,
+      protocol: self.options.Protocol,
+      domain: self.options.Domain,
+      bucket: Bucket,
+      region: Region,
+      object: object,
+    });
+  if (params.SwitchHost) {
+    // 更换请求的url
+    url = url.replace(/myqcloud.com/, 'tencentcos.cn');
+  }
+
+  // 兼容ci接口
+  var token = 'x-cos-security-token';
+  if (util.isCIHost(url)) {
+    token = 'x-ci-security-token';
+  }
 
   // Action、ResourceKey
   var StsData = {};
@@ -3764,9 +3786,13 @@ function getAuthorizationAsync(params, callback) {
 
   var calcAuthByTmpKey = function () {
     var KeyTime = '';
-    if (StsData.StartTime && params.Expires)
+    if (StsData.StartTime && params.Expires) {
       KeyTime = StsData.StartTime + ';' + (StsData.StartTime + params.Expires * 1);
-    else if (StsData.StartTime && StsData.ExpiredTime) KeyTime = StsData.StartTime + ';' + StsData.ExpiredTime;
+    } else if (StsData.StartTime && StsData.ExpiredTime) {
+      KeyTime = StsData.StartTime + ';' + StsData.ExpiredTime;
+    }
+    // SecurityToken加入签名计算
+    headers[token] = StsData.SecurityToken;
     var Authorization = util.getAuth({
       SecretId: StsData.TmpSecretId,
       SecretKey: StsData.TmpSecretKey,
@@ -3868,6 +3894,8 @@ function getAuthorizationAsync(params, callback) {
           StsData.Scope = Scope;
           StsData.ScopeKey = ScopeKey;
           self._StsCache.push(StsData);
+          // SecurityToken加入签名计算
+          headers[token] = StsData.SecurityToken;
           calcAuthByTmpKey();
         }
       }
@@ -3910,6 +3938,8 @@ function getAuthorizationAsync(params, callback) {
         }
         KeyTime = self.options.StartTime + ';' + self.options.ExpiredTime * 1;
       }
+      // SecurityToken加入签名计算
+      headers[token] = self.options.SecurityToken || self.options.XCosSecurityToken;
       var Authorization = util.getAuth({
         SecretId: params.SecretId || self.options.SecretId,
         SecretKey: params.SecretKey || self.options.SecretKey,
@@ -4008,8 +4038,38 @@ function submitRequest(params, callback) {
   params.headers && (params.headers = util.clearKey(params.headers));
   params.qs && (params.qs = util.clearKey(params.qs));
 
+  var contentType = '';
+  var contentLength = '';
+  var defaultContentType = 'text/plain'; // 指定一个默认的 content-type，浏览器默认是 text/plain;charset=UTF-8
+  util.each(params.headers, function (value, key) {
+    if (key.toLowerCase() === 'content-type') {
+      contentType = value;
+    }
+    if (key.toLowerCase() === 'content-length') {
+      contentLength = value;
+    }
+  });
   var Query = util.clone(params.qs);
   params.action && (Query[params.action] = '');
+  var method = params.method.toLowerCase();
+  // 非 get、head 请求的空请求体需补充 content-length = 0
+  var noContentLengthMethods = ['get', 'head'].includes(method);
+  if (!params.body && !noContentLengthMethods) {
+    params.headers['Content-Length'] = 0;
+  }
+  // 传了请求体需补充 content-length
+  var body = params.body;
+  if (body && !contentLength) {
+    var size = util.getContentLength(body);
+    if (!size) {
+      callback(util.error(new Error('params body format error, Only allow File|Blob|String.')));
+      return;
+    }
+  }
+  // 补充默认 content-type
+  if (!contentType) {
+    params.headers['Content-Type'] = defaultContentType;
+  }
 
   /**
    * 手动传params.SignHost的场景：cos.getService、cos.getObjectUrl
@@ -4033,6 +4093,7 @@ function submitRequest(params, callback) {
         Region: params.Region || '',
         Method: params.method,
         Key: params.Key,
+        Url: paramsUrl,
         Query: Query,
         Headers: params.headers,
         SignHost: SignHost,
@@ -4074,7 +4135,8 @@ function submitRequest(params, callback) {
               networkError,
             });
             params.SwitchHost = switchHost;
-            params.retry = true;
+            // 重试时增加请求体
+            params.headers['x-cos-sdk-retry'] = true;
             next(tryTimes + 1);
           } else {
             callback(err, data);
@@ -4158,9 +4220,6 @@ function _submitRequest(params, callback) {
 
   // 清理 undefined 和 null 字段
   opt.headers && (opt.headers = util.clearKey(opt.headers));
-  if (params.retry) {
-    opt.headers['x-cos-sdk-retry'] = true;
-  }
   opt = util.clearKey(opt);
 
   // progress
@@ -4181,7 +4240,6 @@ function _submitRequest(params, callback) {
   if (this.options.Timeout) {
     opt.timeout = this.options.Timeout;
   }
-
   self.options.ForcePathStyle && (opt.pathStyle = self.options.ForcePathStyle);
   self.emit('before-send', opt);
   var useAccelerate = opt.url.includes('accelerate.');
