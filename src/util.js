@@ -109,7 +109,6 @@ var getAuth = function (opt) {
   var method = (opt.method || opt.Method || 'get').toLowerCase();
   var queryParams = clone(opt.Query || opt.params || {});
   var headers = getSignHeaderObj(clone(opt.Headers || opt.headers || {}));
-
   var Key = opt.Key || '';
   var pathname;
   if (opt.UseRawKey) {

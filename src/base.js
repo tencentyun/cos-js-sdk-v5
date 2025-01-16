@@ -3688,8 +3688,6 @@ var getSignHost = function (opt) {
 
 // 异步获取签名
 function getAuthorizationAsync(params, callback) {
-  var object = params.Key;
-  var url = params.Url || params.url;
   var headers = util.clone(params.Headers);
   var headerHost = '';
   util.each(headers, function (v, k) {
@@ -3727,27 +3725,6 @@ function getAuthorizationAsync(params, callback) {
     KeyName = Bucket + '/' + KeyName;
   }
   var Pathname = '/' + KeyName;
-
-  url =
-    url ||
-    getUrl({
-      ForcePathStyle: self.options.ForcePathStyle,
-      protocol: self.options.Protocol,
-      domain: self.options.Domain,
-      bucket: Bucket,
-      region: Region,
-      object: object,
-    });
-  if (params.SwitchHost) {
-    // 更换请求的url
-    url = url.replace(/myqcloud.com/, 'tencentcos.cn');
-  }
-
-  // 兼容ci接口
-  var token = 'x-cos-security-token';
-  if (util.isCIHost(url)) {
-    token = 'x-ci-security-token';
-  }
 
   // Action、ResourceKey
   var StsData = {};
@@ -3791,8 +3768,6 @@ function getAuthorizationAsync(params, callback) {
     } else if (StsData.StartTime && StsData.ExpiredTime) {
       KeyTime = StsData.StartTime + ';' + StsData.ExpiredTime;
     }
-    // SecurityToken加入签名计算
-    headers[token] = StsData.SecurityToken;
     var Authorization = util.getAuth({
       SecretId: StsData.TmpSecretId,
       SecretKey: StsData.TmpSecretKey,
@@ -3894,8 +3869,6 @@ function getAuthorizationAsync(params, callback) {
           StsData.Scope = Scope;
           StsData.ScopeKey = ScopeKey;
           self._StsCache.push(StsData);
-          // SecurityToken加入签名计算
-          headers[token] = StsData.SecurityToken;
           calcAuthByTmpKey();
         }
       }
@@ -3938,8 +3911,6 @@ function getAuthorizationAsync(params, callback) {
         }
         KeyTime = self.options.StartTime + ';' + self.options.ExpiredTime * 1;
       }
-      // SecurityToken加入签名计算
-      headers[token] = self.options.SecurityToken || self.options.XCosSecurityToken;
       var Authorization = util.getAuth({
         SecretId: params.SecretId || self.options.SecretId,
         SecretKey: params.SecretKey || self.options.SecretKey,
@@ -4094,7 +4065,6 @@ function submitRequest(params, callback) {
         Region: params.Region || '',
         Method: params.method,
         Key: params.Key,
-        Url: paramsUrl,
         Query: Query,
         Headers: params.headers,
         SignHost: SignHost,
