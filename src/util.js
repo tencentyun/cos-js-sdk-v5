@@ -790,6 +790,25 @@ var getFileSize = function (api, params, callback) {
 };
 
 // 获取请求体 content-length
+function getUTF8ByteLength(str) {
+  let byteLength = 0;
+  for (let i = 0; i < str.length; i++) {
+    const codePoint = str.charCodeAt(i);
+    if (codePoint <= 0x7f) {
+      byteLength += 1;
+    } else if (codePoint <= 0x7ff) {
+      byteLength += 2;
+    } else if (0xd800 <= codePoint && codePoint <= 0xdfff) {
+      // 处理代理对（surrogate pairs）用于表示Unicode补充字符
+      i++;
+      byteLength += 4;
+    } else {
+      byteLength += 3;
+    }
+  }
+  return byteLength;
+}
+
 var getContentLength = function (body) {
   var size = null;
   var haveSize =
@@ -798,9 +817,7 @@ var getContentLength = function (body) {
     body.toString() === '[object File]' ||
     body.toString() === '[object Blob]';
   if (typeof body === 'string') {
-    var encoder = new TextEncoder();
-    var data = encoder.encode(body);
-    size = data.length;
+    size = getUTF8ByteLength(body);
   } else if (haveSize) {
     size = body.size;
   }
