@@ -4065,6 +4065,7 @@ function submitRequest(params, callback) {
       callback(util.error(new Error('params body format error, Only allow File|Blob|String.')));
       return;
     }
+    params.headers['Content-Length'] = size;
   }
   // 补充默认 content-type
   if (!contentType) {
