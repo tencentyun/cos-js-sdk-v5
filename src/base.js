@@ -4032,7 +4032,7 @@ function submitRequest(params, callback) {
   var body = params.body;
   if (body && !contentLength) {
     var size = util.getContentLength(body);
-    if (!size) {
+    if (size === null) {
       callback(util.error(new Error('params body format error, Only allow File|Blob|String.')));
       return;
     }
