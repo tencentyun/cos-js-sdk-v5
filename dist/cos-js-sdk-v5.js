@@ -9046,7 +9046,7 @@ function submitRequest(params, callback) {
   params.qs && (params.qs = util.clearKey(params.qs));
   var contentType = '';
   var contentLength = '';
-  var defaultContentType = 'text/plain;charset=UTF-8'; // 指定一个默认的 content-type，浏览器默认是 text/plain;charset=UTF-8
+  var defaultContentType = 'text/plain'; // 指定一个默认的 content-type，浏览器默认是 text/plain;charset=UTF-8
   util.each(params.headers, function (value, key) {
     if (key.toLowerCase() === 'content-type') {
       contentType = value;
@@ -10493,7 +10493,16 @@ var xmlParser = new XMLParser({
   // 忽略 XML 声明
   ignoreAttributes: true,
   // 忽略属性
-  parseTagValue: false // 关闭自动解析
+  parseTagValue: false,
+  // 关闭自动解析
+  trimValues: false,
+  alwaysCreateTextNode: false,
+  attrValueProcessor: function attrValueProcessor(attrName, val) {
+    console.log("attrName=".concat(attrName, ",val=").concat(val));
+  },
+  tagValueProcessor: function tagValueProcessor(tagName, val) {
+    console.log("tagName=".concat(tagName, ", val=").concat(val));
+  }
 });
 var xmlBuilder = new XMLBuilder();
 var base64 = __webpack_require__(/*! ../lib/base64 */ "./lib/base64.js");

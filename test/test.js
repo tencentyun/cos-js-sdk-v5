@@ -4236,7 +4236,7 @@ group('deleteMultipleObject Key 带中文字符', function () {
 
 group('upload Content-Type', function () {
   // putObject
-  test('putObject empty string Content-Type null -> text/plain;charset=UTF-8', function (done) {
+  test('putObject empty string Content-Type null -> text/plain', function (done) {
     cos.putObject(
       {
         Bucket: config.Bucket,
@@ -4252,14 +4252,14 @@ group('upload Content-Type', function () {
             Key: '1',
           },
           function (err, data) {
-            assert.ok(data.headers['content-type'] === 'text/plain;charset=UTF-8', 'Content-Type 正确');
+            assert.ok(data.headers['content-type'] === 'text/plain', 'Content-Type 正确');
             done();
           }
         );
       }
     );
   });
-  test('putObject string Content-Type null -> text/plain;charset=UTF-8', function (done) {
+  test('putObject string Content-Type null -> text/plain', function (done) {
     cos.putObject(
       {
         Bucket: config.Bucket,
@@ -4275,7 +4275,7 @@ group('upload Content-Type', function () {
             Key: '1.zip',
           },
           function (err, data) {
-            assert.ok(data.headers['content-type'] === 'text/plain;charset=UTF-8', 'Content-Type 正确');
+            assert.ok(data.headers['content-type'] === 'text/plain', 'Content-Type 正确');
             done();
           }
         );
@@ -4352,7 +4352,7 @@ group('upload Content-Type', function () {
       }
     );
   });
-  test('putObject blob Content-Type null -> text/plain;charset=UTF-8', function (done) {
+  test('putObject blob Content-Type null -> text/plain', function (done) {
     cos.putObject(
       {
         Bucket: config.Bucket,
@@ -4368,14 +4368,14 @@ group('upload Content-Type', function () {
             Key: '1.zip',
           },
           function (err, data) {
-            assert.ok(data.headers['content-type'] === 'text/plain;charset=UTF-8', 'Content-Type 正确');
+            assert.ok(data.headers['content-type'] === 'text/plain', 'Content-Type 正确');
             done();
           }
         );
       }
     );
   });
-  test('putObject blob Content-Type null text/plain;charset=UTF-8', function (done) {
+  test('putObject blob Content-Type null text/plain', function (done) {
     cos.putObject(
       {
         Bucket: config.Bucket,
@@ -4391,14 +4391,14 @@ group('upload Content-Type', function () {
             Key: '1',
           },
           function (err, data) {
-            assert.ok(data.headers['content-type'] === 'text/plain;charset=UTF-8', 'Content-Type 正确');
+            assert.ok(data.headers['content-type'] === 'text/plain', 'Content-Type 正确');
             done();
           }
         );
       }
     );
   });
-  test('putObject empty blob Content-Type null text/plain;charset=UTF-8', function (done) {
+  test('putObject empty blob Content-Type null text/plain', function (done) {
     cos.putObject(
       {
         Bucket: config.Bucket,
@@ -4414,7 +4414,7 @@ group('upload Content-Type', function () {
             Key: '1',
           },
           function (err, data) {
-            assert.ok(data.headers['content-type'] === 'text/plain;charset=UTF-8', 'Content-Type 正确');
+            assert.ok(data.headers['content-type'] === 'text/plain', 'Content-Type 正确');
             done();
           }
         );
@@ -4422,7 +4422,7 @@ group('upload Content-Type', function () {
     );
   });
   // sliceUploadFile
-  test('sliceUploadFile string Content-Type null -> text/plain;charset=UTF-8', function (done) {
+  test('sliceUploadFile string Content-Type null -> text/plain', function (done) {
     cos.sliceUploadFile(
       {
         Bucket: config.Bucket,
@@ -4438,7 +4438,7 @@ group('upload Content-Type', function () {
             Key: '1.zip',
           },
           function (err, data) {
-            assert.ok(data.headers['content-type'] === 'text/plain;charset=UTF-8', 'Content-Type 正确');
+            assert.ok(data.headers['content-type'] === 'text/plain', 'Content-Type 正确');
             done();
           }
         );
@@ -4516,7 +4516,7 @@ group('upload Content-Type', function () {
       }
     );
   });
-  test('sliceUploadFile blob Content-Type null -> text/plain;charset=UTF-8', function (done) {
+  test('sliceUploadFile blob Content-Type null -> text/plain', function (done) {
     cos.sliceUploadFile(
       {
         Bucket: config.Bucket,
@@ -4535,9 +4535,9 @@ group('upload Content-Type', function () {
             var userAgent = navigator.userAgent || '';
             var m = userAgent.match(/ TBS\/(\d{6}) /);
             if (location.protocol === 'http:' && m && m[1].length <= 6 && m[1] < '044429') {
-              assert.ok(data.headers['content-type'] === 'text/plain;charset=UTF-8', 'Content-Type 正确');
+              assert.ok(data.headers['content-type'] === 'text/plain', 'Content-Type 正确');
             } else {
-              assert.ok(data.headers['content-type'] === 'text/plain;charset=UTF-8', 'Content-Type 正确');
+              assert.ok(data.headers['content-type'] === 'text/plain', 'Content-Type 正确');
             }
             done();
           }
@@ -4545,7 +4545,7 @@ group('upload Content-Type', function () {
       }
     );
   });
-  test('sliceUploadFile blob Content-Type null text/plain;charset=UTF-8', function (done) {
+  test('sliceUploadFile blob Content-Type null text/plain', function (done) {
     cos.sliceUploadFile(
       {
         Bucket: config.Bucket,
@@ -4561,7 +4561,7 @@ group('upload Content-Type', function () {
             Key: '1',
           },
           function (err, data) {
-            assert.ok(data.headers['content-type'] === 'text/plain;charset=UTF-8', 'Content-Type 正确');
+            assert.ok(data.headers['content-type'] === 'text/plain', 'Content-Type 正确');
             done();
           }
         );
