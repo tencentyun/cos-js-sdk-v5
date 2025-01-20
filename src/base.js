@@ -2214,7 +2214,7 @@ function putObject(params, callback) {
   var headers = params.Headers;
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
   if (!headers['Content-Type'] && !headers['content-type'])
-    headers['Content-Type'] = (params.Body && params.Body.type) || '';
+    headers['Content-Type'] = (params.Body && params.Body.type) || 'application/octet-stream';
   var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
 
   var tracker = params.tracker;
@@ -2926,7 +2926,7 @@ function multipartInit(params, callback) {
   // 特殊处理 Cache-Control、Content-Type
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
   if (!headers['Content-Type'] && !headers['content-type'])
-    headers['Content-Type'] = (params.Body && params.Body.type) || '';
+    headers['Content-Type'] = (params.Body && params.Body.type) || 'application/octet-stream';
 
   var needCalcMd5 = params.Body && (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5);
   needCalcMd5 && tracker && tracker.setParams({ md5StartTime: new Date().getTime() });
@@ -3389,7 +3389,7 @@ function appendObject(params, callback) {
   var headers = params.Headers;
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
   if (!headers['Content-Type'] && !headers['content-type'])
-    headers['Content-Type'] = (params.Body && params.Body.type) || '';
+    headers['Content-Type'] = (params.Body && params.Body.type) || 'application/octet-stream';
   submitRequest.call(
     this,
     {
@@ -4011,7 +4011,8 @@ function submitRequest(params, callback) {
 
   var contentType = '';
   var contentLength = '';
-  var defaultContentType = 'text/plain'; // 指定一个默认的 content-type，浏览器默认是 text/plain;charset=UTF-8
+   // 指定一个默认的 content-type，如不指定浏览器默认会指定 text/plain;charset=UTF-8
+  var defaultContentType = 'text/plain';
   util.each(params.headers, function (value, key) {
     if (key.toLowerCase() === 'content-type') {
       contentType = value;
