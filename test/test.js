@@ -4236,7 +4236,7 @@ group('deleteMultipleObject Key 带中文字符', function () {
 
 group('upload Content-Type', function () {
   // putObject
-  test('putObject empty string Content-Type null -> application/octet-stream', function (done) {
+  test('putObject empty string Content-Type null -> text/plain', function (done) {
     cos.putObject(
       {
         Bucket: config.Bucket,
@@ -4252,14 +4252,14 @@ group('upload Content-Type', function () {
             Key: '1',
           },
           function (err, data) {
-            assert.ok(data.headers['content-type'] === 'application/octet-stream', 'Content-Type 正确');
+            assert.ok(data.headers['content-type'] === 'text/plain', 'Content-Type 正确');
             done();
           }
         );
       }
     );
   });
-  test('putObject string Content-Type null -> application/octet-stream', function (done) {
+  test('putObject string Content-Type null -> text/plain', function (done) {
     cos.putObject(
       {
         Bucket: config.Bucket,
@@ -4275,7 +4275,7 @@ group('upload Content-Type', function () {
             Key: '1.zip',
           },
           function (err, data) {
-            assert.ok(data.headers['content-type'] === 'application/octet-stream', 'Content-Type 正确');
+            assert.ok(data.headers['content-type'] === 'text/plain', 'Content-Type 正确');
             done();
           }
         );
@@ -4422,7 +4422,7 @@ group('upload Content-Type', function () {
     );
   });
   // sliceUploadFile
-  test('sliceUploadFile string Content-Type null -> application/octet-stream', function (done) {
+  test('sliceUploadFile string Content-Type null -> text/plain', function (done) {
     cos.sliceUploadFile(
       {
         Bucket: config.Bucket,
@@ -4438,7 +4438,7 @@ group('upload Content-Type', function () {
             Key: '1.zip',
           },
           function (err, data) {
-            assert.ok(data.headers['content-type'] === 'application/octet-stream', 'Content-Type 正确');
+            assert.ok(data.headers['content-type'] === 'text/plain', 'Content-Type 正确');
             done();
           }
         );
