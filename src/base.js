@@ -4011,7 +4011,7 @@ function submitRequest(params, callback) {
 
   var contentType = '';
   var contentLength = '';
-  var defaultContentType = 'text/plain'; // 指定一个默认的 content-type，浏览器默认是 text/plain;charset=UTF-8
+  var defaultContentType = 'text/plain;charset=UTF-8'; // 指定一个默认的 content-type，浏览器默认是 text/plain;charset=UTF-8
   util.each(params.headers, function (value, key) {
     if (key.toLowerCase() === 'content-type') {
       contentType = value;
