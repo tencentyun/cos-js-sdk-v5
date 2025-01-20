@@ -7,15 +7,37 @@ var xmlParser = new XMLParser({
   ignoreDeclaration: true, // 忽略 XML 声明
   ignoreAttributes: true, // 忽略属性
   parseTagValue: false, // 关闭自动解析
+  trimValues: false, // 关闭默认 trim
 });
 var xmlBuilder = new XMLBuilder();
 var base64 = require('../lib/base64');
 var Tracker = require('./tracker');
 
+// 删掉不需要的#text
+var textNodeName = '#text';
+var deleteTextNodes = function (obj) {
+  if (!isObject(obj)) return;
+  for (let i in obj) {
+    var item = obj[i];
+    if (typeof item === 'string') {
+      if (i === textNodeName) {
+        delete obj[i];
+      }
+    } else if (Array.isArray(item)) {
+      item.forEach(function (i) {
+        deleteTextNodes(i);
+      });
+    } else if (isObject(item)) {
+      deleteTextNodes(item);
+    }
+  }
+};
+
 // XML 对象转 JSON 对象
 var xml2json = function (bodyStr) {
-  var d = xmlParser.parse(bodyStr);
-  return d;
+  var json = xmlParser.parse(bodyStr);
+  deleteTextNodes(json);
+  return json;
 };
 
 // JSON 对象转 XML 对象
@@ -410,6 +432,10 @@ function extend(target, source) {
 
 function isArray(arr) {
   return arr instanceof Array;
+}
+
+function isObject(obj) {
+  return Object.prototype.toString.call(obj) === '[object Object]';
 }
 
 function isInArray(arr, item) {

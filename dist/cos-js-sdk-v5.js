@@ -2895,7 +2895,7 @@ function buildAttributesMap(attrStr, jPath, tagName) {
 }
 
 const parseXml = function(xmlData) {
-  xmlData = xmlData.replace(/\r\n?/g, "\n"); //TODO: remove this line
+  // xmlData = xmlData.replace(/\r\n?/g, "\n"); //TODO: remove this line
   const xmlObj = new xmlNode('!xml');
   let currentNode = xmlObj;
   let textData = "";
@@ -10495,23 +10495,37 @@ var xmlParser = new XMLParser({
   // 忽略属性
   parseTagValue: false,
   // 关闭自动解析
-  trimValues: false,
-  alwaysCreateTextNode: false,
-  attrValueProcessor: function attrValueProcessor(attrName, val) {
-    console.log("attrName=".concat(attrName, ",val=").concat(val));
-  },
-  tagValueProcessor: function tagValueProcessor(tagName, val) {
-    console.log("tagName=".concat(tagName, ", val=").concat(val));
-  }
+  trimValues: false // 关闭默认 trim
 });
 var xmlBuilder = new XMLBuilder();
 var base64 = __webpack_require__(/*! ../lib/base64 */ "./lib/base64.js");
 var Tracker = __webpack_require__(/*! ./tracker */ "./src/tracker.js");
 
+// 删掉不需要的#text
+var textNodeName = '#text';
+var deleteTextNodes = function deleteTextNodes(obj) {
+  if (!isObject(obj)) return;
+  for (var i in obj) {
+    var item = obj[i];
+    if (typeof item === 'string') {
+      if (i === textNodeName) {
+        delete obj[i];
+      }
+    } else if (Array.isArray(item)) {
+      item.forEach(function (i) {
+        deleteTextNodes(i);
+      });
+    } else if (isObject(item)) {
+      deleteTextNodes(item);
+    }
+  }
+};
+
 // XML 对象转 JSON 对象
 var xml2json = function xml2json(bodyStr) {
-  var d = xmlParser.parse(bodyStr);
-  return d;
+  var json = xmlParser.parse(bodyStr);
+  deleteTextNodes(json);
+  return json;
 };
 
 // JSON 对象转 XML 对象
@@ -10854,6 +10868,9 @@ function extend(target, source) {
 }
 function isArray(arr) {
   return arr instanceof Array;
+}
+function isObject(obj) {
+  return Object.prototype.toString.call(obj) === '[object Object]';
 }
 function isInArray(arr, item) {
   var flag = false;
