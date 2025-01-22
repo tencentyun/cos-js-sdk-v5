@@ -4008,10 +4008,12 @@ function submitRequest(params, callback) {
   // 清理 undefined 和 null 字段
   params.headers && (params.headers = util.clearKey(params.headers));
   params.qs && (params.qs = util.clearKey(params.qs));
+  var Query = util.clone(params.qs);
+  params.action && (Query[params.action] = '');
 
   var contentType = '';
   var contentLength = '';
-   // 指定一个默认的 content-type，如不指定浏览器默认会指定 text/plain;charset=UTF-8
+  // 指定一个默认的 content-type，如不指定浏览器默认会指定 text/plain;charset=UTF-8
   var defaultContentType = 'text/plain';
   util.each(params.headers, function (value, key) {
     if (key.toLowerCase() === 'content-type') {
@@ -4021,23 +4023,25 @@ function submitRequest(params, callback) {
       contentLength = value;
     }
   });
-  var Query = util.clone(params.qs);
-  params.action && (Query[params.action] = '');
+
   var method = params.method.toLowerCase();
-  // 非 get、head 请求的空请求体需补充 content-length = 0
-  var noContentLengthMethods = ['get', 'head'].includes(method);
-  if (!params.body && !noContentLengthMethods) {
-    params.headers['Content-Length'] = 0;
-  }
-  // 传了请求体需补充 content-length
   var body = params.body;
-  if (body && !contentLength) {
-    var size = util.getContentLength(body);
-    if (size === null) {
-      callback(util.error(new Error('params body format error, Only allow File|Blob|String.')));
-      return;
+  if (body) {
+    if (!contentLength) {
+      // 传了请求体需补充 content-length
+      var size = util.getContentLength(body);
+      if (size === null) {
+        callback(util.error(new Error('params body format error, Only allow File|Blob|String.')));
+        return;
+      }
+      params.headers['Content-Length'] = size;
     }
-    params.headers['Content-Length'] = size;
+  } else {
+    // 非 get、head 请求的空请求体需补充 content-length = 0
+    var noContentLengthMethods = ['get', 'head'].includes(method);
+    if (!noContentLengthMethods) {
+      params.headers['Content-Length'] = 0;
+    }
   }
   // 补充默认 content-type
   if (!contentType) {
