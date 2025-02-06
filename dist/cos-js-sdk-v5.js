@@ -11077,8 +11077,8 @@ var apiWrapper = function apiWrapper(apiName, apiFn) {
     // 代理回调函数
     var formatResult = function formatResult(result) {
       if (result && result.headers) {
-        result.headers['x-cos-request-id'] && (result.RequestId = result.headers['x-cos-request-id']);
         result.headers['x-ci-request-id'] && (result.RequestId = result.headers['x-ci-request-id']);
+        result.headers['x-cos-request-id'] && (result.RequestId = result.headers['x-cos-request-id']);
         result.headers['x-cos-version-id'] && (result.VersionId = result.headers['x-cos-version-id']);
         result.headers['x-cos-delete-marker'] && (result.DeleteMarker = result.headers['x-cos-delete-marker']);
       }
