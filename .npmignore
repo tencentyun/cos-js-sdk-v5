@@ -1,0 +1,12 @@
+.github/
+coverage/
+csp/
+demo/
+test/
+server/
+.prettierrc
+CHANGELOG.md
+babel.config.js
+bower.json
+jest.config.js
+webpack.config.js
