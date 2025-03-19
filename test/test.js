@@ -4352,7 +4352,7 @@ group('upload Content-Type', function () {
       }
     );
   });
-  test('putObject blob Content-Type null -> application/octet-stream', function (done) {
+  test('putObject blob Content-Type null -> application/zip or application/octet-stream', function (done) {
     cos.putObject(
       {
         Bucket: config.Bucket,
@@ -4368,7 +4368,7 @@ group('upload Content-Type', function () {
             Key: '1.zip',
           },
           function (err, data) {
-            assert.ok(data.headers['content-type'] === 'application/octet-stream', 'Content-Type 正确');
+            assert.ok(data.headers['content-type'] === 'application/zip', 'Content-Type 正确');
             done();
           }
         );
@@ -4516,7 +4516,7 @@ group('upload Content-Type', function () {
       }
     );
   });
-  test('sliceUploadFile blob Content-Type null -> application/octet-stream', function (done) {
+  test('sliceUploadFile blob Content-Type null -> application/zip or application/octet-stream', function (done) {
     cos.sliceUploadFile(
       {
         Bucket: config.Bucket,
@@ -4537,7 +4537,7 @@ group('upload Content-Type', function () {
             if (location.protocol === 'http:' && m && m[1].length <= 6 && m[1] < '044429') {
               assert.ok(data.headers['content-type'] === 'application/octet-stream', 'Content-Type 正确');
             } else {
-              assert.ok(data.headers['content-type'] === 'application/octet-stream', 'Content-Type 正确');
+              assert.ok(data.headers['content-type'] === 'application/zip', 'Content-Type 正确');
             }
             done();
           }
