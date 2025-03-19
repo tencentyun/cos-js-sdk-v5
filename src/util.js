@@ -823,7 +823,7 @@ var getContentLength = function (body) {
     size = f.size;
     f = null;
   } else if (body instanceof ArrayBuffer) {
-    var f = new Blob([params.Body]);
+    var f = new Blob([body]);
     size = f.size;
     f = null;
   } else if (haveSize) {
