@@ -8479,7 +8479,9 @@ function appendObject(params, callback) {
   // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
   var headers = params.Headers;
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-  if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || 'application/octet-stream';
+  if (!headers['Content-Type'] && !headers['content-type']) {
+    headers['Content-Type'] = params.Body && params.Body.type || '';
+  }
   submitRequest.call(this, {
     Action: 'name/cos:AppendObject',
     method: 'POST',
