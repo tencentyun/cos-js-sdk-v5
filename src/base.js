@@ -3674,7 +3674,9 @@ function getUrl(params) {
 }
 
 var getSignHost = function (opt) {
-  if (!opt.Bucket || !opt.Region) return '';
+  // Url 或 Bucket+Region 至少传一个
+  var paramsCompleted = opt.Url || (opt.Bucket && opt.Region);
+  if (!paramsCompleted) return '';
   var useAccelerate = opt.UseAccelerate === undefined ? this.options.UseAccelerate : opt.UseAccelerate;
   var url =
     opt.Url ||
