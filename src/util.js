@@ -96,7 +96,6 @@ var signHeaders = [
   'content-encoding',
   'content-length',
   'content-md5',
-  'content-type',
   'expect',
   'expires',
   'host',
@@ -131,6 +130,7 @@ var getAuth = function (opt) {
   var method = (opt.method || opt.Method || 'get').toLowerCase();
   var queryParams = clone(opt.Query || opt.params || {});
   var headers = getSignHeaderObj(clone(opt.Headers || opt.headers || {}));
+
   var Key = opt.Key || '';
   var pathname;
   if (opt.UseRawKey) {
@@ -815,23 +815,6 @@ var getFileSize = function (api, params, callback) {
   callback(null, size);
 };
 
-var getContentLength = function (body) {
-  var size = null;
-  var haveSize = body instanceof Blob || body.toString() === '[object File]' || body.toString() === '[object Blob]';
-  if (typeof body === 'string') {
-    var f = new Blob([body], { type: 'text/plain' });
-    size = f.size;
-    f = null;
-  } else if (body instanceof ArrayBuffer) {
-    var f = new Blob([body]);
-    size = f.size;
-    f = null;
-  } else if (haveSize) {
-    size = body.size;
-  }
-  return size;
-};
-
 // 获取调正的时间戳
 var getSkewTime = function (offset) {
   return Date.now() + (offset || 0);
@@ -986,7 +969,6 @@ var util = {
   camSafeUrlEncode: camSafeUrlEncode,
   throttleOnProgress: throttleOnProgress,
   getFileSize: getFileSize,
-  getContentLength: getContentLength,
   getSkewTime: getSkewTime,
   error: error,
   obj2str: obj2str,

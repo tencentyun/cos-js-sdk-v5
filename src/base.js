@@ -3696,9 +3696,7 @@ function getAuthorizationAsync(params, callback) {
   var headers = util.clone(params.Headers);
   var headerHost = '';
   util.each(headers, function (v, k) {
-    if (v === '') {
-      delete headers[k];
-    }
+    (v === '' || ['content-type', 'cache-control', 'expires'].indexOf(k.toLowerCase()) > -1) && delete headers[k];
     if (k.toLowerCase() === 'host') headerHost = v;
   });
   // ForceSignHost明确传入false才不加入host签名
@@ -4015,43 +4013,6 @@ function submitRequest(params, callback) {
   params.qs && (params.qs = util.clearKey(params.qs));
   var Query = util.clone(params.qs);
   params.action && (Query[params.action] = '');
-
-  var contentType;
-  var contentLength = 0;
-  // 指定一个默认的 content-type，如不指定浏览器默认会指定 text/plain;charset=UTF-8
-  var defaultContentType = 'text/plain';
-  util.each(params.headers, function (value, key) {
-    if (key.toLowerCase() === 'content-type') {
-      contentType = value;
-    }
-    if (key.toLowerCase() === 'content-length') {
-      contentLength = value;
-    }
-  });
-
-  var method = params.method.toLowerCase();
-  var body = params.body;
-  if (body) {
-    if (!contentLength) {
-      // 传了请求体需补充 content-length
-      var size = util.getContentLength(body);
-      if (size === null) {
-        callback(util.error(new Error('params body format error, Only allow File|Blob|String.')));
-        return;
-      }
-      params.headers['Content-Length'] = size;
-    }
-  } else {
-    // 非 get、head 请求的空请求体需补充 content-length = 0
-    var noContentLengthMethods = ['get', 'head'].includes(method);
-    if (!noContentLengthMethods) {
-      params.headers['Content-Length'] = 0;
-    }
-  }
-  // 补充默认 content-type，(putObject/multipartInit 不需要补充)
-  if (contentType === undefined) {
-    params.headers['Content-Type'] = defaultContentType;
-  }
 
   /**
    * 手动传params.SignHost的场景：cos.getService、cos.getObjectUrl
