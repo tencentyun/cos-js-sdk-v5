@@ -9124,7 +9124,7 @@ function submitRequest(params, callback) {
             networkError: networkError
           });
           params.SwitchHost = switchHost;
-          // 重试时增加请求体
+          // 重试时增加请求头
           params.headers['x-cos-sdk-retry'] = true;
           next(tryTimes + 1);
         } else {
