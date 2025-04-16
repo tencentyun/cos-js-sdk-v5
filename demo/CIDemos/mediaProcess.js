@@ -360,42 +360,38 @@ export const postTranscode = {
     const url = `https://${host}/${key}`;
     const body = COS.util.json2xml({
       Request: {
-        // 创建任务的Tag：Transcode;是否必传：是
-        Tag: 'Transcode',
-        // 待操作的文件信息;是否必传：是
+        Tag: 'Transcode', // 固定值，必须
         Input: {
-          // 文件路径;是否必传：是
-          Object: 'test.mp4',
+          Object: 'test.mp4', // 待转码的文件名，必须
         },
-        // 操作规则;是否必传：是
         Operation: {
-          // TemplateId与Transcode 二选一传入
-          // 转码模板 ID;是否必传：否，可通过控制台获取
-          TemplateId: 'xxx',
-          // 转码模板参数;是否必传：否
-          // Transcode: {},
-          // 水印模板 ID，可以传多个水印模板 ID，最多传3个;是否必传：否
-          // WatermarkTemplateId: '',
-          // 去除水印参数,  H265、AV1编码暂不支持该参数;是否必传：否
-          // RemoveWatermark: {
-          //   // 距离左上角原点 x 偏移，范围为[1, 4096];是否必传：是
-          //   Dx: '',
-          //   // 距离左上角原点 y 偏移，范围为[1, 4096];是否必传：是
-          //   Dy: '',
-          //   // 宽，范围为[1, 4096];是否必传：是
-          //   Width: '',
-          //   // 高，范围为[1, 4096];是否必传：是
-          //   Height: '',
-          // },
-          // 字幕参数，H265、AV1编码和非mkv封装暂不支持该参数;是否必传：否
-          // Subtitles: {
-          //   // 字幕参数;是否必传：是
-          //   Subtitle: {
-          //     // 同 bucket 的字幕地址，需要 encode;是否必传：是
-          //     Url: '',
-          //   },
-          // },
-          // 结果输出配置;是否必传：是
+          // Transcode 转码参数
+          Transcode: {
+            Container: {
+              Format: 'mp4'
+            },
+            Video: {
+              Width: '1280',
+              Height: '720',
+              Crf: 30
+            },
+            Audio: {
+              Codec: 'aac'
+            }
+          },
+          // Watermark 水印参数
+          Watermark: [{
+            Type: 'Text',
+            Pos: 'BottomRight',
+            LocMode: 'Absolute',
+            Text: {
+              FontSize: '10',
+              FontType: 'simfang.ttf',
+              FontColor: '0x000000',
+              Transparency: '100',
+              Text: 'TencendCloud'
+            },
+          }],
           Output: {
             // 存储桶的地域;是否必传：是
             Region: config.Region,
@@ -405,18 +401,18 @@ export const postTranscode = {
             Object: 'output/test.mp4',
           },
           // 透传用户信息，可打印的 ASCII 码，长度不超过1024;是否必传：否
-          UserData: '',
+          // UserData: '',
           // 任务优先级，级别限制：0 、1 、2 。级别越大任务优先级越高，默认为0;是否必传：否
-          JobLevel: '0',
+          // JobLevel: '0',
         },
         // 任务所在的队列类型，限制为 SpeedTranscoding, 表示为开启倍速转码;是否必传：否
-        QueueType: 'SpeedTranscoding',
+        // QueueType: 'SpeedTranscoding',
         // 任务回调格式，JSON 或 XML，默认 XML，优先级高于队列的回调格式;是否必传：否
-        CallBackFormat: '',
+        // CallBackFormat: '',
         // 任务回调类型，Url 或 TDMQ，默认 Url，优先级高于队列的回调类型;是否必传：否
-        CallBackType: 'Url',
+        // CallBackType: 'Url',
         // 任务回调地址，优先级高于队列的回调地址。设置为 no 时，表示队列的回调地址不产生回调;是否必传：否
-        CallBack: '',
+        // CallBack: '',
       },
     });
 

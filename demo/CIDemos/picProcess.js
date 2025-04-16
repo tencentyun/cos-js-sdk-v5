@@ -285,7 +285,7 @@ export const requestPicOperation = {
       {
         Bucket: config.Bucket,
         Region: config.Region,
-        Key: '02.png',
+        Key: '2.jpg',
         Method: 'GET',
         Action: 'exif',
         RawBody: true,
@@ -301,7 +301,7 @@ export const requestPicOperation = {
           console.log(err);
         } else {
           // 处理请求成功
-          console.log(data);
+          console.log(info);
         }
       }
     );

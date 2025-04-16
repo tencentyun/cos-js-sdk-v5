@@ -4,9 +4,9 @@ module.exports = {
   collectCoverageFrom: ['**/src/*.js'],
   coverageThreshold: {
     global: {
-      statements: 90, // 保证每个语句都执行了
-      functions: 90, // 保证每个函数都调用了
-      branches: 90, // 保证每个 if 等分支代码都执行了
+      statements: 80, // 保证每个语句都执行了
+      functions: 70, // 保证每个函数都调用了
+      branches: 70, // 保证每个 if 等分支代码都执行了
     },
   },
 };

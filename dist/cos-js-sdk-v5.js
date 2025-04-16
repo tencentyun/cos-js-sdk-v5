@@ -2895,7 +2895,7 @@ function buildAttributesMap(attrStr, jPath, tagName) {
 }
 
 const parseXml = function(xmlData) {
-  xmlData = xmlData.replace(/\r\n?/g, "\n"); //TODO: remove this line
+  // xmlData = xmlData.replace(/\r\n?/g, "\n"); //TODO: remove this line
   const xmlObj = new xmlNode('!xml');
   let currentNode = xmlObj;
   let textData = "";
@@ -3932,7 +3932,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.8.7\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js lib/request.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"fast-xml-parser\":\"4.5.0\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"^29.3.1\",\"jest-environment-jsdom\":\"^29.3.1\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.9.0\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js lib/request.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\",\"postinstall\":\"patch-package\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"fast-xml-parser\":\"4.5.0\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"29.7.0\",\"jest-environment-jsdom\":\"29.7.0\",\"patch-package\":\"^8.0.0\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -7389,7 +7389,9 @@ function putObject(params, callback) {
   // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
   var headers = params.Headers;
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-  if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
+  if (!headers['Content-Type'] && !headers['content-type']) {
+    headers['Content-Type'] = params.Body && params.Body.type || '';
+  }
   var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
   var tracker = params.tracker;
   needCalcMd5 && tracker && tracker.setParams({
@@ -8043,7 +8045,9 @@ function multipartInit(params, callback) {
 
   // 特殊处理 Cache-Control、Content-Type
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-  if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
+  if (!headers['Content-Type'] && !headers['content-type']) {
+    headers['Content-Type'] = params.Body && params.Body.type || '';
+  }
   var needCalcMd5 = params.Body && (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5);
   needCalcMd5 && tracker && tracker.setParams({
     md5StartTime: new Date().getTime()
@@ -8205,7 +8209,7 @@ function multipartComplete(params, callback) {
       protocol: self.options.Protocol,
       domain: self.options.Domain,
       bucket: params.Bucket,
-      region: params.Region,
+      region: !self.options.UseAccelerate ? params.Region : 'accelerate',
       object: params.Key,
       isLocation: true
     });
@@ -8475,7 +8479,9 @@ function appendObject(params, callback) {
   // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
   var headers = params.Headers;
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-  if (!headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = params.Body && params.Body.type || '';
+  if (!headers['Content-Type'] && !headers['content-type']) {
+    headers['Content-Type'] = params.Body && params.Body.type || '';
+  }
   submitRequest.call(this, {
     Action: 'name/cos:AppendObject',
     method: 'POST',
@@ -8735,7 +8741,9 @@ function getUrl(params) {
   return url;
 }
 var getSignHost = function getSignHost(opt) {
-  if (!opt.Bucket || !opt.Region) return '';
+  // Url 或 Bucket+Region 至少传一个
+  var paramsCompleted = opt.Url || opt.Bucket && opt.Region;
+  if (!paramsCompleted) return '';
   var useAccelerate = opt.UseAccelerate === undefined ? this.options.UseAccelerate : opt.UseAccelerate;
   var url = opt.Url || getUrl({
     ForcePathStyle: this.options.ForcePathStyle,
@@ -8819,7 +8827,11 @@ function getAuthorizationAsync(params, callback) {
   })();
   var calcAuthByTmpKey = function calcAuthByTmpKey() {
     var KeyTime = '';
-    if (StsData.StartTime && params.Expires) KeyTime = StsData.StartTime + ';' + (StsData.StartTime + params.Expires * 1);else if (StsData.StartTime && StsData.ExpiredTime) KeyTime = StsData.StartTime + ';' + StsData.ExpiredTime;
+    if (StsData.StartTime && params.Expires) {
+      KeyTime = StsData.StartTime + ';' + (StsData.StartTime + params.Expires * 1);
+    } else if (StsData.StartTime && StsData.ExpiredTime) {
+      KeyTime = StsData.StartTime + ';' + StsData.ExpiredTime;
+    }
     var Authorization = util.getAuth({
       SecretId: StsData.TmpSecretId,
       SecretKey: StsData.TmpSecretKey,
@@ -9112,7 +9124,8 @@ function submitRequest(params, callback) {
             networkError: networkError
           });
           params.SwitchHost = switchHost;
-          params.retry = true;
+          // 重试时增加请求头
+          params.headers['x-cos-sdk-retry'] = true;
           next(tryTimes + 1);
         } else {
           callback(err, data);
@@ -9189,9 +9202,6 @@ function _submitRequest(params, callback) {
 
   // 清理 undefined 和 null 字段
   opt.headers && (opt.headers = util.clearKey(opt.headers));
-  if (params.retry) {
-    opt.headers['x-cos-sdk-retry'] = true;
-  }
   opt = util.clearKey(opt);
 
   // progress
@@ -10458,16 +10468,39 @@ var xmlParser = new XMLParser({
   // 忽略 XML 声明
   ignoreAttributes: true,
   // 忽略属性
-  parseTagValue: false // 关闭自动解析
+  parseTagValue: false,
+  // 关闭自动解析
+  trimValues: false // 关闭默认 trim
 });
 var xmlBuilder = new XMLBuilder();
 var base64 = __webpack_require__(/*! ../lib/base64 */ "./lib/base64.js");
 var Tracker = __webpack_require__(/*! ./tracker */ "./src/tracker.js");
 
+// 删掉不需要的#text
+var textNodeName = '#text';
+var deleteTextNodes = function deleteTextNodes(obj) {
+  if (!isObject(obj)) return;
+  for (var i in obj) {
+    var item = obj[i];
+    if (typeof item === 'string') {
+      if (i === textNodeName) {
+        delete obj[i];
+      }
+    } else if (Array.isArray(item)) {
+      item.forEach(function (i) {
+        deleteTextNodes(i);
+      });
+    } else if (isObject(item)) {
+      deleteTextNodes(item);
+    }
+  }
+};
+
 // XML 对象转 JSON 对象
 var xml2json = function xml2json(bodyStr) {
-  var d = xmlParser.parse(bodyStr);
-  return d;
+  var json = xmlParser.parse(bodyStr);
+  deleteTextNodes(json);
+  return json;
 };
 
 // JSON 对象转 XML 对象
@@ -10518,7 +10551,7 @@ var getSignHeaderObj = function getSignHeaderObj(headers) {
   var signHeaderObj = {};
   for (var i in headers) {
     var key = i.toLowerCase();
-    if (key.indexOf('x-cos-') > -1 || signHeaders.indexOf(key) > -1) {
+    if (key.indexOf('x-cos-') > -1 || key.indexOf('x-ci-') > -1 || signHeaders.indexOf(key) > -1) {
       signHeaderObj[i] = headers[i];
     }
   }
@@ -10811,6 +10844,9 @@ function extend(target, source) {
 function isArray(arr) {
   return arr instanceof Array;
 }
+function isObject(obj) {
+  return Object.prototype.toString.call(obj) === '[object Object]';
+}
 function isInArray(arr, item) {
   var flag = false;
   for (var i = 0; i < arr.length; i++) {
@@ -11012,8 +11048,8 @@ var apiWrapper = function apiWrapper(apiName, apiFn) {
     // 代理回调函数
     var formatResult = function formatResult(result) {
       if (result && result.headers) {
-        result.headers['x-cos-request-id'] && (result.RequestId = result.headers['x-cos-request-id']);
         result.headers['x-ci-request-id'] && (result.RequestId = result.headers['x-ci-request-id']);
+        result.headers['x-cos-request-id'] && (result.RequestId = result.headers['x-cos-request-id']);
         result.headers['x-cos-version-id'] && (result.VersionId = result.headers['x-cos-version-id']);
         result.headers['x-cos-delete-marker'] && (result.DeleteMarker = result.headers['x-cos-delete-marker']);
       }

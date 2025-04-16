@@ -1,0 +1,15 @@
+diff --git a/node_modules/jsdom/lib/jsdom/living/xhr/xhr-utils.js b/node_modules/jsdom/lib/jsdom/living/xhr/xhr-utils.js
+index 8437900..d760a02 100644
+--- a/node_modules/jsdom/lib/jsdom/living/xhr/xhr-utils.js
++++ b/node_modules/jsdom/lib/jsdom/living/xhr/xhr-utils.js
+@@ -307,8 +307,9 @@ function createClient(xhr) {
+           }
+           requestBody = Buffer.isBuffer(requestBody) ? requestBody : Buffer.from(requestBody);
+         }
+-        requestHeaders["Content-Length"] = len;
++        // requestHeaders["Content-Length"] = len;
+       }
++      requestHeaders["Content-Length"] = len;
+       requestHeaders["Accept-Encoding"] = "gzip, deflate";
+       const requestClient = new Request(uri, options, { method: flag.method, headers: requestHeaders });
+       if (hasBody) {

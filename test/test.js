@@ -201,7 +201,7 @@ function getSts(options) {
     xhr.open('get', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onload = function (e) {
-      var data,credentials;
+      var data, credentials;
       try {
         data = JSON.parse(e.target.responseText);
         credentials = data.credentials;
@@ -224,7 +224,7 @@ function getSts(options) {
 
 // todo 只能这么提前获取
 const sts = {};
-getSts().then(data => {
+getSts().then((data) => {
   Object.assign(sts, data);
 });
 
@@ -619,7 +619,7 @@ group('init cos', function () {
         Expires: Date.now() * 1000,
       },
       function (err, data) {
-        console.log('getObjectUrl invalid ExpiredTime', err||data);
+        console.log('getObjectUrl invalid ExpiredTime', err || data);
         assert.ok(err);
         done();
       }

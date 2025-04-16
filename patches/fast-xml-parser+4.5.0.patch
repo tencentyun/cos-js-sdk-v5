@@ -1,0 +1,13 @@
+diff --git a/node_modules/fast-xml-parser/src/xmlparser/OrderedObjParser.js b/node_modules/fast-xml-parser/src/xmlparser/OrderedObjParser.js
+index 70db055..17536b7 100644
+--- a/node_modules/fast-xml-parser/src/xmlparser/OrderedObjParser.js
++++ b/node_modules/fast-xml-parser/src/xmlparser/OrderedObjParser.js
+@@ -184,7 +184,7 @@ function buildAttributesMap(attrStr, jPath, tagName) {
+ }
+ 
+ const parseXml = function(xmlData) {
+-  xmlData = xmlData.replace(/\r\n?/g, "\n"); //TODO: remove this line
++  // xmlData = xmlData.replace(/\r\n?/g, "\n"); //TODO: remove this line
+   const xmlObj = new xmlNode('!xml');
+   let currentNode = xmlObj;
+   let textData = "";

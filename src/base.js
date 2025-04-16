@@ -2213,8 +2213,9 @@ function putObject(params, callback) {
   // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
   var headers = params.Headers;
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-  if (!headers['Content-Type'] && !headers['content-type'])
+  if (!headers['Content-Type'] && !headers['content-type']) {
     headers['Content-Type'] = (params.Body && params.Body.type) || '';
+  }
   var needCalcMd5 = params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5 || self.options.UploadCheckContentMd5;
 
   var tracker = params.tracker;
@@ -2925,8 +2926,9 @@ function multipartInit(params, callback) {
 
   // 特殊处理 Cache-Control、Content-Type
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-  if (!headers['Content-Type'] && !headers['content-type'])
+  if (!headers['Content-Type'] && !headers['content-type']) {
     headers['Content-Type'] = (params.Body && params.Body.type) || '';
+  }
 
   var needCalcMd5 = params.Body && (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5);
   needCalcMd5 && tracker && tracker.setParams({ md5StartTime: new Date().getTime() });
@@ -3096,7 +3098,7 @@ function multipartComplete(params, callback) {
         protocol: self.options.Protocol,
         domain: self.options.Domain,
         bucket: params.Bucket,
-        region: params.Region,
+        region: !self.options.UseAccelerate ? params.Region : 'accelerate',
         object: params.Key,
         isLocation: true,
       });
@@ -3388,8 +3390,9 @@ function appendObject(params, callback) {
   // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
   var headers = params.Headers;
   if (!headers['Cache-Control'] && !headers['cache-control']) headers['Cache-Control'] = '';
-  if (!headers['Content-Type'] && !headers['content-type'])
+  if (!headers['Content-Type'] && !headers['content-type']) {
     headers['Content-Type'] = (params.Body && params.Body.type) || '';
+  }
   submitRequest.call(
     this,
     {
@@ -3570,10 +3573,7 @@ function decodeAcl(AccessControlPolicy) {
     Grant.length &&
     util.each(Grant, function (item) {
       var uriMatch = item.Grantee.URI && item.Grantee.URI.endsWith('/groups/global/AllUsers');
-      if (
-        item.Grantee.ID === 'qcs::cam::anyone:anyone' ||
-        uriMatch
-      ) {
+      if (item.Grantee.ID === 'qcs::cam::anyone:anyone' || uriMatch) {
         PublicAcl[item.Permission] = 1;
       } else if (item.Grantee.ID !== AccessControlPolicy.Owner.ID) {
         result[GrantMap[item.Permission]].push('id="' + item.Grantee.ID + '"');
@@ -3674,7 +3674,9 @@ function getUrl(params) {
 }
 
 var getSignHost = function (opt) {
-  if (!opt.Bucket || !opt.Region) return '';
+  // Url 或 Bucket+Region 至少传一个
+  var paramsCompleted = opt.Url || (opt.Bucket && opt.Region);
+  if (!paramsCompleted) return '';
   var useAccelerate = opt.UseAccelerate === undefined ? this.options.UseAccelerate : opt.UseAccelerate;
   var url =
     opt.Url ||
@@ -3764,9 +3766,11 @@ function getAuthorizationAsync(params, callback) {
 
   var calcAuthByTmpKey = function () {
     var KeyTime = '';
-    if (StsData.StartTime && params.Expires)
+    if (StsData.StartTime && params.Expires) {
       KeyTime = StsData.StartTime + ';' + (StsData.StartTime + params.Expires * 1);
-    else if (StsData.StartTime && StsData.ExpiredTime) KeyTime = StsData.StartTime + ';' + StsData.ExpiredTime;
+    } else if (StsData.StartTime && StsData.ExpiredTime) {
+      KeyTime = StsData.StartTime + ';' + StsData.ExpiredTime;
+    }
     var Authorization = util.getAuth({
       SecretId: StsData.TmpSecretId,
       SecretKey: StsData.TmpSecretKey,
@@ -4007,7 +4011,6 @@ function submitRequest(params, callback) {
   // 清理 undefined 和 null 字段
   params.headers && (params.headers = util.clearKey(params.headers));
   params.qs && (params.qs = util.clearKey(params.qs));
-
   var Query = util.clone(params.qs);
   params.action && (Query[params.action] = '');
 
@@ -4074,7 +4077,8 @@ function submitRequest(params, callback) {
               networkError,
             });
             params.SwitchHost = switchHost;
-            params.retry = true;
+            // 重试时增加请求头
+            params.headers['x-cos-sdk-retry'] = true;
             next(tryTimes + 1);
           } else {
             callback(err, data);
@@ -4158,9 +4162,6 @@ function _submitRequest(params, callback) {
 
   // 清理 undefined 和 null 字段
   opt.headers && (opt.headers = util.clearKey(opt.headers));
-  if (params.retry) {
-    opt.headers['x-cos-sdk-retry'] = true;
-  }
   opt = util.clearKey(opt);
 
   // progress
@@ -4181,7 +4182,6 @@ function _submitRequest(params, callback) {
   if (this.options.Timeout) {
     opt.timeout = this.options.Timeout;
   }
-
   self.options.ForcePathStyle && (opt.pathStyle = self.options.ForcePathStyle);
   self.emit('before-send', opt);
   var useAccelerate = opt.url.includes('accelerate.');
