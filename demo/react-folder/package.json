@@ -1,0 +1,15 @@
+{
+  "name": "demo",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "cos-js-sdk-v5": "^1.7.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "typescript": "5.2.2",
+    "@types/react": "18.2.21",
+    "@types/react-dom": "18.2.7"
+  }
+}
