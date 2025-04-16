@@ -1,3 +1,5 @@
+.idea
+.vscode
 .github/
 coverage/
 csp/

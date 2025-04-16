@@ -11,7 +11,7 @@
     "build": "cross-env NODE_ENV=production webpack --mode=production",
     "cos-auth.min.js": "uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m",
     "test": "jest --runInBand --coverage",
-    "postinstall": "patch-package"
+    "postinstall": "npx patch-package"
   },
   "repository": {
     "type": "git",
