@@ -1368,10 +1368,8 @@ module.exports = request;
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-function _classCallCheck(instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
+function _classCallCheck(a, n) {
+  if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function");
 }
 module.exports = _classCallCheck, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
@@ -1385,22 +1383,16 @@ module.exports = _classCallCheck, module.exports.__esModule = true, module.expor
 /***/ (function(module, exports, __webpack_require__) {
 
 var toPropertyKey = __webpack_require__(/*! ./toPropertyKey.js */ "./node_modules/@babel/runtime/helpers/toPropertyKey.js");
-function _defineProperties(target, props) {
-  for (var i = 0; i < props.length; i++) {
-    var descriptor = props[i];
-    descriptor.enumerable = descriptor.enumerable || false;
-    descriptor.configurable = true;
-    if ("value" in descriptor) descriptor.writable = true;
-    Object.defineProperty(target, toPropertyKey(descriptor.key), descriptor);
+function _defineProperties(e, r) {
+  for (var t = 0; t < r.length; t++) {
+    var o = r[t];
+    o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, toPropertyKey(o.key), o);
   }
 }
-function _createClass(Constructor, protoProps, staticProps) {
-  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
-  if (staticProps) _defineProperties(Constructor, staticProps);
-  Object.defineProperty(Constructor, "prototype", {
-    writable: false
-  });
-  return Constructor;
+function _createClass(e, r, t) {
+  return r && _defineProperties(e.prototype, r), t && _defineProperties(e, t), Object.defineProperty(e, "prototype", {
+    writable: !1
+  }), e;
 }
 module.exports = _createClass, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
@@ -1414,17 +1406,17 @@ module.exports = _createClass, module.exports.__esModule = true, module.exports[
 /***/ (function(module, exports, __webpack_require__) {
 
 var _typeof = __webpack_require__(/*! ./typeof.js */ "./node_modules/@babel/runtime/helpers/typeof.js")["default"];
-function _toPrimitive(input, hint) {
-  if (_typeof(input) !== "object" || input === null) return input;
-  var prim = input[Symbol.toPrimitive];
-  if (prim !== undefined) {
-    var res = prim.call(input, hint || "default");
-    if (_typeof(res) !== "object") return res;
+function toPrimitive(t, r) {
+  if ("object" != _typeof(t) || !t) return t;
+  var e = t[Symbol.toPrimitive];
+  if (void 0 !== e) {
+    var i = e.call(t, r || "default");
+    if ("object" != _typeof(i)) return i;
     throw new TypeError("@@toPrimitive must return a primitive value.");
   }
-  return (hint === "string" ? String : Number)(input);
+  return ("string" === r ? String : Number)(t);
 }
-module.exports = _toPrimitive, module.exports.__esModule = true, module.exports["default"] = module.exports;
+module.exports = toPrimitive, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
 /***/ }),
 
@@ -1437,11 +1429,11 @@ module.exports = _toPrimitive, module.exports.__esModule = true, module.exports[
 
 var _typeof = __webpack_require__(/*! ./typeof.js */ "./node_modules/@babel/runtime/helpers/typeof.js")["default"];
 var toPrimitive = __webpack_require__(/*! ./toPrimitive.js */ "./node_modules/@babel/runtime/helpers/toPrimitive.js");
-function _toPropertyKey(arg) {
-  var key = toPrimitive(arg, "string");
-  return _typeof(key) === "symbol" ? key : String(key);
+function toPropertyKey(t) {
+  var i = toPrimitive(t, "string");
+  return "symbol" == _typeof(i) ? i : i + "";
 }
-module.exports = _toPropertyKey, module.exports.__esModule = true, module.exports["default"] = module.exports;
+module.exports = toPropertyKey, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
 /***/ }),
 
@@ -1455,11 +1447,11 @@ module.exports = _toPropertyKey, module.exports.__esModule = true, module.export
 function _typeof(o) {
   "@babel/helpers - typeof";
 
-  return (module.exports = _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) {
+  return module.exports = _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) {
     return typeof o;
   } : function (o) {
     return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
-  }, module.exports.__esModule = true, module.exports["default"] = module.exports), _typeof(o);
+  }, module.exports.__esModule = true, module.exports["default"] = module.exports, _typeof(o);
 }
 module.exports = _typeof, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
@@ -3751,80 +3743,73 @@ process.umask = function() { return 0; };
 /***/ (function(module, exports) {
 
 const hexRegex = /^[-+]?0x[a-fA-F0-9]+$/;
-const numRegex = /^([\-\+])?(0*)(\.[0-9]+([eE]\-?[0-9]+)?|[0-9]+(\.[0-9]+([eE]\-?[0-9]+)?)?)$/;
-// const octRegex = /0x[a-z0-9]+/;
+const numRegex = /^([\-\+])?(0*)([0-9]*(\.[0-9]*)?)$/;
+// const octRegex = /^0x[a-z0-9]+/;
 // const binRegex = /0x[a-z0-9]+/;
 
-
-//polyfill
-if (!Number.parseInt && window.parseInt) {
-    Number.parseInt = window.parseInt;
-}
-if (!Number.parseFloat && window.parseFloat) {
-    Number.parseFloat = window.parseFloat;
-}
-
-  
+ 
 const consider = {
     hex :  true,
+    // oct: false,
     leadingZeros: true,
     decimalPoint: "\.",
-    eNotation: true
+    eNotation: true,
     //skipLike: /regex/
 };
 
 function toNumber(str, options = {}){
-    // const options = Object.assign({}, consider);
-    // if(opt.leadingZeros === false){
-    //     options.leadingZeros = false;
-    // }else if(opt.hex === false){
-    //     options.hex = false;
-    // }
-
     options = Object.assign({}, consider, options );
     if(!str || typeof str !== "string" ) return str;
     
     let trimmedStr  = str.trim();
-    // if(trimmedStr === "0.0") return 0;
-    // else if(trimmedStr === "+0.0") return 0;
-    // else if(trimmedStr === "-0.0") return -0;
-
+    
     if(options.skipLike !== undefined && options.skipLike.test(trimmedStr)) return str;
+    else if(str==="0") return 0;
     else if (options.hex && hexRegex.test(trimmedStr)) {
-        return Number.parseInt(trimmedStr, 16);
-    // } else if (options.parseOct && octRegex.test(str)) {
+        return parse_int(trimmedStr, 16);
+    // }else if (options.oct && octRegex.test(str)) {
     //     return Number.parseInt(val, 8);
+    }else if (trimmedStr.search(/[eE]/)!== -1) { //eNotation
+        const notation = trimmedStr.match(/^([-\+])?(0*)([0-9]*(\.[0-9]*)?[eE][-\+]?[0-9]+)$/); 
+        // +00.123 => [ , '+', '00', '.123', ..
+        if(notation){
+            // console.log(notation)
+            if(options.leadingZeros){ //accept with leading zeros
+                trimmedStr = (notation[1] || "") + notation[3];
+            }else{
+                if(notation[2] === "0" && notation[3][0]=== "."){ //valid number
+                }else{
+                    return str;
+                }
+            }
+            return options.eNotation ? Number(trimmedStr) : str;
+        }else{
+            return str;
+        }
     // }else if (options.parseBin && binRegex.test(str)) {
     //     return Number.parseInt(val, 2);
     }else{
         //separate negative sign, leading zeros, and rest number
         const match = numRegex.exec(trimmedStr);
+        // +00.123 => [ , '+', '00', '.123', ..
         if(match){
             const sign = match[1];
             const leadingZeros = match[2];
             let numTrimmedByZeros = trimZeros(match[3]); //complete num without leading zeros
             //trim ending zeros for floating number
             
-            const eNotation = match[4] || match[6];
             if(!options.leadingZeros && leadingZeros.length > 0 && sign && trimmedStr[2] !== ".") return str; //-0123
             else if(!options.leadingZeros && leadingZeros.length > 0 && !sign && trimmedStr[1] !== ".") return str; //0123
+            else if(options.leadingZeros && leadingZeros===str) return 0; //00
+            
             else{//no leading zeros or leading zeros are allowed
                 const num = Number(trimmedStr);
                 const numStr = "" + num;
+
                 if(numStr.search(/[eE]/) !== -1){ //given number is long and parsed to eNotation
                     if(options.eNotation) return num;
                     else return str;
-                }else if(eNotation){ //given number has enotation
-                    if(options.eNotation) return num;
-                    else return str;
                 }else if(trimmedStr.indexOf(".") !== -1){ //floating number
-                    // const decimalPart = match[5].substr(1);
-                    // const intPart = trimmedStr.substr(0,trimmedStr.indexOf("."));
-
-                    
-                    // const p = numStr.indexOf(".");
-                    // const givenIntPart = numStr.substr(0,p);
-                    // const givenDecPart = numStr.substr(p+1);
                     if(numStr === "0" && (numTrimmedByZeros === "") ) return num; //0.0
                     else if(numStr === numTrimmedByZeros) return num; //0.456. 0.79000
                     else if( sign && numStr === "-"+numTrimmedByZeros) return num;
@@ -3832,26 +3817,11 @@ function toNumber(str, options = {}){
                 }
                 
                 if(leadingZeros){
-                    // if(numTrimmedByZeros === numStr){
-                    //     if(options.leadingZeros) return num;
-                    //     else return str;
-                    // }else return str;
-                    if(numTrimmedByZeros === numStr) return num;
-                    else if(sign+numTrimmedByZeros === numStr) return num;
-                    else return str;
+                    return (numTrimmedByZeros === numStr) || (sign+numTrimmedByZeros === numStr) ? num : str
+                }else  {
+                    return (trimmedStr === numStr) || (trimmedStr === sign+numStr) ? num : str
                 }
-
-                if(trimmedStr === numStr) return num;
-                else if(trimmedStr === sign+numStr) return num;
-                // else{
-                //     //number with +/- sign
-                //     trimmedStr.test(/[-+][0-9]);
-
-                // }
-                return str;
             }
-            // else if(!eNotation && trimmedStr && trimmedStr !== Number(trimmedStr) ) return str;
-            
         }else{ //non-numeric string
             return str;
         }
@@ -3873,8 +3843,16 @@ function trimZeros(numStr){
     }
     return numStr;
 }
-module.exports = toNumber
 
+function parse_int(numStr, base){
+    //polyfill
+    if(parseInt) return parseInt(numStr, base);
+    else if(Number.parseInt) return Number.parseInt(numStr, base);
+    else if(window && window.parseInt) return window.parseInt(numStr, base);
+    else throw new Error("parseInt, Number.parseInt, window.parseInt are not supported")
+}
+
+module.exports = toNumber;
 
 /***/ }),
 
@@ -3932,7 +3910,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.11.0-beta.1\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js lib/request.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\",\"postinstall\":\"patch-package\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"fast-xml-parser\":\"4.5.0\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"29.7.0\",\"jest-environment-jsdom\":\"29.7.0\",\"patch-package\":\"^8.0.0\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.11.0-beta.0\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js lib/request.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\",\"postinstall\":\"npx patch-package\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"fast-xml-parser\":\"4.5.0\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"29.7.0\",\"jest-environment-jsdom\":\"29.7.0\",\"patch-package\":\"^8.0.0\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -4184,12 +4162,12 @@ function getUploadIdAndPartList(params, callback) {
       }
     }
     // 逐个分片计算并检查 ETag 是否一致
-    var next = function next(index) {
+    var _next = function next(index) {
       if (index < PartCount) {
         var Part = PartList[index];
         getChunkETag(Part.PartNumber, function (err, chunk) {
           if (chunk && chunk.ETag === Part.ETag && chunk.Size === Part.Size) {
-            next(index + 1);
+            _next(index + 1);
           } else {
             callback(null, false);
           }
@@ -4198,7 +4176,7 @@ function getUploadIdAndPartList(params, callback) {
         callback(null, true);
       }
     };
-    next(0);
+    _next(0);
   };
   var ep = new EventProxy();
   ep.on('error', function (errData) {
@@ -4325,7 +4303,7 @@ function getUploadIdAndPartList(params, callback) {
       ep.emit('has_and_check_upload_id', RemoteUploadIdList);
       return;
     }
-    var next = function next(index) {
+    var _next2 = function next(index) {
       // 如果本地找不到可用 UploadId，再一个个遍历校验远端
       if (index >= LocalUploadIdList.length) {
         ep.emit('has_and_check_upload_id', RemoteUploadIdList);
@@ -4335,12 +4313,12 @@ function getUploadIdAndPartList(params, callback) {
       // 如果不在远端 UploadId 列表里，跳过并删除
       if (!util.isInArray(RemoteUploadIdList, UploadId)) {
         session.removeUploadId.call(self, UploadId);
-        next(index + 1);
+        _next2(index + 1);
         return;
       }
       // 如果正在上传，跳过
       if (session.using[UploadId]) {
-        next(index + 1);
+        _next2(index + 1);
         return;
       }
       // 判断 UploadId 是否存在线上
@@ -4355,7 +4333,7 @@ function getUploadIdAndPartList(params, callback) {
         if (err) {
           // 如果 UploadId 获取会出错，跳过并删除
           session.removeUploadId.call(self, UploadId);
-          next(index + 1);
+          _next2(index + 1);
         } else {
           // 找到可用 UploadId
           ep.emit('upload_id_available', {
@@ -4365,7 +4343,7 @@ function getUploadIdAndPartList(params, callback) {
         }
       });
     };
-    next(0);
+    _next2(0);
   });
 
   // 获取线上 UploadId 列表
@@ -4416,7 +4394,7 @@ function wholeMultipartList(params, callback) {
     calledBySdk: params.calledBySdk || 'sliceUploadFile',
     tracker: params.tracker
   };
-  var next = function next() {
+  var _next3 = function next() {
     self.multipartList(sendParams, function (err, data) {
       if (err) return callback(err);
       UploadList.push.apply(UploadList, data.Upload || []);
@@ -4424,7 +4402,7 @@ function wholeMultipartList(params, callback) {
         // 列表不完整
         sendParams.KeyMarker = data.NextKeyMarker;
         sendParams.UploadIdMarker = data.NextUploadIdMarker;
-        next();
+        _next3();
       } else {
         callback(null, {
           UploadList: UploadList
@@ -4432,7 +4410,7 @@ function wholeMultipartList(params, callback) {
       }
     });
   };
-  next();
+  _next3();
 }
 
 // 获取指定上传任务的分块列表
@@ -4447,14 +4425,14 @@ function wholeMultipartListPart(params, callback) {
     calledBySdk: 'sliceUploadFile',
     tracker: params.tracker
   };
-  var next = function next() {
+  var _next4 = function next() {
     self.multipartListPart(sendParams, function (err, data) {
       if (err) return callback(err);
       PartList.push.apply(PartList, data.Part || []);
       if (data.IsTruncated === 'true') {
         // 列表不完整
         sendParams.PartNumberMarker = data.NextPartNumberMarker;
-        next();
+        _next4();
       } else {
         callback(null, {
           PartList: PartList
@@ -4462,7 +4440,7 @@ function wholeMultipartListPart(params, callback) {
       }
     });
   };
-  next();
+  _next4();
 }
 
 // 上传文件分块，包括
@@ -5092,12 +5070,12 @@ function sliceCopyFile(params, callback) {
     var uuid = session.getCopyFileId(CopySource, SourceResHeaders, ChunkSize, Bucket, Key);
     var LocalUploadIdList = session.getUploadIdList(uuid);
     if (!uuid || !LocalUploadIdList) return createNewUploadId();
-    var next = function next(index) {
+    var _next5 = function next(index) {
       // 如果本地找不到可用 UploadId，再一个个遍历校验远端
       if (index >= LocalUploadIdList.length) return createNewUploadId();
       var UploadId = LocalUploadIdList[index];
       // 如果正在被使用，跳过
-      if (session.using[UploadId]) return next(index + 1);
+      if (session.using[UploadId]) return _next5(index + 1);
       // 判断 UploadId 是否存在线上
       wholeMultipartListPart.call(self, {
         Bucket: Bucket,
@@ -5110,10 +5088,10 @@ function sliceCopyFile(params, callback) {
         if (err) {
           // 如果 UploadId 获取会出错，跳过并删除
           session.removeUploadId(UploadId);
-          next(index + 1);
+          _next5(index + 1);
         } else {
           // 如果异步回来 UploadId 已经被用了，也跳过
-          if (session.using[UploadId]) return next(index + 1);
+          if (session.using[UploadId]) return _next5(index + 1);
           // 找到可用 UploadId
           var finishETagMap = {};
           var offset = 0;
@@ -5137,7 +5115,7 @@ function sliceCopyFile(params, callback) {
         }
       });
     };
-    next(0);
+    _next5(0);
   });
   ep.on('get_file_size_finish', function () {
     // 控制分片大小
@@ -5349,10 +5327,10 @@ var eachLimit = function eachLimit(arr, limit, iterator, callback) {
   })();
 };
 var retry = function retry(times, iterator, callback) {
-  var next = function next(index) {
+  var _next = function next(index) {
     iterator(function (err, data) {
       if (err && index < times) {
-        next(index + 1);
+        _next(index + 1);
       } else {
         callback(err, data);
       }
@@ -5361,7 +5339,7 @@ var retry = function retry(times, iterator, callback) {
   if (times < 1) {
     callback();
   } else {
-    next(1);
+    _next(1);
   }
 };
 var async = {
@@ -9101,7 +9079,7 @@ function submitRequest(params, callback) {
     Url: paramsUrl
   });
   var tracker = params.tracker;
-  var next = function next(tryTimes) {
+  var _next = function next(tryTimes) {
     var oldClockOffset = self.options.SystemClockOffset;
     tracker && tracker.setParams({
       signStartTime: new Date().getTime(),
@@ -9163,14 +9141,14 @@ function submitRequest(params, callback) {
           params.SwitchHost = switchHost;
           // 重试时增加请求头
           params.headers['x-cos-sdk-retry'] = true;
-          next(tryTimes + 1);
+          _next(tryTimes + 1);
         } else {
           callback(err, data);
         }
       });
     });
   };
-  next(1);
+  _next(1);
 }
 
 // 发起请求
@@ -9307,7 +9285,7 @@ function _submitRequest(params, callback) {
     };
     var hasReturned;
     var cb = function cb(err, data) {
-      TaskId && self.off('inner-kill-task', killTask);
+      TaskId && self.off('inner-kill-task', _killTask);
       if (hasReturned) return;
       hasReturned = true;
       var attrs = {};
@@ -9403,13 +9381,13 @@ function _submitRequest(params, callback) {
   });
 
   // kill task
-  var killTask = function killTask(data) {
+  var _killTask = function killTask(data) {
     if (data.TaskId === TaskId) {
       sender && sender.abort && sender.abort();
-      self.off('inner-kill-task', killTask);
+      self.off('inner-kill-task', _killTask);
     }
   };
-  TaskId && self.on('inner-kill-task', killTask);
+  TaskId && self.on('inner-kill-task', _killTask);
 }
 var API_MAP = {
   // Bucket 相关方法
@@ -9895,7 +9873,7 @@ var initTask = function initTask(cos) {
     }
     emitListUpdate();
   };
-  var startNextTask = function startNextTask() {
+  var _startNextTask = function startNextTask() {
     // 检查是否允许增加执行进程
     if (uploadingFileCount >= cos.options.FileParallelLimit) return;
     // 跳过不可执行的任务
@@ -9917,7 +9895,7 @@ var initTask = function initTask(cos) {
         err && (task.error = err);
         uploadingFileCount--;
         emitListUpdate();
-        startNextTask();
+        _startNextTask();
         task.callback && task.callback(err, data);
         if (task.state === 'success') {
           if (task.params) {
@@ -9932,7 +9910,7 @@ var initTask = function initTask(cos) {
     });
     emitListUpdate();
     // 异步执行下一个任务
-    setTimeout(startNextTask);
+    setTimeout(_startNextTask);
   };
   var killTask = function killTask(id, switchToState) {
     var task = tasks[id];
@@ -9952,7 +9930,7 @@ var initTask = function initTask(cos) {
       emitListUpdate();
       if (running) {
         uploadingFileCount--;
-        startNextTask();
+        _startNextTask();
       }
       if (switchToState === 'canceled') {
         if (task.params) {
@@ -10033,7 +10011,7 @@ var initTask = function initTask(cos) {
       queue.push(task);
       task.size = size;
       !ignoreAddEvent && emitListUpdate();
-      startNextTask();
+      _startNextTask();
       clearQueue();
     });
     return id;
@@ -10057,7 +10035,7 @@ var initTask = function initTask(cos) {
       task.state = 'waiting';
       emitListUpdate();
       nextUploadIndex = Math.min(nextUploadIndex, task.index);
-      startNextTask();
+      _startNextTask();
     }
   };
   cos.isUploadRunning = function () {
@@ -10326,7 +10304,7 @@ var Tracker = /*#__PURE__*/function () {
   }
 
   // 格式化sdk回调
-  _createClass(Tracker, [{
+  return _createClass(Tracker, [{
     key: "formatResult",
     value: function formatResult(err, data) {
       var _err$error, _err$error2, _err$error3, _err$error4, _err$error5, _err$error6;
@@ -10475,7 +10453,6 @@ var Tracker = /*#__PURE__*/function () {
       return new Tracker(subParams);
     }
   }]);
-  return Tracker;
 }();
 module.exports = Tracker;
 
@@ -10515,7 +10492,7 @@ var Tracker = __webpack_require__(/*! ./tracker */ "./src/tracker.js");
 
 // 删掉不需要的#text
 var textNodeName = '#text';
-var deleteTextNodes = function deleteTextNodes(obj) {
+var _deleteTextNodes = function deleteTextNodes(obj) {
   if (!isObject(obj)) return;
   for (var i in obj) {
     var item = obj[i];
@@ -10525,10 +10502,10 @@ var deleteTextNodes = function deleteTextNodes(obj) {
       }
     } else if (Array.isArray(item)) {
       item.forEach(function (i) {
-        deleteTextNodes(i);
+        _deleteTextNodes(i);
       });
     } else if (isObject(item)) {
-      deleteTextNodes(item);
+      _deleteTextNodes(item);
     }
   }
 };
@@ -10536,7 +10513,7 @@ var deleteTextNodes = function deleteTextNodes(obj) {
 // XML 对象转 JSON 对象
 var xml2json = function xml2json(bodyStr) {
   var json = xmlParser.parse(bodyStr);
-  deleteTextNodes(json);
+  _deleteTextNodes(json);
   return json;
 };
 
@@ -10840,7 +10817,7 @@ var getFileMd5 = function getFileMd5(blob, callback, onProgress) {
   var size = blob.size;
   var loaded = 0;
   var md5ctx = md5.getCtx();
-  var next = function next(start) {
+  var _next = function next(start) {
     if (start >= size) {
       var hash = md5ctx.digest('hex');
       callback(null, hash);
@@ -10858,11 +10835,11 @@ var getFileMd5 = function getFileMd5(blob, callback, onProgress) {
           total: size,
           percent: Math.round(loaded / size * 10000) / 10000
         });
-        next(start + md5ChunkSize);
+        _next(start + md5ChunkSize);
       });
     });
   };
-  next(0);
+  _next(0);
 };
 function clone(obj) {
   return map(obj, function (v) {
