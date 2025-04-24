@@ -24,6 +24,7 @@ function sliceUploadFile(params, callback) {
 
   var tracker = params.tracker;
   tracker && tracker.setParams({ chunkSize: ChunkSize });
+  self.logger.info({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] 分块上传开始`});
 
   // 上传过程中出现错误，返回错误
   ep.on('error', function (err) {
@@ -32,6 +33,7 @@ function sliceUploadFile(params, callback) {
       session.removeUsing(params.UploadData.UploadId);
     }
     err.UploadId = params.UploadData.UploadId || '';
+    self.logger.error({ cate: 'RESULT', tag: 'upload', msg: `[key=${params.Key}] 分块上传失败: ${JSON.stringify(err)}`});
     return callback(err);
   });
 
@@ -58,6 +60,7 @@ function sliceUploadFile(params, callback) {
         metaHeaders[k] = val;
       }
     });
+    self.logger.info({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] 开始完成分块请求`});
     uploadSliceComplete.call(
       self,
       {
@@ -74,10 +77,12 @@ function sliceUploadFile(params, callback) {
         session.removeUsing(UploadData.UploadId);
         if (err) {
           onProgress(null, true);
+          self.logger.error({ cate: 'RESULT', tag: 'upload', msg: `[key=${params.Key}] 完成分块请求失败`});
           return ep.emit('error', err);
         }
         session.removeUploadId.call(self, UploadData.UploadId);
         onProgress({ loaded: FileSize, total: FileSize }, true);
+        self.logger.info({ cate: 'RESULT', tag: 'upload', msg: `[key=${params.Key}] 完成分块请求成功`});
         ep.emit('upload_complete', data);
       }
     );
@@ -92,6 +97,7 @@ function sliceUploadFile(params, callback) {
 
     // 获取 UploadId
     onProgress(null, true); // 任务状态开始 uploading
+    self.logger.info({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] 开始上传各个分块`});
     uploadSliceList.call(
       self,
       {
@@ -113,8 +119,10 @@ function sliceUploadFile(params, callback) {
         if (!self._isRunningTask(TaskId)) return;
         if (err) {
           onProgress(null, true);
+          self.logger.error({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] 分块上传失败`});
           return ep.emit('error', err);
         }
+        self.logger.info({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] 所有分块上传完成`});
         ep.emit('upload_slice_complete', data);
       }
     );
@@ -125,6 +133,7 @@ function sliceUploadFile(params, callback) {
     onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
 
     if (params.UploadData.UploadId) {
+      self.logger.info({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] 已经获取到 uploadId, ${params.UploadData.UploadId}`});
       ep.emit('get_upload_data_finish', params.UploadData);
     } else {
       var _params = util.extend(
@@ -143,11 +152,13 @@ function sliceUploadFile(params, callback) {
         },
         params
       );
+      self.logger.info({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] 去获取 uploadId`});
       getUploadIdAndPartList.call(self, _params, function (err, UploadData) {
         if (!self._isRunningTask(TaskId)) return;
         if (err) return ep.emit('error', err);
         params.UploadData.UploadId = UploadData.UploadId;
         params.UploadData.PartList = UploadData.PartList;
+        self.logger.info({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] 获取到 uploadId, ${params.UploadData.UploadId}`});
         ep.emit('get_upload_data_finish', params.UploadData);
       });
     }
@@ -179,6 +190,7 @@ function sliceUploadFile(params, callback) {
     params.Body = '';
     params.ContentLength = 0;
     params.SkipTask = true;
+    self.logger.info({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] 文件大小为 0，执行简单上传`});
     self.putObject(params, callback);
   } else {
     ep.emit('get_file_size_finish');
@@ -319,13 +331,18 @@ function getUploadIdAndPartList(params, callback) {
     var headers = util.clone(params.Headers);
     delete headers['x-cos-mime-limit'];
     _params.Headers = headers;
+    self.logger.info({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] 准备初始化分块上传`});
     self.multipartInit(_params, function (err, data) {
       if (!self._isRunningTask(TaskId)) return;
-      if (err) return ep.emit('error', err);
+      if (err) {
+        self.logger.error({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] 初始化分块上传失败, ${JSON.stringify(err)}`});
+        return ep.emit('error', err);
+      }
       var UploadId = data.UploadId;
       if (!UploadId) {
         return callback(util.error(new Error('no such upload id')));
       }
+      self.logger.info({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] 初始化分块上传成功`});
       ep.emit('upload_id_available', { UploadId: UploadId, PartList: [] });
     });
   });
@@ -584,6 +601,7 @@ function uploadSliceList(params, cb) {
   });
   var onProgress = params.onProgress;
 
+  self.logger.info({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] 开始并发上传各个分块`});
   Async.eachLimit(
     needUploadSlices,
     ChunkParallel,
@@ -593,6 +611,7 @@ function uploadSliceList(params, cb) {
       var currentSize =
         Math.min(FileSize, SliceItem['PartNumber'] * SliceSize) - (SliceItem['PartNumber'] - 1) * SliceSize;
       var preAddSize = 0;
+      self.logger.info({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] 分块${PartNumber}开始上传`});
       uploadSliceItem.call(
         self,
         {
@@ -616,15 +635,19 @@ function uploadSliceList(params, cb) {
         },
         function (err, data) {
           if (!self._isRunningTask(TaskId)) return;
-          if (!err && !data.ETag)
+          if (!err && !data.ETag) {
             err =
               'get ETag error, please add "ETag" to CORS ExposeHeader setting.( 获取ETag失败，请在CORS ExposeHeader设置中添加ETag，请参考文档：https://cloud.tencent.com/document/product/436/13318 )';
+              self.logger.error({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] 分块${PartNumber}上传请求成功，但是未获取到 eTag`});
+          }
           if (err) {
             FinishSize -= preAddSize;
+            self.logger.info({ cate: 'RESULT', tag: 'upload', msg: `[key=${params.Key}] 分块${PartNumber}上传失败`});
           } else {
             FinishSize += currentSize - preAddSize;
             SliceItem.ETag = data.ETag;
           }
+          self.logger.info({ cate: 'RESULT', tag: 'upload', msg: `[key=${params.Key}] 分块${PartNumber}上传成功`});
           onProgress({ loaded: FinishSize, total: FileSize });
           asyncCallback(err || null, data);
         }

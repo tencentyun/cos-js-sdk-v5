@@ -2116,6 +2116,8 @@ function listObjectVersions(params, callback) {
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
 function getObject(params, callback) {
+  var self = this;
+  self.logger.info({ cate: 'PROCESS', tag: 'download', msg: `[key=${params.Key}] getObject开始`});
   if (this.options.ObjectKeySimplifyCheck) {
     // getObject 的 Key 需要校验，避免调用成 getBucket
     var formatKey = util.simplifyPath(params.Key);
@@ -2172,6 +2174,7 @@ function getObject(params, callback) {
         statusCode: data.statusCode,
         headers: data.headers,
       });
+      self.logger.info({ cate: 'PROCESS', tag: 'download', msg: `[key=${params.Key}] getObject结束`});
     }
   );
 }
@@ -2209,6 +2212,7 @@ function putObject(params, callback) {
   var self = this;
   var FileSize = params.ContentLength;
   var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
+  self.logger.info({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] putObject开始`});
 
   // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
   var headers = params.Headers;
@@ -2220,12 +2224,14 @@ function putObject(params, callback) {
 
   var tracker = params.tracker;
   needCalcMd5 && tracker && tracker.setParams({ md5StartTime: new Date().getTime() });
+  needCalcMd5 && self.logger.info({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] 开始计算 md5`});
 
   util.getBodyMd5(
     needCalcMd5,
     params.Body,
     function (md5) {
       if (md5) {
+        self.logger.info({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] md5: ${md5}，md5Base64=${util.b64(md5)}`});
         tracker && tracker.setParams({ md5EndTime: new Date().getTime() });
         if (self.options.UploadCheckContentMd5) headers['Content-MD5'] = util.b64(md5);
         if (params.UploadAddMetaMd5 || self.options.UploadAddMetaMd5) headers['x-cos-meta-md5'] = md5;
@@ -2249,6 +2255,7 @@ function putObject(params, callback) {
         },
         function (err, data) {
           if (err) {
+            self.logger.error({ cate: 'ERROR', tag: 'upload', msg: `上传失败，错误信息：${JSON.stringify(err)}`});
             onProgress(null, true);
             return callback(err);
           }
@@ -2264,6 +2271,8 @@ function putObject(params, callback) {
           url = url.substr(url.indexOf('://') + 3);
           data.Location = url;
           data.ETag = util.attr(data.headers, 'etag', '');
+          self.logger.info({ cate: 'RESULT', tag: 'upload', msg: `上传成功，Location=${url}`});
+          self.logger.info({ cate: 'PROCESS', tag: 'upload', msg: `[key=${params.Key}] putObject结束`});
           callback(null, data);
         }
       );
@@ -4029,6 +4038,11 @@ function submitRequest(params, callback) {
       // 更换要签的host
       SignHost = SignHost.replace(/myqcloud.com/, 'tencentcos.cn');
     }
+    self.logger.info({ cate: 'PROCESS', tag: 'base', msg: `开始计算签名, opt=${JSON.stringify(Object.assign({}, params, {
+      Query,
+      SignHost,
+      ForceSignHost: self.options.ForceSignHost
+    }))}`});
     getAuthorizationAsync.call(
       self,
       {
@@ -4047,11 +4061,14 @@ function submitRequest(params, callback) {
       },
       function (err, AuthData) {
         if (err) {
+          self.logger.error({ cate: 'PROCESS', tag: 'base', msg: `签名获取失败, err=${JSON.stringify(err.message)}`});
           callback(err);
           return;
         }
         tracker && tracker.setParams({ signEndTime: new Date().getTime(), httpStartTime: new Date().getTime() });
         params.AuthData = AuthData;
+        self.logger.info({ cate: 'PROCESS', tag: 'base', msg: `签名获取成功`});
+        self.logger.info({ cate: 'PROCESS', tag: 'base', msg: `准备发起请求`});
         _submitRequest.call(self, params, function (err, data) {
           tracker && tracker.setParams({ httpEndTime: new Date().getTime() });
           let canRetry = false;
@@ -4060,6 +4077,7 @@ function submitRequest(params, callback) {
             const info = allowRetry.call(self, err);
             canRetry = info.canRetry || oldClockOffset !== self.options.SystemClockOffset;
             networkError = info.networkError;
+            self.logger.error({ cate: 'PROCESS', tag: 'network', msg: `请求失败, err=${JSON.stringify(err)}, canRetry=${canRetry}, networkError=${networkError}, tryTimes=${tryTimes}`});
           }
           if (err && tryTimes < 2 && canRetry) {
             if (params.headers) {
@@ -4079,8 +4097,10 @@ function submitRequest(params, callback) {
             params.SwitchHost = switchHost;
             // 重试时增加请求头
             params.headers['x-cos-sdk-retry'] = true;
+            self.logger.info({ cate: 'PROCESS', tag: 'base', msg: `重试请求, 重试第${tryTimes}次`});
             next(tryTimes + 1);
           } else {
+            self.logger.info({ cate: 'PROCESS', tag: 'base', msg: `请求完成, err=${JSON.stringify(err)}}`});
             callback(err, data);
           }
         });
@@ -4183,6 +4203,8 @@ function _submitRequest(params, callback) {
     opt.timeout = this.options.Timeout;
   }
   self.options.ForcePathStyle && (opt.pathStyle = self.options.ForcePathStyle);
+  var requestUid = util.uuid();
+  self.logger.info({ cate: 'PROCESS', tag: 'network', msg: `[Request] ${requestUid}, requestOpt=${JSON.stringify(opt)}`});
   self.emit('before-send', opt);
   var useAccelerate = opt.url.includes('accelerate.');
   var queryString = opt.qs
@@ -4226,6 +4248,8 @@ function _submitRequest(params, callback) {
       statusMessage: receive.statusMessage,
       headers: receive.headers,
     };
+    var result = err ? '[error]' : '[success]';
+    self.logger.info({ cate: 'PROCESS', tag: 'network', msg: `[Response] ${requestUid}, ${result}, response=${JSON.stringify(response)}`});
 
     var hasReturned;
     var cb = function (err, data) {

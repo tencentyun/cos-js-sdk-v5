@@ -5,6 +5,7 @@ var event = require('./event');
 var task = require('./task');
 var base = require('./base');
 var advance = require('./advance');
+var Logger = require('./logger');
 var pkg = require('../package.json');
 
 var defaultOptions = {
@@ -48,6 +49,9 @@ var defaultOptions = {
   CustomId: '', // 自定义上报id
   BeaconReporter: null, // 灯塔上报组件，如有需要请自行传入，传入即代表开启上报
   ClsReporter: null, // cls 上报组件，如有需要请自行传入，传入即代表开启上报
+  // 日志相关
+  EnableLog: false,  // 是否开启日志
+  EnableLogcat: false,  // 是否开启控制台日志打印
 };
 
 // 对外暴露的类
@@ -94,6 +98,15 @@ var COS = function (options) {
   }
   event.init(this);
   task.init(this);
+  // 初始化日志模块
+  this.logger = new Logger({
+    cos: this,
+    level: this.options.logLevel ?? 'VERBOSE',
+  });
+  event.init(this.logger);
+  this.logger.on('log-message', data => {
+    this.emit('log-message', data);
+  });
 };
 
 base.init(COS, task);
