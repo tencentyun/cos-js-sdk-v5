@@ -6928,6 +6928,7 @@ group('EnableLog', function () {
       SecretId: config.SecretId,
       SecretKey: config.SecretKey,
       EnableLog: true,
+      EnableLogcat: true,
     });
     cos.uploadFile(
       {
@@ -6942,7 +6943,7 @@ group('EnableLog', function () {
           {
             Bucket: config.Bucket,
             Region: config.Region,
-            Key: '1mb.zip',
+            Key: '2mb.zip',
           },
           function (err, data) {
             assert.ok(data);
