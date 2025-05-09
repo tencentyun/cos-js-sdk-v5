@@ -6919,3 +6919,37 @@ group('returnBody', function () {
     );
   });
 });
+
+
+group('EnableLog', function () {
+  test('EnableLog uploadFile', function (done) {
+    const cos = new COS({
+      // 必选参数
+      SecretId: config.SecretId,
+      SecretKey: config.SecretKey,
+      EnableLog: true,
+    });
+    cos.uploadFile(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '2mb.zip',
+        Body: util.createFile({ size: 1024 * 1024 * 2 }),
+        ChunkSize: 1024 * 1024,
+      },
+      function (err, data) {
+        cos.getObject(
+          {
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '1mb.zip',
+          },
+          function (err, data) {
+            assert.ok(data);
+            done();
+          }
+        );
+      }
+    );
+  });
+});
