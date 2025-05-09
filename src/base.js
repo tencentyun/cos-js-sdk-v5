@@ -4042,16 +4042,17 @@ function submitRequest(params, callback) {
       // 更换要签的host
       SignHost = SignHost.replace(/myqcloud.com/, 'tencentcos.cn');
     }
+    const logParams = {
+      ...params,
+      Query,
+      SignHost,
+      ForceSignHost: self.options.ForceSignHost,
+    };
+    delete logParams.tracker;
     self.logger.debug({
       cate: 'PROCESS',
       tag: 'base',
-      msg: `开始计算签名, opt=${JSON.stringify(
-        Object.assign({}, params, {
-          Query,
-          SignHost,
-          ForceSignHost: self.options.ForceSignHost,
-        })
-      )}`,
+      msg: `开始计算签名, opt=${JSON.stringify(logParams)}`,
     });
     getAuthorizationAsync.call(
       self,

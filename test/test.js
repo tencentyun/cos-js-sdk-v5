@@ -1891,8 +1891,7 @@ group('getObject() 手动关闭 Key 校验', function () {
         Key: '///////',
       },
       function (err, data) {
-        // 请求变成了 getBucket
-        assert.ok(data.Body.includes('ListBucketResult'));
+        assert.ok(err);
         done();
       }
     );

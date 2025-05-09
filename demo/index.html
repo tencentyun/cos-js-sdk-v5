@@ -255,7 +255,16 @@
           UploadCheckContentMd5: true,
           // BeaconReporter: BeaconAction, // 开启灯塔上报
           // ClsReporter: clsClient,  // 开启 cls 上报
+          // 本地日志相关
+          // EnableLog: true,
+          // EnableLogcat: true,
+          // ClsLogger: clsClient,
+          // LogLevel: 'VERBOSE',
+          // LogExtras: { userId: '123' }
         });
+        // cos.on('log-message', msg => {
+        //   console.log(msg);
+        // });
 
         var util = {
           createFile: function (options) {

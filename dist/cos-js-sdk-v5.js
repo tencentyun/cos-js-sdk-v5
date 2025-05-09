@@ -5481,7 +5481,10 @@ module.exports = async;
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
+var _defineProperty = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/defineProperty.js");
 var _typeof = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_modules/@babel/runtime/helpers/typeof.js");
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 var REQUEST = __webpack_require__(/*! ../lib/request */ "./lib/request.js");
 var util = __webpack_require__(/*! ./util */ "./src/util.js");
 
@@ -9217,14 +9220,16 @@ function submitRequest(params, callback) {
       // 更换要签的host
       SignHost = SignHost.replace(/myqcloud.com/, 'tencentcos.cn');
     }
+    var logParams = _objectSpread(_objectSpread({}, params), {}, {
+      Query: Query,
+      SignHost: SignHost,
+      ForceSignHost: self.options.ForceSignHost
+    });
+    delete logParams.tracker;
     self.logger.debug({
       cate: 'PROCESS',
       tag: 'base',
-      msg: "\u5F00\u59CB\u8BA1\u7B97\u7B7E\u540D, opt=".concat(JSON.stringify(Object.assign({}, params, {
-        Query: Query,
-        SignHost: SignHost,
-        ForceSignHost: self.options.ForceSignHost
-      })))
+      msg: "\u5F00\u59CB\u8BA1\u7B97\u7B7E\u540D, opt=".concat(JSON.stringify(logParams))
     });
     getAuthorizationAsync.call(self, {
       Bucket: params.Bucket || '',
