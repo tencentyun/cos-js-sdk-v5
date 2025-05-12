@@ -3970,10 +3970,14 @@ function allowRetry(err) {
       }
     } else if (Math.floor(err.statusCode / 100) === 5) {
       canRetry = true;
+      networkError = false;
+    } else if(err.message === 'timeout') {
+      canRetry = true;
+      networkError = self.options.AutoSwitchHost;
     } else if (err.message === 'CORS blocked or network error') {
       // 跨域/网络错误都包含在内
-      networkError = true;
-      canRetry = self.options.AutoSwitchHost;
+      canRetry = true;
+      networkError = self.options.AutoSwitchHost;
     }
   }
   return { canRetry, networkError };
@@ -4061,7 +4065,7 @@ function submitRequest(params, callback) {
             canRetry = info.canRetry || oldClockOffset !== self.options.SystemClockOffset;
             networkError = info.networkError;
           }
-          if (err && tryTimes < 2 && canRetry) {
+          if (err && tryTimes < 4 && canRetry) {
             if (params.headers) {
               delete params.headers.Authorization;
               delete params.headers['token'];
