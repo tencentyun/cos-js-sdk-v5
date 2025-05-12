@@ -6958,6 +6958,7 @@ group('retry myqcloud.com', function () {
   const cos = new COS({
     SecretId: config.SecretId,
     SecretKey: config.SecretKey,
+    Protocol: 'http',
     AutoSwitchHost: false,
     Timeout: 10000,
   });
@@ -7058,6 +7059,7 @@ group('retry tencentcos.cn', function () {
   const cos = new COS({
     SecretId: config.SecretId,
     SecretKey: config.SecretKey,
+    Protocol: 'http',
     AutoSwitchHost: false,
     Timeout: 10000,
     Domain: '{Bucket}.cos.{Region}.tencentcos.cn',
