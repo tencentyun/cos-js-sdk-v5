@@ -3,8 +3,8 @@
  */
 import { describe, expect, jest, test } from '@jest/globals';
 import COS from '../index.js';
-import Beacon from '../demo/common/beacon.min';
-import ClsClient from '../demo/common/cls.min';
+import Beacon from '../demo/common/beacon.min.js';
+import ClsClient from '../demo/common/cls.min.js';
 
 // config 替换成自己的桶信息
 var config = {
@@ -1891,8 +1891,7 @@ group('getObject() 手动关闭 Key 校验', function () {
         Key: '///////',
       },
       function (err, data) {
-        // 请求变成了 getBucket
-        assert.ok(data.Body.includes('ListBucketResult'));
+        assert.ok(err);
         done();
       }
     );
@@ -6918,5 +6917,242 @@ group('returnBody', function () {
         done();
       }
     );
+  });
+});
+
+
+group('EnableLog', function () {
+  test('EnableLog uploadFile', function (done) {
+    const cos = new COS({
+      // 必选参数
+      SecretId: config.SecretId,
+      SecretKey: config.SecretKey,
+      EnableLog: true,
+      EnableLogcat: true,
+    });
+    cos.uploadFile(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: '2mb.zip',
+        Body: util.createFile({ size: 1024 * 1024 * 2 }),
+        ChunkSize: 1024 * 1024,
+      },
+      function (err, data) {
+        cos.getObject(
+          {
+            Bucket: config.Bucket,
+            Region: config.Region,
+            Key: '2mb.zip',
+          },
+          function (err, data) {
+            assert.ok(data);
+            done();
+          }
+        );
+      }
+    );
+  });
+}); 
+group('retry myqcloud.com', function () {
+  const cos = new COS({
+    SecretId: config.SecretId,
+    SecretKey: config.SecretKey,
+    Protocol: 'http',
+    AutoSwitchHost: false,
+    Timeout: 10000,
+  });
+  const config = {
+    Bucket: 'cos-sdk-err-retry-1253960454',
+    Region: 'ap-chengdu',
+  };
+  function getObject(Key, done, expectErr) {
+    cos.getObject(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key,
+      },
+      function (err, data) {
+        const isOk = expectErr ? err : !err;
+        console.log(`retry ${Key}---res`, err ? 'err' : 'success', isOk);
+        assert.ok(isOk);
+        done();
+      }
+    );
+  }
+  test('get 200', function (done) {
+    getObject('200', done);
+  });
+  test('get 200r', function (done) {
+    getObject('200r', done);
+  });
+  test('get 204', function (done) {
+    getObject('204', done);
+  });
+  test('get 204r', function (done) {
+    getObject('204r', done);
+  });
+  test('get 206', function (done) {
+    getObject('206', done);
+  });
+  test('get 206r', function (done) {
+    getObject('206r', done);
+  });
+  test('get 301', function (done) {
+    getObject('301', done);
+  });
+  test('get 301r', function (done) {
+    getObject('301r', done);
+  });
+  test('get 302', function (done) {
+    getObject('302', done);
+  });
+  test('get 302r', function (done) {
+    getObject('302r', done);
+  });
+  test('get 400', function (done) {
+    getObject('400', done, true);
+  });
+  test('get 400r', function (done) {
+    getObject('400r', done, true);
+  });
+  test('get 403', function (done) {
+    getObject('403', done, true);
+  });
+  test('get 403r', function (done) {
+    getObject('403r', done, true);
+  });
+  test('get 404', function (done) {
+    getObject('404', done, true);
+  });
+  test('get 404r', function (done) {
+    getObject('404r', done, true);
+  });
+  test('get 500', function (done) {
+    getObject('500', done);
+  });
+  test('get 500r', function (done) {
+    getObject('500r', done);
+  });
+  test('get 503', function (done) {
+    getObject('503', done);
+  });
+  test('get 503r', function (done) {
+    getObject('503r', done);
+  });
+  test('get 504', function (done) {
+    getObject('504', done);
+  });
+  test('get 504r', function (done) {
+    getObject('504r', done);
+  });
+  test('get shutdown', function (done) {
+    getObject('shutdown', done);
+  });
+  test('get timeout', function (done) {
+    getObject('timeout', done);
+  });
+});
+
+group('retry tencentcos.cn', function () {
+  const cos = new COS({
+    SecretId: config.SecretId,
+    SecretKey: config.SecretKey,
+    Protocol: 'http',
+    AutoSwitchHost: false,
+    Timeout: 10000,
+    Domain: '{Bucket}.cos.{Region}.tencentcos.cn',
+  });
+  const config = {
+    Bucket: 'cos-sdk-err-retry-1253960454',
+    Region: 'ap-chengdu',
+  };
+  function getObject(Key, done, expectErr) {
+    cos.getObject(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key,
+      },
+      function (err, data) {
+        const isOk = expectErr ? err : !err;
+        console.log(`retry ${Key}---res`, err ? 'err' : 'success', isOk);
+        assert.ok(isOk);
+        done();
+      }
+    );
+  }
+  test('get 200', function (done) {
+    getObject('200', done);
+  });
+  test('get 200r', function (done) {
+    getObject('200r', done);
+  });
+  test('get 204', function (done) {
+    getObject('204', done);
+  });
+  test('get 204r', function (done) {
+    getObject('204r', done);
+  });
+  test('get 206', function (done) {
+    getObject('206', done);
+  });
+  test('get 206r', function (done) {
+    getObject('206r', done);
+  });
+  test('get 301', function (done) {
+    getObject('301', done);
+  });
+  test('get 301r', function (done) {
+    getObject('301r', done);
+  });
+  test('get 302', function (done) {
+    getObject('302', done);
+  });
+  test('get 302r', function (done) {
+    getObject('302r', done);
+  });
+  test('get 400', function (done) {
+    getObject('400', done, true);
+  });
+  test('get 400r', function (done) {
+    getObject('400r', done, true);
+  });
+  test('get 403', function (done) {
+    getObject('403', done, true);
+  });
+  test('get 403r', function (done) {
+    getObject('403r', done, true);
+  });
+  test('get 404', function (done) {
+    getObject('404', done, true);
+  });
+  test('get 404r', function (done) {
+    getObject('404r', done, true);
+  });
+  test('get 500', function (done) {
+    getObject('500', done);
+  });
+  test('get 500r', function (done) {
+    getObject('500r', done);
+  });
+  test('get 503', function (done) {
+    getObject('503', done);
+  });
+  test('get 503r', function (done) {
+    getObject('503r', done);
+  });
+  test('get 504', function (done) {
+    getObject('504', done);
+  });
+  test('get 504r', function (done) {
+    getObject('504r', done);
+  });
+  test('get shutdown', function (done) {
+    getObject('shutdown', done);
+  });
+  test('get timeout', function (done) {
+    getObject('timeout', done);
   });
 });

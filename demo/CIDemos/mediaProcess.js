@@ -368,30 +368,32 @@ export const postTranscode = {
           // Transcode 转码参数
           Transcode: {
             Container: {
-              Format: 'mp4'
+              Format: 'mp4',
             },
             Video: {
               Width: '1280',
               Height: '720',
-              Crf: 30
+              Crf: 30,
             },
             Audio: {
-              Codec: 'aac'
-            }
+              Codec: 'aac',
+            },
           },
           // Watermark 水印参数
-          Watermark: [{
-            Type: 'Text',
-            Pos: 'BottomRight',
-            LocMode: 'Absolute',
-            Text: {
-              FontSize: '10',
-              FontType: 'simfang.ttf',
-              FontColor: '0x000000',
-              Transparency: '100',
-              Text: 'TencendCloud'
+          Watermark: [
+            {
+              Type: 'Text',
+              Pos: 'BottomRight',
+              LocMode: 'Absolute',
+              Text: {
+                FontSize: '10',
+                FontType: 'simfang.ttf',
+                FontColor: '0x000000',
+                Transparency: '100',
+                Text: 'TencendCloud',
+              },
             },
-          }],
+          ],
           Output: {
             // 存储桶的地域;是否必传：是
             Region: config.Region,

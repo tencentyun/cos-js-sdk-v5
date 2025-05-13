@@ -1398,6 +1398,26 @@ module.exports = _createClass, module.exports.__esModule = true, module.exports[
 
 /***/ }),
 
+/***/ "./node_modules/@babel/runtime/helpers/defineProperty.js":
+/*!***************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/defineProperty.js ***!
+  \***************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var toPropertyKey = __webpack_require__(/*! ./toPropertyKey.js */ "./node_modules/@babel/runtime/helpers/toPropertyKey.js");
+function _defineProperty(e, r, t) {
+  return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
+    value: t,
+    enumerable: !0,
+    configurable: !0,
+    writable: !0
+  }) : e[r] = t, e;
+}
+module.exports = _defineProperty, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
 /***/ "./node_modules/@babel/runtime/helpers/toPrimitive.js":
 /*!************************************************************!*\
   !*** ./node_modules/@babel/runtime/helpers/toPrimitive.js ***!
@@ -3910,7 +3930,7 @@ module.exports = function(module) {
 /*! exports provided: name, version, description, main, types, scripts, repository, keywords, author, license, bugs, homepage, dependencies, devDependencies, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.11.0-beta.0\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js lib/request.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\",\"postinstall\":\"npx patch-package\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"fast-xml-parser\":\"4.5.0\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"29.7.0\",\"jest-environment-jsdom\":\"29.7.0\",\"patch-package\":\"^8.0.0\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
+module.exports = JSON.parse("{\"name\":\"cos-js-sdk-v5\",\"version\":\"1.11.0-beta.1\",\"description\":\"JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)\",\"main\":\"dist/cos-js-sdk-v5.js\",\"types\":\"index.d.ts\",\"scripts\":{\"prettier\":\"prettier --write src demo/demo.js demo/CIDemos/*.js test/test.js server/sts.js lib/request.js index.d.ts\",\"server\":\"node server/sts.js\",\"dev\":\"cross-env NODE_ENV=development webpack -w --mode=development\",\"build\":\"cross-env NODE_ENV=production webpack --mode=production\",\"cos-auth.min.js\":\"uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m\",\"test\":\"jest --runInBand --coverage\",\"postinstall\":\"npx patch-package\"},\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/tencentyun/cos-js-sdk-v5.git\"},\"keywords\":[],\"author\":\"carsonxu\",\"license\":\"ISC\",\"bugs\":{\"url\":\"https://github.com/tencentyun/cos-js-sdk-v5/issues\"},\"homepage\":\"https://github.com/tencentyun/cos-js-sdk-v5#readme\",\"dependencies\":{\"fast-xml-parser\":\"4.5.0\"},\"devDependencies\":{\"@babel/core\":\"7.17.9\",\"@babel/plugin-transform-runtime\":\"7.18.10\",\"@babel/preset-env\":\"7.16.11\",\"babel-loader\":\"8.2.5\",\"body-parser\":\"^1.18.3\",\"cross-env\":\"^5.2.0\",\"express\":\"^4.16.4\",\"jest\":\"29.7.0\",\"jest-environment-jsdom\":\"29.7.0\",\"patch-package\":\"^8.0.0\",\"prettier\":\"^3.0.1\",\"qcloud-cos-sts\":\"^3.0.2\",\"request\":\"^2.87.0\",\"terser-webpack-plugin\":\"4.2.3\",\"uglifyjs\":\"^2.4.11\",\"webpack\":\"4.46.0\",\"webpack-cli\":\"4.10.0\"}}");
 
 /***/ }),
 
@@ -3948,6 +3968,11 @@ function sliceUploadFile(params, callback) {
   tracker && tracker.setParams({
     chunkSize: ChunkSize
   });
+  self.logger.info({
+    cate: 'PROCESS',
+    tag: 'upload',
+    msg: "[key=".concat(params.Key, "] \u5206\u5757\u4E0A\u4F20\u5F00\u59CB")
+  });
 
   // 上传过程中出现错误，返回错误
   ep.on('error', function (err) {
@@ -3956,6 +3981,11 @@ function sliceUploadFile(params, callback) {
       session.removeUsing(params.UploadData.UploadId);
     }
     err.UploadId = params.UploadData.UploadId || '';
+    self.logger.error({
+      cate: 'RESULT',
+      tag: 'upload',
+      msg: "[key=".concat(params.Key, "] \u5206\u5757\u4E0A\u4F20\u5931\u8D25: ").concat(JSON.stringify(err))
+    });
     return callback(err);
   });
 
@@ -3976,6 +4006,11 @@ function sliceUploadFile(params, callback) {
         metaHeaders[k] = val;
       }
     });
+    self.logger.info({
+      cate: 'PROCESS',
+      tag: 'upload',
+      msg: "[key=".concat(params.Key, "] \u5F00\u59CB\u5B8C\u6210\u5206\u5757\u8BF7\u6C42")
+    });
     uploadSliceComplete.call(self, {
       Bucket: Bucket,
       Region: Region,
@@ -3989,6 +4024,11 @@ function sliceUploadFile(params, callback) {
       session.removeUsing(UploadData.UploadId);
       if (err) {
         onProgress(null, true);
+        self.logger.error({
+          cate: 'RESULT',
+          tag: 'upload',
+          msg: "[key=".concat(params.Key, "] \u5B8C\u6210\u5206\u5757\u8BF7\u6C42\u5931\u8D25")
+        });
         return ep.emit('error', err);
       }
       session.removeUploadId.call(self, UploadData.UploadId);
@@ -3996,6 +4036,11 @@ function sliceUploadFile(params, callback) {
         loaded: FileSize,
         total: FileSize
       }, true);
+      self.logger.info({
+        cate: 'RESULT',
+        tag: 'upload',
+        msg: "[key=".concat(params.Key, "] \u5B8C\u6210\u5206\u5757\u8BF7\u6C42\u6210\u529F")
+      });
       ep.emit('upload_complete', data);
     });
   });
@@ -4009,6 +4054,11 @@ function sliceUploadFile(params, callback) {
 
     // 获取 UploadId
     onProgress(null, true); // 任务状态开始 uploading
+    self.logger.info({
+      cate: 'PROCESS',
+      tag: 'upload',
+      msg: "[key=".concat(params.Key, "] \u5F00\u59CB\u4E0A\u4F20\u5404\u4E2A\u5206\u5757")
+    });
     uploadSliceList.call(self, {
       TaskId: TaskId,
       Bucket: Bucket,
@@ -4027,8 +4077,18 @@ function sliceUploadFile(params, callback) {
       if (!self._isRunningTask(TaskId)) return;
       if (err) {
         onProgress(null, true);
+        self.logger.error({
+          cate: 'PROCESS',
+          tag: 'upload',
+          msg: "[key=".concat(params.Key, "] \u5206\u5757\u4E0A\u4F20\u5931\u8D25")
+        });
         return ep.emit('error', err);
       }
+      self.logger.info({
+        cate: 'PROCESS',
+        tag: 'upload',
+        msg: "[key=".concat(params.Key, "] \u6240\u6709\u5206\u5757\u4E0A\u4F20\u5B8C\u6210")
+      });
       ep.emit('upload_slice_complete', data);
     });
   });
@@ -4037,6 +4097,11 @@ function sliceUploadFile(params, callback) {
   ep.on('get_file_size_finish', function () {
     onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
     if (params.UploadData.UploadId) {
+      self.logger.info({
+        cate: 'PROCESS',
+        tag: 'upload',
+        msg: "[key=".concat(params.Key, "] \u5DF2\u7ECF\u83B7\u53D6\u5230 uploadId, ").concat(params.UploadData.UploadId)
+      });
       ep.emit('get_upload_data_finish', params.UploadData);
     } else {
       var _params = util.extend({
@@ -4052,11 +4117,21 @@ function sliceUploadFile(params, callback) {
         onHashProgress: onHashProgress,
         tracker: tracker
       }, params);
+      self.logger.info({
+        cate: 'PROCESS',
+        tag: 'upload',
+        msg: "[key=".concat(params.Key, "] \u53BB\u83B7\u53D6 uploadId")
+      });
       getUploadIdAndPartList.call(self, _params, function (err, UploadData) {
         if (!self._isRunningTask(TaskId)) return;
         if (err) return ep.emit('error', err);
         params.UploadData.UploadId = UploadData.UploadId;
         params.UploadData.PartList = UploadData.PartList;
+        self.logger.info({
+          cate: 'PROCESS',
+          tag: 'upload',
+          msg: "[key=".concat(params.Key, "] \u83B7\u53D6\u5230 uploadId, ").concat(params.UploadData.UploadId)
+        });
         ep.emit('get_upload_data_finish', params.UploadData);
       });
     }
@@ -4088,6 +4163,11 @@ function sliceUploadFile(params, callback) {
     params.Body = '';
     params.ContentLength = 0;
     params.SkipTask = true;
+    self.logger.info({
+      cate: 'PROCESS',
+      tag: 'upload',
+      msg: "[key=".concat(params.Key, "] \u6587\u4EF6\u5927\u5C0F\u4E3A 0\uFF0C\u6267\u884C\u7B80\u5355\u4E0A\u4F20")
+    });
     self.putObject(params, callback);
   } else {
     ep.emit('get_file_size_finish');
@@ -4226,13 +4306,30 @@ function getUploadIdAndPartList(params, callback) {
     var headers = util.clone(params.Headers);
     delete headers['x-cos-mime-limit'];
     _params.Headers = headers;
+    self.logger.info({
+      cate: 'PROCESS',
+      tag: 'upload',
+      msg: "[key=".concat(params.Key, "] \u51C6\u5907\u521D\u59CB\u5316\u5206\u5757\u4E0A\u4F20")
+    });
     self.multipartInit(_params, function (err, data) {
       if (!self._isRunningTask(TaskId)) return;
-      if (err) return ep.emit('error', err);
+      if (err) {
+        self.logger.error({
+          cate: 'PROCESS',
+          tag: 'upload',
+          msg: "[key=".concat(params.Key, "] \u521D\u59CB\u5316\u5206\u5757\u4E0A\u4F20\u5931\u8D25, ").concat(JSON.stringify(err))
+        });
+        return ep.emit('error', err);
+      }
       var UploadId = data.UploadId;
       if (!UploadId) {
         return callback(util.error(new Error('no such upload id')));
       }
+      self.logger.info({
+        cate: 'PROCESS',
+        tag: 'upload',
+        msg: "[key=".concat(params.Key, "] \u521D\u59CB\u5316\u5206\u5757\u4E0A\u4F20\u6210\u529F")
+      });
       ep.emit('upload_id_available', {
         UploadId: UploadId,
         PartList: []
@@ -4475,11 +4572,21 @@ function uploadSliceList(params, cb) {
     return !SliceItem['Uploaded'];
   });
   var _onProgress2 = params.onProgress;
+  self.logger.info({
+    cate: 'PROCESS',
+    tag: 'upload',
+    msg: "[key=".concat(params.Key, "] \u5F00\u59CB\u5E76\u53D1\u4E0A\u4F20\u5404\u4E2A\u5206\u5757")
+  });
   Async.eachLimit(needUploadSlices, ChunkParallel, function (SliceItem, asyncCallback) {
     if (!self._isRunningTask(TaskId)) return;
     var PartNumber = SliceItem['PartNumber'];
     var currentSize = Math.min(FileSize, SliceItem['PartNumber'] * SliceSize) - (SliceItem['PartNumber'] - 1) * SliceSize;
     var preAddSize = 0;
+    self.logger.info({
+      cate: 'PROCESS',
+      tag: 'upload',
+      msg: "[key=".concat(params.Key, "] \u5206\u5757").concat(PartNumber, "\u5F00\u59CB\u4E0A\u4F20")
+    });
     uploadSliceItem.call(self, {
       TaskId: TaskId,
       Bucket: Bucket,
@@ -4503,13 +4610,30 @@ function uploadSliceList(params, cb) {
       tracker: params.tracker
     }, function (err, data) {
       if (!self._isRunningTask(TaskId)) return;
-      if (!err && !data.ETag) err = 'get ETag error, please add "ETag" to CORS ExposeHeader setting.( 获取ETag失败，请在CORS ExposeHeader设置中添加ETag，请参考文档：https://cloud.tencent.com/document/product/436/13318 )';
+      if (!err && !data.ETag) {
+        err = 'get ETag error, please add "ETag" to CORS ExposeHeader setting.( 获取ETag失败，请在CORS ExposeHeader设置中添加ETag，请参考文档：https://cloud.tencent.com/document/product/436/13318 )';
+        self.logger.error({
+          cate: 'PROCESS',
+          tag: 'upload',
+          msg: "[key=".concat(params.Key, "] \u5206\u5757").concat(PartNumber, "\u4E0A\u4F20\u8BF7\u6C42\u6210\u529F\uFF0C\u4F46\u662F\u672A\u83B7\u53D6\u5230 eTag")
+        });
+      }
       if (err) {
         FinishSize -= preAddSize;
+        self.logger.info({
+          cate: 'RESULT',
+          tag: 'upload',
+          msg: "[key=".concat(params.Key, "] \u5206\u5757").concat(PartNumber, "\u4E0A\u4F20\u5931\u8D25")
+        });
       } else {
         FinishSize += currentSize - preAddSize;
         SliceItem.ETag = data.ETag;
       }
+      self.logger.info({
+        cate: 'RESULT',
+        tag: 'upload',
+        msg: "[key=".concat(params.Key, "] \u5206\u5757").concat(PartNumber, "\u4E0A\u4F20\u6210\u529F")
+      });
       _onProgress2({
         loaded: FinishSize,
         total: FileSize
@@ -5357,7 +5481,10 @@ module.exports = async;
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
+var _defineProperty = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/defineProperty.js");
 var _typeof = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_modules/@babel/runtime/helpers/typeof.js");
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 var REQUEST = __webpack_require__(/*! ../lib/request */ "./lib/request.js");
 var util = __webpack_require__(/*! ./util */ "./src/util.js");
 
@@ -7273,6 +7400,12 @@ function listObjectVersions(params, callback) {
  * @param  {Object}  data                                   为对应的 object 数据，包括 body 和 headers
  */
 function getObject(params, callback) {
+  var self = this;
+  self.logger.info({
+    cate: 'PROCESS',
+    tag: 'download',
+    msg: "[key=".concat(params.Key, "] getObject\u5F00\u59CB")
+  });
   if (this.options.ObjectKeySimplifyCheck) {
     // getObject 的 Key 需要校验，避免调用成 getBucket
     var formatKey = util.simplifyPath(params.Key);
@@ -7327,6 +7460,11 @@ function getObject(params, callback) {
       statusCode: data.statusCode,
       headers: data.headers
     });
+    self.logger.info({
+      cate: 'PROCESS',
+      tag: 'download',
+      msg: "[key=".concat(params.Key, "] getObject\u7ED3\u675F")
+    });
   });
 }
 
@@ -7363,6 +7501,11 @@ function putObject(params, callback) {
   var self = this;
   var FileSize = params.ContentLength;
   var onProgress = util.throttleOnProgress.call(self, FileSize, params.onProgress);
+  self.logger.info({
+    cate: 'PROCESS',
+    tag: 'upload',
+    msg: "[key=".concat(params.Key, "] putObject\u5F00\u59CB")
+  });
 
   // 特殊处理 Cache-Control、Content-Type，避免代理更改这两个字段导致写入到 Object 属性里
   var headers = params.Headers;
@@ -7375,8 +7518,18 @@ function putObject(params, callback) {
   needCalcMd5 && tracker && tracker.setParams({
     md5StartTime: new Date().getTime()
   });
+  needCalcMd5 && self.logger.debug({
+    cate: 'PROCESS',
+    tag: 'upload',
+    msg: "[key=".concat(params.Key, "] \u5F00\u59CB\u8BA1\u7B97 md5")
+  });
   util.getBodyMd5(needCalcMd5, params.Body, function (md5) {
     if (md5) {
+      self.logger.debug({
+        cate: 'PROCESS',
+        tag: 'upload',
+        msg: "[key=".concat(params.Key, "] md5: ").concat(md5, "\uFF0Cmd5Base64=").concat(util.b64(md5))
+      });
       tracker && tracker.setParams({
         md5EndTime: new Date().getTime()
       });
@@ -7399,6 +7552,11 @@ function putObject(params, callback) {
       tracker: tracker
     }, function (err, data) {
       if (err) {
+        self.logger.error({
+          cate: 'ERROR',
+          tag: 'upload',
+          msg: "\u4E0A\u4F20\u5931\u8D25\uFF0C\u9519\u8BEF\u4FE1\u606F\uFF1A".concat(JSON.stringify(err))
+        });
         onProgress(null, true);
         return callback(err);
       }
@@ -7417,6 +7575,16 @@ function putObject(params, callback) {
       url = url.substr(url.indexOf('://') + 3);
       data.Location = url;
       data.ETag = util.attr(data.headers, 'etag', '');
+      self.logger.info({
+        cate: 'RESULT',
+        tag: 'upload',
+        msg: "\u4E0A\u4F20\u6210\u529F\uFF0CLocation=".concat(url)
+      });
+      self.logger.info({
+        cate: 'PROCESS',
+        tag: 'upload',
+        msg: "[key=".concat(params.Key, "] putObject\u7ED3\u675F")
+      });
       callback(null, data);
     });
   }, params.onHashProgress);
@@ -8983,10 +9151,14 @@ function allowRetry(err) {
       }
     } else if (Math.floor(err.statusCode / 100) === 5) {
       canRetry = true;
+      networkError = false;
+    } else if (err.message === 'timeout') {
+      canRetry = true;
+      networkError = self.options.AutoSwitchHost;
     } else if (err.message === 'CORS blocked or network error') {
       // 跨域/网络错误都包含在内
-      networkError = true;
-      canRetry = self.options.AutoSwitchHost;
+      canRetry = true;
+      networkError = self.options.AutoSwitchHost;
     }
   }
   return {
@@ -9089,6 +9261,17 @@ function submitRequest(params, callback) {
       // 更换要签的host
       SignHost = SignHost.replace(/myqcloud.com/, 'tencentcos.cn');
     }
+    var logParams = _objectSpread(_objectSpread({}, params), {}, {
+      Query: Query,
+      SignHost: SignHost,
+      ForceSignHost: self.options.ForceSignHost
+    });
+    delete logParams.tracker;
+    self.logger.debug({
+      cate: 'PROCESS',
+      tag: 'base',
+      msg: "\u5F00\u59CB\u8BA1\u7B97\u7B7E\u540D, opt=".concat(JSON.stringify(logParams))
+    });
     getAuthorizationAsync.call(self, {
       Bucket: params.Bucket || '',
       Region: params.Region || '',
@@ -9104,6 +9287,11 @@ function submitRequest(params, callback) {
       SwitchHost: params.SwitchHost
     }, function (err, AuthData) {
       if (err) {
+        self.logger.error({
+          cate: 'PROCESS',
+          tag: 'base',
+          msg: "\u7B7E\u540D\u83B7\u53D6\u5931\u8D25, err=".concat(JSON.stringify(err.message))
+        });
         callback(err);
         return;
       }
@@ -9112,6 +9300,16 @@ function submitRequest(params, callback) {
         httpStartTime: new Date().getTime()
       });
       params.AuthData = AuthData;
+      self.logger.debug({
+        cate: 'PROCESS',
+        tag: 'base',
+        msg: "\u7B7E\u540D\u83B7\u53D6\u6210\u529F"
+      });
+      self.logger.info({
+        cate: 'PROCESS',
+        tag: 'base',
+        msg: "\u51C6\u5907\u53D1\u8D77\u8BF7\u6C42"
+      });
       _submitRequest.call(self, params, function (err, data) {
         tracker && tracker.setParams({
           httpEndTime: new Date().getTime()
@@ -9122,8 +9320,13 @@ function submitRequest(params, callback) {
           var info = allowRetry.call(self, err);
           canRetry = info.canRetry || oldClockOffset !== self.options.SystemClockOffset;
           networkError = info.networkError;
+          self.logger.error({
+            cate: 'PROCESS',
+            tag: 'network',
+            msg: "\u8BF7\u6C42\u5931\u8D25, err=".concat(JSON.stringify(err), ", canRetry=").concat(canRetry, ", networkError=").concat(networkError, ", tryTimes=").concat(tryTimes)
+          });
         }
-        if (err && tryTimes < 2 && canRetry) {
+        if (err && tryTimes < 4 && canRetry) {
           if (params.headers) {
             delete params.headers.Authorization;
             delete params.headers['token'];
@@ -9141,8 +9344,18 @@ function submitRequest(params, callback) {
           params.SwitchHost = switchHost;
           // 重试时增加请求头
           params.headers['x-cos-sdk-retry'] = true;
+          self.logger.info({
+            cate: 'PROCESS',
+            tag: 'base',
+            msg: "\u91CD\u8BD5\u8BF7\u6C42, \u91CD\u8BD5\u7B2C".concat(tryTimes, "\u6B21")
+          });
           _next(tryTimes + 1);
         } else {
+          self.logger.info({
+            cate: 'PROCESS',
+            tag: 'base',
+            msg: "\u8BF7\u6C42\u5B8C\u6210"
+          });
           callback(err, data);
         }
       });
@@ -9241,6 +9454,12 @@ function _submitRequest(params, callback) {
     opt.timeout = this.options.Timeout;
   }
   self.options.ForcePathStyle && (opt.pathStyle = self.options.ForcePathStyle);
+  var requestUid = util.uuid();
+  self.logger.info({
+    cate: 'PROCESS',
+    tag: 'network',
+    msg: "[Request] ".concat(requestUid, ", requestOpt=").concat(JSON.stringify(opt))
+  });
   self.emit('before-send', opt);
   var useAccelerate = opt.url.includes('accelerate.');
   var queryString = opt.qs ? Object.keys(opt.qs).map(function (key) {
@@ -9283,6 +9502,12 @@ function _submitRequest(params, callback) {
       statusMessage: receive.statusMessage,
       headers: receive.headers
     };
+    var result = err ? '[error]' : '[success]';
+    self.logger.info({
+      cate: 'PROCESS',
+      tag: 'network',
+      msg: "[Response] ".concat(requestUid, ", ").concat(result, ", response=").concat(JSON.stringify(response))
+    });
     var hasReturned;
     var cb = function cb(err, data) {
       TaskId && self.off('inner-kill-task', _killTask);
@@ -9524,6 +9749,7 @@ var event = __webpack_require__(/*! ./event */ "./src/event.js");
 var task = __webpack_require__(/*! ./task */ "./src/task.js");
 var base = __webpack_require__(/*! ./base */ "./src/base.js");
 var advance = __webpack_require__(/*! ./advance */ "./src/advance.js");
+var Logger = __webpack_require__(/*! ./logger */ "./src/logger.js");
 var pkg = __webpack_require__(/*! ../package.json */ "./package.json");
 var defaultOptions = {
   AppId: '',
@@ -9578,11 +9804,25 @@ var defaultOptions = {
   // 自定义上报id
   BeaconReporter: null,
   // 灯塔上报组件，如有需要请自行传入，传入即代表开启上报
-  ClsReporter: null // cls 上报组件，如有需要请自行传入，传入即代表开启上报
+  ClsReporter: null,
+  // cls 上报组件，如有需要请自行传入，传入即代表开启上报
+  // 日志相关
+  EnableLog: false,
+  // 是否开启日志
+  EnableLogcat: false,
+  // 是否开启控制台日志打印
+  LogLevel: 'VERBOSE',
+  // 日志级别，支持 VERBOSE、DEBUG、INFO、WARN、ERROR，默认为 VERBOSE
+  ClsLogger: null,
+  // 日志上报到 cls 组件
+  LogExtras: {} // 日志上报时，附带的额外信息，例如：{deviceID: '', userID: ''}
 };
 
 // 对外暴露的类
 var COS = function COS(options) {
+  var _this$options$LogLeve,
+    _this$options$LogExtr,
+    _this = this;
   this.options = util.extend(util.clone(defaultOptions), options || {});
   this.options.FileParallelLimit = Math.max(1, this.options.FileParallelLimit);
   this.options.ChunkParallelLimit = Math.max(1, this.options.ChunkParallelLimit);
@@ -9616,6 +9856,20 @@ var COS = function COS(options) {
   }
   event.init(this);
   task.init(this);
+  // 初始化日志模块
+  this.logger = new Logger({
+    enableLog: this.options.EnableLog,
+    enableLogcat: this.options.EnableLogcat,
+    level: (_this$options$LogLeve = this.options.LogLevel) !== null && _this$options$LogLeve !== void 0 ? _this$options$LogLeve : 'VERBOSE',
+    clsLogger: this.options.ClsLogger,
+    logExtras: (_this$options$LogExtr = this.options.LogExtras) !== null && _this$options$LogExtr !== void 0 ? _this$options$LogExtr : {}
+  });
+  if (this.options.EnableLog) {
+    event.init(this.logger);
+    this.logger.on('log-message', function (data) {
+      _this.emit('log-message', data);
+    });
+  }
 };
 base.init(COS, task);
 advance.init(COS, task);
@@ -9670,6 +9924,123 @@ var EventProxy = function EventProxy() {
 };
 module.exports.init = initEvent;
 module.exports.EventProxy = EventProxy;
+
+/***/ }),
+
+/***/ "./src/logger.js":
+/*!***********************!*\
+  !*** ./src/logger.js ***!
+  \***********************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var _classCallCheck = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/classCallCheck.js");
+var _createClass = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/createClass.js");
+var _defineProperty = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/defineProperty.js");
+var pkg = __webpack_require__(/*! ../package.json */ "./package.json");
+var pkgVersion = pkg.version;
+var logLevelList = ['VERBOSE', 'DEBUG', 'INFO', 'WARN', 'ERROR'];
+var Logger = /*#__PURE__*/function () {
+  "use strict";
+
+  function Logger(params) {
+    var _params$enableLog;
+    _classCallCheck(this, Logger);
+    _defineProperty(this, "level", 'VERBOSE');
+    // VERBOSE | DEBUG | INFO | WARN | ERROR 按日志等级排序
+    _defineProperty(this, "clsLogger", null);
+    _defineProperty(this, "logExtras", {});
+    this.enableLog = (_params$enableLog = params.enableLog) !== null && _params$enableLog !== void 0 ? _params$enableLog : false;
+    this.level = params.level || 'VERBOSE';
+    if (!logLevelList.includes(this.level)) {
+      this.level = 'VERBOSE';
+    }
+    this.enableLogcat = params.enableLogcat;
+    this.clsLogger = params.clsLogger;
+    this.logExtras = params.logExtras;
+  }
+  return _createClass(Logger, [{
+    key: "info",
+    value: function info() {
+      if (['VERBOSE', 'INFO'].includes(this.level)) {
+        for (var _len = arguments.length, msg = new Array(_len), _key = 0; _key < _len; _key++) {
+          msg[_key] = arguments[_key];
+        }
+        this.log.apply(this, ['info'].concat(msg));
+      }
+    }
+  }, {
+    key: "debug",
+    value: function debug() {
+      if (['VERBOSE', 'DEBUG'].includes(this.level)) {
+        for (var _len2 = arguments.length, msg = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+          msg[_key2] = arguments[_key2];
+        }
+        this.log.apply(this, ['debug'].concat(msg));
+      }
+    }
+  }, {
+    key: "warn",
+    value: function warn() {
+      if (['VERBOSE', 'WARN'].includes(this.level)) {
+        for (var _len3 = arguments.length, msg = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+          msg[_key3] = arguments[_key3];
+        }
+        this.log.apply(this, ['warn'].concat(msg));
+      }
+    }
+  }, {
+    key: "error",
+    value: function error() {
+      if (['VERBOSE', 'ERROR'].includes(this.level)) {
+        for (var _len4 = arguments.length, msg = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+          msg[_key4] = arguments[_key4];
+        }
+        this.log.apply(this, ['error'].concat(msg));
+      }
+    }
+    /**
+     * 参数结构 {
+     *  timestamp: '2021-08-16T06:51:27.781Z',
+     *  cate: 'PROCESS',
+     *  tag: 'network',
+     *  msg: {}
+     * */
+  }, {
+    key: "log",
+    value: function log() {
+      if (!this.enableLog) {
+        return;
+      }
+      var type = arguments.length <= 0 ? undefined : arguments[0];
+      var _ref = arguments.length <= 1 ? undefined : arguments[1],
+        _ref$cate = _ref.cate,
+        cate = _ref$cate === void 0 ? 'base' : _ref$cate,
+        _ref$tag = _ref.tag,
+        tag = _ref$tag === void 0 ? 'base' : _ref$tag,
+        msg = _ref.msg;
+      var logMsg = {
+        version: "cos-js-sdk-v5-".concat(pkgVersion),
+        timestamp: new Date().toISOString(),
+        cate: "[".concat(cate.toUpperCase(), "]"),
+        tag: "[".concat(tag.toUpperCase(), "]"),
+        msg: msg,
+        extras: this.logExtras
+      };
+      // 日志输出到控制台
+      if (this.enableLogcat) {
+        console[type]("[".concat(logMsg.version, "] ").concat(logMsg.timestamp, " ").concat(logMsg.cate, " ").concat(logMsg.tag, " ").concat(logMsg.msg, " ").concat(logMsg.extras ? JSON.stringify(logMsg.extras) : ''));
+      }
+      // 日志上报到 cls
+      if (this.clsLogger) {
+        this.clsLogger.log(logMsg, false);
+      }
+      // 日志回调
+      this.emit('log-message', logMsg);
+    }
+  }]);
+}();
+module.exports = Logger;
 
 /***/ }),
 
