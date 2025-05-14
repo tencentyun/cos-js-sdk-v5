@@ -1,6 +1,6 @@
 {
   "name": "cos-js-sdk-v5",
-  "version": "1.10.0",
+  "version": "1.10.1",
   "description": "JavaScript SDK for [腾讯云对象存储](https://cloud.tencent.com/product/cos)",
   "main": "dist/cos-js-sdk-v5.js",
   "types": "index.d.ts",
@@ -11,7 +11,7 @@
     "build": "cross-env NODE_ENV=production webpack --mode=production",
     "cos-auth.min.js": "uglifyjs ./demo/common/cos-auth.js -o ./demo/common/cos-auth.min.js -c -m",
     "test": "jest --runInBand --coverage",
-    "postinstall": "npx patch-package"
+    "postinstall": "node scripts/patch-check.js"
   },
   "repository": {
     "type": "git",
