@@ -6,6 +6,7 @@ csp/
 demo/
 test/
 server/
+patches/
 .prettierrc
 CHANGELOG.md
 babel.config.js
