@@ -2605,7 +2605,7 @@ declare class COS {
   /** 获取文件下载链接 @see https://cloud.tencent.com/document/product/436/35651 */
   getObjectUrl(
     params: COS.GetObjectUrlParams,
-    callback: (err: COS.CosError, data: COS.GetObjectUrlResult) => void
+    callback?: (err: COS.CosError, data: COS.GetObjectUrlResult) => void
   ): string;
 
   /** cos.request */
