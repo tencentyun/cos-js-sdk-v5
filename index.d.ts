@@ -1247,9 +1247,9 @@ declare namespace COS {
     ResponseContentEncoding?: string;
     /** 设置响应中的 Content-Language 头部的值 */
     ResponseContentLanguage?: string;
-    /** 设置响应中的 Content-Type 头部的值 */
-    ResponseExpires?: string;
     /** 设置响应中的 Expires 头部的值 */
+    ResponseExpires?: string;
+    /** 设置响应中的 Content-Type 头部的值 */
     ResponseContentType?: string;
     /** RFC 2616 中定义的字节范围，范围值必须使用 bytes=first-last 格式，first 和 last 都是基于0开始的偏移量。例如 bytes=0-9 表示下载对象的开头10个字节的数据 ，如果不指定，则表示下载整个对象 */
     Range?: string;
@@ -2161,7 +2161,7 @@ declare class COS {
   ): void;
   getBucketLocation(params: COS.GetBucketLocationParams): Promise<COS.GetBucketLocationResult>;
 
-  /** 获取 Bucket 的读取权限策略 @see https://cloud.tencent.com/document/product/436/8282 */
+  /** 设置 Bucket 的读取权限策略 @see https://cloud.tencent.com/document/product/436/8282 */
   putBucketPolicy(
     params: COS.PutBucketPolicyParams,
     callback: (err: COS.CosError, data: COS.PutBucketPolicyResult) => void
@@ -2175,7 +2175,7 @@ declare class COS {
   ): void;
   getBucketPolicy(params: COS.GetBucketPolicyParams): Promise<COS.GetBucketPolicyResult>;
 
-  /** 删除 Bucket 的 跨域设置 @see https://cloud.tencent.com/document/product/436/8285 */
+  /** 删除 Bucket 的读取权限策略 @see https://cloud.tencent.com/document/product/436/8285 */
   deleteBucketPolicy(
     params: COS.DeleteBucketPolicyParams,
     callback: (err: COS.CosError, data: COS.DeleteBucketPolicyResult) => void
